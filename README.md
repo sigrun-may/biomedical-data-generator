@@ -88,11 +88,11 @@ that occur in small sample sizes with a very large number of features.
 
 ## Installation
 
-The artificial-data-generator is available at [the Python Package Index (PyPI)](https://pypi.org/project/artificial-data-generator/).
+The synthetic-data-generator is available at [the Python Package Index (PyPI)](https://pypi.org/project/artificial-data-generator/).
 It can be installed with pip:
 
 ```bash
-$ pip install artificial-data-generator
+$ pip install synthetic-data-generator
 ```
 
 ## Project Setup
