@@ -88,7 +88,7 @@ that occur in small sample sizes with a very large number of features.
 
 ## Installation
 
-The synthetic-data-generator is available at [the Python Package Index (PyPI)](https://pypi.org/project/artificial-data-generator/).
+The synthetic-data-generator is available at [the Python Package Index (PyPI)](https://pypi.org/project/synthetic-data-generator/).
 It can be installed with pip:
 
 ```bash
@@ -179,4 +179,4 @@ Copyright (c) 2022 Sigrun May, Ostfalia Hochschule für angewandte Wissenschafte
 
 Licensed under the **MIT License** (the "License"); you may not use this file except in compliance with the License.
 You may obtain a copy of the License by reviewing the file
-[LICENSE](https://github.com/sigrun-may/artificial-data-generator/blob/main/LICENSE) in the repository.
+[LICENSE](https://github.com/sigrun-may/synthetic-data-generator/blob/main/LICENSE) in the repository.
