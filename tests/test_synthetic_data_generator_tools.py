@@ -12,7 +12,7 @@ import unittest
 import numpy as np
 import pandas as pd
 
-from synthetic_data_generator import artificial_data_generator_tools as adgt
+from synthetic_data_generator import synthetic_data_generator_tools as adgt
 
 
 class TestArtificialDataGenerator(unittest.TestCase):

@@ -6,7 +6,7 @@
 
 """Example for usage of generator for artificial data synthetic_data_generator."""
 
-from synthetic_data_generator import artificial_data_generator, visualizer
+from synthetic_data_generator import synthetic_data_generator, visualizer
 
 
 params_dict = {
