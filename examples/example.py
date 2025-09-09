@@ -4,9 +4,9 @@
 # This software is distributed under the terms of the MIT license
 # which is available at https://opensource.org/licenses/MIT
 
-"""Example for usage of generator for artificial data artificial_data_generator."""
+"""Example for usage of generator for artificial data synthetic_data_generator."""
 
-from artificial_data_generator import artificial_data_generator, visualizer
+from synthetic_data_generator import artificial_data_generator, visualizer
 
 
 params_dict = {
