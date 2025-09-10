@@ -1,7 +1,7 @@
 Code Documentation
 ==================
 
-:mod:`~artificial_data_generator.artificial_data_generator`
+:mod:`~synthetic_data_generator.synthetic_data_generator`
 -----------------------------------------------------------
 
-.. automodule:: artificial_data_generator.artificial_data_generator
+.. automodule:: synthetic_data_generator.synthetic_data_generator

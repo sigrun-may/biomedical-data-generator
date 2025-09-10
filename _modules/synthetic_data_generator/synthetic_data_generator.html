@@ -5,7 +5,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>artificial_data_generator.artificial_data_generator &mdash; Artificial Data Generator  documentation</title>
+  <title>synthetic_data_generator.synthetic_data_generator &mdash; Synthetic Data Generator  documentation</title>
       <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=b86133f3" />
       <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=e59714d7" />
       <link rel="stylesheet" type="text/css" href="../../_static/copybutton.css?v=76b2166b" />
@@ -33,7 +33,7 @@
           
           
           <a href="../../index.html" class="icon icon-home">
-            Artificial Data Generator
+            Synthetic Data Generator
           </a>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
@@ -45,8 +45,8 @@
         </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
               <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../code-doc.html">Code Documentation</a></li>
-<li class="toctree-l1"><a class="reference external" href="https://github.com/sigrun-may/artificial-data-generator/blob/main/LICENSE">License</a></li>
-<li class="toctree-l1"><a class="reference external" href="https://github.com/sigrun-may/artificial-data-generator">GitHub Repository</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://github.com/sigrun-may/synthetic-data-generator/blob/main/LICENSE">License</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://github.com/sigrun-may/synthetic-data-generator">GitHub Repository</a></li>
 </ul>
 
         </div>
@@ -55,7 +55,7 @@
 
     <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
           <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
-          <a href="../../index.html">Artificial Data Generator</a>
+          <a href="../../index.html">Synthetic Data Generator</a>
       </nav>
 
       <div class="wy-nav-content">
@@ -64,7 +64,7 @@
   <ul class="wy-breadcrumbs">
       <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
           <li class="breadcrumb-item"><a href="../index.html">Module code</a></li>
-      <li class="breadcrumb-item active">artificial_data_generator.artificial_data_generator</li>
+      <li class="breadcrumb-item active">synthetic_data_generator.synthetic_data_generator</li>
       <li class="wy-breadcrumbs-aside">
       </li>
   </ul>
@@ -73,7 +73,7 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
              
-  <h1>Source code for artificial_data_generator.artificial_data_generator</h1><div class="highlight"><pre>
+  <h1>Source code for synthetic_data_generator.synthetic_data_generator</h1><div class="highlight"><pre>
 <span></span><span class="c1"># Copyright (c) 2022 Sigrun May,</span>
 <span class="c1"># Ostfalia Hochschule für angewandte Wissenschaften</span>
 <span class="c1">#</span>
@@ -99,7 +99,7 @@
 
 
 <div class="viewcode-block" id="_build_pseudo_classes">
-<a class="viewcode-back" href="../../code-doc.html#artificial_data_generator.artificial_data_generator._build_pseudo_classes">[docs]</a>
+<a class="viewcode-back" href="../../code-doc.html#synthetic_data_generator.synthetic_data_generator._build_pseudo_classes">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">_build_pseudo_classes</span><span class="p">(</span><span class="n">params_dict</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">ndarray</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Create pseudo-classes by shuffling artificial classes.</span>
 
@@ -157,7 +157,7 @@
 
 
 <div class="viewcode-block" id="_build_single_class">
-<a class="viewcode-back" href="../../code-doc.html#artificial_data_generator.artificial_data_generator._build_single_class">[docs]</a>
+<a class="viewcode-back" href="../../code-doc.html#synthetic_data_generator.synthetic_data_generator._build_single_class">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">_build_single_class</span><span class="p">(</span><span class="n">class_params_dict</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">],</span> <span class="n">number_of_relevant_features</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">rng</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ndarray</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Generate a single class with the given parameters.</span>
 
@@ -191,7 +191,7 @@
 
 
 <div class="viewcode-block" id="_generate_normal_distributed_class">
-<a class="viewcode-back" href="../../code-doc.html#artificial_data_generator.artificial_data_generator._generate_normal_distributed_class">[docs]</a>
+<a class="viewcode-back" href="../../code-doc.html#synthetic_data_generator.synthetic_data_generator._generate_normal_distributed_class">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">_generate_normal_distributed_class</span><span class="p">(</span><span class="n">class_params_dict</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">],</span> <span class="n">number_of_relevant_features</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">rng</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ndarray</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Generate normal distributed class data.</span>
 
@@ -245,7 +245,7 @@
 
 
 <div class="viewcode-block" id="_generate_correlated_cluster">
-<a class="viewcode-back" href="../../code-doc.html#artificial_data_generator.artificial_data_generator._generate_correlated_cluster">[docs]</a>
+<a class="viewcode-back" href="../../code-doc.html#synthetic_data_generator.synthetic_data_generator._generate_correlated_cluster">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">_generate_correlated_cluster</span><span class="p">(</span>
     <span class="n">number_of_features</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
     <span class="n">number_of_samples</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
@@ -311,7 +311,7 @@
 
 
 <div class="viewcode-block" id="_generate_correlated_features">
-<a class="viewcode-back" href="../../code-doc.html#artificial_data_generator.artificial_data_generator._generate_correlated_features">[docs]</a>
+<a class="viewcode-back" href="../../code-doc.html#synthetic_data_generator.synthetic_data_generator._generate_correlated_features">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">_generate_correlated_features</span><span class="p">(</span><span class="n">class_params_dict</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">],</span> <span class="n">rng</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ndarray</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Generate correlated features for a given class.</span>
 
@@ -344,7 +344,7 @@
 
 
 <div class="viewcode-block" id="_repeat_correlation_cluster_generation">
-<a class="viewcode-back" href="../../code-doc.html#artificial_data_generator.artificial_data_generator._repeat_correlation_cluster_generation">[docs]</a>
+<a class="viewcode-back" href="../../code-doc.html#synthetic_data_generator.synthetic_data_generator._repeat_correlation_cluster_generation">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">_repeat_correlation_cluster_generation</span><span class="p">(</span><span class="n">correlated_feature_cluster</span><span class="p">,</span> <span class="n">cluster_params_dict</span><span class="p">,</span> <span class="n">rng</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ndarray</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot; Repeat random generation of correlated features until lower bound is reached.</span>
 
@@ -386,7 +386,7 @@
 
 
 <div class="viewcode-block" id="_generate_dataframe">
-<a class="viewcode-back" href="../../code-doc.html#artificial_data_generator.artificial_data_generator._generate_dataframe">[docs]</a>
+<a class="viewcode-back" href="../../code-doc.html#synthetic_data_generator.synthetic_data_generator._generate_dataframe">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">_generate_dataframe</span><span class="p">(</span>
     <span class="n">data_np</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
     <span class="n">params_dict</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">],</span>
@@ -437,7 +437,7 @@
 
 
 <div class="viewcode-block" id="_shuffle_features">
-<a class="viewcode-back" href="../../code-doc.html#artificial_data_generator.artificial_data_generator._shuffle_features">[docs]</a>
+<a class="viewcode-back" href="../../code-doc.html#synthetic_data_generator.synthetic_data_generator._shuffle_features">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">_shuffle_features</span><span class="p">(</span><span class="n">data_df</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">params_dict</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Shuffle the features of the given DataFrame.</span>
 
@@ -462,7 +462,7 @@
 
 
 <div class="viewcode-block" id="_save">
-<a class="viewcode-back" href="../../code-doc.html#artificial_data_generator.artificial_data_generator._save">[docs]</a>
+<a class="viewcode-back" href="../../code-doc.html#synthetic_data_generator.synthetic_data_generator._save">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">_save</span><span class="p">(</span><span class="n">data_df</span><span class="p">,</span> <span class="n">params_dict</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Save the generated data and parameters to the given paths.</span>
 <span class="sd">    Args:</span>
@@ -493,7 +493,7 @@
 
 
 <div class="viewcode-block" id="generate_artificial_classification_data">
-<a class="viewcode-back" href="../../code-doc.html#artificial_data_generator.artificial_data_generator.generate_artificial_classification_data">[docs]</a>
+<a class="viewcode-back" href="../../code-doc.html#synthetic_data_generator.synthetic_data_generator.generate_artificial_classification_data">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">generate_artificial_classification_data</span><span class="p">(</span><span class="n">params_dict</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Generate artificial classification (e.g. biomarker) data.</span>
 
