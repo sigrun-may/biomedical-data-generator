@@ -1,4 +1,4 @@
-# Data generator for synthetic data including artificial classes, intraclass correlations, pseudo-classes and random data - [Sphinx Doc](https://sigrun-may.github.io/artificial-data-generator/)
+# Data generator for synthetic data including artificial classes, intraclass correlations, pseudo-classes and random data - [Sphinx Doc](https://sigrun-may.github.io/synthetic-data-generator/)
 
 ## Table of Contents
 
