@@ -44,7 +44,8 @@ build-backend = "poetry.core.masonry.api"
 "Bug Tracker" = "https://github.com/sigrun-may/synthetic-data-generator/issues"
 
 [tool.poetry.dependencies]
-python = "^3.8"
+python = ">=3.10,<4.0"
+numpy = ">=1.20"
 pyyaml = "*"
 numpy = "*"
 pandas = "*"
