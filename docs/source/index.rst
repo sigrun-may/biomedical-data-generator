@@ -1,4 +1,4 @@
-Artificial Data Generator
+Synthetic Data Generator
 =========================
 
 .. todo:
