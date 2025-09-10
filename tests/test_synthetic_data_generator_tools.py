@@ -3,10 +3,10 @@
 #
 # This software is distributed under the terms of the MIT license
 # which is available at https://opensource.org/licenses/MIT
-"""Tests for the artificial_data_generator_tools module.
+"""Tests for the synthetic_data_generator_tools module.
 
-The artificial_data_generator_tools module is part of the artificial-data-generator package.
-It provides functions for use in Jupyter notebooks to generate artificial data for classification tasks.
+The synthetic_data_generator_tools module is part of the synthetic-data-generator package.
+It provides functions for use in Jupyter notebooks to generate synthetic data for classification tasks.
 """
 import unittest
 import numpy as np

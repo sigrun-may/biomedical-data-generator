@@ -35,8 +35,8 @@ params_dict = {
     "shuffle_features": False,
 }
 
-# generate artificial data as Dataframe
-data_df = artificial_data_generator.generate_artificial_classification_data(params_dict)
+# generate synthetic data as Dataframe
+data_df = synthetic_data_generator.generate_artificial_classification_data(params_dict)
 
 # visualize generated correlations and class distributions
 visualizer.visualize(data_df, params_dict)

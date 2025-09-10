@@ -20,7 +20,7 @@ from typing import List
 
 # -- Project information -----------------------------------------------------
 
-project = "Artificial Data Generator"
+project = "Synthetic Data Generator"
 copyright = "2022, Sigrun May"
 author = "Sigrun May"
 
@@ -88,7 +88,7 @@ html_show_sphinx = False
 html_context = {
     "display_github": True,
     "github_user": "sigrun-may",
-    "github_repo": "artificial-data-generator",
+    "github_repo": "synthetic-data-generator",
     "github_version": "main/docs/source/",
 }
 

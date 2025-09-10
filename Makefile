@@ -1,4 +1,4 @@
-src := artificial_data_generator
+src := synthetic_data_generator
 other-src := examples
 
 # check the code

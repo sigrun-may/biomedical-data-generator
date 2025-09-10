@@ -1,11 +1,11 @@
 [tool.poetry]
-name = "artificial-data-generator"
-version = "0.0.4rc3"
+name = "synthetic-data-generator"
+version = "0.1.0"
 description = ""
 authors = ["Sigrun May <s.may@ostfalia.de>"]
 license = "MIT"
 readme = "README.md"
-homepage = "https://github.com/sigrun-may/artificial-data-generator"
+homepage = "https://github.com/sigrun-may/synthetic-data-generator"
 include = ["LICENSE", "Makefile"]
 keywords = [
     "artificial data",
@@ -41,7 +41,7 @@ requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
 
 [tool.poetry.urls]
-"Bug Tracker" = "https://github.com/sigrun-may/artificial-data-generator/issues"
+"Bug Tracker" = "https://github.com/sigrun-may/synthetic-data-generator/issues"
 
 [tool.poetry.dependencies]
 python = "^3.8"

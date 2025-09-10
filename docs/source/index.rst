@@ -12,8 +12,8 @@ Content
    :maxdepth: 2
 
    code-doc
-   License <https://github.com/sigrun-may/artificial-data-generator/blob/main/LICENSE>
-   GitHub Repository <https://github.com/sigrun-may/artificial-data-generator>
+   License <https://github.com/sigrun-may/synthetic-data-generator/blob/main/LICENSE>
+   GitHub Repository <https://github.com/sigrun-may/synthetic-data-generator>
 
 Indices and Tables
 ------------------
