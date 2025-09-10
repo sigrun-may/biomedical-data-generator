@@ -33,7 +33,7 @@ classifiers = [
 ]
 
 [build-system]
-requires = ["poetry-core"]
+requires = ["poetry-core>=1.9.0"]
 build-backend = "poetry.core.masonry.api"
 
 [tool.poetry.urls]
@@ -43,7 +43,6 @@ build-backend = "poetry.core.masonry.api"
 python = ">=3.10,<4.0"
 numpy = ">=1.23"
 pyyaml = "*"
-numpy = "*"
 pandas = "*"
 seaborn = "*"
 matplotlib = "*"
@@ -83,10 +82,6 @@ source = ["synthetic_data_generator"]
 [tool.coverage.report]
 show_missing = true
 skip_empty = true
-
-[build-system]
-requires = ["poetry-core>=1.9.0"]
-build-backend = "poetry.core.masonry.api"
 
 [tool.poetry.group.test.dependencies]
 pytest = "*"
