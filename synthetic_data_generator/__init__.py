@@ -7,3 +7,6 @@
 # which is available at https://opensource.org/licenses/MIT
 
 """Data generator main package."""
+
+from .core import generate_dataset, DatasetMeta
+__all__ = ["generate_dataset", "DatasetMeta"]
