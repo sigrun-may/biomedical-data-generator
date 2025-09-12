@@ -1,3 +1,9 @@
+# Copyright (c) 2025 Sigrun May,
+# Ostfalia Hochschule für angewandte Wissenschaften
+#
+# This software is distributed under the terms of the MIT license
+# which is available at https://opensource.org/licenses/MIT
+
 from __future__ import annotations
 
 import math
