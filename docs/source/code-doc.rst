@@ -1,7 +1,7 @@
 Code Documentation
 ==================
 
-:mod:`~synthetic_data_generator.synthetic_data_generator`
+:mod:`~biomedical_data_generator.biomedical_data_generator`
 -----------------------------------------------------------
 
-.. automodule:: synthetic_data_generator.synthetic_data_generator
+.. automodule:: biomedical_data_generator.biomedical_data_generator

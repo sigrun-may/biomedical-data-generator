@@ -18,7 +18,7 @@
 
 # -- Project information -----------------------------------------------------
 
-project = "Synthetic Data Generator"
+project = "Biomedical Data Generator"
 copyright = "2022, Sigrun May"
 author = "Sigrun May"
 
@@ -86,7 +86,7 @@ html_show_sphinx = False
 html_context = {
     "display_github": True,
     "github_user": "sigrun-may",
-    "github_repo": "synthetic-data-generator",
+    "github_repo": "biomedical-data-generator",
     "github_version": "main/docs/source/",
 }
 

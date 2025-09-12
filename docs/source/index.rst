@@ -1,4 +1,4 @@
-Synthetic Data Generator
+Biomedical Data Generator
 =========================
 
 .. todo:
@@ -12,8 +12,8 @@ Content
    :maxdepth: 2
 
    code-doc
-   License <https://github.com/sigrun-may/synthetic-data-generator/blob/main/LICENSE>
-   GitHub Repository <https://github.com/sigrun-may/synthetic-data-generator>
+   License <https://github.com/sigrun-may/biomedical-data-generator/blob/main/LICENSE>
+   GitHub Repository <https://github.com/sigrun-may/biomedical-data-generator>
 
 Indices and Tables
 ------------------

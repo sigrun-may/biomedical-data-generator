@@ -1,4 +1,4 @@
-# Data generator for synthetic data including artificial classes, intraclass correlations, pseudo-classes and random data - [Sphinx Doc](https://sigrun-may.github.io/synthetic-data-generator/)
+# Data generator for synthetic data including artificial classes, intraclass correlations, pseudo-classes and random data - [Sphinx Doc](https://sigrun-may.github.io/biomedical-data-generator/)
 
 ## Table of Contents
 
@@ -21,7 +21,7 @@ certainty, artificial data **enables to know the expected outcome in advance**. 
 
 ### Different parts of the data set
 
-The synthetic-data-generator produces data sets consisting of up to three main parts:
+The biomedical-data-generator produces data sets consisting of up to three main parts:
 
 1. **Relevant features** belonging to an artificial class (for example artificial biomarkers)
 1. [optional] **Pseudo-classes** (for example a patient's height or gender, which have no association with a particular disease)
@@ -88,11 +88,11 @@ that occur in small sample sizes with a very large number of features.
 
 ## Installation
 
-The synthetic-data-generator is available at [the Python Package Index (PyPI)](https://pypi.org/project/synthetic-data-generator/).
+The biomedical-data-generator is available at [the Python Package Index (PyPI)](https://pypi.org/project/biomedical-data-generator/).
 It can be installed with pip:
 
 ```bash
-$ pip install synthetic-data-generator
+$ pip install biomedical-data-generator
 ```
 
 ## Project Setup
@@ -179,4 +179,4 @@ Copyright (c) 2022 Sigrun May, Ostfalia Hochschule für angewandte Wissenschafte
 
 Licensed under the **MIT License** (the "License"); you may not use this file except in compliance with the License.
 You may obtain a copy of the License by reviewing the file
-[LICENSE](https://github.com/sigrun-may/synthetic-data-generator/blob/main/LICENSE) in the repository.
+[LICENSE](https://github.com/sigrun-may/biomedical-data-generator/blob/main/LICENSE) in the repository.

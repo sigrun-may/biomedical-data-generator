@@ -5,7 +5,7 @@ description = "Generate synthetic data for data science, machine learning, and s
 authors = ["Sigrun May <s.may@ostfalia.de>"]
 license = "MIT"
 readme = "README.md"
-homepage = "https://github.com/sigrun-may/synthetic-data-generator"
+homepage = "https://github.com/sigrun-may/biomedical-data-generator"
 include = ["LICENSE", "Makefile"]
 keywords = [
     "artificial data", "synthetic data", "data generation", "data simulation", "data science", "machine learning",
@@ -35,7 +35,7 @@ requires = ["poetry-core>=1.9.0"]
 build-backend = "poetry.core.masonry.api"
 
 [tool.poetry.urls]
-"Bug Tracker" = "https://github.com/sigrun-may/synthetic-data-generator/issues"
+"Bug Tracker" = "https://github.com/sigrun-may/biomedical-data-generator/issues"
 
 [tool.poetry.dependencies]
 python = ">=3.10,<4.0"
@@ -86,7 +86,7 @@ testpaths = ["tests"]
 
 [tool.coverage.run]
 branch = true
-source = ["synthetic_data_generator"]
+source = ["biomedical_data_generator"]
 
 [tool.coverage.report]
 show_missing = true
