@@ -8,7 +8,7 @@
 
 """Data generator main package."""
 
-from .core import generate_dataset, DatasetConfig, DatasetMeta
+from .core import DatasetConfig, DatasetMeta, generate_dataset
 
 __all__ = [
     "generate_dataset",

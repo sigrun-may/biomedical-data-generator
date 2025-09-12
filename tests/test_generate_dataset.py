@@ -5,7 +5,9 @@
 # which is available at https://opensource.org/licenses/MIT
 
 import numpy as np
+
 import synthetic_data_generator as sdg
+
 
 def test_public_entrypoint_exists():
     # Top-level import should expose the stable entry points

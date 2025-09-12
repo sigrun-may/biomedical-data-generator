@@ -5,15 +5,15 @@
 # which is available at https://opensource.org/licenses/MIT
 
 from __future__ import annotations
-from dataclasses import dataclass, asdict
-from typing import Iterable, Optional, Tuple, Literal, Dict, Any, Union
 
 import math
 import warnings as _warnings
+from collections.abc import Iterable
+from dataclasses import asdict, dataclass
+from typing import Any, Literal
 
 import numpy as np
 from numpy.typing import NDArray
-
 
 NoiseDist = Literal["normal", "uniform", "lognormal"]
 
@@ -45,16 +45,16 @@ class DatasetConfig:
     n_informative: int = 5
     class_sep: float = 1.2
     classes: int = 2  # only binary supported; kept here for completeness
-    weights: Optional[Tuple[float, float]] = None
-    random_state: Optional[int] = 42
+    weights: tuple[float, float] | None = None
+    random_state: int | None = 42
 
     # Noise / irrelevant features
     n_noise: int = 0
     noise_dist: NoiseDist = "normal"
 
     # Correlations
-    corr_matrix: Optional[NDArray[np.float64]] = None
-    block_sizes: Optional[Iterable[int]] = None
+    corr_matrix: NDArray[np.float64] | None = None
+    block_sizes: Iterable[int] | None = None
     corr_within: float = 0.8
     corr_between: float = 0.0
 
@@ -63,10 +63,10 @@ class DatasetConfig:
     pseudo_effect: float = 0.0
 
     # Deprecated convenience flags kept for compatibility (ignored by the core impl)
-    add_pseudo: Optional[bool] = None
+    add_pseudo: bool | None = None
     return_meta: bool = True  # handled at wrapper level only
 
-    def to_kwargs(self) -> Dict[str, Any]:
+    def to_kwargs(self) -> dict[str, Any]:
         """Convert dataclass to a kwargs dict suitable for `generate_dataset`."""
         d = asdict(self)
         # Normalize iterables to lists for downstream use
@@ -83,28 +83,25 @@ def generate_dataset(
     class_sep: float = 1.2,
     *,
     classes: int = 2,
-    weights: Optional[Tuple[float, float]] = None,
-    random_state: Optional[int] = 42,
+    weights: tuple[float, float] | None = None,
+    random_state: int | None = 42,
     # Noise / irrelevant features
     n_noise: int = 0,
     noise_dist: NoiseDist = "normal",
     # Correlations
-    corr_matrix: Optional[NDArray[np.float64]] = None,
-    block_sizes: Optional[Iterable[int]] = None,
+    corr_matrix: NDArray[np.float64] | None = None,
+    block_sizes: Iterable[int] | None = None,
     corr_within: float = 0.8,
     corr_between: float = 0.0,
     # Pseudo confounding
     n_pseudo: int = 0,
     pseudo_effect: float = 0.0,
     # Legacy convenience flags (wrapper-level only)
-    add_pseudo: Optional[bool] = None,   # deprecated: use pseudo_effect instead
+    add_pseudo: bool | None = None,   # deprecated: use pseudo_effect instead
     return_meta: bool = True,            # wrapper decides whether to drop meta
     # Optional config (base values) – explicit function args take precedence
-    config: Optional[DatasetConfig] = None,
-) -> Union[
-    tuple[NDArray[np.float64], NDArray[np.int64], DatasetMeta],
-    tuple[NDArray[np.float64], NDArray[np.int64]],
-]:
+    config: DatasetConfig | None = None,
+) -> tuple[NDArray[np.float64], NDArray[np.int64], DatasetMeta] | tuple[NDArray[np.float64], NDArray[np.int64]]:
     """
     Stable public entry point used in README & docs.
 
@@ -122,7 +119,7 @@ def generate_dataset(
     (X, y, meta) if return_meta=True, otherwise (X, y).
     """
     # --- Merge config (if any) with explicit parameters (explicit wins) --------------------------
-    base: Dict[str, Any] = config.to_kwargs() if config is not None else {}
+    base: dict[str, Any] = config.to_kwargs() if config is not None else {}
 
     # Map legacy flag 'add_pseudo' to a default pseudo effect if user set it
     if add_pseudo:
@@ -135,7 +132,7 @@ def generate_dataset(
         raise NotImplementedError("Only binary classification (classes=2) is supported at the moment.")
 
     # Normalize/validate weights (must be two non-negative numbers summing to 1)
-    norm_weights: Optional[Tuple[float, float]]
+    norm_weights: tuple[float, float] | None
     if weights is None:
         norm_weights = None
     else:
@@ -150,7 +147,7 @@ def generate_dataset(
     block_list = list(block_sizes) if block_sizes is not None else None
 
     # Build final kwargs for the internal implementation
-    impl_kwargs: Dict[str, Any] = {
+    impl_kwargs: dict[str, Any] = {
         # core parameters
         "n_samples": n_samples if n_samples is not None else base.get("n_samples"),
         "n_features": n_features if n_features is not None else base.get("n_features"),
