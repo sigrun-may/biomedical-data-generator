@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import math
 from dataclasses import dataclass
-from typing import Dict, List, Optional, Tuple
 
 import numpy as np
 from numpy.typing import NDArray
@@ -12,17 +11,17 @@ from numpy.typing import NDArray
 class DatasetMeta:
     """Container for ground-truth metadata returned by `generate_dataset`."""
 
-    feature_names: List[str]
-    informative_idx: List[int]
-    pseudo_idx: List[int]
-    noise_idx: List[int]
-    y_weights: Tuple[float, float]
+    feature_names: list[str]
+    informative_idx: list[int]
+    pseudo_idx: list[int]
+    noise_idx: list[int]
+    y_weights: tuple[float, float]
     class_sep: float
     corr_within: float
     corr_between: float
-    block_sizes: List[int]
-    random_state: Optional[int]
-    y_counts: Dict[int, int]
+    block_sizes: list[int]
+    random_state: int | None
+    y_counts: dict[int, int]
 
 
 def _nearest_psd(corr: NDArray[np.float64], eps: float = 1e-8) -> NDArray[np.float64]:
@@ -42,7 +41,7 @@ def _nearest_psd(corr: NDArray[np.float64], eps: float = 1e-8) -> NDArray[np.flo
     return psd
 
 
-def _make_block_corr(block_sizes: List[int], corr_within: float, corr_between: float) -> NDArray[np.float64]:
+def _make_block_corr(block_sizes: list[int], corr_within: float, corr_between: float) -> NDArray[np.float64]:
     """Construct a block correlation matrix with given within/between correlations."""
     p = int(sum(block_sizes))
     if p <= 0:
@@ -68,20 +67,20 @@ def generate_dataset(
     n_features: int = 20,
     n_informative: int = 5,
     class_sep: float = 1.2,
-    weights: Tuple[float, float] | None = None,  # class imbalance (p(y=0), p(y=1))
+    weights: tuple[float, float] | None = None,  # class imbalance (p(y=0), p(y=1))
     random_state: int | None = 42,
     # Noise / irrelevant features
     n_noise: int = 0,
     noise_dist: str = "normal",  # "normal" | "uniform"
     # Correlations (applied to ALL non-noise features)
     corr_matrix: NDArray[np.float64] | None = None,  # full corr matrix or None
-    block_sizes: List[int] | None = None,  # alternative to corr_matrix
+    block_sizes: list[int] | None = None,  # alternative to corr_matrix
     corr_within: float = 0.8,
     corr_between: float = 0.0,
     # Pseudo-class confounding (independent of true y)
     n_pseudo: int = 0,
     pseudo_effect: float = 0.0,  # mean shift magnitude applied to pseudo features
-) -> Tuple[NDArray[np.float64], NDArray[np.int64], DatasetMeta]:
+) -> tuple[NDArray[np.float64], NDArray[np.int64], DatasetMeta]:
     """
     Generate a high-dimensional synthetic binary classification dataset for
     biological/biomedical teaching and benchmarking.
@@ -206,7 +205,7 @@ def generate_dataset(
 
     # Build correlation for the correlated part (p_corr may be 0)
     X_corr = np.empty((n_samples, 0), dtype=np.float64)
-    block_used: List[int] = []
+    block_used: list[int] = []
 
     if p_corr > 0:
         if corr_matrix is not None:
@@ -232,7 +231,6 @@ def generate_dataset(
         # Indices within correlated part
         idx_inf = np.arange(0, n_informative, dtype=np.int64)
         idx_pseudo = np.arange(n_informative, n_informative + n_pseudo, dtype=np.int64)
-        idx_plain = np.arange(n_informative + n_pseudo, p_corr, dtype=np.int64)
 
         # Class separation for informative features
         if n_informative > 0 and class_sep != 0.0:

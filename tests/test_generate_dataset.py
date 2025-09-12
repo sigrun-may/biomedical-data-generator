@@ -1,4 +1,5 @@
 import numpy as np
+
 from synthetic_data_generator import generate_dataset
 
 

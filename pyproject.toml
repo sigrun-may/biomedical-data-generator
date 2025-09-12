@@ -54,6 +54,7 @@ pytest = "^8.0.0"
 pytest-cov = "^5.0.0"
 coverage = {version="^7.6.0", extras=["toml"]}
 black = {extras = ["jupyter"], version = "^25.1.0"}
+ruff = "^0.13.0"
 
 [tool.black]
 line-length = 120
@@ -85,8 +86,10 @@ skip_empty = true
 
 
 
+
 [tool.poetry.group.test.dependencies]
 pytest = "*"
+
 
 
 
