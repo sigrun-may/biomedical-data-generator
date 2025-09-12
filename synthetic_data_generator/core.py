@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import math
 from dataclasses import dataclass
-from typing import Dict, List, Tuple, Optional
+from typing import Dict, List, Optional, Tuple
 
 import numpy as np
 from numpy.typing import NDArray
@@ -11,6 +11,7 @@ from numpy.typing import NDArray
 @dataclass(frozen=True)
 class DatasetMeta:
     """Container for ground-truth metadata returned by `generate_dataset`."""
+
     feature_names: List[str]
     informative_idx: List[int]
     pseudo_idx: List[int]
@@ -67,19 +68,16 @@ def generate_dataset(
     n_features: int = 20,
     n_informative: int = 5,
     class_sep: float = 1.2,
-    weights: Tuple[float, float] | None = None,   # class imbalance (p(y=0), p(y=1))
+    weights: Tuple[float, float] | None = None,  # class imbalance (p(y=0), p(y=1))
     random_state: int | None = 42,
-
     # Noise / irrelevant features
     n_noise: int = 0,
-    noise_dist: str = "normal",                    # "normal" | "uniform"
-
+    noise_dist: str = "normal",  # "normal" | "uniform"
     # Correlations (applied to ALL non-noise features)
-    corr_matrix: NDArray[np.float64] | None = None,   # full corr matrix or None
-    block_sizes: List[int] | None = None,             # alternative to corr_matrix
+    corr_matrix: NDArray[np.float64] | None = None,  # full corr matrix or None
+    block_sizes: List[int] | None = None,  # alternative to corr_matrix
     corr_within: float = 0.8,
     corr_between: float = 0.0,
-
     # Pseudo-class confounding (independent of true y)
     n_pseudo: int = 0,
     pseudo_effect: float = 0.0,  # mean shift magnitude applied to pseudo features
@@ -239,14 +237,16 @@ def generate_dataset(
         # Class separation for informative features
         if n_informative > 0 and class_sep != 0.0:
             # Shift magnitude: +/- class_sep/2 to produce total mean difference ≈ class_sep
-            shift = (class_sep / 2.0).astype(np.float64) if isinstance(class_sep, np.ndarray) else float(class_sep) / 2.0
+            shift = (
+                (class_sep / 2.0).astype(np.float64) if isinstance(class_sep, np.ndarray) else float(class_sep) / 2.0
+            )
             # Broadcast shifts per sample
             s = np.where(y == 1, +shift, -shift).reshape(-1, 1)
             X_corr[:, idx_inf] = X_corr[:, idx_inf] + s
 
         # Pseudo-class shifts (independent confounding)
         if n_pseudo > 0 and pseudo_effect != 0.0 and z is not None:
-            pshift = (float(pseudo_effect) / 2.0)
+            pshift = float(pseudo_effect) / 2.0
             s_p = np.where(z == 1, +pshift, -pshift).reshape(-1, 1)
             X_corr[:, idx_pseudo] = X_corr[:, idx_pseudo] + s_p
 

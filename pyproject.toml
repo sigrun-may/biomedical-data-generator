@@ -47,16 +47,16 @@ pandas = "*"
 seaborn = "*"
 matplotlib = "*"
 statsmodels = "*"
+pytest = "^8.4.2"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.0.0"
 pytest-cov = "^5.0.0"
 coverage = {version="^7.6.0", extras=["toml"]}
-black = "^24.0.0"
-ruff = "^0.6.0"
+black = {extras = ["jupyter"], version = "^25.1.0"}
 
 [tool.black]
-line-length = 88
+line-length = 120
 target-version = ["py311"]
 
 [tool.isort]
@@ -65,7 +65,7 @@ lines_after_imports = 2
 line_length = 120
 
 [tool.ruff]
-line-length = 88
+line-length = 120
 target-version = "py311"
 
 [tool.ruff.lint]
@@ -83,8 +83,12 @@ source = ["synthetic_data_generator"]
 show_missing = true
 skip_empty = true
 
+
+
 [tool.poetry.group.test.dependencies]
 pytest = "*"
+
+
 
 [tool.poetry.group.doc.dependencies]
 sphinx = "*"

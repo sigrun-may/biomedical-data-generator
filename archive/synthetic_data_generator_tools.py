@@ -16,6 +16,7 @@ each with a specified number of samples and features.
 The generated data can be used for benchmarking and development of new methods
 in machine learning and data analysis.
 """
+from __future__ import annotations
 
 import logging
 import math
@@ -181,11 +182,10 @@ def build_class(
     number_of_informative_features: int,
     scale: float = 1,
     distribution: Literal["normal", "lognormal"] = "normal",
-    correlated_clusters_list: Optional[list] = None,
+    correlated_clusters_list: list|None = None,
     plot_correlation_matrix: bool = True,
     plot_distribution: bool = True,
     path_to_save_pdf="",
-
 ) -> ndarray:
     """Build a class with the given number of samples per class and the given number of informative features.
 
@@ -216,8 +216,9 @@ def build_class(
 
     # check if a plot will be generated if a plot path is given
     if path_to_save_pdf != "" and not (plot_correlation_matrix or plot_distribution):
-        raise ValueError("No plot will be generated. "
-                         "Please set 'plot_correlation_matrix' or 'plot_distribution' to True.")
+        raise ValueError(
+            "No plot will be generated. " "Please set 'plot_correlation_matrix' or 'plot_distribution' to True."
+        )
 
     # check if path to save pdf is a string
     if not isinstance(path_to_save_pdf, str):
@@ -466,10 +467,10 @@ def generate_artificial_classification_data(
     )
     assert np.all(
         artificial_classification_data_np[:, 0] == class_data_np[:, 0]
-    ), f"First column of artificial classification data does not match first column of class data"
+    ), "First column of artificial classification data does not match first column of class data"
     assert np.all(
         artificial_classification_data_np[:, 1 : class_data_np.shape[1]] == class_data_np[:, 1:]
-    ), f"Class features of artificial classification data do not match the original class features"
+    ), "Class features of artificial classification data do not match the original class features"
     assert (
         artificial_classification_data_np.shape[1]
         == class_data_np.shape[1] + number_of_pseudo_class_features + number_of_random_features
@@ -523,7 +524,7 @@ def find_perfectly_separated_features(list_of_feature_values_per_class: list[np.
         for j in range(len(list_of_feature_values_per_class) - 1):
             # check if all features of class j are smaller or greater than the corresponding features of class j+1
             if np.all(
-                    list_of_feature_values_per_class[j][:, i] < list_of_feature_values_per_class[j + 1][:, i]
+                list_of_feature_values_per_class[j][:, i] < list_of_feature_values_per_class[j + 1][:, i]
             ) or np.all(list_of_feature_values_per_class[j][:, i] > list_of_feature_values_per_class[j + 1][:, i]):
                 # print(f"Feature {i} perfectly separates class {j} and class {j + 1}")
                 perfectly_separating_features.append(i)
@@ -531,7 +532,7 @@ def find_perfectly_separated_features(list_of_feature_values_per_class: list[np.
 
 
 def drop_perfectly_separated_features(
-    list_of_perfectly_separated_features: list[int], data_df: pd.DataFrame, target_column_name: str|None = None
+    list_of_perfectly_separated_features: list[int], data_df: pd.DataFrame, target_column_name: str | None = None
 ) -> pd.DataFrame:
     """Drop the perfectly separated informative features from the given data.
 

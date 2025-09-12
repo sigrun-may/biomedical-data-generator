@@ -108,7 +108,9 @@ def _build_single_class(class_params_dict: Dict[str, Any], number_of_relevant_fe
     return class_data_np
 
 
-def _generate_normal_distributed_class(class_params_dict: Dict[str, Any], number_of_relevant_features: int, rng) -> ndarray:
+def _generate_normal_distributed_class(
+    class_params_dict: Dict[str, Any], number_of_relevant_features: int, rng
+) -> ndarray:
     """Generate normal distributed class data.
 
     Args:
@@ -253,7 +255,7 @@ def _generate_correlated_features(class_params_dict: Dict[str, Any], rng) -> nda
 
 
 def _repeat_correlation_cluster_generation(correlated_feature_cluster, cluster_params_dict, rng) -> ndarray:
-    """ Repeat random generation of correlated features until lower bound is reached.
+    """Repeat random generation of correlated features until lower bound is reached.
 
     Args:
         correlated_feature_cluster: Numpy array with generated correlated features.
@@ -480,8 +482,12 @@ def generate_artificial_classification_data(params_dict: Dict[str, Any]) -> pd.D
     assert isinstance(params_dict["path_to_save_feather"], (str, type(None)))
     assert isinstance(params_dict["path_to_save_meta_data"], (str, type(None)))
     assert isinstance(params_dict["shuffle_features"], bool)
-    assert (params_dict["number_of_relevant_features"] + params_dict["number_of_pseudo_class_features"] +
-            params_dict["random_features"]["number_of_features"] > 0), "At least one feature must be generated."
+    assert (
+        params_dict["number_of_relevant_features"]
+        + params_dict["number_of_pseudo_class_features"]
+        + params_dict["random_features"]["number_of_features"]
+        > 0
+    ), "At least one feature must be generated."
 
     if params_dict["seed"] is not None:
         assert isinstance(params_dict["seed"], int)

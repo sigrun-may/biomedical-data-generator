@@ -24,8 +24,8 @@ certainty, artificial data **enables to know the expected outcome in advance**. 
 The synthetic-data-generator produces data sets consisting of up to three main parts:
 
 1. **Relevant features** belonging to an artificial class (for example artificial biomarkers)
-1. \[optional\] **Pseudo-classes** (for example a patient's height or gender, which have no association with a particular disease)
-1. \[optional\] **Random data** representing the features (for example biomarker candidates) that are not associated with any class
+1. [optional] **Pseudo-classes** (for example a patient's height or gender, which have no association with a particular disease)
+1. [optional] **Random data** representing the features (for example biomarker candidates) that are not associated with any class
 
 The number of artificial classes is not limited. Each class is generated individually and then combined with the others.
 In order to simulate artificial biomarkers in total, all individual classes have the same number of features in total.

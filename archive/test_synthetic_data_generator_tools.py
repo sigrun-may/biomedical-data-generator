@@ -12,7 +12,7 @@ import unittest
 import numpy as np
 import pandas as pd
 
-from synthetic_data_generator import synthetic_data_generator_tools as adgt
+from archive import synthetic_data_generator_tools as adgt
 
 
 class TestArtificialDataGenerator(unittest.TestCase):
@@ -96,16 +96,13 @@ class TestArtificialDataGenerator(unittest.TestCase):
 
 class TestDropPerfectlySeparatedFeatures(unittest.TestCase):
     def setUp(self):
-        self.data_df = pd.DataFrame({
-            'label': [1, 1, 0, 0],
-            'bm_0': [1, 2, 3, 4],
-            'bm_1': [5, 6, 7, 8],
-            'bm_2': [9, 10, 11, 12]
-        })
+        self.data_df = pd.DataFrame(
+            {"label": [1, 1, 0, 0], "bm_0": [1, 2, 3, 4], "bm_1": [5, 6, 7, 8], "bm_2": [9, 10, 11, 12]}
+        )
 
     def test_drop_perfectly_separated_features(self):
         result = adgt.drop_perfectly_separated_features([1], self.data_df)
-        self.assertEqual(result.columns.tolist(), ['label', 'bm_0', 'bm_2'])
+        self.assertEqual(result.columns.tolist(), ["label", "bm_0", "bm_2"])
 
     def test_zero_perfectly_separated_features(self):
         with self.assertRaises(ValueError):
@@ -116,7 +113,7 @@ class TestDropPerfectlySeparatedFeatures(unittest.TestCase):
             adgt.drop_perfectly_separated_features([0, 1, 2, 3], self.data_df)
 
     def test_target_not_in_data_df(self):
-        data_df = self.data_df[['bm_0', 'bm_1', 'bm_2']]
+        data_df = self.data_df[["bm_0", "bm_1", "bm_2"]]
         with self.assertRaises(ValueError):
             adgt.drop_perfectly_separated_features([1], data_df, target_column_name="label")
 
@@ -129,7 +126,12 @@ class TestBuildClass(unittest.TestCase):
         self.correlated_clusters_list = [np.random.normal(0, 1, (30, 5)), np.random.normal(0, 1, (30, 5))]
 
     def test_build_class(self):
-        result = adgt.build_class(self.number_of_samples_per_class, self.number_of_informative_features, self.scale, self.correlated_clusters_list)
+        result = adgt.build_class(
+            self.number_of_samples_per_class,
+            self.number_of_informative_features,
+            self.scale,
+            self.correlated_clusters_list,
+        )
         self.assertEqual(result.shape, (self.number_of_samples_per_class, self.number_of_informative_features))
 
     def test_build_uncorrelated_class(self):
@@ -146,7 +148,9 @@ class TestBuildClass(unittest.TestCase):
 
     def test_zero_scale(self):
         with self.assertRaises(ValueError):
-            adgt.build_class(self.number_of_samples_per_class, self.number_of_informative_features, 0, self.correlated_clusters_list)
+            adgt.build_class(
+                self.number_of_samples_per_class, self.number_of_informative_features, 0, self.correlated_clusters_list
+            )
 
 
 if __name__ == "__main__":
