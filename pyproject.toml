@@ -8,7 +8,8 @@ readme = "README.md"
 homepage = "https://github.com/sigrun-may/synthetic-data-generator"
 include = ["LICENSE", "Makefile"]
 keywords = [
-    "artificial data",
+    "artificial data", "synthetic data", "data generation", "data simulation", "data science", "machine learning",
+    "statistics", "data analysis"
 ]
 classifiers = [
     "Development Status :: 4 - Beta",
