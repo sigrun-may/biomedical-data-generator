@@ -5,14 +5,20 @@
 # which is available at https://opensource.org/licenses/MIT
 
 from __future__ import annotations
+from dataclasses import dataclass, asdict
+from typing import Iterable, Optional, Tuple, Literal, Dict, Any, Union
 
 import math
-from dataclasses import dataclass
+import warnings as _warnings
 
 import numpy as np
 from numpy.typing import NDArray
 
 
+NoiseDist = Literal["normal", "uniform", "lognormal"]
+
+
+# ----- Ground-truth meta returned to the user ----------------------------------------------------
 @dataclass(frozen=True)
 class DatasetMeta:
     """Container for ground-truth metadata returned by `generate_dataset`."""
@@ -30,12 +36,161 @@ class DatasetMeta:
     y_counts: dict[int, int]
 
 
-def _nearest_psd(corr: NDArray[np.float64], eps: float = 1e-8) -> NDArray[np.float64]:
-    """Project a symmetric matrix to the nearest PSD by clipping eigenvalues.
+# ----- Optional config holder (handy for presets / CLI), strictly additive -----------------------
+@dataclass(frozen=True)
+class DatasetConfig:
+    # Mirrors the public function parameters (non-breaking convenience)
+    n_samples: int = 300
+    n_features: int = 20
+    n_informative: int = 5
+    class_sep: float = 1.2
+    classes: int = 2  # only binary supported; kept here for completeness
+    weights: Optional[Tuple[float, float]] = None
+    random_state: Optional[int] = 42
 
-    This allows slightly aggressive correlation settings to still work.
+    # Noise / irrelevant features
+    n_noise: int = 0
+    noise_dist: NoiseDist = "normal"
+
+    # Correlations
+    corr_matrix: Optional[NDArray[np.float64]] = None
+    block_sizes: Optional[Iterable[int]] = None
+    corr_within: float = 0.8
+    corr_between: float = 0.0
+
+    # Pseudo-class (confounding)
+    n_pseudo: int = 0
+    pseudo_effect: float = 0.0
+
+    # Deprecated convenience flags kept for compatibility (ignored by the core impl)
+    add_pseudo: Optional[bool] = None
+    return_meta: bool = True  # handled at wrapper level only
+
+    def to_kwargs(self) -> Dict[str, Any]:
+        """Convert dataclass to a kwargs dict suitable for `generate_dataset`."""
+        d = asdict(self)
+        # Normalize iterables to lists for downstream use
+        if d.get("block_sizes") is not None:
+            d["block_sizes"] = list(d["block_sizes"])  # type: ignore[index]
+        return d
+
+
+# ----- Public entry point ------------------------------------------------------------------------
+def generate_dataset(
+    n_samples: int = 300,
+    n_features: int = 20,
+    n_informative: int = 5,
+    class_sep: float = 1.2,
+    *,
+    classes: int = 2,
+    weights: Optional[Tuple[float, float]] = None,
+    random_state: Optional[int] = 42,
+    # Noise / irrelevant features
+    n_noise: int = 0,
+    noise_dist: NoiseDist = "normal",
+    # Correlations
+    corr_matrix: Optional[NDArray[np.float64]] = None,
+    block_sizes: Optional[Iterable[int]] = None,
+    corr_within: float = 0.8,
+    corr_between: float = 0.0,
+    # Pseudo confounding
+    n_pseudo: int = 0,
+    pseudo_effect: float = 0.0,
+    # Legacy convenience flags (wrapper-level only)
+    add_pseudo: Optional[bool] = None,   # deprecated: use pseudo_effect instead
+    return_meta: bool = True,            # wrapper decides whether to drop meta
+    # Optional config (base values) – explicit function args take precedence
+    config: Optional[DatasetConfig] = None,
+) -> Union[
+    tuple[NDArray[np.float64], NDArray[np.int64], DatasetMeta],
+    tuple[NDArray[np.float64], NDArray[np.int64]],
+]:
     """
-    # Force symmetry
+    Stable public entry point used in README & docs.
+
+    Notes on precedence
+    -------------------
+    If `config` is provided, it serves as a base. Explicit function arguments
+    are applied on top (explicit args take precedence).
+
+    Binary-only
+    -----------
+    The current implementation supports binary classification only (`classes=2`).
+
+    Returns
+    -------
+    (X, y, meta) if return_meta=True, otherwise (X, y).
+    """
+    # --- Merge config (if any) with explicit parameters (explicit wins) --------------------------
+    base: Dict[str, Any] = config.to_kwargs() if config is not None else {}
+
+    # Map legacy flag 'add_pseudo' to a default pseudo effect if user set it
+    if add_pseudo:
+        # If user did not set pseudo_effect explicitly, use a reasonable shift
+        if pseudo_effect == 0.0:
+            pseudo_effect = float(class_sep)
+
+    # Enforce binary-only for now
+    if classes != 2:
+        raise NotImplementedError("Only binary classification (classes=2) is supported at the moment.")
+
+    # Normalize/validate weights (must be two non-negative numbers summing to 1)
+    norm_weights: Optional[Tuple[float, float]]
+    if weights is None:
+        norm_weights = None
+    else:
+        if len(weights) != 2:
+            raise ValueError("weights must be a 2-tuple (p(y=0), p(y=1)).")
+        w0, w1 = float(weights[0]), float(weights[1])
+        if w0 < 0 or w1 < 0 or abs((w0 + w1) - 1.0) > 1e-8:
+            raise ValueError("weights must be non-negative and sum to 1.")
+        norm_weights = (w0, w1)
+
+    # Normalize block_sizes to list for the core implementation
+    block_list = list(block_sizes) if block_sizes is not None else None
+
+    # Build final kwargs for the internal implementation
+    impl_kwargs: Dict[str, Any] = {
+        # core parameters
+        "n_samples": n_samples if n_samples is not None else base.get("n_samples"),
+        "n_features": n_features if n_features is not None else base.get("n_features"),
+        "n_informative": n_informative if n_informative is not None else base.get("n_informative"),
+        "class_sep": class_sep if class_sep is not None else base.get("class_sep"),
+        "weights": norm_weights if norm_weights is not None else base.get("weights"),
+        "random_state": random_state if random_state is not None else base.get("random_state"),
+        # noise
+        "n_noise": n_noise if n_noise is not None else base.get("n_noise"),
+        "noise_dist": noise_dist if noise_dist is not None else base.get("noise_dist"),
+        # correlations
+        "corr_matrix": corr_matrix if corr_matrix is not None else base.get("corr_matrix"),
+        "block_sizes": block_list if block_list is not None else base.get("block_sizes"),
+        "corr_within": corr_within if corr_within is not None else base.get("corr_within"),
+        "corr_between": corr_between if corr_between is not None else base.get("corr_between"),
+        # pseudo/confounding
+        "n_pseudo": n_pseudo if n_pseudo is not None else base.get("n_pseudo"),
+        "pseudo_effect": pseudo_effect if pseudo_effect is not None else base.get("pseudo_effect"),
+    }
+
+    # Warn about deprecated args that do nothing at core level
+    if add_pseudo is not None:
+        _warnings.warn(
+            "Argument 'add_pseudo' is deprecated. Use 'n_pseudo' and 'pseudo_effect' instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+
+    # Call internal generator
+    X, y, meta = _generate_dataset_impl(**impl_kwargs)
+
+    # Respect return_meta flag at the wrapper level
+    if not return_meta:
+        return X, y
+    return X, y, meta
+
+
+# ----- Internals --------------------------------------------------------------------------------
+def _nearest_psd(corr: NDArray[np.float64], eps: float = 1e-8) -> NDArray[np.float64]:
+    """Project a symmetric matrix to the nearest PSD by clipping eigenvalues."""
     sym = (corr + corr.T) / 2.0
     vals, vecs = np.linalg.eigh(sym)
     vals_clipped = np.clip(vals, eps, None)
@@ -64,11 +219,10 @@ def _make_block_corr(block_sizes: list[int], corr_within: float, corr_between: f
         corr[start:stop, start:stop] = corr_within
         start = stop
     np.fill_diagonal(corr, 1.0)
-    # Make sure it's PSD
     return _nearest_psd(corr)
 
 
-def generate_dataset(
+def _generate_dataset_impl(
     n_samples: int = 300,
     n_features: int = 20,
     n_informative: int = 5,
@@ -77,7 +231,7 @@ def generate_dataset(
     random_state: int | None = 42,
     # Noise / irrelevant features
     n_noise: int = 0,
-    noise_dist: str = "normal",  # "normal" | "uniform"
+    noise_dist: str = "normal",  # "normal" | "uniform" | "lognormal"
     # Correlations (applied to ALL non-noise features)
     corr_matrix: NDArray[np.float64] | None = None,  # full corr matrix or None
     block_sizes: list[int] | None = None,  # alternative to corr_matrix
@@ -88,81 +242,20 @@ def generate_dataset(
     pseudo_effect: float = 0.0,  # mean shift magnitude applied to pseudo features
 ) -> tuple[NDArray[np.float64], NDArray[np.int64], DatasetMeta]:
     """
-    Generate a high-dimensional synthetic binary classification dataset for
-    biological/biomedical teaching and benchmarking.
+    Generate a high-dimensional synthetic *binary* classification dataset.
 
-    The generator supports:
-      - Binary labels with optional class imbalance (`weights`)
-      - Correlated feature blocks (or custom correlation matrix)
-      - Informative features with class-dependent mean shift (`class_sep`)
-      - Optional pseudo-class (confounder) that shifts a subset of features but
-        is independent of the true label (useful to demonstrate false positives)
-      - Pure noise features drawn independent from the correlated structure
-
-    Parameters
-    ----------
-    n_samples : int, default=300
-        Number of samples.
-    n_features : int, default=20
-        Total number of features = informative + pseudo + (correlated-but-uninformative) + noise.
-    n_informative : int, default=5
-        Number of informative features (class-separating).
-    class_sep : float, default=1.2
-        Target mean difference (in SD units) between the two classes on informative features.
-        Implemented as +/- class_sep/2 shift for y=1 / y=0 respectively.
-    weights : (float, float) or None, default=None
-        Class probabilities (p(y=0), p(y=1)). If None, classes are balanced (0.5, 0.5).
-    random_state : int or None, default=42
-        Seed for reproducibility.
-
-    n_noise : int, default=0
-        Number of fully independent noise features (NOT part of the correlation structure).
-    noise_dist : {"normal", "uniform"}, default="normal"
-        Distribution for pure noise features.
-
-    corr_matrix : ndarray of shape (p_corr, p_corr) or None, default=None
-        Full correlation matrix for the non-noise features (p_corr = n_features - n_noise).
-        Must be symmetric with ones on the diagonal; will be projected to PSD if needed.
-    block_sizes : list[int] or None, default=None
-        If `corr_matrix` is None, build a block correlation matrix with these block sizes.
-        If None, a single block of size p_corr is used.
-    corr_within : float, default=0.8
-        Within-block correlation used when `block_sizes` is provided.
-    corr_between : float, default=0.0
-        Between-block correlation used when `block_sizes` is provided.
-
-    n_pseudo : int, default=0
-        Number of pseudo-class features (confounded but NOT informative for y).
-        These are part of the correlated set if `n_noise < n_features`.
-    pseudo_effect : float, default=0.0
-        Mean shift magnitude applied to pseudo features based on an *independent* binary
-        pseudo label z ~ Bernoulli(0.5). Shift is +/- pseudo_effect/2.
+    Supports:
+      - Class imbalance via `weights`
+      - Correlated feature blocks or a custom correlation matrix
+      - Informative features with class-dependent shift (`class_sep`)
+      - Optional pseudo-class confounding via `n_pseudo` and `pseudo_effect`
+      - Pure noise features
 
     Returns
     -------
     X : ndarray of shape (n_samples, n_features)
-        Feature matrix.
     y : ndarray of shape (n_samples,)
-        Binary labels {0, 1}.
     meta : DatasetMeta
-        Ground-truth metadata (feature roles, block info, label distribution, etc.).
-
-    Notes
-    -----
-    - Correlation is applied to all *non-noise* features. Pure noise features are appended
-      on the right and are independent of everything else.
-    - Informative features receive class-dependent mean shifts; pseudo features receive
-      pseudo-class-dependent shifts independent of y.
-    - The returned `meta` contains index lists *after* the final column order.
-
-    Examples
-    --------
-    >>> X, y, meta = generate_dataset(
-    ...     n_samples=120, n_features=200, n_informative=10,
-    ...     class_sep=1.0, n_noise=190, corr_within=0.75, random_state=42
-    ... )
-    >>> X.shape, y.shape
-    ((120, 200), (120,))
     """
     if n_samples <= 1:
         raise ValueError("n_samples must be > 1.")
@@ -224,10 +317,10 @@ def generate_dataset(
             block_used = [p_corr]  # unknown block layout; treat as single
         else:
             if block_sizes is None or sum(block_sizes) != p_corr:
-                # Default: single block covering p_corr
-                block_used = [p_corr] if block_sizes is None else block_sizes + [p_corr - sum(block_sizes)]
+                # Default: single block covering p_corr (fill remainder if user underspecified)
+                block_used = [p_corr] if block_sizes is None else list(block_sizes) + [p_corr - sum(block_sizes)]
             else:
-                block_used = block_sizes
+                block_used = list(block_sizes)
             corr = _make_block_corr(block_used, corr_within=corr_within, corr_between=corr_between)
 
         # Sample correlated base: mean 0, diag 1
@@ -241,10 +334,7 @@ def generate_dataset(
         # Class separation for informative features
         if n_informative > 0 and class_sep != 0.0:
             # Shift magnitude: +/- class_sep/2 to produce total mean difference ≈ class_sep
-            shift = (
-                (class_sep / 2.0).astype(np.float64) if isinstance(class_sep, np.ndarray) else float(class_sep) / 2.0
-            )
-            # Broadcast shifts per sample
+            shift = float(class_sep) / 2.0
             s = np.where(y == 1, +shift, -shift).reshape(-1, 1)
             X_corr[:, idx_inf] = X_corr[:, idx_inf] + s
 
@@ -257,13 +347,16 @@ def generate_dataset(
     # Pure noise features (independent of everything)
     X_noise = np.empty((n_samples, 0), dtype=np.float64)
     if p_noise > 0:
-        if noise_dist not in {"normal", "uniform"}:
-            raise ValueError("noise_dist must be 'normal' or 'uniform'.")
+        if noise_dist not in {"normal", "uniform", "lognormal"}:
+            raise ValueError("noise_dist must be 'normal', 'uniform', or 'lognormal'.")
         if noise_dist == "normal":
             X_noise = rng.normal(loc=0.0, scale=1.0, size=(n_samples, p_noise)).astype(np.float64)
-        else:
+        elif noise_dist == "uniform":
             # Uniform in [-1, 1] roughly matches variance scale of N(0,1)
             X_noise = rng.uniform(low=-1.0, high=1.0, size=(n_samples, p_noise)).astype(np.float64)
+        else:  # lognormal
+            # Heavier-tailed positive noise; sigma chosen moderate to avoid huge means
+            X_noise = rng.lognormal(mean=0.0, sigma=0.5, size=(n_samples, p_noise)).astype(np.float64)
 
     # Concatenate correlated part and noise part
     X = np.hstack([X_corr, X_noise]) if p_noise > 0 else X_corr
