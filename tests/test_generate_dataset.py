@@ -6,7 +6,7 @@
 
 import numpy as np
 
-import synthetic_data_generator as sdg
+import biomedical_data_generator as sdg
 
 
 def test_public_entrypoint_exists():

@@ -2,7 +2,7 @@
 # Ostfalia Hochschule für angewandte Wissenschaften
 #
 # This software is distributed under the terms of the MIT license
-# which is available at https://opensource.org/licenses/MITsrc := synthetic_data_generator
+# which is available at https://opensource.org/licenses/MITsrc := biomedical_data_generator
 
 other-src := examples
 
