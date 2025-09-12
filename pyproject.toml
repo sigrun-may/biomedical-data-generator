@@ -10,11 +10,8 @@ include = ["LICENSE", "Makefile"]
 keywords = [
     "artificial data",
 ]
-# all classifiers see https://pypi.org/classifiers/
 classifiers = [
-    # "Development Status :: 3 - Alpha",
     "Development Status :: 4 - Beta",
-    # "Development Status :: 5 - Production/Stable",
     "Intended Audience :: Science/Research",
     "Intended Audience :: Education",
     "Intended Audience :: Developers",
@@ -47,14 +44,24 @@ pandas = "*"
 seaborn = "*"
 matplotlib = "*"
 statsmodels = "*"
-pytest = "^8.4.2"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.0.0"
 pytest-cov = "^5.0.0"
 coverage = {version="^7.6.0", extras=["toml"]}
-black = {extras = ["jupyter"], version = "^25.1.0"}
+
+[tool.poetry.group.lint.dependencies]
 ruff = "^0.13.0"
+black = {extras = ["jupyter"], version = "^25.1.0"}
+
+[tool.poetry.group.test.dependencies]
+pytest = "*"
+
+[tool.poetry.group.doc.dependencies]
+sphinx = "*"
+sphinx_rtd_theme = "*"
+myst_parser = "*"
+sphinx_copybutton = "*"
 
 [tool.black]
 line-length = 120
@@ -84,33 +91,13 @@ source = ["synthetic_data_generator"]
 show_missing = true
 skip_empty = true
 
-
-
-
-[tool.poetry.group.test.dependencies]
-pytest = "*"
-
-
-
-
-[tool.poetry.group.doc.dependencies]
-sphinx = "*"
-sphinx_rtd_theme = "*"
-myst_parser = "*"
-sphinx_copybutton = "*"
-
-
-#[tool.pylint."MASTER"]
-#load-plugins = "pylintfileheader"
-#file-header = "(# Copyright \\(c\\) \\d{4} .*\\n)*# This software is distributed under the terms of the MIT license\\n# which is available at https://opensource.org/licenses/MIT\\n\\n"
-
 [tool.pylint."MESSAGES CONTROL"]
 disable = [
     "too-many-arguments",
     "too-many-lines",
-    "line-too-long",  # checked by flake8
+    "line-too-long",
     "fixme",
-    "bare-except",  # checked by flake8
+    "bare-except",
     "too-many-locals",
     "too-many-branches",
 ]
