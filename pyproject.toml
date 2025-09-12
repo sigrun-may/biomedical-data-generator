@@ -1,7 +1,7 @@
 [tool.poetry]
 name = "synthetic-data-generator"
 version = "0.1.0"
-description = ""
+description = "Generate synthetic data for data science, machine learning, and statistics."
 authors = ["Sigrun May <s.may@ostfalia.de>"]
 license = "MIT"
 readme = "README.md"
