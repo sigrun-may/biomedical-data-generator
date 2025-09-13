@@ -24,6 +24,6 @@ jobs:
 
     - name: Build and publish
       env:
-        POETRY_PYPI_TOKEN_PYPI: ${{ secrets.PYPI_TOKEN }}
+        POETRY_PYPI_TOKEN_PYPI: ${{ secrets.PYPI_GLOBAL }}
       run: |
         poetry publish --build
