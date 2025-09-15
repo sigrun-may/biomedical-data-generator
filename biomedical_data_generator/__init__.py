@@ -9,6 +9,12 @@
 """Data generator main package."""
 
 from .core import DatasetConfig, DatasetMeta, generate_dataset
+from .config import DatasetConfig
+from .core import generate_dataset
+
+def generate_from_yaml(path: str):
+    cfg = DatasetConfig.from_yaml(path)
+    return generate_dataset(cfg)
 
 __all__ = [
     "generate_dataset",
