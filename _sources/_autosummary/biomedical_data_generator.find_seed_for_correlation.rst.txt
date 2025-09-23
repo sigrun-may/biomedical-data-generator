@@ -1,0 +1,6 @@
+﻿biomedical\_data\_generator.find\_seed\_for\_correlation
+========================================================
+
+.. currentmodule:: biomedical_data_generator
+
+.. autofunction:: find_seed_for_correlation

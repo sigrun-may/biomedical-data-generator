@@ -1,0 +1,44 @@
+﻿biomedical\_data\_generator.DatasetMeta
+=======================================
+
+.. currentmodule:: biomedical_data_generator
+
+.. autoclass:: DatasetMeta
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~DatasetMeta.__init__
+      ~DatasetMeta.to_dict
+   
+   
+
+   
+   
+   .. rubric:: Attributes
+
+   .. autosummary::
+   
+      ~DatasetMeta.random_state
+      ~DatasetMeta.feature_names
+      ~DatasetMeta.informative_idx
+      ~DatasetMeta.pseudo_idx
+      ~DatasetMeta.noise_idx
+      ~DatasetMeta.corr_cluster_indices
+      ~DatasetMeta.anchor_idx
+      ~DatasetMeta.anchor_role
+      ~DatasetMeta.anchor_beta
+      ~DatasetMeta.cluster_label
+      ~DatasetMeta.y_weights
+      ~DatasetMeta.y_counts
+      ~DatasetMeta.n_classes
+      ~DatasetMeta.class_sep
+      ~DatasetMeta.corr_between
+      ~DatasetMeta.resolved_config
+   
+   

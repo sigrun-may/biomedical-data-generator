@@ -1,0 +1,388 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>biomedical_data_generator.config &mdash; Biomedical Data Generator 0.1.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="../../_static/copybutton.css?v=76b2166b" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/custom.css?v=7f485136" />
+
+  
+      <script src="../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../_static/documentation_options.js?v=01f34227"></script>
+      <script src="../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../../_static/clipboard.min.js?v=a7894cd8"></script>
+      <script src="../../_static/copybutton.js?v=f281be69"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            Biomedical Data Generator
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../code-doc.html">Code Documentation</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://github.com/sigrun-may/biomedical-data-generator/blob/main/LICENSE">License</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://github.com/sigrun-may/biomedical-data-generator">GitHub Repository</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../_autosummary/biomedical_data_generator.generate_dataset.html">biomedical_data_generator.generate_dataset</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../_autosummary/biomedical_data_generator.generate_correlated_cluster.html">biomedical_data_generator.generate_correlated_cluster</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../_autosummary/biomedical_data_generator.find_seed_for_correlation.html">biomedical_data_generator.find_seed_for_correlation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../_autosummary/biomedical_data_generator.DatasetConfig.html">biomedical_data_generator.DatasetConfig</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../_autosummary/biomedical_data_generator.CorrCluster.html">biomedical_data_generator.CorrCluster</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../_autosummary/biomedical_data_generator.DatasetMeta.html">biomedical_data_generator.DatasetMeta</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">Biomedical Data Generator</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">biomedical_data_generator.config</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for biomedical_data_generator.config</h1><div class="highlight"><pre>
+<span></span><span class="c1"># Copyright (c) 2025 Sigrun May,</span>
+<span class="c1"># Ostfalia Hochschule für angewandte Wissenschaften</span>
+<span class="c1">#</span>
+<span class="c1"># This software is distributed under the terms of the MIT license</span>
+<span class="c1"># which is available at https://opensource.org/licenses/MIT</span>
+
+<span class="sd">&quot;&quot;&quot;Configuration models for the dataset generator.&quot;&quot;&quot;</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">annotations</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">warnings</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">collections.abc</span><span class="w"> </span><span class="kn">import</span> <span class="n">Sequence</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pathlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">Path</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Literal</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">yaml</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">Field</span><span class="p">,</span> <span class="n">model_validator</span>
+
+
+<div class="viewcode-block" id="CorrCluster">
+<a class="viewcode-back" href="../../_autosummary/biomedical_data_generator.CorrCluster.html#biomedical_data_generator.CorrCluster">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">CorrCluster</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Configuration for a correlated feature cluster.</span>
+
+<span class="sd">    Attributes</span>
+<span class="sd">    ----------</span>
+<span class="sd">        size: Number of features in the cluster.</span>
+<span class="sd">        rho: Target correlation within the cluster (0 ≤ rho &lt; 1).</span>
+<span class="sd">        structure: Correlation structure (&quot;equicorrelated&quot; or &quot;ar1&quot;).</span>
+<span class="sd">        anchor_role: Whether the cluster has an anchor that affects y</span>
+<span class="sd">            (&quot;informative&quot;) or is purely latent (&quot;latent&quot;).</span>
+<span class="sd">        anchor_beta: Effect size for the anchor (only if informative).</span>
+<span class="sd">        anchor_class: Class index (0..n_classes-1) for which the anchor</span>
+<span class="sd">            contributes positively. Ignored if anchor_role=&quot;latent&quot;.</span>
+<span class="sd">        random_state: Optional seed for reproducibility of this cluster.</span>
+<span class="sd">        label: Optional didactic label for clarity in teaching contexts.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">size</span><span class="p">:</span> <span class="nb">int</span>
+    <span class="n">rho</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.7</span>
+    <span class="n">structure</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;equicorrelated&quot;</span><span class="p">,</span> <span class="s2">&quot;ar1&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;equicorrelated&quot;</span>
+    <span class="n">anchor_role</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;informative&quot;</span><span class="p">,</span> <span class="s2">&quot;latent&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;latent&quot;</span>
+    <span class="n">anchor_beta</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1.0</span>
+    <span class="n">anchor_class</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">random_state</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">label</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span></div>
+
+
+
+<div class="viewcode-block" id="DatasetConfig">
+<a class="viewcode-back" href="../../_autosummary/biomedical_data_generator.DatasetConfig.html#biomedical_data_generator.DatasetConfig">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">DatasetConfig</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Configuration for generating a synthetic classification dataset.</span>
+
+<span class="sd">    Attributes</span>
+<span class="sd">    ----------</span>
+<span class="sd">        n_samples: Number of samples (rows).</span>
+<span class="sd">        n_features: Total number of features.</span>
+<span class="sd">        n_informative: Number of informative features (including anchors).</span>
+<span class="sd">        n_pseudo: Number of pseudo features (correlated proxies or free).</span>
+<span class="sd">        n_noise: Number of pure noise features.</span>
+<span class="sd">        class_sep: Global scaling factor for signal strength.</span>
+<span class="sd">        n_classes: Number of classes (&gt;=2).</span>
+<span class="sd">        weights: Optional class proportions of length n_classes.</span>
+<span class="sd">        corr_between: Global coupling between all cluster features.</span>
+<span class="sd">        corr_clusters: Optional list of correlated feature clusters.</span>
+<span class="sd">        feature_naming: How to name features (&quot;prefixed&quot; or &quot;generic&quot;).</span>
+<span class="sd">        prefix_informative: Prefix for informative features.</span>
+<span class="sd">        prefix_corr: Prefix for correlated proxy features.</span>
+<span class="sd">        prefix_pseudo: Prefix for free pseudo features.</span>
+<span class="sd">        prefix_noise: Prefix for noise features.</span>
+<span class="sd">        random_state: Optional global random seed.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">n_samples</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="mi">200</span><span class="p">,</span> <span class="n">ge</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+    <span class="n">n_features</span><span class="p">:</span> <span class="nb">int</span>
+    <span class="n">n_informative</span><span class="p">:</span> <span class="nb">int</span>
+    <span class="n">n_pseudo</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">n_noise</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">class_sep</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1.0</span>
+
+    <span class="c1"># Multiclass extension</span>
+    <span class="n">n_classes</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">2</span>
+    <span class="n">weights</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>  <span class="c1"># length n_classes or None</span>
+
+    <span class="c1"># Correlation</span>
+    <span class="n">corr_between</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.0</span>
+    <span class="n">corr_clusters</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">CorrCluster</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+
+    <span class="c1"># Naming</span>
+    <span class="n">feature_naming</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;prefixed&quot;</span><span class="p">,</span> <span class="s2">&quot;generic&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;prefixed&quot;</span>
+    <span class="n">prefix_informative</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;i&quot;</span>
+    <span class="n">prefix_corr</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;corr&quot;</span>
+    <span class="n">prefix_pseudo</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;p&quot;</span>
+    <span class="n">prefix_noise</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;n&quot;</span>
+
+    <span class="c1"># Randomness</span>
+    <span class="n">random_state</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+
+<div class="viewcode-block" id="DatasetConfig.from_yaml">
+<a class="viewcode-back" href="../../_autosummary/biomedical_data_generator.DatasetConfig.html#biomedical_data_generator.DatasetConfig.from_yaml">[docs]</a>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">from_yaml</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">path</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">Path</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">DatasetConfig</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Load a DatasetConfig from a YAML file.&quot;&quot;&quot;</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="n">yaml</span><span class="o">.</span><span class="n">safe_load</span><span class="p">(</span><span class="n">Path</span><span class="p">(</span><span class="n">path</span><span class="p">)</span><span class="o">.</span><span class="n">read_text</span><span class="p">(</span><span class="n">encoding</span><span class="o">=</span><span class="s2">&quot;utf-8&quot;</span><span class="p">))</span>
+        <span class="k">return</span> <span class="bp">cls</span><span class="o">.</span><span class="n">model_validate</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>  <span class="c1"># explicit v2 API</span></div>
+
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_proxies_from_clusters</span><span class="p">(</span><span class="n">clusters</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">CorrCluster</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Count additional proxy features contributed by correlated clusters.&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">clusters</span><span class="p">:</span>
+            <span class="k">return</span> <span class="mi">0</span>
+        <span class="n">proxies</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">clusters</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">c</span><span class="o">.</span><span class="n">anchor_role</span> <span class="o">==</span> <span class="s2">&quot;informative&quot;</span><span class="p">:</span>
+                <span class="c1"># anchor is informative; remaining (size - 1) columns are proxies</span>
+                <span class="n">proxies</span> <span class="o">+=</span> <span class="nb">max</span><span class="p">(</span><span class="n">c</span><span class="o">.</span><span class="n">size</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="c1"># entire cluster is pseudo (latent anchor), so all columns are proxies</span>
+                <span class="n">proxies</span> <span class="o">+=</span> <span class="n">c</span><span class="o">.</span><span class="n">size</span>
+        <span class="k">return</span> <span class="n">proxies</span>
+
+<div class="viewcode-block" id="DatasetConfig.expected_n_features">
+<a class="viewcode-back" href="../../_autosummary/biomedical_data_generator.DatasetConfig.html#biomedical_data_generator.DatasetConfig.expected_n_features">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">expected_n_features</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Compute n_informative + n_pseudo + n_noise + proxies_from_clusters.&quot;&quot;&quot;</span>
+        <span class="n">proxies</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_proxies_from_clusters</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">corr_clusters</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_informative</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_pseudo</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_noise</span> <span class="o">+</span> <span class="n">proxies</span></div>
+
+
+    <span class="c1"># @model_validator(mode=&quot;after&quot;)</span>
+    <span class="c1"># def _validate_feature_counts(self) -&gt; &quot;DatasetConfig&quot;:</span>
+    <span class="c1">#     &quot;&quot;&quot;Validate counts and raise a clear error if they are inconsistent.&quot;&quot;&quot;</span>
+    <span class="c1">#     # informative anchors must be counted inside n_informative</span>
+    <span class="c1">#     n_anchors = sum(1 for c in (self.corr_clusters or []) if c.anchor_role == &quot;informative&quot;)</span>
+    <span class="c1">#     if self.n_informative &lt; n_anchors:</span>
+    <span class="c1">#         raise ValueError(</span>
+    <span class="c1">#             f&quot;n_informative ({self.n_informative}) &lt; number of informative anchors ({n_anchors}).&quot;</span>
+    <span class="c1">#         )</span>
+    <span class="c1">#</span>
+    <span class="c1">#     expected = self.expected_n_features()</span>
+    <span class="c1">#     if self.n_features != expected:</span>
+    <span class="c1">#         proxies = self._proxies_from_clusters(self.corr_clusters)</span>
+    <span class="c1">#         raise ValueError(</span>
+    <span class="c1">#             &quot;cfg.n_features must equal n_informative + n_pseudo + n_noise + proxies_from_clusters &quot;</span>
+    <span class="c1">#             f&quot;= {self.n_informative} + {self.n_pseudo} + {self.n_noise} + {proxies} &quot;</span>
+    <span class="c1">#             f&quot;= {expected}, but got n_features={self.n_features}.&quot;</span>
+    <span class="c1">#         )</span>
+    <span class="c1">#     return self</span>
+
+    <span class="nd">@model_validator</span><span class="p">(</span><span class="n">mode</span><span class="o">=</span><span class="s2">&quot;after&quot;</span><span class="p">)</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_normalize_feature_counts</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">DatasetConfig</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Ensure counts are consistent; auto-correct n_features with a warning.&quot;&quot;&quot;</span>
+        <span class="c1"># Informative anchors must be counted inside n_informative</span>
+        <span class="n">n_anchors</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="mi">1</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">corr_clusters</span> <span class="ow">or</span> <span class="p">[])</span> <span class="k">if</span> <span class="n">c</span><span class="o">.</span><span class="n">anchor_role</span> <span class="o">==</span> <span class="s2">&quot;informative&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_informative</span> <span class="o">&lt;</span> <span class="n">n_anchors</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;n_informative (</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">n_informative</span><span class="si">}</span><span class="s2">) &lt; number of informative anchors (</span><span class="si">{</span><span class="n">n_anchors</span><span class="si">}</span><span class="s2">).&quot;</span><span class="p">)</span>
+
+        <span class="n">expected</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">expected_n_features</span><span class="p">()</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_features</span> <span class="o">!=</span> <span class="n">expected</span><span class="p">:</span>
+            <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span>
+                <span class="s2">&quot;Adjusted n_features to match n_informative + n_pseudo + n_noise + proxies_from_clusters: &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">n_informative</span><span class="si">}</span><span class="s2"> + </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">n_pseudo</span><span class="si">}</span><span class="s2"> + </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">n_noise</span><span class="si">}</span><span class="s2"> + &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_proxies_from_clusters</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">corr_clusters</span><span class="p">)</span><span class="si">}</span><span class="s2"> = </span><span class="si">{</span><span class="n">expected</span><span class="si">}</span><span class="s2"> &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;(was </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">n_features</span><span class="si">}</span><span class="s2">).&quot;</span><span class="p">,</span>
+                <span class="ne">UserWarning</span><span class="p">,</span>
+                <span class="n">stacklevel</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>
+            <span class="p">)</span>
+            <span class="c1"># Return a new model with corrected n_features (avoid in-place mutation)</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">model_copy</span><span class="p">(</span><span class="n">update</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;n_features&quot;</span><span class="p">:</span> <span class="n">expected</span><span class="p">})</span>
+
+        <span class="k">return</span> <span class="bp">self</span>
+
+    <span class="c1"># --- Convenience helpers for introspection ---------------------------------</span>
+
+<div class="viewcode-block" id="DatasetConfig.count_informative_anchors">
+<a class="viewcode-back" href="../../_autosummary/biomedical_data_generator.DatasetConfig.html#biomedical_data_generator.DatasetConfig.count_informative_anchors">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">count_informative_anchors</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Count clusters whose anchor contributes as &#39;informative&#39;.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="nb">sum</span><span class="p">(</span><span class="mi">1</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">corr_clusters</span> <span class="ow">or</span> <span class="p">[])</span> <span class="k">if</span> <span class="n">c</span><span class="o">.</span><span class="n">anchor_role</span> <span class="o">==</span> <span class="s2">&quot;informative&quot;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="DatasetConfig.breakdown">
+<a class="viewcode-back" href="../../_autosummary/biomedical_data_generator.DatasetConfig.html#biomedical_data_generator.DatasetConfig.breakdown">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">breakdown</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">int</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return a structured breakdown of feature counts, incl. cluster proxies.&quot;&quot;&quot;</span>
+        <span class="n">proxies</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_proxies_from_clusters</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">corr_clusters</span><span class="p">)</span>
+        <span class="n">n_anchors</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">count_informative_anchors</span><span class="p">()</span>
+        <span class="k">return</span> <span class="p">{</span>
+            <span class="s2">&quot;n_informative_total&quot;</span><span class="p">:</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">n_informative</span><span class="p">),</span>
+            <span class="s2">&quot;n_informative_anchors&quot;</span><span class="p">:</span> <span class="nb">int</span><span class="p">(</span><span class="n">n_anchors</span><span class="p">),</span>
+            <span class="s2">&quot;n_informative_free&quot;</span><span class="p">:</span> <span class="nb">int</span><span class="p">(</span><span class="nb">max</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">n_informative</span> <span class="o">-</span> <span class="n">n_anchors</span><span class="p">,</span> <span class="mi">0</span><span class="p">)),</span>
+            <span class="s2">&quot;n_pseudo_free&quot;</span><span class="p">:</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">n_pseudo</span><span class="p">),</span>
+            <span class="s2">&quot;n_noise&quot;</span><span class="p">:</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">n_noise</span><span class="p">),</span>
+            <span class="s2">&quot;proxies_from_clusters&quot;</span><span class="p">:</span> <span class="nb">int</span><span class="p">(</span><span class="n">proxies</span><span class="p">),</span>
+            <span class="s2">&quot;n_features_expected&quot;</span><span class="p">:</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">n_informative</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_pseudo</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_noise</span> <span class="o">+</span> <span class="n">proxies</span><span class="p">),</span>
+            <span class="s2">&quot;n_features_configured&quot;</span><span class="p">:</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">n_features</span><span class="p">),</span>
+        <span class="p">}</span></div>
+
+
+<div class="viewcode-block" id="DatasetConfig.summary">
+<a class="viewcode-back" href="../../_autosummary/biomedical_data_generator.DatasetConfig.html#biomedical_data_generator.DatasetConfig.summary">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">summary</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">per_cluster</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span> <span class="n">as_markdown</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return a human-readable summary of the configuration.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            per_cluster: Include one line per cluster (size/role/rho/etc.).</span>
+<span class="sd">            as_markdown: Render as a Markdown table-like text.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            A formatted string summarizing the feature layout and counts.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">b</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">breakdown</span><span class="p">()</span>
+        <span class="n">lines</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="k">if</span> <span class="n">as_markdown</span><span class="p">:</span>
+            <span class="n">lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;### Feature breakdown&quot;</span><span class="p">)</span>
+            <span class="n">lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;&quot;</span><span class="p">)</span>
+            <span class="n">lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;| key | value |&quot;</span><span class="p">)</span>
+            <span class="n">lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;|-----|-------|&quot;</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="p">[</span>
+                <span class="s2">&quot;n_informative_total&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;n_informative_anchors&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;n_informative_free&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;n_pseudo_free&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;n_noise&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;proxies_from_clusters&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;n_features_expected&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;n_features_configured&quot;</span><span class="p">,</span>
+            <span class="p">]:</span>
+                <span class="n">lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;| </span><span class="si">{</span><span class="n">k</span><span class="si">}</span><span class="s2"> | </span><span class="si">{</span><span class="n">b</span><span class="p">[</span><span class="n">k</span><span class="p">]</span><span class="si">}</span><span class="s2"> |&quot;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;Feature breakdown&quot;</span><span class="p">)</span>
+            <span class="n">lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;- n_informative_total    : </span><span class="si">{</span><span class="n">b</span><span class="p">[</span><span class="s1">&#39;n_informative_total&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="n">lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;- n_informative_anchors  : </span><span class="si">{</span><span class="n">b</span><span class="p">[</span><span class="s1">&#39;n_informative_anchors&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="n">lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;- n_informative_free     : </span><span class="si">{</span><span class="n">b</span><span class="p">[</span><span class="s1">&#39;n_informative_free&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="n">lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;- n_pseudo_free          : </span><span class="si">{</span><span class="n">b</span><span class="p">[</span><span class="s1">&#39;n_pseudo_free&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="n">lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;- n_noise                : </span><span class="si">{</span><span class="n">b</span><span class="p">[</span><span class="s1">&#39;n_noise&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="n">lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;- proxies_from_clusters  : </span><span class="si">{</span><span class="n">b</span><span class="p">[</span><span class="s1">&#39;proxies_from_clusters&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="n">lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;- n_features_expected    : </span><span class="si">{</span><span class="n">b</span><span class="p">[</span><span class="s1">&#39;n_features_expected&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="n">lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;- n_features_configured  : </span><span class="si">{</span><span class="n">b</span><span class="p">[</span><span class="s1">&#39;n_features_configured&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">per_cluster</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">corr_clusters</span><span class="p">:</span>
+            <span class="n">lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;&quot;</span> <span class="k">if</span> <span class="n">as_markdown</span> <span class="k">else</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
+            <span class="n">header</span> <span class="o">=</span> <span class="p">(</span>
+                <span class="s2">&quot;| id | size | role | rho | structure | label | proxies |&quot;</span>
+                <span class="k">if</span> <span class="n">as_markdown</span>
+                <span class="k">else</span> <span class="s2">&quot;Clusters:&quot;</span>
+            <span class="p">)</span>
+            <span class="k">if</span> <span class="n">as_markdown</span><span class="p">:</span>
+                <span class="n">lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;&quot;</span><span class="p">)</span>
+                <span class="n">lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;### Clusters&quot;</span><span class="p">)</span>
+                <span class="n">lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;&quot;</span><span class="p">)</span>
+                <span class="n">lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">header</span><span class="p">)</span>
+                <span class="n">lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;|----|------|------|-----|-----------|-------|---------|&quot;</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">header</span><span class="p">)</span>
+
+            <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">c</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">corr_clusters</span><span class="p">,</span> <span class="n">start</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
+                <span class="n">role</span> <span class="o">=</span> <span class="n">c</span><span class="o">.</span><span class="n">anchor_role</span>  <span class="c1"># expected field in your model</span>
+                <span class="n">proxies</span> <span class="o">=</span> <span class="p">(</span><span class="n">c</span><span class="o">.</span><span class="n">size</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="k">if</span> <span class="n">role</span> <span class="o">==</span> <span class="s2">&quot;informative&quot;</span> <span class="k">else</span> <span class="n">c</span><span class="o">.</span><span class="n">size</span>
+                <span class="n">label</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">c</span><span class="p">,</span> <span class="s2">&quot;label&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">as_markdown</span><span class="p">:</span>
+                    <span class="n">lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                        <span class="sa">f</span><span class="s2">&quot;| </span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2"> | </span><span class="si">{</span><span class="n">c</span><span class="o">.</span><span class="n">size</span><span class="si">}</span><span class="s2"> | </span><span class="si">{</span><span class="n">role</span><span class="si">}</span><span class="s2"> | </span><span class="si">{</span><span class="n">c</span><span class="o">.</span><span class="n">rho</span><span class="si">}</span><span class="s2"> | </span><span class="si">{</span><span class="n">c</span><span class="o">.</span><span class="n">structure</span><span class="si">}</span><span class="s2"> | &quot;</span>
+                        <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">label</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="n">label</span><span class="w"> </span><span class="ow">is</span><span class="w"> </span><span class="ow">not</span><span class="w"> </span><span class="kc">None</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="s1">&#39;&#39;</span><span class="si">}</span><span class="s2"> | </span><span class="si">{</span><span class="n">proxies</span><span class="si">}</span><span class="s2"> |&quot;</span>
+                    <span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                        <span class="sa">f</span><span class="s2">&quot;- #</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2">: size=</span><span class="si">{</span><span class="n">c</span><span class="o">.</span><span class="n">size</span><span class="si">}</span><span class="s2">, role=</span><span class="si">{</span><span class="n">role</span><span class="si">}</span><span class="s2">, rho=</span><span class="si">{</span><span class="n">c</span><span class="o">.</span><span class="n">rho</span><span class="si">}</span><span class="s2">, structure=</span><span class="si">{</span><span class="n">c</span><span class="o">.</span><span class="n">structure</span><span class="si">}</span><span class="s2">, &quot;</span>
+                        <span class="sa">f</span><span class="s2">&quot;label=</span><span class="si">{</span><span class="n">label</span><span class="si">}</span><span class="s2">, proxies=</span><span class="si">{</span><span class="n">proxies</span><span class="si">}</span><span class="s2">&quot;</span>
+                    <span class="p">)</span>
+
+        <span class="k">return</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">lines</span><span class="p">)</span></div>
+</div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, Sigrun May.</p>
+  </div>
+
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

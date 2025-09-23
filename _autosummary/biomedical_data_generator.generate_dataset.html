@@ -1,0 +1,162 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>biomedical_data_generator.generate_dataset &mdash; Biomedical Data Generator 0.1.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="../_static/copybutton.css?v=76b2166b" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/custom.css?v=7f485136" />
+
+  
+      <script src="../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../_static/documentation_options.js?v=01f34227"></script>
+      <script src="../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../_static/clipboard.min.js?v=a7894cd8"></script>
+      <script src="../_static/copybutton.js?v=f281be69"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="biomedical_data_generator.generate_correlated_cluster" href="biomedical_data_generator.generate_correlated_cluster.html" />
+    <link rel="prev" title="Code Documentation" href="../code-doc.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            Biomedical Data Generator
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../code-doc.html">Code Documentation</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://github.com/sigrun-may/biomedical-data-generator/blob/main/LICENSE">License</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://github.com/sigrun-may/biomedical-data-generator">GitHub Repository</a></li>
+</ul>
+<ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="#">biomedical_data_generator.generate_dataset</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#biomedical_data_generator.generate_dataset"><code class="docutils literal notranslate"><span class="pre">generate_dataset()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="biomedical_data_generator.generate_correlated_cluster.html">biomedical_data_generator.generate_correlated_cluster</a></li>
+<li class="toctree-l1"><a class="reference internal" href="biomedical_data_generator.find_seed_for_correlation.html">biomedical_data_generator.find_seed_for_correlation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="biomedical_data_generator.DatasetConfig.html">biomedical_data_generator.DatasetConfig</a></li>
+<li class="toctree-l1"><a class="reference internal" href="biomedical_data_generator.CorrCluster.html">biomedical_data_generator.CorrCluster</a></li>
+<li class="toctree-l1"><a class="reference internal" href="biomedical_data_generator.DatasetMeta.html">biomedical_data_generator.DatasetMeta</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">Biomedical Data Generator</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">biomedical_data_generator.generate_dataset</li>
+      <li class="wy-breadcrumbs-aside">
+              <a href="https://github.com/sigrun-may/biomedical-data-generator/blob/main/docs/_autosummary/biomedical_data_generator.generate_dataset.rst" class="fa fa-github"> Edit on GitHub</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="biomedical-data-generator-generate-dataset">
+<h1>biomedical_data_generator.generate_dataset<a class="headerlink" href="#biomedical-data-generator-generate-dataset" title="Link to this heading"></a></h1>
+<dl class="py function">
+<dt class="sig sig-object py" id="biomedical_data_generator.generate_dataset">
+<span class="sig-prename descclassname"><span class="pre">biomedical_data_generator.</span></span><span class="sig-name descname"><span class="pre">generate_dataset</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cfg</span></span></em>, <em class="sig-param"><span class="positional-only-separator o"><abbr title="Positional-only parameter separator (PEP 570)"><span class="pre">/</span></abbr></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">return_dataframe</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">overrides</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/biomedical_data_generator/generator.html#generate_dataset"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#biomedical_data_generator.generate_dataset" title="Link to this definition"></a></dt>
+<dd><p>Generate an n-class (softmax) classification dataset with optional correlated clusters.</p>
+<p>Features are ordered as: cluster features (anchors first within each cluster),
+then free informative features, then free pseudo features, then noise features.
+Labels y are sampled from a softmax model over <cite>n_classes</cite>: cluster anchors add a positive
+contribution to their assigned class (via <cite>anchor_beta</cite>), free informative features contribute
+to classes in a simple round-robin assignment (β=0.8). Pseudo and noise features have β=0.
+Reproducibility is controlled by <cite>cfg.random_state</cite> and optional per-cluster seeds. If <cite>weights</cite>
+are specified (length <cite>n_classes</cite>), per-class intercepts are added so that
+softmax(mean_logits + intercepts) ≈ weights. Feature names follow either a “prefixed” scheme
+(e.g., <cite>i*</cite>, <cite>corr{cid}_k</cite>, <cite>p*</cite>, <cite>n*</cite>) or a generic <cite>feature_1..p</cite>. The returned <cite>meta</cite> includes
+role masks, cluster indices, empirical class proportions, and the resolved configuration.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>cfg</strong> (<a class="reference internal" href="biomedical_data_generator.DatasetConfig.html#biomedical_data_generator.DatasetConfig" title="biomedical_data_generator.DatasetConfig"><code class="xref py py-class docutils literal notranslate"><span class="pre">DatasetConfig</span></code></a>) – Configuration including feature counts, cluster layout, correlation
+parameters, naming policy, randomness controls, <cite>n_classes</cite>, and optional <cite>weights</cite>.</p></li>
+<li><p><strong>return_dataframe</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.13)"><code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code></a>, <em>optional</em>) – If True (default), return <cite>X</cite> as a <cite>pandas.DataFrame</cite>
+with column names. If False, return <cite>X</cite> as a NumPy array in the same column order.</p></li>
+<li><p><strong>**overrides</strong> – Optional config overrides merged into <cite>cfg</cite> (e.g., <cite>n_samples=…</cite>).</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p>X (pandas.DataFrame | np.ndarray): Shape (n_samples, n_features). By default a DataFrame
+with feature names in canonical order (clusters → free informative → free pseudo → noise).</p></li>
+<li><p>y (np.ndarray): Shape (n_samples,). Integer labels in {0, 1, …, n_classes-1}.</p></li>
+<li><p>meta (DatasetMeta): Metadata including role masks, cluster indices/labels, empirical class
+weights, and the resolved configuration.</p></li>
+</ul>
+</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.13)"><code class="xref py py-class docutils literal notranslate"><span class="pre">tuple</span></code></a></p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="../code-doc.html" class="btn btn-neutral float-left" title="Code Documentation" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="biomedical_data_generator.generate_correlated_cluster.html" class="btn btn-neutral float-right" title="biomedical_data_generator.generate_correlated_cluster" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, Sigrun May.</p>
+  </div>
+
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

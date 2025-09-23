@@ -1,0 +1,385 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>biomedical_data_generator.CorrCluster &mdash; Biomedical Data Generator 0.1.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="../_static/copybutton.css?v=76b2166b" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/custom.css?v=7f485136" />
+
+  
+      <script src="../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../_static/documentation_options.js?v=01f34227"></script>
+      <script src="../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../_static/clipboard.min.js?v=a7894cd8"></script>
+      <script src="../_static/copybutton.js?v=f281be69"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="biomedical_data_generator.DatasetMeta" href="biomedical_data_generator.DatasetMeta.html" />
+    <link rel="prev" title="biomedical_data_generator.DatasetConfig" href="biomedical_data_generator.DatasetConfig.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            Biomedical Data Generator
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../code-doc.html">Code Documentation</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://github.com/sigrun-may/biomedical-data-generator/blob/main/LICENSE">License</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://github.com/sigrun-may/biomedical-data-generator">GitHub Repository</a></li>
+</ul>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="biomedical_data_generator.generate_dataset.html">biomedical_data_generator.generate_dataset</a></li>
+<li class="toctree-l1"><a class="reference internal" href="biomedical_data_generator.generate_correlated_cluster.html">biomedical_data_generator.generate_correlated_cluster</a></li>
+<li class="toctree-l1"><a class="reference internal" href="biomedical_data_generator.find_seed_for_correlation.html">biomedical_data_generator.find_seed_for_correlation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="biomedical_data_generator.DatasetConfig.html">biomedical_data_generator.DatasetConfig</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">biomedical_data_generator.CorrCluster</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#biomedical_data_generator.CorrCluster"><code class="docutils literal notranslate"><span class="pre">CorrCluster</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#biomedical_data_generator.CorrCluster.size"><code class="docutils literal notranslate"><span class="pre">CorrCluster.size</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#biomedical_data_generator.CorrCluster.rho"><code class="docutils literal notranslate"><span class="pre">CorrCluster.rho</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#biomedical_data_generator.CorrCluster.structure"><code class="docutils literal notranslate"><span class="pre">CorrCluster.structure</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#biomedical_data_generator.CorrCluster.anchor_role"><code class="docutils literal notranslate"><span class="pre">CorrCluster.anchor_role</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#biomedical_data_generator.CorrCluster.anchor_beta"><code class="docutils literal notranslate"><span class="pre">CorrCluster.anchor_beta</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#biomedical_data_generator.CorrCluster.anchor_class"><code class="docutils literal notranslate"><span class="pre">CorrCluster.anchor_class</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#biomedical_data_generator.CorrCluster.random_state"><code class="docutils literal notranslate"><span class="pre">CorrCluster.random_state</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#biomedical_data_generator.CorrCluster.label"><code class="docutils literal notranslate"><span class="pre">CorrCluster.label</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#biomedical_data_generator.CorrCluster.__init__"><code class="docutils literal notranslate"><span class="pre">CorrCluster.__init__()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#biomedical_data_generator.CorrCluster.model_config"><code class="docutils literal notranslate"><span class="pre">CorrCluster.model_config</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="biomedical_data_generator.DatasetMeta.html">biomedical_data_generator.DatasetMeta</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">Biomedical Data Generator</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">biomedical_data_generator.CorrCluster</li>
+      <li class="wy-breadcrumbs-aside">
+              <a href="https://github.com/sigrun-may/biomedical-data-generator/blob/main/docs/_autosummary/biomedical_data_generator.CorrCluster.rst" class="fa fa-github"> Edit on GitHub</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="biomedical-data-generator-corrcluster">
+<h1>biomedical_data_generator.CorrCluster<a class="headerlink" href="#biomedical-data-generator-corrcluster" title="Link to this heading"></a></h1>
+<dl class="py class">
+<dt class="sig sig-object py" id="biomedical_data_generator.CorrCluster">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">biomedical_data_generator.</span></span><span class="sig-name descname"><span class="pre">CorrCluster</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">size</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rho</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.7</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">structure</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'equicorrelated'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">anchor_role</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'latent'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">anchor_beta</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">anchor_class</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">random_state</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">label</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/biomedical_data_generator/config.html#CorrCluster"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#biomedical_data_generator.CorrCluster" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">BaseModel</span></code></p>
+<p>Configuration for a correlated feature cluster.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>size</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.13)"><em>int</em></a>)</p></li>
+<li><p><strong>rho</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.13)"><em>float</em></a>)</p></li>
+<li><p><strong>structure</strong> (<a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Literal" title="(in Python v3.13)"><em>Literal</em></a><em>[</em><em>'equicorrelated'</em><em>, </em><em>'ar1'</em><em>]</em>)</p></li>
+<li><p><strong>anchor_role</strong> (<a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Literal" title="(in Python v3.13)"><em>Literal</em></a><em>[</em><em>'informative'</em><em>, </em><em>'latent'</em><em>]</em>)</p></li>
+<li><p><strong>anchor_beta</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.13)"><em>float</em></a>)</p></li>
+<li><p><strong>anchor_class</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.13)"><em>int</em></a><em> | </em><em>None</em>)</p></li>
+<li><p><strong>random_state</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.13)"><em>int</em></a><em> | </em><em>None</em>)</p></li>
+<li><p><strong>label</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a><em> | </em><em>None</em>)</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="biomedical_data_generator.CorrCluster.size">
+<span class="sig-name descname"><span class="pre">size</span></span><a class="headerlink" href="#biomedical_data_generator.CorrCluster.size" title="Link to this definition"></a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">Number</span></code> of <code class="xref py py-class docutils literal notranslate"><span class="pre">features</span> <span class="pre">in</span> <span class="pre">the</span> <span class="pre">cluster.</span></code></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="biomedical_data_generator.CorrCluster.rho">
+<span class="sig-name descname"><span class="pre">rho</span></span><a class="headerlink" href="#biomedical_data_generator.CorrCluster.rho" title="Link to this definition"></a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">Target</span> <span class="pre">correlation</span> <span class="pre">within</span> <span class="pre">the</span> <span class="pre">cluster</span> <span class="pre">(0</span> <span class="pre">≤</span> <span class="pre">rho</span> <span class="pre">&lt;</span> <span class="pre">1).</span></code></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="biomedical_data_generator.CorrCluster.structure">
+<span class="sig-name descname"><span class="pre">structure</span></span><a class="headerlink" href="#biomedical_data_generator.CorrCluster.structure" title="Link to this definition"></a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">Correlation</span> <span class="pre">structure</span> <span class="pre">(``</span></code>”equicorrelated”`` or <code class="docutils literal notranslate"><span class="pre">&quot;ar1&quot;</span></code><code class="xref py py-class docutils literal notranslate"><span class="pre">).</span></code></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="biomedical_data_generator.CorrCluster.anchor_role">
+<span class="sig-name descname"><span class="pre">anchor_role</span></span><a class="headerlink" href="#biomedical_data_generator.CorrCluster.anchor_role" title="Link to this definition"></a></dt>
+<dd><p>(“informative”) or is purely latent (“latent”).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">Whether</span> <span class="pre">the</span> <span class="pre">cluster</span> <span class="pre">has</span> <span class="pre">an</span> <span class="pre">anchor</span> <span class="pre">that</span> <span class="pre">affects</span> <span class="pre">y</span></code></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="biomedical_data_generator.CorrCluster.anchor_beta">
+<span class="sig-name descname"><span class="pre">anchor_beta</span></span><a class="headerlink" href="#biomedical_data_generator.CorrCluster.anchor_beta" title="Link to this definition"></a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">Effect</span> <span class="pre">size</span> <span class="pre">for</span> <span class="pre">the</span> <span class="pre">anchor</span> <span class="pre">(only</span> <span class="pre">if</span> <span class="pre">informative).</span></code></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="biomedical_data_generator.CorrCluster.anchor_class">
+<span class="sig-name descname"><span class="pre">anchor_class</span></span><a class="headerlink" href="#biomedical_data_generator.CorrCluster.anchor_class" title="Link to this definition"></a></dt>
+<dd><p>contributes positively. Ignored if anchor_role=”latent”.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">Class</span> <span class="pre">index</span> <span class="pre">(0..n_classes-1)</span> <span class="pre">for</span> <span class="pre">which</span> <span class="pre">the</span> <span class="pre">anchor</span></code></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="biomedical_data_generator.CorrCluster.random_state">
+<span class="sig-name descname"><span class="pre">random_state</span></span><a class="headerlink" href="#biomedical_data_generator.CorrCluster.random_state" title="Link to this definition"></a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">Optional</span> <span class="pre">seed</span> <span class="pre">for</span> <span class="pre">reproducibility</span></code> of <code class="xref py py-class docutils literal notranslate"><span class="pre">this</span> <span class="pre">cluster.</span></code></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="biomedical_data_generator.CorrCluster.label">
+<span class="sig-name descname"><span class="pre">label</span></span><a class="headerlink" href="#biomedical_data_generator.CorrCluster.label" title="Link to this definition"></a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">Optional</span> <span class="pre">didactic</span> <span class="pre">label</span> <span class="pre">for</span> <span class="pre">clarity</span> <span class="pre">in</span> <span class="pre">teaching</span> <span class="pre">contexts.</span></code></p>
+</dd>
+</dl>
+</dd></dl>
+
+<p>Create a new model by parsing and validating input data from keyword arguments.</p>
+<p>Raises [<cite>ValidationError</cite>][pydantic_core.ValidationError] if the input data cannot be
+validated to form a valid model.</p>
+<p><cite>self</cite> is explicitly positional-only to allow <cite>self</cite> as a field name.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="biomedical_data_generator.CorrCluster.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">data</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#biomedical_data_generator.CorrCluster.__init__" title="Link to this definition"></a></dt>
+<dd><p>Create a new model by parsing and validating input data from keyword arguments.</p>
+<p>Raises [<cite>ValidationError</cite>][pydantic_core.ValidationError] if the input data cannot be
+validated to form a valid model.</p>
+<p><cite>self</cite> is explicitly positional-only to allow <cite>self</cite> as a field name.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>data</strong> (<a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.13)"><em>Any</em></a>)</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<p class="rubric">Methods</p>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#biomedical_data_generator.CorrCluster.__init__" title="biomedical_data_generator.CorrCluster.__init__"><code class="xref py py-obj docutils literal notranslate"><span class="pre">__init__</span></code></a>(**data)</p></td>
+<td><p>Create a new model by parsing and validating input data from keyword arguments.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">construct</span></code>([_fields_set])</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">copy</span></code>(*[, include, exclude, update, deep])</p></td>
+<td><p>Returns a copy of the model.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">dict</span></code>(*[, include, exclude, by_alias, ...])</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">from_orm</span></code>(obj)</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">json</span></code>(*[, include, exclude, by_alias, ...])</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">model_construct</span></code>([_fields_set])</p></td>
+<td><p>Creates a new instance of the <cite>Model</cite> class with validated data.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">model_copy</span></code>(*[, update, deep])</p></td>
+<td><p>!!! abstract &quot;Usage Documentation&quot;</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">model_dump</span></code>(*[, mode, include, exclude, ...])</p></td>
+<td><p>!!! abstract &quot;Usage Documentation&quot;</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">model_dump_json</span></code>(*[, indent, include, ...])</p></td>
+<td><p>!!! abstract &quot;Usage Documentation&quot;</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">model_json_schema</span></code>([by_alias, ref_template, ...])</p></td>
+<td><p>Generates a JSON schema for a model class.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">model_parametrized_name</span></code>(params)</p></td>
+<td><p>Compute the class name for parametrizations of generic classes.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">model_post_init</span></code>(context, /)</p></td>
+<td><p>Override this method to perform additional initialization after <cite>__init__</cite> and <cite>model_construct</cite>.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">model_rebuild</span></code>(*[, force, raise_errors, ...])</p></td>
+<td><p>Try to rebuild the pydantic-core schema for the model.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">model_validate</span></code>(obj, *[, strict, ...])</p></td>
+<td><p>Validate a pydantic model instance.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">model_validate_json</span></code>(json_data, *[, strict, ...])</p></td>
+<td><p>!!! abstract &quot;Usage Documentation&quot;</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">model_validate_strings</span></code>(obj, *[, strict, ...])</p></td>
+<td><p>Validate the given object with string data against the Pydantic model.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">parse_file</span></code>(path, *[, content_type, ...])</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">parse_obj</span></code>(obj)</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">parse_raw</span></code>(b, *[, content_type, encoding, ...])</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">schema</span></code>([by_alias, ref_template])</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">schema_json</span></code>(*[, by_alias, ref_template])</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">update_forward_refs</span></code>(**localns)</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">validate</span></code>(value)</p></td>
+<td><p></p></td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Attributes</p>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">model_computed_fields</span></code></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#biomedical_data_generator.CorrCluster.model_config" title="biomedical_data_generator.CorrCluster.model_config"><code class="xref py py-obj docutils literal notranslate"><span class="pre">model_config</span></code></a></p></td>
+<td><p>Configuration for the model, should be a dictionary conforming to [<cite>ConfigDict</cite>][pydantic.config.ConfigDict].</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">model_extra</span></code></p></td>
+<td><p>Get extra fields set during validation.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">model_fields</span></code></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">model_fields_set</span></code></p></td>
+<td><p>Returns the set of fields that have been explicitly set on this model instance.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#biomedical_data_generator.CorrCluster.size" title="biomedical_data_generator.CorrCluster.size"><code class="xref py py-obj docutils literal notranslate"><span class="pre">size</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#biomedical_data_generator.CorrCluster.rho" title="biomedical_data_generator.CorrCluster.rho"><code class="xref py py-obj docutils literal notranslate"><span class="pre">rho</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#biomedical_data_generator.CorrCluster.structure" title="biomedical_data_generator.CorrCluster.structure"><code class="xref py py-obj docutils literal notranslate"><span class="pre">structure</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#biomedical_data_generator.CorrCluster.anchor_role" title="biomedical_data_generator.CorrCluster.anchor_role"><code class="xref py py-obj docutils literal notranslate"><span class="pre">anchor_role</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#biomedical_data_generator.CorrCluster.anchor_beta" title="biomedical_data_generator.CorrCluster.anchor_beta"><code class="xref py py-obj docutils literal notranslate"><span class="pre">anchor_beta</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#biomedical_data_generator.CorrCluster.anchor_class" title="biomedical_data_generator.CorrCluster.anchor_class"><code class="xref py py-obj docutils literal notranslate"><span class="pre">anchor_class</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#biomedical_data_generator.CorrCluster.random_state" title="biomedical_data_generator.CorrCluster.random_state"><code class="xref py py-obj docutils literal notranslate"><span class="pre">random_state</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#biomedical_data_generator.CorrCluster.label" title="biomedical_data_generator.CorrCluster.label"><code class="xref py py-obj docutils literal notranslate"><span class="pre">label</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+</tbody>
+</table>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="biomedical_data_generator.CorrCluster.model_config">
+<span class="sig-name descname"><span class="pre">model_config</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">ClassVar</span><span class="p"><span class="pre">[</span></span><span class="pre">ConfigDict</span><span class="p"><span class="pre">]</span></span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{}</span></em><a class="headerlink" href="#biomedical_data_generator.CorrCluster.model_config" title="Link to this definition"></a></dt>
+<dd><p>Configuration for the model, should be a dictionary conforming to [<cite>ConfigDict</cite>][pydantic.config.ConfigDict].</p>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="biomedical_data_generator.DatasetConfig.html" class="btn btn-neutral float-left" title="biomedical_data_generator.DatasetConfig" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="biomedical_data_generator.DatasetMeta.html" class="btn btn-neutral float-right" title="biomedical_data_generator.DatasetMeta" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, Sigrun May.</p>
+  </div>
+
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

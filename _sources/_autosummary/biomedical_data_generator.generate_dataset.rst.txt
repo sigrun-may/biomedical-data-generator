@@ -1,0 +1,6 @@
+﻿biomedical\_data\_generator.generate\_dataset
+=============================================
+
+.. currentmodule:: biomedical_data_generator
+
+.. autofunction:: generate_dataset

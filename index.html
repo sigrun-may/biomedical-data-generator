@@ -6,7 +6,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Biomedical Data Generator &mdash; biomedical-data-generator 0.1.0 documentation</title>
+  <title>Biomedical Data Generator &mdash; Biomedical Data Generator 0.1.0 documentation</title>
       <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=b86133f3" />
       <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=e59714d7" />
       <link rel="stylesheet" type="text/css" href="_static/copybutton.css?v=76b2166b" />
@@ -35,7 +35,7 @@
           
           
           <a href="#" class="icon icon-home">
-            biomedical-data-generator
+            Biomedical Data Generator
           </a>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
@@ -50,6 +50,14 @@
 <li class="toctree-l1"><a class="reference external" href="https://github.com/sigrun-may/biomedical-data-generator/blob/main/LICENSE">License</a></li>
 <li class="toctree-l1"><a class="reference external" href="https://github.com/sigrun-may/biomedical-data-generator">GitHub Repository</a></li>
 </ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="_autosummary/biomedical_data_generator.generate_dataset.html">biomedical_data_generator.generate_dataset</a></li>
+<li class="toctree-l1"><a class="reference internal" href="_autosummary/biomedical_data_generator.generate_correlated_cluster.html">biomedical_data_generator.generate_correlated_cluster</a></li>
+<li class="toctree-l1"><a class="reference internal" href="_autosummary/biomedical_data_generator.find_seed_for_correlation.html">biomedical_data_generator.find_seed_for_correlation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="_autosummary/biomedical_data_generator.DatasetConfig.html">biomedical_data_generator.DatasetConfig</a></li>
+<li class="toctree-l1"><a class="reference internal" href="_autosummary/biomedical_data_generator.CorrCluster.html">biomedical_data_generator.CorrCluster</a></li>
+<li class="toctree-l1"><a class="reference internal" href="_autosummary/biomedical_data_generator.DatasetMeta.html">biomedical_data_generator.DatasetMeta</a></li>
+</ul>
 
         </div>
       </div>
@@ -57,7 +65,7 @@
 
     <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
           <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
-          <a href="#">biomedical-data-generator</a>
+          <a href="#">Biomedical Data Generator</a>
       </nav>
 
       <div class="wy-nav-content">
@@ -77,6 +85,7 @@
              
   <section id="biomedical-data-generator">
 <h1>Biomedical Data Generator<a class="headerlink" href="#biomedical-data-generator" title="Link to this heading"></a></h1>
+<p>A small library to generate synthetic classification datasets with correlated feature clusters.</p>
 <section id="content">
 <h2>Content<a class="headerlink" href="#content" title="Link to this heading"></a></h2>
 <div class="toctree-wrapper compound">
@@ -96,6 +105,32 @@
 <li><p><a class="reference internal" href="genindex.html"><span class="std std-ref">Index</span></a></p></li>
 <li><p><a class="reference internal" href="py-modindex.html"><span class="std std-ref">Module Index</span></a></p></li>
 </ul>
+<p><strong>`docs/api.rst`</strong>
+<a href="#id1"><span class="problematic" id="id2">``</span></a><a href="#id3"><span class="problematic" id="id4">`</span></a>rst
+API Reference
+=============</p>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="_autosummary/biomedical_data_generator.generate_dataset.html#biomedical_data_generator.generate_dataset" title="biomedical_data_generator.generate_dataset"><code class="xref py py-obj docutils literal notranslate"><span class="pre">biomedical_data_generator.generate_dataset</span></code></a></p></td>
+<td><p>Generate an n-class (softmax) classification dataset with optional correlated clusters.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="_autosummary/biomedical_data_generator.generate_correlated_cluster.html#biomedical_data_generator.generate_correlated_cluster" title="biomedical_data_generator.generate_correlated_cluster"><code class="xref py py-obj docutils literal notranslate"><span class="pre">biomedical_data_generator.generate_correlated_cluster</span></code></a></p></td>
+<td><p>Generate a single correlated feature cluster (no labels y involved).</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="_autosummary/biomedical_data_generator.find_seed_for_correlation.html#biomedical_data_generator.find_seed_for_correlation" title="biomedical_data_generator.find_seed_for_correlation"><code class="xref py py-obj docutils literal notranslate"><span class="pre">biomedical_data_generator.find_seed_for_correlation</span></code></a></p></td>
+<td><p>Try seeds until the empirical correlation satisfies the rule.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="_autosummary/biomedical_data_generator.DatasetConfig.html#biomedical_data_generator.DatasetConfig" title="biomedical_data_generator.DatasetConfig"><code class="xref py py-obj docutils literal notranslate"><span class="pre">biomedical_data_generator.DatasetConfig</span></code></a></p></td>
+<td><p>Configuration for generating a synthetic classification dataset.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="_autosummary/biomedical_data_generator.CorrCluster.html#biomedical_data_generator.CorrCluster" title="biomedical_data_generator.CorrCluster"><code class="xref py py-obj docutils literal notranslate"><span class="pre">biomedical_data_generator.CorrCluster</span></code></a></p></td>
+<td><p>Configuration for a correlated feature cluster.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="_autosummary/biomedical_data_generator.DatasetMeta.html#biomedical_data_generator.DatasetMeta" title="biomedical_data_generator.DatasetMeta"><code class="xref py py-obj docutils literal notranslate"><span class="pre">biomedical_data_generator.DatasetMeta</span></code></a></p></td>
+<td><p>Metadata about the generated dataset.</p></td>
+</tr>
+</tbody>
+</table>
 </section>
 </section>
 

@@ -1,0 +1,167 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>biomedical_data_generator.find_seed_for_correlation &mdash; Biomedical Data Generator 0.1.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="../_static/copybutton.css?v=76b2166b" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/custom.css?v=7f485136" />
+
+  
+      <script src="../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../_static/documentation_options.js?v=01f34227"></script>
+      <script src="../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../_static/clipboard.min.js?v=a7894cd8"></script>
+      <script src="../_static/copybutton.js?v=f281be69"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="biomedical_data_generator.DatasetConfig" href="biomedical_data_generator.DatasetConfig.html" />
+    <link rel="prev" title="biomedical_data_generator.generate_correlated_cluster" href="biomedical_data_generator.generate_correlated_cluster.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            Biomedical Data Generator
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../code-doc.html">Code Documentation</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://github.com/sigrun-may/biomedical-data-generator/blob/main/LICENSE">License</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://github.com/sigrun-may/biomedical-data-generator">GitHub Repository</a></li>
+</ul>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="biomedical_data_generator.generate_dataset.html">biomedical_data_generator.generate_dataset</a></li>
+<li class="toctree-l1"><a class="reference internal" href="biomedical_data_generator.generate_correlated_cluster.html">biomedical_data_generator.generate_correlated_cluster</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">biomedical_data_generator.find_seed_for_correlation</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#biomedical_data_generator.find_seed_for_correlation"><code class="docutils literal notranslate"><span class="pre">find_seed_for_correlation()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="biomedical_data_generator.DatasetConfig.html">biomedical_data_generator.DatasetConfig</a></li>
+<li class="toctree-l1"><a class="reference internal" href="biomedical_data_generator.CorrCluster.html">biomedical_data_generator.CorrCluster</a></li>
+<li class="toctree-l1"><a class="reference internal" href="biomedical_data_generator.DatasetMeta.html">biomedical_data_generator.DatasetMeta</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">Biomedical Data Generator</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">biomedical_data_generator.find_seed_for_correlation</li>
+      <li class="wy-breadcrumbs-aside">
+              <a href="https://github.com/sigrun-may/biomedical-data-generator/blob/main/docs/_autosummary/biomedical_data_generator.find_seed_for_correlation.rst" class="fa fa-github"> Edit on GitHub</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="biomedical-data-generator-find-seed-for-correlation">
+<h1>biomedical_data_generator.find_seed_for_correlation<a class="headerlink" href="#biomedical-data-generator-find-seed-for-correlation" title="Link to this heading"></a></h1>
+<dl class="py function">
+<dt class="sig sig-object py" id="biomedical_data_generator.find_seed_for_correlation">
+<span class="sig-prename descclassname"><span class="pre">biomedical_data_generator.</span></span><span class="sig-name descname"><span class="pre">find_seed_for_correlation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">n_samples</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">size</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rho_target</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">structure</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'equicorrelated'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">metric</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'mean_offdiag'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">threshold</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.65</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">op</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'&gt;='</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tol</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.02</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">start_seed</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_tries</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">500</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/biomedical_data_generator/generator.html#find_seed_for_correlation"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#biomedical_data_generator.find_seed_for_correlation" title="Link to this definition"></a></dt>
+<dd><p>Try seeds until the empirical correlation satisfies the rule.</p>
+<dl class="simple">
+<dt>Try seeds starting from <cite>start_seed</cite> until one of the following is satisfied:</dt><dd><ul class="simple">
+<li><p><a href="#id1"><span class="problematic" id="id2">|mean_offdiag - rho_target|</span></a> &lt;= tol (if tol is not None), else</p></li>
+<li><p>(metric op threshold) with metric in {“mean_offdiag”, “min_offdiag”} and op in {“&gt;=”, “&lt;=”}.</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>n_samples</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.13)"><em>int</em></a>) – Number of samples (rows).</p></li>
+<li><p><strong>size</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.13)"><em>int</em></a>) – Number of features (columns).</p></li>
+<li><p><strong>rho_target</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.13)"><em>float</em></a>) – Target correlation between features.</p></li>
+<li><p><strong>structure</strong> (<a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Literal" title="(in Python v3.13)"><em>Literal</em></a><em>[</em><em>'equicorrelated'</em><em>, </em><em>'ar1'</em><em>]</em>) – “equicorrelated” or “ar1”.</p></li>
+<li><p><strong>metric</strong> (<a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Literal" title="(in Python v3.13)"><em>Literal</em></a><em>[</em><em>'mean_offdiag'</em><em>, </em><em>'min_offdiag'</em><em>]</em>) – Empirical metric to use for acceptance.</p></li>
+<li><p><strong>threshold</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.13)"><em>float</em></a>) – Threshold for the metric (if tol is None).</p></li>
+<li><p><strong>op</strong> (<a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Literal" title="(in Python v3.13)"><em>Literal</em></a><em>[</em><em>'&gt;='</em><em>, </em><em>'&lt;='</em><em>]</em>) – Operator for threshold comparison (“&lt;=” or “&gt;=”).</p></li>
+<li><p><strong>tol</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.13)"><em>float</em></a><em> | </em><em>None</em>) – Optional tolerance around rho_target for acceptance.</p></li>
+<li><p><strong>start_seed</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.13)"><em>int</em></a>) – First seed to try.</p></li>
+<li><p><strong>max_tries</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.13)"><em>int</em></a>) – Maximum number of seeds to try before giving up.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p>seed (int): The first seed that satisfied the condition.</p></li>
+<li><p>meta (dict): Metadata as returned by generate_correlated_cluster.</p></li>
+</ul>
+</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.13)"><code class="xref py py-class docutils literal notranslate"><span class="pre">tuple</span></code></a></p>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><ul class="simple">
+<li><p><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#RuntimeError" title="(in Python v3.13)"><strong>RuntimeError</strong></a> – </p></li>
+<li><p><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#ValueError" title="(in Python v3.13)"><strong>ValueError</strong></a> – </p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="biomedical_data_generator.generate_correlated_cluster.html" class="btn btn-neutral float-left" title="biomedical_data_generator.generate_correlated_cluster" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="biomedical_data_generator.DatasetConfig.html" class="btn btn-neutral float-right" title="biomedical_data_generator.DatasetConfig" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, Sigrun May.</p>
+  </div>
+
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

@@ -1,0 +1,765 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>biomedical_data_generator.generator &mdash; Biomedical Data Generator 0.1.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="../../_static/copybutton.css?v=76b2166b" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/custom.css?v=7f485136" />
+
+  
+      <script src="../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../_static/documentation_options.js?v=01f34227"></script>
+      <script src="../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../../_static/clipboard.min.js?v=a7894cd8"></script>
+      <script src="../../_static/copybutton.js?v=f281be69"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            Biomedical Data Generator
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../code-doc.html">Code Documentation</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://github.com/sigrun-may/biomedical-data-generator/blob/main/LICENSE">License</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://github.com/sigrun-may/biomedical-data-generator">GitHub Repository</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../_autosummary/biomedical_data_generator.generate_dataset.html">biomedical_data_generator.generate_dataset</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../_autosummary/biomedical_data_generator.generate_correlated_cluster.html">biomedical_data_generator.generate_correlated_cluster</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../_autosummary/biomedical_data_generator.find_seed_for_correlation.html">biomedical_data_generator.find_seed_for_correlation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../_autosummary/biomedical_data_generator.DatasetConfig.html">biomedical_data_generator.DatasetConfig</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../_autosummary/biomedical_data_generator.CorrCluster.html">biomedical_data_generator.CorrCluster</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../_autosummary/biomedical_data_generator.DatasetMeta.html">biomedical_data_generator.DatasetMeta</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">Biomedical Data Generator</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">biomedical_data_generator.generator</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for biomedical_data_generator.generator</h1><div class="highlight"><pre>
+<span></span><span class="c1"># Copyright (c) 2025 Sigrun May,</span>
+<span class="c1"># Ostfalia Hochschule für angewandte Wissenschaften</span>
+<span class="c1">#</span>
+<span class="c1"># This software is distributed under the terms of the MIT license</span>
+<span class="c1"># which is available at https://opensource.org/licenses/MIT</span>
+
+<span class="sd">&quot;&quot;&quot;Generator for synthetic classification datasets with correlated feature clusters.&quot;&quot;&quot;</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">annotations</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">collections.abc</span><span class="w"> </span><span class="kn">import</span> <span class="n">Callable</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">dataclasses</span><span class="w"> </span><span class="kn">import</span> <span class="n">asdict</span><span class="p">,</span> <span class="n">dataclass</span><span class="p">,</span> <span class="n">field</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Literal</span><span class="p">,</span> <span class="n">cast</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">numpy.typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">NDArray</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="kn">import</span> <span class="n">DataFrame</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">.config</span><span class="w"> </span><span class="kn">import</span> <span class="n">CorrCluster</span><span class="p">,</span> <span class="n">DatasetConfig</span>
+
+
+<span class="c1"># =========================</span>
+<span class="c1"># Ground-truth meta</span>
+<span class="c1"># =========================</span>
+<div class="viewcode-block" id="DatasetMeta">
+<a class="viewcode-back" href="../../_autosummary/biomedical_data_generator.DatasetMeta.html#biomedical_data_generator.DatasetMeta">[docs]</a>
+<span class="nd">@dataclass</span><span class="p">(</span><span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">DatasetMeta</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Metadata about the generated dataset.&quot;&quot;&quot;</span>
+
+    <span class="n">feature_names</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span>
+
+    <span class="n">informative_idx</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span>  <span class="c1"># includes cluster anchors + free i*</span>
+    <span class="n">pseudo_idx</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span>  <span class="c1"># corr* proxies + free p*</span>
+    <span class="n">noise_idx</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span>
+
+    <span class="c1"># Correlated cluster structure</span>
+    <span class="n">corr_cluster_indices</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">]]</span>  <span class="c1"># cluster_id -&gt; column indices</span>
+    <span class="n">anchor_idx</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span><span class="p">]</span>  <span class="c1"># cluster_id -&gt; anchor col (or None)</span>
+    <span class="n">anchor_role</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">str</span><span class="p">]</span>  <span class="c1"># &quot;informative&quot; | &quot;latent&quot;</span>
+    <span class="n">anchor_beta</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">]</span>  <span class="c1"># 0.0 if latent</span>
+    <span class="n">cluster_label</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span><span class="p">]</span>  <span class="c1"># didactic tags per cluster</span>
+
+    <span class="c1"># Class distribution</span>
+    <span class="n">y_weights</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span>
+    <span class="n">y_counts</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">]</span>
+
+    <span class="c1"># Provenance</span>
+    <span class="n">n_classes</span><span class="p">:</span> <span class="nb">int</span>
+    <span class="n">class_sep</span><span class="p">:</span> <span class="nb">float</span>
+    <span class="n">corr_between</span><span class="p">:</span> <span class="nb">float</span>
+    <span class="n">random_state</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">resolved_config</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">object</span><span class="p">]</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="nb">dict</span><span class="p">)</span>
+
+<div class="viewcode-block" id="DatasetMeta.to_dict">
+<a class="viewcode-back" href="../../_autosummary/biomedical_data_generator.DatasetMeta.html#biomedical_data_generator.DatasetMeta.to_dict">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">to_dict</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">object</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Convert to a dictionary (e.g., for JSON serialization).&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">asdict</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span></div>
+</div>
+
+
+
+<span class="c1"># =========================</span>
+<span class="c1"># Small covariance helpers</span>
+<span class="c1"># =========================</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_cov_equicorr</span><span class="p">(</span><span class="n">size</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">rho</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">NDArray</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">]:</span>
+    <span class="n">identity</span><span class="p">:</span> <span class="n">NDArray</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">eye</span><span class="p">(</span><span class="n">size</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span>
+    <span class="n">ones</span><span class="p">:</span> <span class="n">NDArray</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">((</span><span class="n">size</span><span class="p">,</span> <span class="n">size</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span>
+    <span class="k">return</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">rho</span><span class="p">)</span> <span class="o">*</span> <span class="n">identity</span> <span class="o">+</span> <span class="n">rho</span> <span class="o">*</span> <span class="n">ones</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_cov_ar1</span><span class="p">(</span><span class="n">size</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">rho</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">NDArray</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">]:</span>
+    <span class="n">idx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">size</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int64</span><span class="p">)</span>
+    <span class="n">D</span><span class="p">:</span> <span class="n">NDArray</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">idx</span><span class="p">[:,</span> <span class="kc">None</span><span class="p">]</span> <span class="o">-</span> <span class="n">idx</span><span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="p">:])</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">,</span> <span class="n">copy</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="c1"># ensure float64 ndarray for typing</span>
+    <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">rho</span><span class="o">**</span><span class="n">D</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_sample_cluster_matrix</span><span class="p">(</span><span class="n">n</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">cluster</span><span class="p">:</span> <span class="n">CorrCluster</span><span class="p">,</span> <span class="n">rng</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">Generator</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">NDArray</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">]:</span>
+    <span class="n">Sigma</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="n">_cov_equicorr</span><span class="p">(</span><span class="n">cluster</span><span class="o">.</span><span class="n">size</span><span class="p">,</span> <span class="n">cluster</span><span class="o">.</span><span class="n">rho</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">cluster</span><span class="o">.</span><span class="n">structure</span> <span class="o">==</span> <span class="s2">&quot;equicorrelated&quot;</span>
+        <span class="k">else</span> <span class="n">_cov_ar1</span><span class="p">(</span><span class="n">cluster</span><span class="o">.</span><span class="n">size</span><span class="p">,</span> <span class="n">cluster</span><span class="o">.</span><span class="n">rho</span><span class="p">)</span>
+    <span class="p">)</span>
+    <span class="n">L</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">cholesky</span><span class="p">(</span><span class="n">Sigma</span><span class="p">)</span>
+    <span class="n">Z</span><span class="p">:</span> <span class="n">NDArray</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">]</span> <span class="o">=</span> <span class="n">rng</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">cluster</span><span class="o">.</span><span class="n">size</span><span class="p">))</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">,</span> <span class="n">copy</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="n">X</span><span class="p">:</span> <span class="n">NDArray</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">]</span> <span class="o">=</span> <span class="n">cast</span><span class="p">(</span><span class="n">NDArray</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">],</span> <span class="n">Z</span> <span class="o">@</span> <span class="n">L</span><span class="o">.</span><span class="n">T</span><span class="p">)</span>
+    <span class="c1"># standardize columns to ~unit variance (helpful for teaching consistency)</span>
+    <span class="n">X</span> <span class="o">=</span> <span class="p">(</span><span class="n">X</span> <span class="o">-</span> <span class="n">X</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">))</span> <span class="o">/</span> <span class="p">(</span><span class="n">X</span><span class="o">.</span><span class="n">std</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span> <span class="o">+</span> <span class="mf">1e-9</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">X</span>  <span class="c1"># (n, size)</span>
+
+
+<span class="c1"># ============================================</span>
+<span class="c1"># Public: generate a single correlated cluster</span>
+<span class="c1"># ============================================</span>
+<div class="viewcode-block" id="generate_correlated_cluster">
+<a class="viewcode-back" href="../../_autosummary/biomedical_data_generator.generate_correlated_cluster.html#biomedical_data_generator.generate_correlated_cluster">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">generate_correlated_cluster</span><span class="p">(</span>
+    <span class="n">n_samples</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+    <span class="n">size</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+    <span class="n">rho</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.7</span><span class="p">,</span>
+    <span class="n">structure</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;equicorrelated&quot;</span><span class="p">,</span> <span class="s2">&quot;ar1&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;equicorrelated&quot;</span><span class="p">,</span>
+    <span class="n">random_state</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">label</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">NDArray</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">],</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">object</span><span class="p">]]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Generate a single correlated feature cluster (no labels y involved).</span>
+
+<span class="sd">    Returns (X_cluster, meta) where meta contains the empirical correlation matrix.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        n_samples: Number of samples (rows).</span>
+<span class="sd">        size: Number of features (columns).</span>
+<span class="sd">        rho: Target correlation between features (0 ≤ rho &lt; 1).</span>
+<span class="sd">        structure: &quot;equicorrelated&quot; or &quot;ar1&quot;.</span>
+<span class="sd">        random_state: Random seed for reproducibility.</span>
+<span class="sd">        label: Optional didactic tag for this cluster.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">        tuple:</span>
+<span class="sd">            - X (np.ndarray): Shape (n_samples, size) with standardized columns.</span>
+<span class="sd">            - meta (dict): Metadata with keys:</span>
+<span class="sd">              size, rho, structure, random_state, label, corr_matrix (size x size),</span>
+<span class="sd">              mean_offdiag, min_offdiag.</span>
+
+<span class="sd">    Raises</span>
+<span class="sd">    ------</span>
+<span class="sd">        ValueError: If size &lt; 1 or rho not in [0, 1).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">size</span> <span class="o">&lt;</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;size must be &gt;= 1&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="mf">0.0</span> <span class="o">&lt;=</span> <span class="n">rho</span> <span class="o">&lt;</span> <span class="mf">1.0</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;rho must be in [0, 1)&quot;</span><span class="p">)</span>
+
+    <span class="n">rng</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">default_rng</span><span class="p">(</span><span class="n">random_state</span><span class="p">)</span>
+    <span class="n">Sigma</span><span class="p">:</span> <span class="n">NDArray</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">]</span> <span class="o">=</span> <span class="n">_cov_equicorr</span><span class="p">(</span><span class="n">size</span><span class="p">,</span> <span class="n">rho</span><span class="p">)</span> <span class="k">if</span> <span class="n">structure</span> <span class="o">==</span> <span class="s2">&quot;equicorrelated&quot;</span> <span class="k">else</span> <span class="n">_cov_ar1</span><span class="p">(</span><span class="n">size</span><span class="p">,</span> <span class="n">rho</span><span class="p">)</span>
+    <span class="n">L</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">cholesky</span><span class="p">(</span><span class="n">Sigma</span><span class="p">)</span>
+    <span class="n">Z</span><span class="p">:</span> <span class="n">NDArray</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">]</span> <span class="o">=</span> <span class="n">rng</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="n">n_samples</span><span class="p">,</span> <span class="n">size</span><span class="p">))</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">,</span> <span class="n">copy</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="n">X</span><span class="p">:</span> <span class="n">NDArray</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">]</span> <span class="o">=</span> <span class="n">cast</span><span class="p">(</span><span class="n">NDArray</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">],</span> <span class="n">Z</span> <span class="o">@</span> <span class="n">L</span><span class="o">.</span><span class="n">T</span><span class="p">)</span>
+    <span class="n">X</span> <span class="o">=</span> <span class="p">(</span><span class="n">X</span> <span class="o">-</span> <span class="n">X</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">))</span> <span class="o">/</span> <span class="p">(</span><span class="n">X</span><span class="o">.</span><span class="n">std</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span> <span class="o">+</span> <span class="mf">1e-9</span><span class="p">)</span>
+    <span class="n">C</span><span class="p">:</span> <span class="n">NDArray</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">corrcoef</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">rowvar</span><span class="o">=</span><span class="kc">False</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span>
+
+    <span class="c1"># boolean diagonal mask (NumPy 2.0 compatible)</span>
+    <span class="n">diag_mask</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">eye</span><span class="p">(</span><span class="n">size</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">bool</span><span class="p">)</span>
+    <span class="n">off_diag</span> <span class="o">=</span> <span class="n">C</span><span class="p">[</span><span class="o">~</span><span class="n">diag_mask</span><span class="p">]</span>
+
+    <span class="n">meta</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">object</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s2">&quot;size&quot;</span><span class="p">:</span> <span class="nb">int</span><span class="p">(</span><span class="n">size</span><span class="p">),</span>
+        <span class="s2">&quot;rho&quot;</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="n">rho</span><span class="p">),</span>
+        <span class="s2">&quot;structure&quot;</span><span class="p">:</span> <span class="n">structure</span><span class="p">,</span>
+        <span class="s2">&quot;random_state&quot;</span><span class="p">:</span> <span class="n">random_state</span><span class="p">,</span>
+        <span class="s2">&quot;label&quot;</span><span class="p">:</span> <span class="n">label</span><span class="p">,</span>
+        <span class="s2">&quot;corr_matrix&quot;</span><span class="p">:</span> <span class="n">C</span><span class="p">,</span>  <span class="c1"># empirical correlation (size x size)</span>
+        <span class="s2">&quot;mean_offdiag&quot;</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="n">off_diag</span><span class="o">.</span><span class="n">mean</span><span class="p">())</span> <span class="k">if</span> <span class="n">size</span> <span class="o">&gt;</span> <span class="mi">1</span> <span class="k">else</span> <span class="mf">1.0</span><span class="p">,</span>
+        <span class="s2">&quot;min_offdiag&quot;</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="n">off_diag</span><span class="o">.</span><span class="n">min</span><span class="p">())</span> <span class="k">if</span> <span class="n">size</span> <span class="o">&gt;</span> <span class="mi">1</span> <span class="k">else</span> <span class="mf">1.0</span><span class="p">,</span>
+    <span class="p">}</span>
+    <span class="k">return</span> <span class="n">X</span><span class="p">,</span> <span class="n">meta</span></div>
+
+
+
+<span class="c1"># =====================================================</span>
+<span class="c1"># Public: search a seed until correlation is sufficient</span>
+<span class="c1"># =====================================================</span>
+<div class="viewcode-block" id="find_seed_for_correlation">
+<a class="viewcode-back" href="../../_autosummary/biomedical_data_generator.find_seed_for_correlation.html#biomedical_data_generator.find_seed_for_correlation">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">find_seed_for_correlation</span><span class="p">(</span>
+    <span class="n">n_samples</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+    <span class="n">size</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+    <span class="n">rho_target</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+    <span class="n">structure</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;equicorrelated&quot;</span><span class="p">,</span> <span class="s2">&quot;ar1&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;equicorrelated&quot;</span><span class="p">,</span>
+    <span class="n">metric</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;mean_offdiag&quot;</span><span class="p">,</span> <span class="s2">&quot;min_offdiag&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;mean_offdiag&quot;</span><span class="p">,</span>
+    <span class="n">threshold</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.65</span><span class="p">,</span>
+    <span class="n">op</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;&gt;=&quot;</span><span class="p">,</span> <span class="s2">&quot;&lt;=&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;&gt;=&quot;</span><span class="p">,</span>
+    <span class="n">tol</span><span class="p">:</span> <span class="nb">float</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="mf">0.02</span><span class="p">,</span>
+    <span class="n">start_seed</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span>
+    <span class="n">max_tries</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">500</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">object</span><span class="p">]]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Try seeds until the empirical correlation satisfies the rule.</span>
+
+<span class="sd">    Try seeds starting from `start_seed` until one of the following is satisfied:</span>
+<span class="sd">      - |mean_offdiag - rho_target| &lt;= tol (if tol is not None), else</span>
+<span class="sd">      - (metric op threshold) with metric in {&quot;mean_offdiag&quot;, &quot;min_offdiag&quot;} and op in {&quot;&gt;=&quot;, &quot;&lt;=&quot;}.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        n_samples: Number of samples (rows).</span>
+<span class="sd">        size: Number of features (columns).</span>
+<span class="sd">        rho_target: Target correlation between features.</span>
+<span class="sd">        structure: &quot;equicorrelated&quot; or &quot;ar1&quot;.</span>
+<span class="sd">        metric: Empirical metric to use for acceptance.</span>
+<span class="sd">        threshold: Threshold for the metric (if tol is None).</span>
+<span class="sd">        op: Operator for threshold comparison (&quot;&lt;=&quot; or &quot;&gt;=&quot;).</span>
+<span class="sd">        tol: Optional tolerance around rho_target for acceptance.</span>
+<span class="sd">        start_seed: First seed to try.</span>
+<span class="sd">        max_tries: Maximum number of seeds to try before giving up.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">        tuple:</span>
+<span class="sd">            - seed (int): The first seed that satisfied the condition.</span>
+<span class="sd">            - meta (dict): Metadata as returned by generate_correlated_cluster.</span>
+
+<span class="sd">    Raises</span>
+<span class="sd">    ------</span>
+<span class="sd">        RuntimeError: If no seed satisfied the rule within max_tries.</span>
+<span class="sd">        ValueError: If size &lt; 1 or rho_target not in [0, 1).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">size</span> <span class="o">&lt;</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;size must be &gt;= 1&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="mf">0.0</span> <span class="o">&lt;=</span> <span class="n">rho_target</span> <span class="o">&lt;</span> <span class="mf">1.0</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;rho_target must be in [0, 1)&quot;</span><span class="p">)</span>
+
+    <span class="n">seed</span> <span class="o">=</span> <span class="n">start_seed</span>
+    <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">max_tries</span><span class="p">):</span>
+        <span class="n">_</span><span class="p">,</span> <span class="n">m</span> <span class="o">=</span> <span class="n">generate_correlated_cluster</span><span class="p">(</span><span class="n">n_samples</span><span class="p">,</span> <span class="n">size</span><span class="p">,</span> <span class="n">rho_target</span><span class="p">,</span> <span class="n">structure</span><span class="p">,</span> <span class="n">random_state</span><span class="o">=</span><span class="n">seed</span><span class="p">)</span>
+        <span class="n">mean_off</span> <span class="o">=</span> <span class="n">cast</span><span class="p">(</span><span class="nb">float</span><span class="p">,</span> <span class="n">m</span><span class="p">[</span><span class="s2">&quot;mean_offdiag&quot;</span><span class="p">])</span>
+        <span class="n">min_off</span> <span class="o">=</span> <span class="n">cast</span><span class="p">(</span><span class="nb">float</span><span class="p">,</span> <span class="n">m</span><span class="p">[</span><span class="s2">&quot;min_offdiag&quot;</span><span class="p">])</span>
+
+        <span class="n">ok</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="k">if</span> <span class="n">tol</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">ok</span> <span class="o">=</span> <span class="nb">abs</span><span class="p">(</span><span class="n">mean_off</span> <span class="o">-</span> <span class="n">rho_target</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="n">tol</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">ok</span><span class="p">:</span>
+            <span class="n">val</span> <span class="o">=</span> <span class="n">mean_off</span> <span class="k">if</span> <span class="n">metric</span> <span class="o">==</span> <span class="s2">&quot;mean_offdiag&quot;</span> <span class="k">else</span> <span class="n">min_off</span>
+            <span class="n">ok</span> <span class="o">=</span> <span class="p">(</span><span class="n">val</span> <span class="o">&gt;=</span> <span class="n">threshold</span><span class="p">)</span> <span class="k">if</span> <span class="n">op</span> <span class="o">==</span> <span class="s2">&quot;&gt;=&quot;</span> <span class="k">else</span> <span class="p">(</span><span class="n">val</span> <span class="o">&lt;=</span> <span class="n">threshold</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">ok</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">seed</span><span class="p">,</span> <span class="n">m</span>
+        <span class="n">seed</span> <span class="o">+=</span> <span class="mi">1</span>
+    <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;No seed satisfied the correlation rule within max_tries.&quot;</span><span class="p">)</span></div>
+
+
+
+<span class="c1"># ==================</span>
+<span class="c1"># Naming &amp; role map</span>
+<span class="c1"># ==================</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_make_names_and_roles</span><span class="p">(</span>
+    <span class="n">cfg</span><span class="p">:</span> <span class="n">DatasetConfig</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">],</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">],</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">],</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">]],</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span><span class="p">]]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Build feature names and role indices.</span>
+
+<span class="sd">    Important semantics:</span>
+<span class="sd">      - `n_pseudo` counts ONLY free pseudo-features (`p*`), NOT cluster proxies.</span>
+<span class="sd">      - Cluster proxies (`corr{cid}_k`) are additional pseudo-features coming from clusters.</span>
+<span class="sd">      - Therefore the expected total number of features is:</span>
+<span class="sd">            n_features_expected = n_informative + n_pseudo + n_noise + proxies_from_clusters</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">names</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">informative_idx</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">pseudo_idx</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">noise_idx</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">cluster_indices</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">]]</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="n">anchor_idx</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+
+    <span class="n">current</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">proxies_from_clusters</span> <span class="o">=</span> <span class="mi">0</span>
+
+    <span class="c1"># 1) clusters first for contiguous columns</span>
+    <span class="k">if</span> <span class="n">cfg</span><span class="o">.</span><span class="n">corr_clusters</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">cid</span><span class="p">,</span> <span class="n">c</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">cfg</span><span class="o">.</span><span class="n">corr_clusters</span><span class="p">,</span> <span class="n">start</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
+            <span class="n">cols</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="n">current</span><span class="p">,</span> <span class="n">current</span> <span class="o">+</span> <span class="n">c</span><span class="o">.</span><span class="n">size</span><span class="p">))</span>
+            <span class="n">cluster_indices</span><span class="p">[</span><span class="n">cid</span><span class="p">]</span> <span class="o">=</span> <span class="n">cols</span>
+            <span class="k">if</span> <span class="n">c</span><span class="o">.</span><span class="n">anchor_role</span> <span class="o">==</span> <span class="s2">&quot;informative&quot;</span><span class="p">:</span>
+                <span class="c1"># first col is anchor -&gt; named as informative</span>
+                <span class="n">anchor_col</span> <span class="o">=</span> <span class="n">cols</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+                <span class="n">anchor_idx</span><span class="p">[</span><span class="n">cid</span><span class="p">]</span> <span class="o">=</span> <span class="n">anchor_col</span>
+                <span class="n">names</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">cfg</span><span class="o">.</span><span class="n">prefix_informative</span><span class="si">}{</span><span class="nb">len</span><span class="p">(</span><span class="n">informative_idx</span><span class="p">)</span><span class="o">+</span><span class="mi">1</span><span class="si">}</span><span class="s2">&quot;</span>
+                    <span class="k">if</span> <span class="n">cfg</span><span class="o">.</span><span class="n">feature_naming</span> <span class="o">==</span> <span class="s2">&quot;prefixed&quot;</span>
+                    <span class="k">else</span> <span class="sa">f</span><span class="s2">&quot;feature_</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">names</span><span class="p">)</span><span class="o">+</span><span class="mi">1</span><span class="si">}</span><span class="s2">&quot;</span>
+                <span class="p">)</span>
+                <span class="n">informative_idx</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">anchor_col</span><span class="p">)</span>
+                <span class="c1"># proxies (remaining columns in this cluster)</span>
+                <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">col</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">cols</span><span class="p">[</span><span class="mi">1</span><span class="p">:],</span> <span class="n">start</span><span class="o">=</span><span class="mi">2</span><span class="p">):</span>
+                    <span class="n">names</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                        <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">cfg</span><span class="o">.</span><span class="n">prefix_corr</span><span class="si">}{</span><span class="n">cid</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">k</span><span class="si">}</span><span class="s2">&quot;</span> <span class="k">if</span> <span class="n">cfg</span><span class="o">.</span><span class="n">feature_naming</span> <span class="o">==</span> <span class="s2">&quot;prefixed&quot;</span> <span class="k">else</span> <span class="sa">f</span><span class="s2">&quot;feature_</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">names</span><span class="p">)</span><span class="o">+</span><span class="mi">1</span><span class="si">}</span><span class="s2">&quot;</span>
+                    <span class="p">)</span>
+                    <span class="n">pseudo_idx</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">col</span><span class="p">)</span>
+                <span class="n">proxies_from_clusters</span> <span class="o">+=</span> <span class="nb">max</span><span class="p">(</span><span class="n">c</span><span class="o">.</span><span class="n">size</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">anchor_idx</span><span class="p">[</span><span class="n">cid</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+                <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">col</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">cols</span><span class="p">,</span> <span class="n">start</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
+                    <span class="n">names</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                        <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">cfg</span><span class="o">.</span><span class="n">prefix_corr</span><span class="si">}{</span><span class="n">cid</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">k</span><span class="si">}</span><span class="s2">&quot;</span> <span class="k">if</span> <span class="n">cfg</span><span class="o">.</span><span class="n">feature_naming</span> <span class="o">==</span> <span class="s2">&quot;prefixed&quot;</span> <span class="k">else</span> <span class="sa">f</span><span class="s2">&quot;feature_</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">names</span><span class="p">)</span><span class="o">+</span><span class="mi">1</span><span class="si">}</span><span class="s2">&quot;</span>
+                    <span class="p">)</span>
+                    <span class="n">pseudo_idx</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">col</span><span class="p">)</span>
+                <span class="n">proxies_from_clusters</span> <span class="o">+=</span> <span class="n">c</span><span class="o">.</span><span class="n">size</span>
+            <span class="n">current</span> <span class="o">+=</span> <span class="n">c</span><span class="o">.</span><span class="n">size</span>
+
+    <span class="c1"># 2) free informative outside clusters</span>
+    <span class="n">n_anchors</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="mi">1</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="p">(</span><span class="n">cfg</span><span class="o">.</span><span class="n">corr_clusters</span> <span class="ow">or</span> <span class="p">[])</span> <span class="k">if</span> <span class="n">c</span><span class="o">.</span><span class="n">anchor_role</span> <span class="o">==</span> <span class="s2">&quot;informative&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">cfg</span><span class="o">.</span><span class="n">n_informative</span> <span class="o">&lt;</span> <span class="n">n_anchors</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;n_informative (</span><span class="si">{</span><span class="n">cfg</span><span class="o">.</span><span class="n">n_informative</span><span class="si">}</span><span class="s2">) &lt; number of informative anchors (</span><span class="si">{</span><span class="n">n_anchors</span><span class="si">}</span><span class="s2">).&quot;</span><span class="p">)</span>
+    <span class="n">n_inf_free</span> <span class="o">=</span> <span class="n">cfg</span><span class="o">.</span><span class="n">n_informative</span> <span class="o">-</span> <span class="n">n_anchors</span>
+    <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_inf_free</span><span class="p">):</span>
+        <span class="n">names</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">cfg</span><span class="o">.</span><span class="n">prefix_informative</span><span class="si">}{</span><span class="nb">len</span><span class="p">(</span><span class="n">informative_idx</span><span class="p">)</span><span class="o">+</span><span class="mi">1</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="k">if</span> <span class="n">cfg</span><span class="o">.</span><span class="n">feature_naming</span> <span class="o">==</span> <span class="s2">&quot;prefixed&quot;</span>
+            <span class="k">else</span> <span class="sa">f</span><span class="s2">&quot;feature_</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">names</span><span class="p">)</span><span class="o">+</span><span class="mi">1</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="p">)</span>
+        <span class="n">informative_idx</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">names</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
+
+    <span class="c1"># 3) free pseudo (exactly cfg.n_pseudo, independent of proxies)</span>
+    <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">cfg</span><span class="o">.</span><span class="n">n_pseudo</span><span class="p">):</span>
+        <span class="n">names</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">cfg</span><span class="o">.</span><span class="n">prefix_pseudo</span><span class="si">}{</span><span class="n">j</span><span class="o">+</span><span class="mi">1</span><span class="si">}</span><span class="s2">&quot;</span> <span class="k">if</span> <span class="n">cfg</span><span class="o">.</span><span class="n">feature_naming</span> <span class="o">==</span> <span class="s2">&quot;prefixed&quot;</span> <span class="k">else</span> <span class="sa">f</span><span class="s2">&quot;feature_</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">names</span><span class="p">)</span><span class="o">+</span><span class="mi">1</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="n">pseudo_idx</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">names</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
+
+    <span class="c1"># 4) noise</span>
+    <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">cfg</span><span class="o">.</span><span class="n">n_noise</span><span class="p">):</span>
+        <span class="n">names</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">cfg</span><span class="o">.</span><span class="n">prefix_noise</span><span class="si">}{</span><span class="n">j</span><span class="o">+</span><span class="mi">1</span><span class="si">}</span><span class="s2">&quot;</span> <span class="k">if</span> <span class="n">cfg</span><span class="o">.</span><span class="n">feature_naming</span> <span class="o">==</span> <span class="s2">&quot;prefixed&quot;</span> <span class="k">else</span> <span class="sa">f</span><span class="s2">&quot;feature_</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">names</span><span class="p">)</span><span class="o">+</span><span class="mi">1</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="n">noise_idx</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">names</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
+
+    <span class="c1"># Totals validation with proxies added on top</span>
+    <span class="n">n_features_expected</span> <span class="o">=</span> <span class="n">cfg</span><span class="o">.</span><span class="n">n_informative</span> <span class="o">+</span> <span class="n">cfg</span><span class="o">.</span><span class="n">n_pseudo</span> <span class="o">+</span> <span class="n">cfg</span><span class="o">.</span><span class="n">n_noise</span> <span class="o">+</span> <span class="n">proxies_from_clusters</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">names</span><span class="p">)</span> <span class="o">!=</span> <span class="n">n_features_expected</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">AssertionError</span><span class="p">((</span><span class="nb">len</span><span class="p">(</span><span class="n">names</span><span class="p">),</span> <span class="n">n_features_expected</span><span class="p">))</span>
+    <span class="k">if</span> <span class="n">cfg</span><span class="o">.</span><span class="n">n_features</span> <span class="o">!=</span> <span class="n">n_features_expected</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="s2">&quot;cfg.n_features must equal n_informative + n_pseudo + n_noise + proxies_from_clusters &quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;= </span><span class="si">{</span><span class="n">cfg</span><span class="o">.</span><span class="n">n_informative</span><span class="si">}</span><span class="s2"> + </span><span class="si">{</span><span class="n">cfg</span><span class="o">.</span><span class="n">n_pseudo</span><span class="si">}</span><span class="s2"> + </span><span class="si">{</span><span class="n">cfg</span><span class="o">.</span><span class="n">n_noise</span><span class="si">}</span><span class="s2"> + </span><span class="si">{</span><span class="n">proxies_from_clusters</span><span class="si">}</span><span class="s2"> &quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;= </span><span class="si">{</span><span class="n">n_features_expected</span><span class="si">}</span><span class="s2">, but got n_features=</span><span class="si">{</span><span class="n">cfg</span><span class="o">.</span><span class="n">n_features</span><span class="si">}</span><span class="s2">.&quot;</span>
+        <span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">names</span><span class="p">,</span> <span class="n">informative_idx</span><span class="p">,</span> <span class="n">pseudo_idx</span><span class="p">,</span> <span class="n">noise_idx</span><span class="p">,</span> <span class="n">cluster_indices</span><span class="p">,</span> <span class="n">anchor_idx</span>
+
+
+<span class="c1"># ================</span>
+<span class="c1"># Softmax utility</span>
+<span class="c1"># ================</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_softmax</span><span class="p">(</span><span class="n">Z</span><span class="p">:</span> <span class="n">NDArray</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">NDArray</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">]:</span>
+    <span class="n">Z</span> <span class="o">=</span> <span class="n">Z</span> <span class="o">-</span> <span class="n">Z</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">keepdims</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">Z</span><span class="p">,</span> <span class="n">out</span><span class="o">=</span><span class="n">Z</span><span class="p">)</span>
+    <span class="n">Z_sum</span> <span class="o">=</span> <span class="n">Z</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">keepdims</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">Z</span> <span class="o">/=</span> <span class="n">Z_sum</span>
+    <span class="k">return</span> <span class="n">Z</span>
+
+
+<span class="c1"># =================</span>
+<span class="c1"># Public generator</span>
+<span class="c1"># =================</span>
+<div class="viewcode-block" id="generate_dataset">
+<a class="viewcode-back" href="../../_autosummary/biomedical_data_generator.generate_dataset.html#biomedical_data_generator.generate_dataset">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">generate_dataset</span><span class="p">(</span>
+    <span class="n">cfg</span><span class="p">:</span> <span class="n">DatasetConfig</span><span class="p">,</span>
+    <span class="o">/</span><span class="p">,</span>
+    <span class="o">*</span><span class="p">,</span>
+    <span class="n">return_dataframe</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+    <span class="o">**</span><span class="n">overrides</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">DataFrame</span> <span class="o">|</span> <span class="n">NDArray</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">],</span> <span class="n">NDArray</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">int64</span><span class="p">],</span> <span class="n">DatasetMeta</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Generate an n-class (softmax) classification dataset with optional correlated clusters.</span>
+
+<span class="sd">    Features are ordered as: cluster features (anchors first within each cluster),</span>
+<span class="sd">    then free informative features, then free pseudo features, then noise features.</span>
+<span class="sd">    Labels y are sampled from a softmax model over `n_classes`: cluster anchors add a positive</span>
+<span class="sd">    contribution to their assigned class (via `anchor_beta`), free informative features contribute</span>
+<span class="sd">    to classes in a simple round-robin assignment (β=0.8). Pseudo and noise features have β=0.</span>
+<span class="sd">    Reproducibility is controlled by `cfg.random_state` and optional per-cluster seeds. If `weights`</span>
+<span class="sd">    are specified (length `n_classes`), per-class intercepts are added so that</span>
+<span class="sd">    softmax(mean_logits + intercepts) ≈ weights. Feature names follow either a “prefixed” scheme</span>
+<span class="sd">    (e.g., `i*`, `corr{cid}_k`, `p*`, `n*`) or a generic `feature_1..p`. The returned `meta` includes</span>
+<span class="sd">    role masks, cluster indices, empirical class proportions, and the resolved configuration.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        cfg (DatasetConfig): Configuration including feature counts, cluster layout, correlation</span>
+<span class="sd">            parameters, naming policy, randomness controls, `n_classes`, and optional `weights`.</span>
+<span class="sd">        return_dataframe (bool, optional): If True (default), return `X` as a `pandas.DataFrame`</span>
+<span class="sd">            with column names. If False, return `X` as a NumPy array in the same column order.</span>
+<span class="sd">        **overrides: Optional config overrides merged into `cfg` (e.g., `n_samples=...`).</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">        tuple:</span>
+<span class="sd">            - X (pandas.DataFrame | np.ndarray): Shape (n_samples, n_features). By default a DataFrame</span>
+<span class="sd">              with feature names in canonical order (clusters → free informative → free pseudo → noise).</span>
+<span class="sd">            - y (np.ndarray): Shape (n_samples,). Integer labels in {0, 1, ..., n_classes-1}.</span>
+<span class="sd">            - meta (DatasetMeta): Metadata including role masks, cluster indices/labels, empirical class</span>
+<span class="sd">              weights, and the resolved configuration.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">overrides</span><span class="p">:</span>
+        <span class="n">cfg</span> <span class="o">=</span> <span class="n">cfg</span><span class="o">.</span><span class="n">model_copy</span><span class="p">(</span><span class="n">update</span><span class="o">=</span><span class="n">overrides</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">cfg</span><span class="o">.</span><span class="n">n_classes</span> <span class="o">&lt;</span> <span class="mi">2</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;n_classes must be &gt;= 2.&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">cfg</span><span class="o">.</span><span class="n">weights</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">cfg</span><span class="o">.</span><span class="n">weights</span><span class="p">)</span> <span class="o">!=</span> <span class="n">cfg</span><span class="o">.</span><span class="n">n_classes</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;weights must have length n_classes.&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">any</span><span class="p">(</span><span class="n">w</span> <span class="o">&lt;</span> <span class="mi">0</span> <span class="k">for</span> <span class="n">w</span> <span class="ow">in</span> <span class="n">cfg</span><span class="o">.</span><span class="n">weights</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;weights must be non-negative.&quot;</span><span class="p">)</span>
+        <span class="n">wsum</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="nb">sum</span><span class="p">(</span><span class="n">cfg</span><span class="o">.</span><span class="n">weights</span><span class="p">))</span>
+        <span class="k">if</span> <span class="n">wsum</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;sum(weights) must be &gt; 0.&quot;</span><span class="p">)</span>
+
+    <span class="n">rng_global</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">default_rng</span><span class="p">(</span><span class="n">cfg</span><span class="o">.</span><span class="n">random_state</span><span class="p">)</span>
+
+    <span class="c1"># names &amp; roles (+ totals validation inside)</span>
+    <span class="n">names</span><span class="p">,</span> <span class="n">inf_idx</span><span class="p">,</span> <span class="n">pse_idx</span><span class="p">,</span> <span class="n">noi_idx</span><span class="p">,</span> <span class="n">cluster_idx</span><span class="p">,</span> <span class="n">anch_idx</span> <span class="o">=</span> <span class="n">_make_names_and_roles</span><span class="p">(</span><span class="n">cfg</span><span class="p">)</span>
+
+    <span class="c1"># 1) build matrices per cluster (respect per-cluster seed if provided)</span>
+    <span class="n">cluster_matrices</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">NDArray</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">]]</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="c1"># Map: anchor feature column -&gt; (beta, class_id)</span>
+    <span class="n">anchor_contrib</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">int</span><span class="p">]]</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="n">cluster_label_map</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="n">col_start</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="k">if</span> <span class="n">cfg</span><span class="o">.</span><span class="n">corr_clusters</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">cid</span><span class="p">,</span> <span class="n">c</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">cfg</span><span class="o">.</span><span class="n">corr_clusters</span><span class="p">,</span> <span class="n">start</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
+            <span class="n">seed</span> <span class="o">=</span> <span class="n">c</span><span class="o">.</span><span class="n">random_state</span> <span class="k">if</span> <span class="n">c</span><span class="o">.</span><span class="n">random_state</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">cfg</span><span class="o">.</span><span class="n">random_state</span>
+            <span class="n">rng</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">default_rng</span><span class="p">(</span><span class="n">seed</span><span class="p">)</span>
+            <span class="n">B</span> <span class="o">=</span> <span class="n">_sample_cluster_matrix</span><span class="p">(</span><span class="n">cfg</span><span class="o">.</span><span class="n">n_samples</span><span class="p">,</span> <span class="n">c</span><span class="p">,</span> <span class="n">rng</span><span class="p">)</span>
+            <span class="c1"># weak global coupling (same g for all cluster columns)</span>
+            <span class="k">if</span> <span class="n">cfg</span><span class="o">.</span><span class="n">corr_between</span> <span class="o">&gt;</span> <span class="mf">0.0</span><span class="p">:</span>
+                <span class="n">g</span> <span class="o">=</span> <span class="n">rng_global</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="n">cfg</span><span class="o">.</span><span class="n">n_samples</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
+                <span class="n">B</span> <span class="o">=</span> <span class="n">B</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">cfg</span><span class="o">.</span><span class="n">corr_between</span><span class="p">)</span> <span class="o">*</span> <span class="n">g</span>
+            <span class="k">if</span> <span class="n">c</span><span class="o">.</span><span class="n">anchor_role</span> <span class="o">==</span> <span class="s2">&quot;informative&quot;</span><span class="p">:</span>
+                <span class="n">anchor_col</span> <span class="o">=</span> <span class="n">col_start</span>  <span class="c1"># first column of this cluster in global X</span>
+                <span class="n">anchor_cls</span> <span class="o">=</span> <span class="mi">0</span> <span class="k">if</span> <span class="n">c</span><span class="o">.</span><span class="n">anchor_class</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="nb">int</span><span class="p">(</span><span class="n">c</span><span class="o">.</span><span class="n">anchor_class</span><span class="p">)</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="mi">0</span> <span class="o">&lt;=</span> <span class="n">anchor_cls</span> <span class="o">&lt;</span> <span class="n">cfg</span><span class="o">.</span><span class="n">n_classes</span><span class="p">):</span>
+                    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;anchor_class </span><span class="si">{</span><span class="n">anchor_cls</span><span class="si">}</span><span class="s2"> out of range for n_classes=</span><span class="si">{</span><span class="n">cfg</span><span class="o">.</span><span class="n">n_classes</span><span class="si">}</span><span class="s2">.&quot;</span><span class="p">)</span>
+                <span class="n">anchor_contrib</span><span class="p">[</span><span class="n">anchor_col</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">c</span><span class="o">.</span><span class="n">anchor_beta</span><span class="p">),</span> <span class="n">anchor_cls</span><span class="p">)</span>
+            <span class="n">cluster_label_map</span><span class="p">[</span><span class="n">cid</span><span class="p">]</span> <span class="o">=</span> <span class="n">c</span><span class="o">.</span><span class="n">label</span>
+            <span class="n">cluster_matrices</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">B</span><span class="p">)</span>
+            <span class="n">col_start</span> <span class="o">+=</span> <span class="n">c</span><span class="o">.</span><span class="n">size</span>
+    <span class="n">X_clusters</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">(</span><span class="n">cluster_matrices</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span> <span class="k">if</span> <span class="n">cluster_matrices</span> <span class="k">else</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">((</span><span class="n">cfg</span><span class="o">.</span><span class="n">n_samples</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span>
+
+    <span class="c1"># 2) free informative (exactly n_informative - n_anchors)</span>
+    <span class="n">n_anchors</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="mi">1</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="p">(</span><span class="n">cfg</span><span class="o">.</span><span class="n">corr_clusters</span> <span class="ow">or</span> <span class="p">[])</span> <span class="k">if</span> <span class="n">c</span><span class="o">.</span><span class="n">anchor_role</span> <span class="o">==</span> <span class="s2">&quot;informative&quot;</span><span class="p">)</span>
+    <span class="n">n_inf_free</span> <span class="o">=</span> <span class="n">cfg</span><span class="o">.</span><span class="n">n_informative</span> <span class="o">-</span> <span class="n">n_anchors</span>
+    <span class="n">X_inf</span> <span class="o">=</span> <span class="n">rng_global</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="n">cfg</span><span class="o">.</span><span class="n">n_samples</span><span class="p">,</span> <span class="n">n_inf_free</span><span class="p">))</span> <span class="k">if</span> <span class="n">n_inf_free</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="k">else</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">((</span><span class="n">cfg</span><span class="o">.</span><span class="n">n_samples</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span>
+
+    <span class="c1"># 3) free pseudo (exactly cfg.n_pseudo, independent of proxies)</span>
+    <span class="n">X_pseudo</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="n">rng_global</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="n">cfg</span><span class="o">.</span><span class="n">n_samples</span><span class="p">,</span> <span class="n">cfg</span><span class="o">.</span><span class="n">n_pseudo</span><span class="p">))</span> <span class="k">if</span> <span class="n">cfg</span><span class="o">.</span><span class="n">n_pseudo</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="k">else</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">((</span><span class="n">cfg</span><span class="o">.</span><span class="n">n_samples</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span>
+    <span class="p">)</span>
+
+    <span class="c1"># 4) noise</span>
+    <span class="n">X_noise</span> <span class="o">=</span> <span class="n">rng_global</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="n">cfg</span><span class="o">.</span><span class="n">n_samples</span><span class="p">,</span> <span class="n">cfg</span><span class="o">.</span><span class="n">n_noise</span><span class="p">))</span> <span class="k">if</span> <span class="n">cfg</span><span class="o">.</span><span class="n">n_noise</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="k">else</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">((</span><span class="n">cfg</span><span class="o">.</span><span class="n">n_samples</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span>
+
+    <span class="c1"># Concatenate in naming order: [clusters] + [free informative] + [free pseudo] + [noise]</span>
+    <span class="n">X</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">([</span><span class="n">X_clusters</span><span class="p">,</span> <span class="n">X_inf</span><span class="p">,</span> <span class="n">X_pseudo</span><span class="p">,</span> <span class="n">X_noise</span><span class="p">],</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+
+    <span class="c1"># Sicherheit: Spaltenzahl prüfen (soll == len(names) == cfg.n_features)</span>
+    <span class="k">assert</span> <span class="n">X</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="n">names</span><span class="p">)</span> <span class="o">==</span> <span class="n">cfg</span><span class="o">.</span><span class="n">n_features</span><span class="p">,</span> <span class="p">(</span><span class="n">X</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="nb">len</span><span class="p">(</span><span class="n">names</span><span class="p">),</span> <span class="n">cfg</span><span class="o">.</span><span class="n">n_features</span><span class="p">)</span>
+
+    <span class="c1"># ----- logits for n_classes</span>
+    <span class="n">K</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">cfg</span><span class="o">.</span><span class="n">n_classes</span><span class="p">)</span>
+    <span class="n">logits</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">cfg</span><span class="o">.</span><span class="n">n_samples</span><span class="p">,</span> <span class="n">K</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
+
+    <span class="c1"># Anchors: add to their assigned class only</span>
+    <span class="k">for</span> <span class="n">col</span><span class="p">,</span> <span class="p">(</span><span class="n">beta</span><span class="p">,</span> <span class="bp">cls</span><span class="p">)</span> <span class="ow">in</span> <span class="n">anchor_contrib</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="n">logits</span><span class="p">[:,</span> <span class="bp">cls</span><span class="p">]</span> <span class="o">+=</span> <span class="n">beta</span> <span class="o">*</span> <span class="n">X</span><span class="p">[:,</span> <span class="n">col</span><span class="p">]</span>
+
+    <span class="c1"># Free informative: round-robin across classes with beta=0.8</span>
+    <span class="n">rr</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="k">for</span> <span class="n">idx</span> <span class="ow">in</span> <span class="n">inf_idx</span><span class="p">:</span>
+        <span class="c1"># Skip anchor indices (already handled as anchors, although sie in informative_idx enthalten sind)</span>
+        <span class="k">if</span> <span class="n">idx</span> <span class="ow">in</span> <span class="n">anchor_contrib</span><span class="p">:</span>
+            <span class="k">continue</span>
+        <span class="n">logits</span><span class="p">[:,</span> <span class="n">rr</span><span class="p">]</span> <span class="o">+=</span> <span class="mf">0.8</span> <span class="o">*</span> <span class="n">X</span><span class="p">[:,</span> <span class="n">idx</span><span class="p">]</span>
+        <span class="n">rr</span> <span class="o">=</span> <span class="p">(</span><span class="n">rr</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">%</span> <span class="n">K</span>
+
+    <span class="c1"># Scale by class_sep</span>
+    <span class="n">logits</span> <span class="o">*=</span> <span class="nb">float</span><span class="p">(</span><span class="n">cfg</span><span class="o">.</span><span class="n">class_sep</span><span class="p">)</span>
+
+    <span class="c1"># Optional class prior matching via per-class intercepts</span>
+    <span class="k">if</span> <span class="n">cfg</span><span class="o">.</span><span class="n">weights</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">target</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">cfg</span><span class="o">.</span><span class="n">weights</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
+        <span class="n">target</span> <span class="o">=</span> <span class="n">target</span> <span class="o">/</span> <span class="n">target</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+        <span class="n">mean_logits</span> <span class="o">=</span> <span class="n">logits</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>  <span class="c1"># shape (K,)</span>
+        <span class="k">with</span> <span class="n">np</span><span class="o">.</span><span class="n">errstate</span><span class="p">(</span><span class="n">divide</span><span class="o">=</span><span class="s2">&quot;ignore&quot;</span><span class="p">):</span>
+            <span class="n">b</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">target</span><span class="p">)</span> <span class="o">-</span> <span class="n">mean_logits</span>  <span class="c1"># shift so softmax(mean+b) ≈ target</span>
+        <span class="n">logits</span> <span class="o">=</span> <span class="n">logits</span> <span class="o">+</span> <span class="n">b</span><span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="p">:]</span>
+
+    <span class="c1"># Sample labels</span>
+    <span class="n">P</span> <span class="o">=</span> <span class="n">_softmax</span><span class="p">(</span><span class="n">logits</span><span class="o">.</span><span class="n">copy</span><span class="p">())</span>  <span class="c1"># copy because _softmax is in-place</span>
+    <span class="n">cdf</span> <span class="o">=</span> <span class="n">P</span><span class="o">.</span><span class="n">cumsum</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+    <span class="n">r</span> <span class="o">=</span> <span class="n">rng_global</span><span class="o">.</span><span class="n">random</span><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="n">cfg</span><span class="o">.</span><span class="n">n_samples</span><span class="p">)[:,</span> <span class="kc">None</span><span class="p">]</span>
+    <span class="n">y</span> <span class="o">=</span> <span class="p">(</span><span class="n">r</span> <span class="o">&gt;</span> <span class="n">cdf</span><span class="p">[:,</span> <span class="p">:</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">int64</span><span class="p">)</span>  <span class="c1"># categorical draw</span>
+
+    <span class="c1"># Empirical class stats</span>
+    <span class="n">y_counts</span> <span class="o">=</span> <span class="p">{</span><span class="nb">int</span><span class="p">(</span><span class="n">k</span><span class="p">):</span> <span class="nb">int</span><span class="p">((</span><span class="n">y</span> <span class="o">==</span> <span class="n">k</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">())</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">K</span><span class="p">)}</span>
+    <span class="n">y_weights</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="nb">tuple</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">y_counts</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">/</span> <span class="n">cfg</span><span class="o">.</span><span class="n">n_samples</span><span class="p">)</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">K</span><span class="p">))</span>
+        <span class="k">if</span> <span class="n">cfg</span><span class="o">.</span><span class="n">weights</span> <span class="ow">is</span> <span class="kc">None</span>
+        <span class="k">else</span> <span class="nb">tuple</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">w</span><span class="p">)</span> <span class="o">/</span> <span class="nb">float</span><span class="p">(</span><span class="nb">sum</span><span class="p">(</span><span class="n">cfg</span><span class="o">.</span><span class="n">weights</span><span class="p">))</span> <span class="k">for</span> <span class="n">w</span> <span class="ow">in</span> <span class="n">cfg</span><span class="o">.</span><span class="n">weights</span><span class="p">)</span>
+    <span class="p">)</span>
+
+    <span class="c1"># per-cluster role/beta maps for meta</span>
+    <span class="n">anchor_role_map</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="n">anchor_beta_map</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">if</span> <span class="n">cfg</span><span class="o">.</span><span class="n">corr_clusters</span><span class="p">:</span>
+        <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">for</span> <span class="n">cid</span><span class="p">,</span> <span class="n">c</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">cfg</span><span class="o">.</span><span class="n">corr_clusters</span><span class="p">,</span> <span class="n">start</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
+            <span class="n">anchor_role_map</span><span class="p">[</span><span class="n">cid</span><span class="p">]</span> <span class="o">=</span> <span class="n">c</span><span class="o">.</span><span class="n">anchor_role</span>
+            <span class="n">anchor_beta_map</span><span class="p">[</span><span class="n">cid</span><span class="p">]</span> <span class="o">=</span> <span class="n">c</span><span class="o">.</span><span class="n">anchor_beta</span> <span class="k">if</span> <span class="n">c</span><span class="o">.</span><span class="n">anchor_role</span> <span class="o">==</span> <span class="s2">&quot;informative&quot;</span> <span class="k">else</span> <span class="mf">0.0</span>
+            <span class="n">i</span> <span class="o">+=</span> <span class="n">c</span><span class="o">.</span><span class="n">size</span>
+
+    <span class="n">meta</span> <span class="o">=</span> <span class="n">DatasetMeta</span><span class="p">(</span>
+        <span class="n">feature_names</span><span class="o">=</span><span class="n">names</span><span class="p">,</span>
+        <span class="n">informative_idx</span><span class="o">=</span><span class="n">inf_idx</span><span class="p">,</span>
+        <span class="n">pseudo_idx</span><span class="o">=</span><span class="n">pse_idx</span><span class="p">,</span>
+        <span class="n">noise_idx</span><span class="o">=</span><span class="n">noi_idx</span><span class="p">,</span>
+        <span class="n">corr_cluster_indices</span><span class="o">=</span><span class="n">cluster_idx</span><span class="p">,</span>
+        <span class="n">anchor_idx</span><span class="o">=</span><span class="n">anch_idx</span><span class="p">,</span>
+        <span class="n">anchor_role</span><span class="o">=</span><span class="n">anchor_role_map</span><span class="p">,</span>
+        <span class="n">anchor_beta</span><span class="o">=</span><span class="n">anchor_beta_map</span><span class="p">,</span>
+        <span class="n">cluster_label</span><span class="o">=</span><span class="n">cluster_label_map</span><span class="p">,</span>
+        <span class="n">y_weights</span><span class="o">=</span><span class="n">y_weights</span><span class="p">,</span>
+        <span class="n">y_counts</span><span class="o">=</span><span class="n">y_counts</span><span class="p">,</span>
+        <span class="n">n_classes</span><span class="o">=</span><span class="n">K</span><span class="p">,</span>
+        <span class="n">class_sep</span><span class="o">=</span><span class="nb">float</span><span class="p">(</span><span class="n">cfg</span><span class="o">.</span><span class="n">class_sep</span><span class="p">),</span>
+        <span class="n">corr_between</span><span class="o">=</span><span class="nb">float</span><span class="p">(</span><span class="n">cfg</span><span class="o">.</span><span class="n">corr_between</span><span class="p">),</span>
+        <span class="n">random_state</span><span class="o">=</span><span class="n">cfg</span><span class="o">.</span><span class="n">random_state</span><span class="p">,</span>
+        <span class="n">resolved_config</span><span class="o">=</span><span class="n">cfg</span><span class="o">.</span><span class="n">model_dump</span><span class="p">(),</span>
+    <span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">return_dataframe</span><span class="p">:</span>
+        <span class="n">X_df</span><span class="p">:</span> <span class="n">DataFrame</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">columns</span><span class="o">=</span><span class="n">names</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">X_df</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">meta</span>
+    <span class="k">return</span> <span class="n">X</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">meta</span></div>
+
+
+
+<span class="c1"># ==========================================================</span>
+<span class="c1"># Dataset-level acceptance helpers (multiclass-aware)</span>
+<span class="c1"># ==========================================================</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">find_dataset_seed_for_class_weights</span><span class="p">(</span>
+    <span class="n">cfg</span><span class="p">:</span> <span class="n">DatasetConfig</span><span class="p">,</span>
+    <span class="o">/</span><span class="p">,</span>
+    <span class="o">*</span><span class="p">,</span>
+    <span class="n">tol</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.02</span><span class="p">,</span>
+    <span class="n">start_seed</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span>
+    <span class="n">max_tries</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">500</span><span class="p">,</span>
+    <span class="n">return_dataframe</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+    <span class="o">**</span><span class="n">overrides</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="n">DataFrame</span> <span class="o">|</span> <span class="n">NDArray</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">],</span> <span class="n">NDArray</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">int64</span><span class="p">],</span> <span class="n">DatasetMeta</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Find a random_state such that empirical class proportions approximate cfg.weights.</span>
+
+<span class="sd">    Tries seeds starting at `start_seed` and returns the first seed for which the</span>
+<span class="sd">    L1 distance between the empirical class proportions and the target weights is &lt;= tol.</span>
+<span class="sd">    Works for multiclass (n_classes &gt;= 2). If cfg.weights is None, the target is uniform.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        cfg: Base configuration to use (n_classes may be &gt; 2).</span>
+<span class="sd">        tol: L1 tolerance against target weights. Defaults to 0.02.</span>
+<span class="sd">        start_seed: First seed to try. Defaults to 0.</span>
+<span class="sd">        max_tries: Maximum number of seeds to try. Defaults to 500.</span>
+<span class="sd">        return_dataframe: Return X as DataFrame (default) or ndarray.</span>
+<span class="sd">        **overrides: Optional keyword overrides merged into cfg for generation.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">        tuple:</span>
+<span class="sd">            - seed (int): The seed that satisfied the tolerance.</span>
+<span class="sd">            - X (pandas.DataFrame | np.ndarray): Feature matrix for that seed.</span>
+<span class="sd">            - y (np.ndarray): Labels for that seed.</span>
+<span class="sd">            - meta (DatasetMeta): Metadata for that seed.</span>
+
+<span class="sd">    Raises</span>
+<span class="sd">    ------</span>
+<span class="sd">        RuntimeError: If no seed satisfies the tolerance within max_tries.</span>
+<span class="sd">        ValueError: If cfg.n_classes &lt; 2 or weights length mismatches n_classes.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">cfg</span><span class="o">.</span><span class="n">n_classes</span> <span class="o">&lt;</span> <span class="mi">2</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;n_classes must be &gt;= 2.&quot;</span><span class="p">)</span>
+
+    <span class="c1"># Normalize/derive target weights</span>
+    <span class="k">if</span> <span class="n">cfg</span><span class="o">.</span><span class="n">weights</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">target</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">full</span><span class="p">(</span><span class="n">cfg</span><span class="o">.</span><span class="n">n_classes</span><span class="p">,</span> <span class="mf">1.0</span> <span class="o">/</span> <span class="n">cfg</span><span class="o">.</span><span class="n">n_classes</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">cfg</span><span class="o">.</span><span class="n">weights</span><span class="p">)</span> <span class="o">!=</span> <span class="n">cfg</span><span class="o">.</span><span class="n">n_classes</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;weights must have length n_classes.&quot;</span><span class="p">)</span>
+        <span class="n">target</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">cfg</span><span class="o">.</span><span class="n">weights</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
+        <span class="n">s</span> <span class="o">=</span> <span class="n">target</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">s</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;sum(weights) must be &gt; 0.&quot;</span><span class="p">)</span>
+        <span class="n">target</span> <span class="o">=</span> <span class="n">target</span> <span class="o">/</span> <span class="n">s</span>
+
+    <span class="n">seed</span> <span class="o">=</span> <span class="n">start_seed</span>
+    <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">max_tries</span><span class="p">):</span>
+        <span class="n">X</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">meta</span> <span class="o">=</span> <span class="n">generate_dataset</span><span class="p">(</span><span class="n">cfg</span><span class="p">,</span> <span class="n">return_dataframe</span><span class="o">=</span><span class="n">return_dataframe</span><span class="p">,</span> <span class="o">**</span><span class="p">({</span><span class="s2">&quot;random_state&quot;</span><span class="p">:</span> <span class="n">seed</span><span class="p">}</span> <span class="o">|</span> <span class="n">overrides</span><span class="p">))</span>
+        <span class="c1"># empirical proportions</span>
+        <span class="n">counts</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">bincount</span><span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="n">minlength</span><span class="o">=</span><span class="n">cfg</span><span class="o">.</span><span class="n">n_classes</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">float</span><span class="p">)</span>
+        <span class="n">emp</span> <span class="o">=</span> <span class="n">counts</span> <span class="o">/</span> <span class="n">counts</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">emp</span> <span class="o">-</span> <span class="n">target</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span> <span class="o">&lt;=</span> <span class="n">tol</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">seed</span><span class="p">,</span> <span class="n">X</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">meta</span>
+        <span class="n">seed</span> <span class="o">+=</span> <span class="mi">1</span>
+    <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;No dataset seed satisfied class-weights tolerance within max_tries.&quot;</span><span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">find_dataset_seed_for_score</span><span class="p">(</span>
+    <span class="n">cfg</span><span class="p">:</span> <span class="n">DatasetConfig</span><span class="p">,</span>
+    <span class="n">scorer</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">DataFrame</span> <span class="o">|</span> <span class="n">NDArray</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">],</span> <span class="n">NDArray</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">int64</span><span class="p">],</span> <span class="n">DatasetMeta</span><span class="p">],</span> <span class="nb">float</span><span class="p">],</span>
+    <span class="o">/</span><span class="p">,</span>
+    <span class="o">*</span><span class="p">,</span>
+    <span class="n">mode</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;max&quot;</span><span class="p">,</span> <span class="s2">&quot;min&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;max&quot;</span><span class="p">,</span>
+    <span class="n">threshold</span><span class="p">:</span> <span class="nb">float</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">start_seed</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span>
+    <span class="n">max_tries</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">200</span><span class="p">,</span>
+    <span class="n">return_dataframe</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+    <span class="o">**</span><span class="n">overrides</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="n">DataFrame</span> <span class="o">|</span> <span class="n">NDArray</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">],</span> <span class="n">NDArray</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">int64</span><span class="p">],</span> <span class="n">DatasetMeta</span><span class="p">,</span> <span class="nb">float</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Find a random_state that optimizes a user-provided scorer(X, y, meta).</span>
+
+<span class="sd">    Tries seeds starting at `start_seed`. If `threshold` is given, stops as soon as it</span>
+<span class="sd">    finds a seed where the score meets the threshold (&gt;= for mode=&quot;max&quot;, &lt;= for &quot;min&quot;).</span>
+<span class="sd">    Otherwise, returns the best-scoring seed after max_tries.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        cfg: Base configuration.</span>
+<span class="sd">        scorer: Function scorer(X, y, meta) -&gt; float.</span>
+<span class="sd">        mode: Optimize to &quot;max&quot; or &quot;min&quot;. Defaults to &quot;max&quot;.</span>
+<span class="sd">        threshold: Early-stop threshold (&gt;= if mode=&quot;max&quot;, &lt;= if &quot;min&quot;).</span>
+<span class="sd">        start_seed: First seed to try. Defaults to 0.</span>
+<span class="sd">        max_tries: Maximum number of seeds. Defaults to 200.</span>
+<span class="sd">        return_dataframe: Return X as DataFrame (default) or ndarray.</span>
+<span class="sd">        **overrides: Optional keyword overrides merged into cfg for generation.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">        tuple:</span>
+<span class="sd">            - seed (int): The selected seed.</span>
+<span class="sd">            - X (pandas.DataFrame | np.ndarray): Feature matrix for that seed.</span>
+<span class="sd">            - y (np.ndarray): Labels for that seed.</span>
+<span class="sd">            - meta (DatasetMeta): Metadata for that seed.</span>
+<span class="sd">            - score (float): The achieved score.</span>
+
+<span class="sd">    Raises</span>
+<span class="sd">    ------</span>
+<span class="sd">        ValueError: If mode is invalid.</span>
+<span class="sd">        RuntimeError: If threshold is given but not met within max_tries.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">mode</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;max&quot;</span><span class="p">,</span> <span class="s2">&quot;min&quot;</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;mode must be &quot;max&quot; or &quot;min&quot;.&#39;</span><span class="p">)</span>
+
+    <span class="n">best</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="n">DataFrame</span> <span class="o">|</span> <span class="n">NDArray</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">],</span> <span class="n">NDArray</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">int64</span><span class="p">],</span> <span class="n">DatasetMeta</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">cmp</span> <span class="o">=</span> <span class="p">(</span><span class="k">lambda</span> <span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">:</span> <span class="n">a</span> <span class="o">&gt;</span> <span class="n">b</span><span class="p">)</span> <span class="k">if</span> <span class="n">mode</span> <span class="o">==</span> <span class="s2">&quot;max&quot;</span> <span class="k">else</span> <span class="p">(</span><span class="k">lambda</span> <span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">:</span> <span class="n">a</span> <span class="o">&lt;</span> <span class="n">b</span><span class="p">)</span>
+
+    <span class="n">seed</span> <span class="o">=</span> <span class="n">start_seed</span>
+    <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">max_tries</span><span class="p">):</span>
+        <span class="n">X</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">meta</span> <span class="o">=</span> <span class="n">generate_dataset</span><span class="p">(</span><span class="n">cfg</span><span class="p">,</span> <span class="n">return_dataframe</span><span class="o">=</span><span class="n">return_dataframe</span><span class="p">,</span> <span class="o">**</span><span class="p">({</span><span class="s2">&quot;random_state&quot;</span><span class="p">:</span> <span class="n">seed</span><span class="p">}</span> <span class="o">|</span> <span class="n">overrides</span><span class="p">))</span>
+        <span class="n">s</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">scorer</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">meta</span><span class="p">))</span>
+
+        <span class="k">if</span> <span class="n">best</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">cmp</span><span class="p">(</span><span class="n">s</span><span class="p">,</span> <span class="n">best</span><span class="p">[</span><span class="mi">0</span><span class="p">]):</span>
+            <span class="n">best</span> <span class="o">=</span> <span class="p">(</span><span class="n">s</span><span class="p">,</span> <span class="n">seed</span><span class="p">,</span> <span class="n">X</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">meta</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">threshold</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="p">(</span><span class="n">mode</span> <span class="o">==</span> <span class="s2">&quot;max&quot;</span> <span class="ow">and</span> <span class="n">s</span> <span class="o">&gt;=</span> <span class="n">threshold</span><span class="p">)</span> <span class="ow">or</span> <span class="p">(</span><span class="n">mode</span> <span class="o">==</span> <span class="s2">&quot;min&quot;</span> <span class="ow">and</span> <span class="n">s</span> <span class="o">&lt;=</span> <span class="n">threshold</span><span class="p">):</span>
+                <span class="k">return</span> <span class="n">seed</span><span class="p">,</span> <span class="n">X</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">meta</span><span class="p">,</span> <span class="n">s</span>
+        <span class="n">seed</span> <span class="o">+=</span> <span class="mi">1</span>
+
+    <span class="k">if</span> <span class="n">threshold</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;No dataset seed met the threshold within max_tries.&quot;</span><span class="p">)</span>
+    <span class="k">assert</span> <span class="n">best</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+    <span class="n">s</span><span class="p">,</span> <span class="n">seed</span><span class="p">,</span> <span class="n">X</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">meta</span> <span class="o">=</span> <span class="n">best</span>
+    <span class="k">return</span> <span class="n">seed</span><span class="p">,</span> <span class="n">X</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">meta</span><span class="p">,</span> <span class="n">s</span>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, Sigrun May.</p>
+  </div>
+
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

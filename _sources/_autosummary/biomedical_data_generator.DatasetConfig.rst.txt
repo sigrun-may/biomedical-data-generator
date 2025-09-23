@@ -1,0 +1,76 @@
+﻿biomedical\_data\_generator.DatasetConfig
+=========================================
+
+.. currentmodule:: biomedical_data_generator
+
+.. autoclass:: DatasetConfig
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~DatasetConfig.__init__
+      ~DatasetConfig.breakdown
+      ~DatasetConfig.construct
+      ~DatasetConfig.copy
+      ~DatasetConfig.count_informative_anchors
+      ~DatasetConfig.dict
+      ~DatasetConfig.expected_n_features
+      ~DatasetConfig.from_orm
+      ~DatasetConfig.from_yaml
+      ~DatasetConfig.json
+      ~DatasetConfig.model_construct
+      ~DatasetConfig.model_copy
+      ~DatasetConfig.model_dump
+      ~DatasetConfig.model_dump_json
+      ~DatasetConfig.model_json_schema
+      ~DatasetConfig.model_parametrized_name
+      ~DatasetConfig.model_post_init
+      ~DatasetConfig.model_rebuild
+      ~DatasetConfig.model_validate
+      ~DatasetConfig.model_validate_json
+      ~DatasetConfig.model_validate_strings
+      ~DatasetConfig.parse_file
+      ~DatasetConfig.parse_obj
+      ~DatasetConfig.parse_raw
+      ~DatasetConfig.schema
+      ~DatasetConfig.schema_json
+      ~DatasetConfig.summary
+      ~DatasetConfig.update_forward_refs
+      ~DatasetConfig.validate
+   
+   
+
+   
+   
+   .. rubric:: Attributes
+
+   .. autosummary::
+   
+      ~DatasetConfig.model_computed_fields
+      ~DatasetConfig.model_config
+      ~DatasetConfig.model_extra
+      ~DatasetConfig.model_fields
+      ~DatasetConfig.model_fields_set
+      ~DatasetConfig.n_samples
+      ~DatasetConfig.n_features
+      ~DatasetConfig.n_informative
+      ~DatasetConfig.n_pseudo
+      ~DatasetConfig.n_noise
+      ~DatasetConfig.class_sep
+      ~DatasetConfig.n_classes
+      ~DatasetConfig.weights
+      ~DatasetConfig.corr_between
+      ~DatasetConfig.corr_clusters
+      ~DatasetConfig.feature_naming
+      ~DatasetConfig.prefix_informative
+      ~DatasetConfig.prefix_corr
+      ~DatasetConfig.prefix_pseudo
+      ~DatasetConfig.prefix_noise
+      ~DatasetConfig.random_state
+   
+   
