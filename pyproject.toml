@@ -53,6 +53,7 @@ ruff = "^0.13.0"
 black = {extras = ["jupyter"], version = "^25.1.0"}
 mypy = "^1.10.0"
 mdformat = "^0.7.18"
+twine = "^6.2.0"
 
 [tool.poetry.group.test.dependencies]
 pytest = "^8.0.0"
