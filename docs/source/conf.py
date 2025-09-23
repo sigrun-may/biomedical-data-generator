@@ -1,132 +1,90 @@
-"""Configuration for the Sphinx documentation builder."""
+"""Sphinx configuration for the biomedical-data-generator project."""
 
-# Configuration file for the Sphinx documentation builder.
-#
-# This file only contains a selection of the most common options. For a full
-# list see the documentation:
-# https://www.sphinx-doc.org/en/master/usage/configuration.html
+from __future__ import annotations
 
-# -- Path setup --------------------------------------------------------------
+from datetime import date
+from importlib.metadata import PackageNotFoundError, version as pkg_version
 
-# If extensions (or modules to document with autodoc) are in another directory,
-# add these directories to sys.path here. If the directory is relative to the
-# documentation root, use os.path.abspath to make it absolute, like shown here.
-#
-# import os
-# import sys
-# sys.path.insert(0, os.path.abspath('.'))
+# --- Project info -------------------------------------------------------------
 
-# -- Project information -----------------------------------------------------
-
-project = "Biomedical Data Generator"
-copyright = "2022, Sigrun May"
+project = "biomedical-data-generator"
 author = "Sigrun May"
+copyright = f"{date.today().year}, {author}"
 
+# Use the installed package version if available; fall back for local builds
+try:
+    release = pkg_version("biomedical-data-generator")
+except PackageNotFoundError:
+    release = "0.1.0"
 
-# -- General configuration ---------------------------------------------------
+# --- General configuration ----------------------------------------------------
 
-# Add any Sphinx extension module names here, as strings. They can be
-# extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
-# ones.
 extensions = [
     "sphinx.ext.autodoc",
-    "sphinx_rtd_theme",
+    "sphinx.ext.autosummary",
     "sphinx.ext.napoleon",
     "sphinx.ext.viewcode",
-    # "recommonmark",
-    "myst_parser",  # https://myst-parser.readthedocs.io/
     "sphinx.ext.intersphinx",
-    "sphinx_copybutton",  # https://github.com/executablebooks/sphinx-copybutton
-    "sphinx.ext.todo",  # https://www.sphinx-doc.org/en/master/usage/extensions/todo.html
+    "myst_parser",
+    "sphinx_copybutton",
+    "sphinx.ext.todo",
 ]
 
-# Add any paths that contain templates here, relative to this directory.
-templates_path = ["_templates"]
+autosummary_generate = True
 
-# List of patterns, relative to source directory, that match files and
-# directories to ignore when looking for source files.
-# This pattern also affects html_static_path and html_extra_path.
-exclude_patterns: list[str] = []
+# Docstring style
+napoleon_google_docstring = True
+napoleon_numpy_docstring = True
+napoleon_preprocess_types = True
 
-
-# -- Options for HTML output -------------------------------------------------
-
-# The theme to use for HTML and HTML Help pages.  See the documentation for
-# a list of builtin themes.
-#
-html_theme = "sphinx_rtd_theme"
-
-# Add any paths that contain custom static files (such as style sheets) here,
-# relative to this directory. They are copied after the builtin static files,
-# so a file named "default.css" will overwrite the builtin "default.css".
-html_static_path = ["_static"]
-
-# -- additional settings -------------------------------------------------
-intersphinx_mapping = {
-    "python": ("https://docs.python.org/3", None),
-    "scipy": ("https://docs.scipy.org/doc/scipy/reference/", None),
-    "numpy": ("https://numpy.org/doc/stable/", None),
+# Autodoc behavior
+autodoc_typehints = "description"
+autoclass_content = "both"
+autodoc_default_options = {
+    "members": True,
+    "show-inheritance": True,
+    # Keep special/private members off by default; enable in individual pages if needed
+    # "special-members": "__call__",
+    # "private-members": True,
+    "exclude-members": "__weakref__, __init__",
 }
 
-# html_logo = "imgs/logo.png"
+# Source file types
+source_suffix = {
+    ".rst": "restructuredtext",
+    ".md": "markdown",
+}
 
-# These paths are either relative to html_static_path
-# or fully qualified paths (eg. https://...)
+templates_path = ["_templates"]
+exclude_patterns = []
+
+# Intersphinx references
+intersphinx_mapping = {
+    "python": ("https://docs.python.org/3", None),
+    "numpy": ("https://numpy.org/doc/stable/", None),
+    "scipy": ("https://docs.scipy.org/doc/scipy/reference/", None),
+}
+
+# Todos
+todo_include_todos = True
+
+# --- HTML output --------------------------------------------------------------
+
+html_theme = "sphinx_rtd_theme"
+html_static_path = ["_static"]
+html_show_sourcelink = False
+html_show_sphinx = False
+
+# Optional custom CSS (ensure file exists at docs/_static/css/custom.css)
 html_css_files = [
     "css/custom.css",
 ]
 
-# If true, links to the reST sources are added to the pages.
-html_show_sourcelink = False
-
-# If true, "Created using Sphinx" is shown in the HTML footer. Default is True.
-html_show_sphinx = False
-
-# add github link
+# GitHub integration (used by many RTD templates to render "Edit on GitHub")
 html_context = {
     "display_github": True,
     "github_user": "sigrun-may",
     "github_repo": "biomedical-data-generator",
-    "github_version": "main/docs/source/",
+    "github_version": "main",
+    "conf_py_path": "/docs/",
 }
-
-source_suffix = [".rst", ".md"]
-
-# -- autosummary config -------------------------------------------------
-# This value controls how to represent typehints.
-# https://www.sphinx-doc.org/en/master/usage/extensions/autodoc.html#confval-autodoc_typehints
-autodoc_typehints = "description"
-
-# This value selects what content will be inserted into the main body of an autoclass directive.
-# https://www.sphinx-doc.org/en/master/usage/extensions/autodoc.html#confval-autoclass_content
-autoclass_content = "both"
-
-# The default options for autodoc directives.
-# https://www.sphinx-doc.org/en/master/usage/extensions/autodoc.html#confval-autodoc_default_options
-autodoc_default_options = {
-    # If set, autodoc will generate document for the members of the target module, class or exception.  # noqa: E501
-    # https://www.sphinx-doc.org/en/master/usage/extensions/autodoc.html#directive-option-automodule-members
-    "members": True,
-    "show-inheritance": True,
-    # If set, autodoc will also generate document for the special members (that is, those named like __special__).  # noqa: E501
-    # https://www.sphinx-doc.org/en/master/usage/extensions/autodoc.html#directive-option-automodule-special-members
-    "special-members": None,
-    # If set, autodoc will also generate document for the private members (that is, those named like _private or __private).  # noqa: E501
-    # https://www.sphinx-doc.org/en/master/usage/extensions/autodoc.html#directive-option-automodule-private-members
-    "private-members": None,
-    "exclude-members": "__weakref__, __init__",
-}
-
-doc_module_names = False
-
-# True to convert the type definitions in the docstrings as references.
-# https://www.sphinx-doc.org/en/master/usage/extensions/napoleon.html#confval-napoleon_preprocess_types
-napoleon_preprocess_types = True
-
-# True to parse NumPy style docstrings. False to disable support for NumPy style docstrings.
-# https://www.sphinx-doc.org/en/master/usage/extensions/napoleon.html#confval-napoleon_numpy_docstring
-napoleon_numpy_docstring = False
-
-# If this is True, todo and todolist produce output, else they produce nothing. The default is False.  # noqa: E501
-# https://www.sphinx-doc.org/en/master/usage/extensions/todo.html#confval-todo_include_todos
-todo_include_todos = True
