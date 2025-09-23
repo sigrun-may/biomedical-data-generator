@@ -8,7 +8,7 @@
 
 from __future__ import annotations
 from dataclasses import dataclass, field, asdict
-from typing import Dict, List, Optional, Tuple, Literal, Union, Sequence, Callable
+from typing import Dict, List, Optional, Tuple, Literal, Union, Callable
 import numpy as np
 from numpy.typing import NDArray
 import pandas as pd
@@ -121,7 +121,7 @@ def generate_correlated_cluster(
     X = (X - X.mean(axis=0)) / (X.std(axis=0) + 1e-9)
     C = np.corrcoef(X, rowvar=False)
 
-    # Fix: correct boolean diagonal mask
+    # boolean diagonal mask (NumPy 2.0 compatible)
     diag_mask = np.eye(size, dtype=bool)
     off_diag = C[~diag_mask]
 
@@ -210,12 +210,13 @@ def find_seed_for_correlation(
 def _make_names_and_roles(cfg: DatasetConfig) -> tuple[
     List[str], List[int], List[int], List[int], Dict[int, List[int]], Dict[int, Optional[int]]
 ]:
-    """Build feature names and role indices consistent with totals in cfg.
+    """Build feature names and role indices.
 
-    Important: cfg.n_pseudo is the **total** number of pseudo features, i.e., cluster proxies
-    (corr*) **plus** free pseudo features. We therefore derive:
-      n_pseudo_free = cfg.n_pseudo - proxies_from_clusters
-    and validate it is >= 0. Names list length must equal cfg.n_features.
+    Important semantics:
+      - `n_pseudo` counts ONLY free pseudo-features (`p*`), NOT cluster proxies.
+      - Cluster proxies (`corr{cid}_k`) are additional pseudo-features coming from clusters.
+      - Therefore the expected total number of features is:
+            n_features_expected = n_informative + n_pseudo + n_noise + proxies_from_clusters
     """
     names: List[str] = []
     informative_idx: List[int] = []
@@ -241,7 +242,7 @@ def _make_names_and_roles(cfg: DatasetConfig) -> tuple[
                     if cfg.feature_naming == "prefixed" else f"feature_{len(names)+1}"
                 )
                 informative_idx.append(anchor_col)
-                # proxies
+                # proxies (remaining columns in this cluster)
                 for k, col in enumerate(cols[1:], start=2):
                     names.append(
                         f"{cfg.prefix_corr}{cid}_{k}"
@@ -272,14 +273,8 @@ def _make_names_and_roles(cfg: DatasetConfig) -> tuple[
         )
         informative_idx.append(len(names) - 1)
 
-    # 3) free pseudo (total minus proxies)
-    n_pseudo_free = cfg.n_pseudo - proxies_from_clusters
-    if n_pseudo_free < 0:
-        raise ValueError(
-            f"cfg.n_pseudo ({cfg.n_pseudo}) is smaller than the number of cluster proxies "
-            f"({proxies_from_clusters}). Increase n_pseudo or reduce cluster sizes."
-        )
-    for j in range(n_pseudo_free):
+    # 3) free pseudo (exactly cfg.n_pseudo, independent of proxies)
+    for j in range(cfg.n_pseudo):
         names.append(
             f"{cfg.prefix_pseudo}{j+1}"
             if cfg.feature_naming == "prefixed" else f"feature_{len(names)+1}"
@@ -294,14 +289,17 @@ def _make_names_and_roles(cfg: DatasetConfig) -> tuple[
         )
         noise_idx.append(len(names) - 1)
 
-    # Totals validation
-    if cfg.n_informative + cfg.n_pseudo + cfg.n_noise != cfg.n_features:
+    # Totals validation with proxies added on top
+    n_features_expected = cfg.n_informative + cfg.n_pseudo + cfg.n_noise + proxies_from_clusters
+    if len(names) != n_features_expected:
+        raise AssertionError((len(names), n_features_expected))
+    if cfg.n_features != n_features_expected:
         raise ValueError(
-            "n_informative + n_pseudo + n_noise must equal n_features "
-            f"({cfg.n_informative} + {cfg.n_pseudo} + {cfg.n_noise} != {cfg.n_features})."
+            "cfg.n_features must equal n_informative + n_pseudo + n_noise + proxies_from_clusters "
+            f"= {cfg.n_informative} + {cfg.n_pseudo} + {cfg.n_noise} + {proxies_from_clusters} "
+            f"= {n_features_expected}, but got n_features={cfg.n_features}."
         )
 
-    assert len(names) == cfg.n_features, (len(names), cfg.n_features)
     return names, informative_idx, pseudo_idx, noise_idx, cluster_indices, anchor_idx
 
 
@@ -370,7 +368,7 @@ def generate_dataset(
 
     rng_global = np.random.default_rng(cfg.random_state)
 
-    # names & roles
+    # names & roles (+ totals validation inside)
     names, inf_idx, pse_idx, noi_idx, cluster_idx, anch_idx = _make_names_and_roles(cfg)
 
     # 1) build matrices per cluster (respect per-cluster seed if provided)
@@ -399,21 +397,22 @@ def generate_dataset(
             col_start += c.size
     X_clusters = np.concatenate(cluster_matrices, axis=1) if cluster_matrices else np.empty((cfg.n_samples, 0))
 
-    # 2) free informative (count determined by meta indices)
-    n_inf_free = len([i for i in inf_idx if i >= X_clusters.shape[1]])
+    # 2) free informative (exactly n_informative - n_anchors)
+    n_anchors = sum(1 for c in (cfg.corr_clusters or []) if c.anchor_role == "informative")
+    n_inf_free = cfg.n_informative - n_anchors
     X_inf = rng_global.normal(size=(cfg.n_samples, n_inf_free)) if n_inf_free > 0 else np.empty((cfg.n_samples, 0))
 
-    # 3) free pseudo (count determined by meta indices)
-    n_pseudo_free = len([p for p in pse_idx if p >= X_clusters.shape[1] + n_inf_free])
-    X_pseudo = rng_global.normal(size=(cfg.n_samples, n_pseudo_free)) if n_pseudo_free > 0 else np.empty((cfg.n_samples, 0))
+    # 3) free pseudo (exactly cfg.n_pseudo, independent of proxies)
+    X_pseudo = rng_global.normal(size=(cfg.n_samples, cfg.n_pseudo)) if cfg.n_pseudo > 0 else np.empty((cfg.n_samples, 0))
 
     # 4) noise
-    n_noise = len(noi_idx)
-    X_noise = rng_global.normal(size=(cfg.n_samples, n_noise)) if n_noise > 0 else np.empty((cfg.n_samples, 0))
+    X_noise = rng_global.normal(size=(cfg.n_samples, cfg.n_noise)) if cfg.n_noise > 0 else np.empty((cfg.n_samples, 0))
 
-    # Concatenate in naming order
+    # Concatenate in naming order: [clusters] + [free informative] + [free pseudo] + [noise]
     X = np.concatenate([X_clusters, X_inf, X_pseudo, X_noise], axis=1)
-    assert X.shape[1] == cfg.n_features
+
+    # Sicherheit: Spaltenzahl prüfen (soll == len(names) == cfg.n_features)
+    assert X.shape[1] == len(names) == cfg.n_features, (X.shape[1], len(names), cfg.n_features)
 
     # ----- logits for n_classes
     K = int(cfg.n_classes)
@@ -426,6 +425,7 @@ def generate_dataset(
     # Free informative: round-robin across classes with beta=0.8
     rr = 0
     for idx in inf_idx:
+        # Skip anchor indices (already handled as anchors, although sie in informative_idx enthalten sind)
         if idx in anchor_contrib:
             continue
         logits[:, rr] += 0.8 * X[:, idx]

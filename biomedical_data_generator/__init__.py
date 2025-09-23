@@ -8,16 +8,20 @@
 
 """Data generator main package."""
 
-from .core import DatasetConfig, DatasetMeta, generate_dataset
-from .config import DatasetConfig
-from .core import generate_dataset
-
-def generate_from_yaml(path: str):
-    cfg = DatasetConfig.from_yaml(path)
-    return generate_dataset(cfg)
+from .config import DatasetConfig, CorrCluster
+from .generator import (
+    generate_dataset,
+    DatasetMeta,
+    generate_correlated_cluster,
+    find_seed_for_correlation,
+)
 
 __all__ = [
-    "generate_dataset",
     "DatasetConfig",
+    "CorrCluster",
     "DatasetMeta",
+    "generate_dataset",
+    "generate_correlated_cluster",
+    "find_seed_for_correlation",
 ]
+
