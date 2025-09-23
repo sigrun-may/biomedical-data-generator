@@ -7,7 +7,11 @@
 """Configuration models for the dataset generator."""
 
 from __future__ import annotations
+
+from pathlib import Path
 from typing import List, Optional, Sequence, Literal
+
+import yaml
 from pydantic import BaseModel, Field
 
 
@@ -81,3 +85,9 @@ class DatasetConfig(BaseModel):
 
     # Randomness
     random_state: Optional[int] = None
+
+
+@classmethod
+def from_yaml(cls, path: str | Path) -> "DatasetConfig":
+    data = yaml.safe_load(Path(path).read_text(encoding="utf-8"))
+    return cls(**data)
