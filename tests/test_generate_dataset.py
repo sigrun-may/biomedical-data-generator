@@ -19,14 +19,14 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from biomedical_data_generator.config import DatasetConfig, CorrCluster
+from biomedical_data_generator.config import CorrCluster, DatasetConfig
 from biomedical_data_generator.generator import (
-    generate_dataset,
-    generate_correlated_cluster,
-    find_seed_for_correlation,
+    DatasetMeta,
     find_dataset_seed_for_class_weights,
     find_dataset_seed_for_score,
-    DatasetMeta,
+    find_seed_for_correlation,
+    generate_correlated_cluster,
+    generate_dataset,
 )
 
 
@@ -49,9 +49,7 @@ def test_default_returns_dataframe_and_meta_types():
         n_noise=2,
         n_classes=3,
         random_state=42,
-        corr_clusters=[
-            CorrCluster(size=3, rho=0.6, anchor_role="informative", anchor_beta=1.0, anchor_class=2)
-        ],
+        corr_clusters=[CorrCluster(size=3, rho=0.6, anchor_role="informative", anchor_beta=1.0, anchor_class=2)],
     )
     X, y, meta = generate_dataset(cfg)  # default: DataFrame
 
@@ -99,8 +97,7 @@ def test_feature_order_and_prefixes_prefixed_naming():
         n_classes=2,
         random_state=0,
         feature_naming="prefixed",
-        corr_clusters=[CorrCluster(size=3, rho=0.5, anchor_role="informative",
-                                   anchor_beta=1.0, anchor_class=1)],
+        corr_clusters=[CorrCluster(size=3, rho=0.5, anchor_role="informative", anchor_beta=1.0, anchor_class=1)],
     )
     X, y, meta = generate_dataset(cfg)
     cols = list(X.columns)
@@ -124,15 +121,13 @@ def test_multiclass_anchor_influences_its_class_mean():
     cfg = DatasetConfig(
         n_samples=1200,
         n_features=13,
-        n_informative=4,   # 1 anchor + 3 free informative
+        n_informative=4,  # 1 anchor + 3 free informative
         n_pseudo=3,
         n_noise=3,
         n_classes=3,
         class_sep=1.5,
         random_state=11,
-        corr_clusters=[
-            CorrCluster(size=4, rho=0.6, anchor_role="informative", anchor_beta=1.2, anchor_class=2)
-        ],
+        corr_clusters=[CorrCluster(size=4, rho=0.6, anchor_role="informative", anchor_beta=1.2, anchor_class=2)],
     )
     X, y, meta = generate_dataset(cfg)
 
@@ -158,9 +153,7 @@ def test_class_weights_bias_matches_priors_approximately():
         weights=weights,
         class_sep=1.0,
         random_state=123,
-        corr_clusters=[
-            CorrCluster(size=3, rho=0.5, anchor_role="informative", anchor_beta=1.0, anchor_class=0)
-        ],
+        corr_clusters=[CorrCluster(size=3, rho=0.5, anchor_role="informative", anchor_beta=1.0, anchor_class=0)],
     )
     X, y, meta = generate_dataset(cfg)
 
@@ -198,9 +191,7 @@ def test_dataset_seed_for_class_weights_helper():
         n_classes=3,
         weights=[0.5, 0.3, 0.2],
         random_state=None,  # will be set by the helper
-        corr_clusters=[
-            CorrCluster(size=3, rho=0.6, anchor_role="informative", anchor_beta=1.0, anchor_class=1)
-        ],
+        corr_clusters=[CorrCluster(size=3, rho=0.6, anchor_role="informative", anchor_beta=1.0, anchor_class=1)],
     )
     seed, X, y, meta = find_dataset_seed_for_class_weights(cfg, tol=0.06, start_seed=0, max_tries=200)
     assert isinstance(seed, int)
@@ -234,9 +225,7 @@ def test_dataset_seed_for_score_helper_max_mode():
         n_classes=3,
         class_sep=1.0,
         random_state=None,
-        corr_clusters=[
-            CorrCluster(size=3, rho=0.5, anchor_role="informative", anchor_beta=1.0, anchor_class=0)
-        ],
+        corr_clusters=[CorrCluster(size=3, rho=0.5, anchor_role="informative", anchor_beta=1.0, anchor_class=0)],
     )
     seed, X, y, meta, score = find_dataset_seed_for_score(
         cfg, sep_score, mode="max", threshold=0.12, start_seed=0, max_tries=150

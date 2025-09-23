@@ -45,18 +45,19 @@ pandas = "*"
 seaborn = "*"
 matplotlib = "*"
 statsmodels = "*"
+pydantic = "^2.7"
 
-[tool.poetry.group.dev.dependencies]
-pytest = "^8.0.0"
-pytest-cov = "^5.0.0"
-coverage = {version="^7.6.0", extras=["toml"]}
-
+# ---- Dev groups ----
 [tool.poetry.group.lint.dependencies]
 ruff = "^0.13.0"
 black = {extras = ["jupyter"], version = "^25.1.0"}
+mypy = "^1.10.0"
+mdformat = "^0.7.18"
 
 [tool.poetry.group.test.dependencies]
-pytest = "*"
+pytest = "^8.0.0"
+pytest-cov = "^5.0.0"
+coverage = {version="^7.6.0", extras=["toml"]}
 
 [tool.poetry.group.doc.dependencies]
 sphinx = "*"
@@ -64,22 +65,29 @@ sphinx_rtd_theme = "*"
 myst_parser = "*"
 sphinx_copybutton = "*"
 
+[tool.poetry.scripts]
+bdg = "biomedical_data_generator.__main__:main"
+
+# ---- Black ----
 [tool.black]
 line-length = 120
 target-version = ["py311"]
 
-[tool.isort]
-profile = "black"
-lines_after_imports = 2
-line_length = 120
-
+# ---- Ruff (Lint inkl. Import-Sortierung & Docstring-Regeln) ----
 [tool.ruff]
 line-length = 120
 target-version = "py311"
 
 [tool.ruff.lint]
-select = ["E", "F", "I", "UP"]
+# E,F: pycodestyle/pyflakes | I: isort | UP: pyupgrade | D: pydocstyle via Ruff
+select = ["E", "F", "I", "UP", "D"]
+ignore = ["D105", "D107"]  # magic methods & __init__ docstrings nicht verpflichtend
+per-file-ignores = { "tests/**" = ["D"] }
 
+[tool.ruff.lint.pydocstyle]
+convention = "numpy"
+
+# ---- Pytest / Coverage ----
 [tool.pytest.ini_options]
 addopts = "-ra -q"
 testpaths = ["tests"]
@@ -92,13 +100,10 @@ source = ["biomedical_data_generator"]
 show_missing = true
 skip_empty = true
 
-[tool.pylint."MESSAGES CONTROL"]
-disable = [
-    "too-many-arguments",
-    "too-many-lines",
-    "line-too-long",
-    "fixme",
-    "bare-except",
-    "too-many-locals",
-    "too-many-branches",
-]
+# ---- MyPy ----
+[tool.mypy]
+python_version = "3.11"
+warn_unused_ignores = true
+warn_redundant_casts = true
+strict_optional = true
+plugins = ["pydantic.mypy"]

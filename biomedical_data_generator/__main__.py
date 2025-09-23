@@ -7,12 +7,18 @@
 """Command line interface for dataset generation."""
 
 from __future__ import annotations
-import argparse, json
+
+import argparse
+import json
+
 import pandas as pd
+
 from .config import DatasetConfig
 from .generator import generate_dataset
 
+
 def main():
+    """Command line interface for dataset generation."""
     ap = argparse.ArgumentParser("biomedical-data-generator")
     ap.add_argument("--config", required=True, help="YAML config path")
     ap.add_argument("--out", default=None, help="CSV output (optional)")
@@ -28,6 +34,6 @@ def main():
 
     print(json.dumps(meta.to_dict(), indent=2))
 
+
 if __name__ == "__main__":
     main()
-

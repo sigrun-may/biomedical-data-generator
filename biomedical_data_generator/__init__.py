@@ -8,12 +8,12 @@
 
 """Data generator main package."""
 
-from .config import DatasetConfig, CorrCluster
+from .config import CorrCluster, DatasetConfig
 from .generator import (
-    generate_dataset,
     DatasetMeta,
-    generate_correlated_cluster,
     find_seed_for_correlation,
+    generate_correlated_cluster,
+    generate_dataset,
 )
 
 __all__ = [
@@ -24,4 +24,3 @@ __all__ = [
     "generate_correlated_cluster",
     "find_seed_for_correlation",
 ]
-

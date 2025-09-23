@@ -8,8 +8,9 @@
 
 from __future__ import annotations
 
+from collections.abc import Sequence
 from pathlib import Path
-from typing import List, Optional, Sequence, Literal
+from typing import Literal
 
 import yaml
 from pydantic import BaseModel, Field
@@ -18,7 +19,8 @@ from pydantic import BaseModel, Field
 class CorrCluster(BaseModel):
     """Configuration for a correlated feature cluster.
 
-    Attributes:
+    Attributes
+    ----------
         size: Number of features in the cluster.
         rho: Target correlation within the cluster (0 ≤ rho < 1).
         structure: Correlation structure ("equicorrelated" or "ar1").
@@ -30,20 +32,22 @@ class CorrCluster(BaseModel):
         random_state: Optional seed for reproducibility of this cluster.
         label: Optional didactic label for clarity in teaching contexts.
     """
+
     size: int
     rho: float = 0.7
     structure: Literal["equicorrelated", "ar1"] = "equicorrelated"
     anchor_role: Literal["informative", "latent"] = "latent"
     anchor_beta: float = 1.0
-    anchor_class: Optional[int] = 0
-    random_state: Optional[int] = None
-    label: Optional[str] = None
+    anchor_class: int | None = 0
+    random_state: int | None = None
+    label: str | None = None
 
 
 class DatasetConfig(BaseModel):
     """Configuration for generating a synthetic classification dataset.
 
-    Attributes:
+    Attributes
+    ----------
         n_samples: Number of samples (rows).
         n_features: Total number of features.
         n_informative: Number of informative features (including anchors).
@@ -61,6 +65,7 @@ class DatasetConfig(BaseModel):
         prefix_noise: Prefix for noise features.
         random_state: Optional global random seed.
     """
+
     n_samples: int = Field(200, ge=1)
     n_features: int
     n_informative: int
@@ -70,11 +75,11 @@ class DatasetConfig(BaseModel):
 
     # Multiclass extension
     n_classes: int = 2
-    weights: Optional[Sequence[float]] = None  # length n_classes or None
+    weights: Sequence[float] | None = None  # length n_classes or None
 
     # Correlation
     corr_between: float = 0.0
-    corr_clusters: Optional[List[CorrCluster]] = None
+    corr_clusters: list[CorrCluster] | None = None
 
     # Naming
     feature_naming: Literal["prefixed", "generic"] = "prefixed"
@@ -84,10 +89,10 @@ class DatasetConfig(BaseModel):
     prefix_noise: str = "n"
 
     # Randomness
-    random_state: Optional[int] = None
+    random_state: int | None = None
 
-
-@classmethod
-def from_yaml(cls, path: str | Path) -> "DatasetConfig":
-    data = yaml.safe_load(Path(path).read_text(encoding="utf-8"))
-    return cls(**data)
+    @classmethod
+    def from_yaml(cls, path: str | Path) -> DatasetConfig:
+        """Load a DatasetConfig from a YAML file."""
+        data = yaml.safe_load(Path(path).read_text(encoding="utf-8"))
+        return cls.model_validate(data)  # explicit v2 API
