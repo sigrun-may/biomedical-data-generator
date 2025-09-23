@@ -7,7 +7,7 @@ from importlib.metadata import PackageNotFoundError, version as pkg_version
 
 # --- Project info -------------------------------------------------------------
 
-project = "biomedical-data-generator"
+project = "Biomedical Data Generator"
 author = "Sigrun May"
 copyright = f"{date.today().year}, {author}"
 
@@ -27,7 +27,6 @@ extensions = [
     "sphinx.ext.intersphinx",
     "myst_parser",
     "sphinx_copybutton",
-    "sphinx.ext.todo",
 ]
 
 autosummary_generate = True
@@ -64,9 +63,6 @@ intersphinx_mapping = {
     "numpy": ("https://numpy.org/doc/stable/", None),
     "scipy": ("https://docs.scipy.org/doc/scipy/reference/", None),
 }
-
-# Todos
-todo_include_todos = True
 
 # --- HTML output --------------------------------------------------------------
 

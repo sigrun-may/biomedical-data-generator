@@ -1,29 +1,31 @@
-name: PyPI Upload
+name: Publish to PyPI (OIDC)
 
 on:
+  push:
+    tags: ["v*.*.*"]
   release:
-    types: [created]
+    types: [published]
+
+permissions:
+  contents: read
+  id-token: write  # OIDC required
 
 jobs:
-  deploy:
+  build-and-publish:
     runs-on: ubuntu-latest
-
     steps:
-    # https://github.com/actions/checkout
-    - uses: actions/checkout@v3
-
-    # https://github.com/actions/setup-python
-    - uses: actions/setup-python@v4
-      with:
-        python-version: "3.11"
-
-    - name: Install
-      run: |
-        curl -sSL https://install.python-poetry.org | python3 -
-        poetry install --all-extras
-
-    - name: Build and publish
-      env:
-        POETRY_PYPI_TOKEN_PYPI: ${{ secrets.PYPI_GLOBAL }}
-      run: |
-        poetry publish --build
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Build sdist/wheel
+        run: |
+          pipx install poetry
+          poetry build
+      - name: Twine check
+        run: pipx run twine check dist/*
+      - name: Publish via OIDC (no token)
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          print-hashes: true
+          skip-existing: true

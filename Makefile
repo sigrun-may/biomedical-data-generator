@@ -51,3 +51,11 @@ clean: ## Remove build and cache artifacts
 
 distclean: clean ## Also remove Poetry venv
 	-poetry env remove --all
+
+.PHONY: docs serve-docs
+
+docs: ## Build Sphinx docs to docs/_build/html
+	poetry run sphinx-build -b html docs docs/_build/html
+
+serve-docs: docs ## Serve docs locally at http://localhost:8000
+	python -m http.server -d docs/_build/html 8000
