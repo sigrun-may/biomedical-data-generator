@@ -57,28 +57,12 @@
 <li class="toctree-l1"><a class="reference internal" href="biomedical_data_generator.find_seed_for_correlation.html">biomedical_data_generator.find_seed_for_correlation</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">biomedical_data_generator.DatasetConfig</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#biomedical_data_generator.DatasetConfig"><code class="docutils literal notranslate"><span class="pre">DatasetConfig</span></code></a><ul>
-<li class="toctree-l3"><a class="reference internal" href="#biomedical_data_generator.DatasetConfig.n_samples"><code class="docutils literal notranslate"><span class="pre">DatasetConfig.n_samples</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="#biomedical_data_generator.DatasetConfig.n_features"><code class="docutils literal notranslate"><span class="pre">DatasetConfig.n_features</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="#biomedical_data_generator.DatasetConfig.n_informative"><code class="docutils literal notranslate"><span class="pre">DatasetConfig.n_informative</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="#biomedical_data_generator.DatasetConfig.n_pseudo"><code class="docutils literal notranslate"><span class="pre">DatasetConfig.n_pseudo</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="#biomedical_data_generator.DatasetConfig.n_noise"><code class="docutils literal notranslate"><span class="pre">DatasetConfig.n_noise</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="#biomedical_data_generator.DatasetConfig.class_sep"><code class="docutils literal notranslate"><span class="pre">DatasetConfig.class_sep</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="#biomedical_data_generator.DatasetConfig.n_classes"><code class="docutils literal notranslate"><span class="pre">DatasetConfig.n_classes</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="#biomedical_data_generator.DatasetConfig.weights"><code class="docutils literal notranslate"><span class="pre">DatasetConfig.weights</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="#biomedical_data_generator.DatasetConfig.corr_between"><code class="docutils literal notranslate"><span class="pre">DatasetConfig.corr_between</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="#biomedical_data_generator.DatasetConfig.corr_clusters"><code class="docutils literal notranslate"><span class="pre">DatasetConfig.corr_clusters</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="#biomedical_data_generator.DatasetConfig.feature_naming"><code class="docutils literal notranslate"><span class="pre">DatasetConfig.feature_naming</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="#biomedical_data_generator.DatasetConfig.prefix_informative"><code class="docutils literal notranslate"><span class="pre">DatasetConfig.prefix_informative</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="#biomedical_data_generator.DatasetConfig.prefix_corr"><code class="docutils literal notranslate"><span class="pre">DatasetConfig.prefix_corr</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="#biomedical_data_generator.DatasetConfig.prefix_pseudo"><code class="docutils literal notranslate"><span class="pre">DatasetConfig.prefix_pseudo</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="#biomedical_data_generator.DatasetConfig.prefix_noise"><code class="docutils literal notranslate"><span class="pre">DatasetConfig.prefix_noise</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="#biomedical_data_generator.DatasetConfig.random_state"><code class="docutils literal notranslate"><span class="pre">DatasetConfig.random_state</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#biomedical_data_generator.DatasetConfig.__init__"><code class="docutils literal notranslate"><span class="pre">DatasetConfig.__init__()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#biomedical_data_generator.DatasetConfig.breakdown"><code class="docutils literal notranslate"><span class="pre">DatasetConfig.breakdown()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#biomedical_data_generator.DatasetConfig.count_informative_anchors"><code class="docutils literal notranslate"><span class="pre">DatasetConfig.count_informative_anchors()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="#biomedical_data_generator.DatasetConfig.expected_n_features"><code class="docutils literal notranslate"><span class="pre">DatasetConfig.expected_n_features()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#biomedical_data_generator.DatasetConfig.from_yaml"><code class="docutils literal notranslate"><span class="pre">DatasetConfig.from_yaml()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#biomedical_data_generator.DatasetConfig.model_config"><code class="docutils literal notranslate"><span class="pre">DatasetConfig.model_config</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#biomedical_data_generator.DatasetConfig.relaxed"><code class="docutils literal notranslate"><span class="pre">DatasetConfig.relaxed()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#biomedical_data_generator.DatasetConfig.summary"><code class="docutils literal notranslate"><span class="pre">DatasetConfig.summary()</span></code></a></li>
 </ul>
 </li>
@@ -116,195 +100,44 @@
 <h1>biomedical_data_generator.DatasetConfig<a class="headerlink" href="#biomedical-data-generator-datasetconfig" title="Link to this heading"></a></h1>
 <dl class="py class">
 <dt class="sig sig-object py" id="biomedical_data_generator.DatasetConfig">
-<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">biomedical_data_generator.</span></span><span class="sig-name descname"><span class="pre">DatasetConfig</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_samples</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">200</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_features</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_informative</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_pseudo</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_noise</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">class_sep</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_classes</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">weights</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">corr_between</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">corr_clusters</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">feature_naming</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'prefixed'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">prefix_informative</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'i'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">prefix_corr</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'corr'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">prefix_pseudo</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'p'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">prefix_noise</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'n'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">random_state</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/biomedical_data_generator/config.html#DatasetConfig"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#biomedical_data_generator.DatasetConfig" title="Link to this definition"></a></dt>
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">biomedical_data_generator.</span></span><span class="sig-name descname"><span class="pre">DatasetConfig</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_samples=100</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_features=None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_informative=2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_pseudo=0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_noise=0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_classes=2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">weights=None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">class_sep=1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">feature_naming='prefixed'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">prefix_informative='i'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">prefix_pseudo='p'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">prefix_noise='n'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">prefix_corr='corr'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">corr_clusters=&lt;factory&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">corr_between=0.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">effect_size='medium'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">random_state=None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/biomedical_data_generator/config.html#DatasetConfig"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#biomedical_data_generator.DatasetConfig" title="Link to this definition"></a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">BaseModel</span></code></p>
-<p>Configuration for generating a synthetic classification dataset.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>n_samples</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.13)"><em>int</em></a>)</p></li>
-<li><p><strong>n_features</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.13)"><em>int</em></a>)</p></li>
-<li><p><strong>n_informative</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.13)"><em>int</em></a>)</p></li>
-<li><p><strong>n_pseudo</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.13)"><em>int</em></a>)</p></li>
-<li><p><strong>n_noise</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.13)"><em>int</em></a>)</p></li>
-<li><p><strong>class_sep</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.13)"><em>float</em></a>)</p></li>
-<li><p><strong>n_classes</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.13)"><em>int</em></a>)</p></li>
-<li><p><strong>weights</strong> (<a class="reference external" href="https://docs.python.org/3/library/collections.abc.html#collections.abc.Sequence" title="(in Python v3.13)"><em>Sequence</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.13)"><em>float</em></a><em>] </em><em>| </em><em>None</em>)</p></li>
-<li><p><strong>corr_between</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.13)"><em>float</em></a>)</p></li>
-<li><p><strong>corr_clusters</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.13)"><em>list</em></a><em>[</em><a class="reference internal" href="biomedical_data_generator.CorrCluster.html#biomedical_data_generator.CorrCluster" title="biomedical_data_generator.config.CorrCluster"><em>CorrCluster</em></a><em>] </em><em>| </em><em>None</em>)</p></li>
-<li><p><strong>feature_naming</strong> (<a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Literal" title="(in Python v3.13)"><em>Literal</em></a><em>[</em><em>'prefixed'</em><em>, </em><em>'generic'</em><em>]</em>)</p></li>
-<li><p><strong>prefix_informative</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a>)</p></li>
-<li><p><strong>prefix_corr</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a>)</p></li>
-<li><p><strong>prefix_pseudo</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a>)</p></li>
-<li><p><strong>prefix_noise</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a>)</p></li>
-<li><p><strong>random_state</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.13)"><em>int</em></a><em> | </em><em>None</em>)</p></li>
+<p>Configuration for synthetic dataset generation.</p>
+<p>The strict <cite>mode=”before”</cite> normalizer fills/validates <cite>n_features</cite> without Pydantic warnings.</p>
+<p class="rubric">Notes</p>
+<ul class="simple">
+<li><p>The ‘before’ validator normalizes <em>raw</em> inputs:
+* fills n_features if omitted,
+* enforces n_features &gt;= minimal requirement (strict).</p></li>
+<li><p>Use <cite>DatasetConfig.relaxed(…)</cite> if you want silent auto-fix instead of a validation error.</p></li>
 </ul>
-</dd>
-</dl>
-<dl class="py attribute">
-<dt class="sig sig-object py" id="biomedical_data_generator.DatasetConfig.n_samples">
-<span class="sig-name descname"><span class="pre">n_samples</span></span><a class="headerlink" href="#biomedical_data_generator.DatasetConfig.n_samples" title="Link to this definition"></a></dt>
-<dd><dl class="field-list simple">
-<dt class="field-odd">Type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">Number</span></code> of <code class="xref py py-class docutils literal notranslate"><span class="pre">samples</span> <span class="pre">(rows).</span></code></p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="biomedical_data_generator.DatasetConfig.n_features">
-<span class="sig-name descname"><span class="pre">n_features</span></span><a class="headerlink" href="#biomedical_data_generator.DatasetConfig.n_features" title="Link to this definition"></a></dt>
-<dd><dl class="field-list simple">
-<dt class="field-odd">Type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">Total</span> <span class="pre">number</span></code> of <code class="xref py py-class docutils literal notranslate"><span class="pre">features.</span></code></p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="biomedical_data_generator.DatasetConfig.n_informative">
-<span class="sig-name descname"><span class="pre">n_informative</span></span><a class="headerlink" href="#biomedical_data_generator.DatasetConfig.n_informative" title="Link to this definition"></a></dt>
-<dd><dl class="field-list simple">
-<dt class="field-odd">Type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">Number</span></code> of <code class="xref py py-class docutils literal notranslate"><span class="pre">informative</span> <span class="pre">features</span> <span class="pre">(including</span> <span class="pre">anchors).</span></code></p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="biomedical_data_generator.DatasetConfig.n_pseudo">
-<span class="sig-name descname"><span class="pre">n_pseudo</span></span><a class="headerlink" href="#biomedical_data_generator.DatasetConfig.n_pseudo" title="Link to this definition"></a></dt>
-<dd><dl class="field-list simple">
-<dt class="field-odd">Type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">Number</span></code> of <code class="xref py py-class docutils literal notranslate"><span class="pre">pseudo</span> <span class="pre">features</span> <span class="pre">(correlated</span> <span class="pre">proxies</span></code> or <code class="xref py py-class docutils literal notranslate"><span class="pre">free).</span></code></p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="biomedical_data_generator.DatasetConfig.n_noise">
-<span class="sig-name descname"><span class="pre">n_noise</span></span><a class="headerlink" href="#biomedical_data_generator.DatasetConfig.n_noise" title="Link to this definition"></a></dt>
-<dd><dl class="field-list simple">
-<dt class="field-odd">Type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">Number</span></code> of <code class="xref py py-class docutils literal notranslate"><span class="pre">pure</span> <span class="pre">noise</span> <span class="pre">features.</span></code></p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="biomedical_data_generator.DatasetConfig.class_sep">
-<span class="sig-name descname"><span class="pre">class_sep</span></span><a class="headerlink" href="#biomedical_data_generator.DatasetConfig.class_sep" title="Link to this definition"></a></dt>
-<dd><dl class="field-list simple">
-<dt class="field-odd">Type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">Global</span> <span class="pre">scaling</span> <span class="pre">factor</span> <span class="pre">for</span> <span class="pre">signal</span> <span class="pre">strength.</span></code></p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="biomedical_data_generator.DatasetConfig.n_classes">
-<span class="sig-name descname"><span class="pre">n_classes</span></span><a class="headerlink" href="#biomedical_data_generator.DatasetConfig.n_classes" title="Link to this definition"></a></dt>
-<dd><dl class="field-list simple">
-<dt class="field-odd">Type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">Number</span></code> of <code class="xref py py-class docutils literal notranslate"><span class="pre">classes</span> <span class="pre">(&gt;=2).</span></code></p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="biomedical_data_generator.DatasetConfig.weights">
-<span class="sig-name descname"><span class="pre">weights</span></span><a class="headerlink" href="#biomedical_data_generator.DatasetConfig.weights" title="Link to this definition"></a></dt>
-<dd><dl class="field-list simple">
-<dt class="field-odd">Type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">Optional</span> <span class="pre">class</span> <span class="pre">proportions</span></code> of <code class="xref py py-class docutils literal notranslate"><span class="pre">length</span> <span class="pre">n_classes.</span></code></p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="biomedical_data_generator.DatasetConfig.corr_between">
-<span class="sig-name descname"><span class="pre">corr_between</span></span><a class="headerlink" href="#biomedical_data_generator.DatasetConfig.corr_between" title="Link to this definition"></a></dt>
-<dd><dl class="field-list simple">
-<dt class="field-odd">Type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">Global</span> <span class="pre">coupling</span> <span class="pre">between</span> <span class="pre">all</span> <span class="pre">cluster</span> <span class="pre">features.</span></code></p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="biomedical_data_generator.DatasetConfig.corr_clusters">
-<span class="sig-name descname"><span class="pre">corr_clusters</span></span><a class="headerlink" href="#biomedical_data_generator.DatasetConfig.corr_clusters" title="Link to this definition"></a></dt>
-<dd><dl class="field-list simple">
-<dt class="field-odd">Type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">Optional</span> <span class="pre">list</span></code> of <code class="xref py py-class docutils literal notranslate"><span class="pre">correlated</span> <span class="pre">feature</span> <span class="pre">clusters.</span></code></p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="biomedical_data_generator.DatasetConfig.feature_naming">
-<span class="sig-name descname"><span class="pre">feature_naming</span></span><a class="headerlink" href="#biomedical_data_generator.DatasetConfig.feature_naming" title="Link to this definition"></a></dt>
-<dd><dl class="field-list simple">
-<dt class="field-odd">Type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">How</span></code> to <code class="xref py py-class docutils literal notranslate"><span class="pre">name</span> <span class="pre">features</span> <span class="pre">(``</span></code>”prefixed”`` or <code class="docutils literal notranslate"><span class="pre">&quot;generic&quot;</span></code><code class="xref py py-class docutils literal notranslate"><span class="pre">).</span></code></p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="biomedical_data_generator.DatasetConfig.prefix_informative">
-<span class="sig-name descname"><span class="pre">prefix_informative</span></span><a class="headerlink" href="#biomedical_data_generator.DatasetConfig.prefix_informative" title="Link to this definition"></a></dt>
-<dd><dl class="field-list simple">
-<dt class="field-odd">Type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">Prefix</span> <span class="pre">for</span> <span class="pre">informative</span> <span class="pre">features.</span></code></p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="biomedical_data_generator.DatasetConfig.prefix_corr">
-<span class="sig-name descname"><span class="pre">prefix_corr</span></span><a class="headerlink" href="#biomedical_data_generator.DatasetConfig.prefix_corr" title="Link to this definition"></a></dt>
-<dd><dl class="field-list simple">
-<dt class="field-odd">Type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">Prefix</span> <span class="pre">for</span> <span class="pre">correlated</span> <span class="pre">proxy</span> <span class="pre">features.</span></code></p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="biomedical_data_generator.DatasetConfig.prefix_pseudo">
-<span class="sig-name descname"><span class="pre">prefix_pseudo</span></span><a class="headerlink" href="#biomedical_data_generator.DatasetConfig.prefix_pseudo" title="Link to this definition"></a></dt>
-<dd><dl class="field-list simple">
-<dt class="field-odd">Type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">Prefix</span> <span class="pre">for</span> <span class="pre">free</span> <span class="pre">pseudo</span> <span class="pre">features.</span></code></p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="biomedical_data_generator.DatasetConfig.prefix_noise">
-<span class="sig-name descname"><span class="pre">prefix_noise</span></span><a class="headerlink" href="#biomedical_data_generator.DatasetConfig.prefix_noise" title="Link to this definition"></a></dt>
-<dd><dl class="field-list simple">
-<dt class="field-odd">Type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">Prefix</span> <span class="pre">for</span> <span class="pre">noise</span> <span class="pre">features.</span></code></p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="biomedical_data_generator.DatasetConfig.random_state">
-<span class="sig-name descname"><span class="pre">random_state</span></span><a class="headerlink" href="#biomedical_data_generator.DatasetConfig.random_state" title="Link to this definition"></a></dt>
-<dd><dl class="field-list simple">
-<dt class="field-odd">Type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">Optional</span> <span class="pre">global</span> <span class="pre">random</span> <span class="pre">seed.</span></code></p>
-</dd>
-</dl>
-</dd></dl>
-
 <p>Create a new model by parsing and validating input data from keyword arguments.</p>
 <p>Raises [<cite>ValidationError</cite>][pydantic_core.ValidationError] if the input data cannot be
 validated to form a valid model.</p>
 <p><cite>self</cite> is explicitly positional-only to allow <cite>self</cite> as a field name.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>n_samples</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.13)"><em>int</em></a>)</p></li>
+<li><p><strong>n_features</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.13)"><em>int</em></a><em> | </em><em>None</em>)</p></li>
+<li><p><strong>n_informative</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.13)"><em>int</em></a>)</p></li>
+<li><p><strong>n_pseudo</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.13)"><em>int</em></a>)</p></li>
+<li><p><strong>n_noise</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.13)"><em>int</em></a>)</p></li>
+<li><p><strong>n_classes</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.13)"><em>int</em></a>)</p></li>
+<li><p><strong>weights</strong> (<a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.List" title="(in Python v3.13)"><em>List</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.13)"><em>float</em></a><em>] </em><em>| </em><em>None</em>)</p></li>
+<li><p><strong>class_sep</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.13)"><em>float</em></a>)</p></li>
+<li><p><strong>feature_naming</strong> (<a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Literal" title="(in Python v3.13)"><em>Literal</em></a><em>[</em><em>'prefixed'</em><em>, </em><em>'simple'</em><em>]</em>)</p></li>
+<li><p><strong>prefix_informative</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a>)</p></li>
+<li><p><strong>prefix_pseudo</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a>)</p></li>
+<li><p><strong>prefix_noise</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a>)</p></li>
+<li><p><strong>prefix_corr</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a>)</p></li>
+<li><p><strong>corr_clusters</strong> (<a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.List" title="(in Python v3.13)"><em>List</em></a><em>[</em><a class="reference internal" href="biomedical_data_generator.CorrCluster.html#biomedical_data_generator.CorrCluster" title="biomedical_data_generator.config.CorrCluster"><em>CorrCluster</em></a><em>]</em>)</p></li>
+<li><p><strong>corr_between</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.13)"><em>float</em></a>)</p></li>
+<li><p><strong>effect_size</strong> (<a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Literal" title="(in Python v3.13)"><em>Literal</em></a><em>[</em><em>'small'</em><em>, </em><em>'medium'</em><em>, </em><em>'large'</em><em>]</em>)</p></li>
+<li><p><strong>random_state</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.13)"><em>int</em></a><em> | </em><em>None</em>)</p></li>
+</ul>
+</dd>
+</dl>
 <dl class="py method">
 <dt class="sig sig-object py" id="biomedical_data_generator.DatasetConfig.__init__">
 <span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">data</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#biomedical_data_generator.DatasetConfig.__init__" title="Link to this definition"></a></dt>
@@ -343,59 +176,59 @@ validated to form a valid model.</p>
 <tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">dict</span></code>(*[, include, exclude, by_alias, ...])</p></td>
 <td><p></p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#biomedical_data_generator.DatasetConfig.expected_n_features" title="biomedical_data_generator.DatasetConfig.expected_n_features"><code class="xref py py-obj docutils literal notranslate"><span class="pre">expected_n_features</span></code></a>()</p></td>
-<td><p>Compute n_informative + n_pseudo + n_noise + proxies_from_clusters.</p></td>
-</tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">from_orm</span></code>(obj)</p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">from_orm</span></code>(obj)</p></td>
 <td><p></p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#biomedical_data_generator.DatasetConfig.from_yaml" title="biomedical_data_generator.DatasetConfig.from_yaml"><code class="xref py py-obj docutils literal notranslate"><span class="pre">from_yaml</span></code></a>(path)</p></td>
-<td><p>Load a DatasetConfig from a YAML file.</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#biomedical_data_generator.DatasetConfig.from_yaml" title="biomedical_data_generator.DatasetConfig.from_yaml"><code class="xref py py-obj docutils literal notranslate"><span class="pre">from_yaml</span></code></a>(path)</p></td>
+<td><p>Load from YAML and validate via the same 'before' pipeline.</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">json</span></code>(*[, include, exclude, by_alias, ...])</p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">json</span></code>(*[, include, exclude, by_alias, ...])</p></td>
 <td><p></p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">model_construct</span></code>([_fields_set])</p></td>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">model_construct</span></code>([_fields_set])</p></td>
 <td><p>Creates a new instance of the <cite>Model</cite> class with validated data.</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">model_copy</span></code>(*[, update, deep])</p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">model_copy</span></code>(*[, update, deep])</p></td>
 <td><p>!!! abstract &quot;Usage Documentation&quot;</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">model_dump</span></code>(*[, mode, include, exclude, ...])</p></td>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">model_dump</span></code>(*[, mode, include, exclude, ...])</p></td>
 <td><p>!!! abstract &quot;Usage Documentation&quot;</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">model_dump_json</span></code>(*[, indent, include, ...])</p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">model_dump_json</span></code>(*[, indent, include, ...])</p></td>
 <td><p>!!! abstract &quot;Usage Documentation&quot;</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">model_json_schema</span></code>([by_alias, ref_template, ...])</p></td>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">model_json_schema</span></code>([by_alias, ref_template, ...])</p></td>
 <td><p>Generates a JSON schema for a model class.</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">model_parametrized_name</span></code>(params)</p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">model_parametrized_name</span></code>(params)</p></td>
 <td><p>Compute the class name for parametrizations of generic classes.</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">model_post_init</span></code>(context, /)</p></td>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">model_post_init</span></code>(context, /)</p></td>
 <td><p>Override this method to perform additional initialization after <cite>__init__</cite> and <cite>model_construct</cite>.</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">model_rebuild</span></code>(*[, force, raise_errors, ...])</p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">model_rebuild</span></code>(*[, force, raise_errors, ...])</p></td>
 <td><p>Try to rebuild the pydantic-core schema for the model.</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">model_validate</span></code>(obj, *[, strict, ...])</p></td>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">model_validate</span></code>(obj, *[, strict, ...])</p></td>
 <td><p>Validate a pydantic model instance.</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">model_validate_json</span></code>(json_data, *[, strict, ...])</p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">model_validate_json</span></code>(json_data, *[, strict, ...])</p></td>
 <td><p>!!! abstract &quot;Usage Documentation&quot;</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">model_validate_strings</span></code>(obj, *[, strict, ...])</p></td>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">model_validate_strings</span></code>(obj, *[, strict, ...])</p></td>
 <td><p>Validate the given object with string data against the Pydantic model.</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">parse_file</span></code>(path, *[, content_type, ...])</p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">parse_file</span></code>(path, *[, content_type, ...])</p></td>
 <td><p></p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">parse_obj</span></code>(obj)</p></td>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">parse_obj</span></code>(obj)</p></td>
 <td><p></p></td>
 </tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">parse_raw</span></code>(b, *[, content_type, encoding, ...])</p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">parse_raw</span></code>(b, *[, content_type, encoding, ...])</p></td>
 <td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#biomedical_data_generator.DatasetConfig.relaxed" title="biomedical_data_generator.DatasetConfig.relaxed"><code class="xref py py-obj docutils literal notranslate"><span class="pre">relaxed</span></code></a>(**kwargs)</p></td>
+<td><p>Convenience factory that silently 'autofixes' n_features to the required minimum.</p></td>
 </tr>
 <tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">schema</span></code>([by_alias, ref_template])</p></td>
 <td><p></p></td>
@@ -432,52 +265,55 @@ validated to form a valid model.</p>
 <tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">model_fields_set</span></code></p></td>
 <td><p>Returns the set of fields that have been explicitly set on this model instance.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#biomedical_data_generator.DatasetConfig.n_samples" title="biomedical_data_generator.DatasetConfig.n_samples"><code class="xref py py-obj docutils literal notranslate"><span class="pre">n_samples</span></code></a></p></td>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">n_samples</span></code></p></td>
 <td><p></p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#biomedical_data_generator.DatasetConfig.n_features" title="biomedical_data_generator.DatasetConfig.n_features"><code class="xref py py-obj docutils literal notranslate"><span class="pre">n_features</span></code></a></p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">n_features</span></code></p></td>
 <td><p></p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#biomedical_data_generator.DatasetConfig.n_informative" title="biomedical_data_generator.DatasetConfig.n_informative"><code class="xref py py-obj docutils literal notranslate"><span class="pre">n_informative</span></code></a></p></td>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">n_informative</span></code></p></td>
 <td><p></p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#biomedical_data_generator.DatasetConfig.n_pseudo" title="biomedical_data_generator.DatasetConfig.n_pseudo"><code class="xref py py-obj docutils literal notranslate"><span class="pre">n_pseudo</span></code></a></p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">n_pseudo</span></code></p></td>
 <td><p></p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#biomedical_data_generator.DatasetConfig.n_noise" title="biomedical_data_generator.DatasetConfig.n_noise"><code class="xref py py-obj docutils literal notranslate"><span class="pre">n_noise</span></code></a></p></td>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">n_noise</span></code></p></td>
 <td><p></p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#biomedical_data_generator.DatasetConfig.class_sep" title="biomedical_data_generator.DatasetConfig.class_sep"><code class="xref py py-obj docutils literal notranslate"><span class="pre">class_sep</span></code></a></p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">n_classes</span></code></p></td>
 <td><p></p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#biomedical_data_generator.DatasetConfig.n_classes" title="biomedical_data_generator.DatasetConfig.n_classes"><code class="xref py py-obj docutils literal notranslate"><span class="pre">n_classes</span></code></a></p></td>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">weights</span></code></p></td>
 <td><p></p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#biomedical_data_generator.DatasetConfig.weights" title="biomedical_data_generator.DatasetConfig.weights"><code class="xref py py-obj docutils literal notranslate"><span class="pre">weights</span></code></a></p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">class_sep</span></code></p></td>
 <td><p></p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#biomedical_data_generator.DatasetConfig.corr_between" title="biomedical_data_generator.DatasetConfig.corr_between"><code class="xref py py-obj docutils literal notranslate"><span class="pre">corr_between</span></code></a></p></td>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">feature_naming</span></code></p></td>
 <td><p></p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#biomedical_data_generator.DatasetConfig.corr_clusters" title="biomedical_data_generator.DatasetConfig.corr_clusters"><code class="xref py py-obj docutils literal notranslate"><span class="pre">corr_clusters</span></code></a></p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">prefix_informative</span></code></p></td>
 <td><p></p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#biomedical_data_generator.DatasetConfig.feature_naming" title="biomedical_data_generator.DatasetConfig.feature_naming"><code class="xref py py-obj docutils literal notranslate"><span class="pre">feature_naming</span></code></a></p></td>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">prefix_pseudo</span></code></p></td>
 <td><p></p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#biomedical_data_generator.DatasetConfig.prefix_informative" title="biomedical_data_generator.DatasetConfig.prefix_informative"><code class="xref py py-obj docutils literal notranslate"><span class="pre">prefix_informative</span></code></a></p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">prefix_noise</span></code></p></td>
 <td><p></p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#biomedical_data_generator.DatasetConfig.prefix_corr" title="biomedical_data_generator.DatasetConfig.prefix_corr"><code class="xref py py-obj docutils literal notranslate"><span class="pre">prefix_corr</span></code></a></p></td>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">prefix_corr</span></code></p></td>
 <td><p></p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#biomedical_data_generator.DatasetConfig.prefix_pseudo" title="biomedical_data_generator.DatasetConfig.prefix_pseudo"><code class="xref py py-obj docutils literal notranslate"><span class="pre">prefix_pseudo</span></code></a></p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">corr_clusters</span></code></p></td>
 <td><p></p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#biomedical_data_generator.DatasetConfig.prefix_noise" title="biomedical_data_generator.DatasetConfig.prefix_noise"><code class="xref py py-obj docutils literal notranslate"><span class="pre">prefix_noise</span></code></a></p></td>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">corr_between</span></code></p></td>
 <td><p></p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#biomedical_data_generator.DatasetConfig.random_state" title="biomedical_data_generator.DatasetConfig.random_state"><code class="xref py py-obj docutils literal notranslate"><span class="pre">random_state</span></code></a></p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">effect_size</span></code></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">random_state</span></code></p></td>
 <td><p></p></td>
 </tr>
 </tbody>
@@ -487,52 +323,114 @@ validated to form a valid model.</p>
 <span class="sig-name descname"><span class="pre">breakdown</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/biomedical_data_generator/config.html#DatasetConfig.breakdown"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#biomedical_data_generator.DatasetConfig.breakdown" title="Link to this definition"></a></dt>
 <dd><p>Return a structured breakdown of feature counts, incl. cluster proxies.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.13)">dict</a>[<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)">str</a>, <a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.13)">int</a>]</p>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p><ul class="simple">
+<li><p>n_informative_total</p></li>
+<li><p>n_informative_anchors</p></li>
+<li><p>n_informative_free</p></li>
+<li><p>n_pseudo_free</p></li>
+<li><p>n_noise</p></li>
+<li><p>proxies_from_clusters</p></li>
+<li><p>n_features_expected</p></li>
+<li><p>n_features_configured</p></li>
+</ul>
+</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>A dict with keys</p>
+</dd>
+<dt class="field-odd">Raises<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#ValueError" title="(in Python v3.13)"><strong>ValueError</strong></a> – If self.n_features is inconsistent (should not happen if validated).</p></li>
+<li><p><strong>This is a safeguard against manual tampering with the instance attributes. This should not happen if the</strong> – </p></li>
+</ul>
 </dd>
 </dl>
+<p>:raises instance was created via the normal validators. If you encounter this`, :py:class:<a href="#id1"><span class="problematic" id="id2">`</span></a>please report a bug.:</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>n_features_expected = n_informative + n_pseudo + n_noise + proxies_from_clusters
+n_features_configured = self.n_features (may be larger than expected)</p>
+</div>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="biomedical_data_generator.DatasetConfig.count_informative_anchors">
 <span class="sig-name descname"><span class="pre">count_informative_anchors</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/biomedical_data_generator/config.html#DatasetConfig.count_informative_anchors"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#biomedical_data_generator.DatasetConfig.count_informative_anchors" title="Link to this definition"></a></dt>
 <dd><p>Count clusters whose anchor contributes as ‘informative’.</p>
+<p>Note: This is a subset of n_informative, not a separate count.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.13)">int</a></p>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>The number of clusters with anchor_role == “informative”.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.13)">int</a></p>
 </dd>
 </dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="biomedical_data_generator.DatasetConfig.expected_n_features">
-<span class="sig-name descname"><span class="pre">expected_n_features</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/biomedical_data_generator/config.html#DatasetConfig.expected_n_features"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#biomedical_data_generator.DatasetConfig.expected_n_features" title="Link to this definition"></a></dt>
-<dd><p>Compute n_informative + n_pseudo + n_noise + proxies_from_clusters.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.13)">int</a></p>
-</dd>
-</dl>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>If you want the number of <em>additional</em> features contributed by clusters,
+use <cite>self._proxies_from_clusters(self.corr_clusters)</cite>.</p>
+</div>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="biomedical_data_generator.DatasetConfig.from_yaml">
 <em class="property"><span class="k"><span class="pre">classmethod</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">from_yaml</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/biomedical_data_generator/config.html#DatasetConfig.from_yaml"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#biomedical_data_generator.DatasetConfig.from_yaml" title="Link to this definition"></a></dt>
-<dd><p>Load a DatasetConfig from a YAML file.</p>
+<dd><p>Load from YAML and validate via the same ‘before’ pipeline.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>path</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a><em> | </em><a class="reference external" href="https://docs.python.org/3/library/pathlib.html#pathlib.Path" title="(in Python v3.13)"><em>Path</em></a>)</p>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>cls</strong> – The DatasetConfig class.</p></li>
+<li><p><strong>path</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a>) – Path to a YAML file.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>A validated DatasetConfig instance.</p>
+</dd>
+<dt class="field-odd">Raises<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#FileNotFoundError" title="(in Python v3.13)"><strong>FileNotFoundError</strong></a> – If the file does not exist.</p></li>
+<li><p><strong>yaml.YAMLError</strong> – If the file cannot be parsed as YAML.</p></li>
+<li><p><strong>pydantic.ValidationError</strong> – If the loaded config is invalid.</p></li>
+</ul>
 </dd>
 <dt class="field-even">Return type<span class="colon">:</span></dt>
 <dd class="field-even"><p><a class="reference internal" href="#biomedical_data_generator.DatasetConfig" title="biomedical_data_generator.config.DatasetConfig"><em>DatasetConfig</em></a></p>
 </dd>
 </dl>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>This requires PyYAML to be installed.</p>
+</div>
 </dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="biomedical_data_generator.DatasetConfig.model_config">
-<span class="sig-name descname"><span class="pre">model_config</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">ClassVar</span><span class="p"><span class="pre">[</span></span><span class="pre">ConfigDict</span><span class="p"><span class="pre">]</span></span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{}</span></em><a class="headerlink" href="#biomedical_data_generator.DatasetConfig.model_config" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">model_config</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">ClassVar</span><span class="p"><span class="pre">[</span></span><span class="pre">ConfigDict</span><span class="p"><span class="pre">]</span></span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{'extra':</span> <span class="pre">'forbid'}</span></em><a class="headerlink" href="#biomedical_data_generator.DatasetConfig.model_config" title="Link to this definition"></a></dt>
 <dd><p>Configuration for the model, should be a dictionary conforming to [<cite>ConfigDict</cite>][pydantic.config.ConfigDict].</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="biomedical_data_generator.DatasetConfig.relaxed">
+<em class="property"><span class="k"><span class="pre">classmethod</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">relaxed</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/biomedical_data_generator/config.html#DatasetConfig.relaxed"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#biomedical_data_generator.DatasetConfig.relaxed" title="Link to this definition"></a></dt>
+<dd><p>Convenience factory that silently ‘autofixes’ n_features to the required minimum.</p>
+<p>Prefer this in teaching notebooks to avoid interruptions.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>**kwargs</strong> (<a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.13)"><em>Any</em></a>) – Any valid DatasetConfig field.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>A validated DatasetConfig instance with n_features &gt;= required minimum.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="#biomedical_data_generator.DatasetConfig" title="biomedical_data_generator.config.DatasetConfig"><em>DatasetConfig</em></a></p>
+</dd>
+</dl>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>This does NOT modify the original kwargs dict.</p>
+</div>
 </dd></dl>
 
 <dl class="py method">

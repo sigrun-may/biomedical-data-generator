@@ -92,189 +92,388 @@
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">annotations</span>
 
-<span class="kn">import</span><span class="w"> </span><span class="nn">warnings</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">collections.abc</span><span class="w"> </span><span class="kn">import</span> <span class="n">Sequence</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">pathlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">Path</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Literal</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Iterable</span><span class="p">,</span> <span class="n">Mapping</span><span class="p">,</span> <span class="n">MutableMapping</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Literal</span><span class="p">,</span> <span class="n">TypeAlias</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Dict</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">Field</span><span class="p">,</span> <span class="n">ConfigDict</span><span class="p">,</span> <span class="n">model_validator</span>
 
-<span class="kn">import</span><span class="w"> </span><span class="nn">yaml</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">Field</span><span class="p">,</span> <span class="n">model_validator</span>
+<span class="n">RawConfig</span><span class="p">:</span> <span class="n">TypeAlias</span> <span class="o">=</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span>
+<span class="n">MutableRawConfig</span><span class="p">:</span> <span class="n">TypeAlias</span> <span class="o">=</span> <span class="n">MutableMapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span>
 
 
 <div class="viewcode-block" id="CorrCluster">
 <a class="viewcode-back" href="../../_autosummary/biomedical_data_generator.CorrCluster.html#biomedical_data_generator.CorrCluster">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">CorrCluster</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Configuration for a correlated feature cluster.</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;One correlated feature block anchored at a role feature.</span>
 
+<span class="sd">    Notes</span>
+<span class="sd">    -----</span>
+<span class="sd">    - The cluster contributes &#39;size&#39; features, of which one is the anchor.</span>
+<span class="sd">    - The anchor feature contributes to the role count (informative/pseudo/noise).</span>
+<span class="sd">    - The other (size - 1) features are proxies, contributing additional features.</span>
+<span class="sd">    - The anchor_beta controls the effect size of the anchor feature on the target.</span>
+<span class="sd">        The proxies have no direct effect on the target, but are correlated to the anchor.</span>
+<span class="sd">    - If anchor_class is set (0..n_classes-1), the anchor has a stronger effect for that class.</span>
+<span class="sd">        This is useful to create class-specific patterns.  The anchor_class allows boosting a</span>
+<span class="sd">        specific class for the anchor feature.</span>
+<span class="sd">    - The structure controls the correlation pattern within the cluster.</span>
+<span class="sd">    - The random_state can be set for reproducible results.</span>
+<span class="sd">    -----------</span>
 <span class="sd">    Attributes</span>
 <span class="sd">    ----------</span>
-<span class="sd">        size: Number of features in the cluster.</span>
-<span class="sd">        rho: Target correlation within the cluster (0 ≤ rho &lt; 1).</span>
-<span class="sd">        structure: Correlation structure (&quot;equicorrelated&quot; or &quot;ar1&quot;).</span>
-<span class="sd">        anchor_role: Whether the cluster has an anchor that affects y</span>
-<span class="sd">            (&quot;informative&quot;) or is purely latent (&quot;latent&quot;).</span>
-<span class="sd">        anchor_beta: Effect size for the anchor (only if informative).</span>
-<span class="sd">        anchor_class: Class index (0..n_classes-1) for which the anchor</span>
-<span class="sd">            contributes positively. Ignored if anchor_role=&quot;latent&quot;.</span>
-<span class="sd">        random_state: Optional seed for reproducibility of this cluster.</span>
-<span class="sd">        label: Optional didactic label for clarity in teaching contexts.</span>
+<span class="sd">    size : int</span>
+<span class="sd">        Number of features in the cluster (including the anchor).</span>
+<span class="sd">    rho : float</span>
+<span class="sd">        Correlation coefficient (0 &lt; rho &lt; 1).</span>
+<span class="sd">    structure : Literal[&quot;equicorrelated&quot;, &quot;toeplitz&quot;]</span>
+<span class="sd">        Correlation structure within the cluster.</span>
+<span class="sd">        - &quot;equicorrelated&quot;: All features have the same pairwise correlation rho.</span>
+<span class="sd">        - &quot;toeplitz&quot;: Correlation decreases with distance: rho^|i-j|.</span>
+<span class="sd">    anchor_role : Literal[&quot;informative&quot;, &quot;pseudo&quot;, &quot;noise&quot;]</span>
+<span class="sd">        Role of the anchor feature.</span>
+<span class="sd">    anchor_beta : float</span>
+<span class="sd">        Effect size of the anchor feature on the target (default: 1.0).</span>
+<span class="sd">    anchor_class : Optional[int]</span>
+<span class="sd">        If set, the anchor has a stronger effect for this class (0..n_classes-1).</span>
+<span class="sd">    random_state : Optional[int]</span>
+<span class="sd">        Random seed for reproducibility.</span>
+<span class="sd">    label : Optional[str]</span>
+<span class="sd">        Optional label for the cluster (for display purposes).</span>
+<span class="sd">    -----------</span>
+<span class="sd">    Examples</span>
+<span class="sd">    --------</span>
+<span class="sd">    &gt;&gt;&gt; from biomedical_data_generator import CorrCluster</span>
+<span class="sd">    &gt;&gt;&gt; c1 = CorrCluster(size=3, rho=0.7, anchor_role=&quot;informative&quot;, anchor_beta=1.0)</span>
+<span class="sd">    &gt;&gt;&gt; c2 = CorrCluster(size=2, rho=0.5, anchor_role=&quot;pseudo&quot;)</span>
+<span class="sd">    &gt;&gt;&gt; print(c1)</span>
+<span class="sd">    size=3 rho=0.7 structure=&#39;equicorrelated&#39; anchor_role=&#39;informative&#39; anchor_beta=1.0 anchor_class=None random_state=None label=None</span>
+<span class="sd">    &gt;&gt;&gt; print(c2)</span>
+<span class="sd">    size=2 rho=0.5 structure=&#39;equicorrelated&#39; anchor_role=&#39;pseudo&#39; anchor_beta=1.0 anchor_class=None random_state=None label=None</span>
+<span class="sd">    -----------</span>
+<span class="sd">    References</span>
+<span class="sd">    ----------</span>
+<span class="sd">    - May, S., Bischl, B., &amp; Lang, M. (2022). A Benchmark for Data Generation Methods in Classification.</span>
+<span class="sd">      In Proceedings of the 25th International Conference on Artificial Intelligence and Statistics (pp. 3433-3443). PMLR.</span>
+<span class="sd">    - sklearn.datasets.make_classification (for the general idea of informative/pseudo/noise features)</span>
+<span class="sd">    - https://en.wikipedia.org/wiki/Equicorrelated_random_variables</span>
+<span class="sd">    - https://en.wikipedia.org/wiki/Toeplitz_matrix</span>
+<span class="sd">    -----------</span>
+<span class="sd">    See Also</span>
+<span class="sd">    --------</span>
+<span class="sd">    - DatasetConfig for the overall dataset configuration.</span>
+<span class="sd">    - generate_dataset for generating datasets from the configuration.</span>
+<span class="sd">    -----------</span>
+<span class="sd">    -----------</span>
+<span class="sd">    Warning</span>
+<span class="sd">    -------</span>
+<span class="sd">    - This model does not enforce value constraints (e.g., 0 &lt; rho &lt; 1).</span>
+<span class="sd">        Such checks are performed during dataset generation.</span>
+<span class="sd">    - The random_state is per-cluster; if you want overall reproducibility,</span>
+<span class="sd">        set the DatasetConfig.random_state instead.</span>
+<span class="sd">    -----------</span>
 <span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">model_config</span> <span class="o">=</span> <span class="n">ConfigDict</span><span class="p">(</span><span class="n">extra</span><span class="o">=</span><span class="s2">&quot;forbid&quot;</span><span class="p">)</span>
 
     <span class="n">size</span><span class="p">:</span> <span class="nb">int</span>
-    <span class="n">rho</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.7</span>
-    <span class="n">structure</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;equicorrelated&quot;</span><span class="p">,</span> <span class="s2">&quot;ar1&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;equicorrelated&quot;</span>
-    <span class="n">anchor_role</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;informative&quot;</span><span class="p">,</span> <span class="s2">&quot;latent&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;latent&quot;</span>
+    <span class="n">rho</span><span class="p">:</span> <span class="nb">float</span>
+    <span class="n">structure</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;equicorrelated&quot;</span><span class="p">,</span> <span class="s2">&quot;toeplitz&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;equicorrelated&quot;</span>
+    <span class="n">anchor_role</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;informative&quot;</span><span class="p">,</span> <span class="s2">&quot;pseudo&quot;</span><span class="p">,</span> <span class="s2">&quot;noise&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;informative&quot;</span>
     <span class="n">anchor_beta</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1.0</span>
-    <span class="n">anchor_class</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="mi">0</span>
-    <span class="n">random_state</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
-    <span class="n">label</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span></div>
+    <span class="n">anchor_class</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">random_state</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span> <span class="c1"># aka ‘seed’: set to an integer for reproducible results</span>
+    <span class="n">label</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>  <span class="c1"># optional display label</span></div>
 
 
 
 <div class="viewcode-block" id="DatasetConfig">
 <a class="viewcode-back" href="../../_autosummary/biomedical_data_generator.DatasetConfig.html#biomedical_data_generator.DatasetConfig">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">DatasetConfig</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Configuration for generating a synthetic classification dataset.</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Configuration for synthetic dataset generation.</span>
 
-<span class="sd">    Attributes</span>
-<span class="sd">    ----------</span>
-<span class="sd">        n_samples: Number of samples (rows).</span>
-<span class="sd">        n_features: Total number of features.</span>
-<span class="sd">        n_informative: Number of informative features (including anchors).</span>
-<span class="sd">        n_pseudo: Number of pseudo features (correlated proxies or free).</span>
-<span class="sd">        n_noise: Number of pure noise features.</span>
-<span class="sd">        class_sep: Global scaling factor for signal strength.</span>
-<span class="sd">        n_classes: Number of classes (&gt;=2).</span>
-<span class="sd">        weights: Optional class proportions of length n_classes.</span>
-<span class="sd">        corr_between: Global coupling between all cluster features.</span>
-<span class="sd">        corr_clusters: Optional list of correlated feature clusters.</span>
-<span class="sd">        feature_naming: How to name features (&quot;prefixed&quot; or &quot;generic&quot;).</span>
-<span class="sd">        prefix_informative: Prefix for informative features.</span>
-<span class="sd">        prefix_corr: Prefix for correlated proxy features.</span>
-<span class="sd">        prefix_pseudo: Prefix for free pseudo features.</span>
-<span class="sd">        prefix_noise: Prefix for noise features.</span>
-<span class="sd">        random_state: Optional global random seed.</span>
+<span class="sd">    The strict `mode=&quot;before&quot;` normalizer fills/validates `n_features` without Pydantic warnings.</span>
+
+<span class="sd">    Notes</span>
+<span class="sd">    -----</span>
+<span class="sd">    - The &#39;before&#39; validator normalizes *raw* inputs:</span>
+<span class="sd">      * fills n_features if omitted,</span>
+<span class="sd">      * enforces n_features &gt;= minimal requirement (strict).</span>
+<span class="sd">    - Use `DatasetConfig.relaxed(...)` if you want silent auto-fix instead of a validation error.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">model_config</span> <span class="o">=</span> <span class="n">ConfigDict</span><span class="p">(</span><span class="n">extra</span><span class="o">=</span><span class="s2">&quot;forbid&quot;</span><span class="p">)</span>
 
-    <span class="n">n_samples</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="mi">200</span><span class="p">,</span> <span class="n">ge</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
-    <span class="n">n_features</span><span class="p">:</span> <span class="nb">int</span>
-    <span class="n">n_informative</span><span class="p">:</span> <span class="nb">int</span>
+    <span class="n">n_samples</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">100</span>
+    <span class="n">n_features</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">n_informative</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">2</span>
     <span class="n">n_pseudo</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span>
     <span class="n">n_noise</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span>
+
+    <span class="c1"># multi-class controls</span>
+    <span class="n">n_classes</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">2</span>
+    <span class="n">weights</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">float</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span>  <span class="c1"># will be normalized by generator; only length is checked here</span>
     <span class="n">class_sep</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1.0</span>
 
-    <span class="c1"># Multiclass extension</span>
-    <span class="n">n_classes</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">2</span>
-    <span class="n">weights</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>  <span class="c1"># length n_classes or None</span>
-
-    <span class="c1"># Correlation</span>
-    <span class="n">corr_between</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.0</span>
-    <span class="n">corr_clusters</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">CorrCluster</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
-
-    <span class="c1"># Naming</span>
-    <span class="n">feature_naming</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;prefixed&quot;</span><span class="p">,</span> <span class="s2">&quot;generic&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;prefixed&quot;</span>
+    <span class="c1"># naming</span>
+    <span class="n">feature_naming</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;prefixed&quot;</span><span class="p">,</span> <span class="s2">&quot;simple&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;prefixed&quot;</span>
     <span class="n">prefix_informative</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;i&quot;</span>
-    <span class="n">prefix_corr</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;corr&quot;</span>
     <span class="n">prefix_pseudo</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;p&quot;</span>
     <span class="n">prefix_noise</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;n&quot;</span>
+    <span class="n">prefix_corr</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;corr&quot;</span>
 
-    <span class="c1"># Randomness</span>
-    <span class="n">random_state</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="c1"># structure</span>
+    <span class="n">corr_clusters</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">CorrCluster</span><span class="p">]</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="nb">list</span><span class="p">)</span>
+    <span class="n">corr_between</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.0</span>  <span class="c1"># correlation between different clusters/roles (0 = independent)</span>
+    <span class="n">effect_size</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;small&quot;</span><span class="p">,</span> <span class="s2">&quot;medium&quot;</span><span class="p">,</span> <span class="s2">&quot;large&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;medium&quot;</span>  <span class="c1"># controls default anchor_beta</span>
+    <span class="n">random_state</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+
+    <span class="c1"># ---------- helpers (typed) ----------</span>
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_iter_cluster_dicts</span><span class="p">(</span><span class="n">raw_config</span><span class="p">:</span> <span class="n">RawConfig</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Iterable</span><span class="p">[</span><span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Yield cluster dicts from raw_config, regardless of whether items are dicts or CorrCluster instances.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            raw_config: The raw input config mapping.</span>
+<span class="sd">        Yields:</span>
+<span class="sd">            An iterable of cluster dicts.</span>
+<span class="sd">        Raises:</span>
+<span class="sd">            TypeError: If any entry is neither a dict nor a CorrCluster instance.</span>
+<span class="sd">        -----------</span>
+<span class="sd">        Note:</span>
+<span class="sd">        This is a static method because it operates on raw input data before model instantiation.</span>
+<span class="sd">        -----------</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">clusters</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="n">raw_config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;corr_clusters&quot;</span><span class="p">)</span>  <span class="c1"># could be None / list[dict] / list[CorrCluster]</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">clusters</span><span class="p">:</span>
+            <span class="k">return</span> <span class="p">[]</span>
+        <span class="n">out</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">cc</span> <span class="ow">in</span> <span class="n">clusters</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">cc</span><span class="p">,</span> <span class="n">CorrCluster</span><span class="p">):</span>
+                <span class="n">out</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">cc</span><span class="o">.</span><span class="n">model_dump</span><span class="p">())</span>
+            <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">cc</span><span class="p">,</span> <span class="n">Mapping</span><span class="p">):</span>
+                <span class="n">out</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">cc</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;corr_clusters entries must be Mapping or CorrCluster, got </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">cc</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">&quot;</span>
+                <span class="p">)</span>
+        <span class="k">return</span> <span class="n">out</span>
+
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_required_n_features</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">raw_config</span><span class="p">:</span> <span class="n">RawConfig</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Compute the minimal number of features needed based on roles and correlated clusters.</span>
+
+<span class="sd">        Assumption</span>
+<span class="sd">        ----------</span>
+<span class="sd">        Each cluster of size &#39;k&#39; contributes (k - 1) *additional* features,</span>
+<span class="sd">        because its anchor is already counted in the base role counts.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">base</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">raw_config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;n_informative&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span> <span class="o">+</span> <span class="nb">int</span><span class="p">(</span><span class="n">raw_config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;n_pseudo&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span> <span class="o">+</span> <span class="nb">int</span><span class="p">(</span><span class="n">raw_config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;n_noise&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span>
+        <span class="n">extra_from_clusters</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="bp">cls</span><span class="o">.</span><span class="n">_iter_cluster_dicts</span><span class="p">(</span><span class="n">raw_config</span><span class="p">):</span>
+            <span class="n">size</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">c</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;size&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span>
+            <span class="n">extra_from_clusters</span> <span class="o">+=</span> <span class="nb">max</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">size</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">base</span> <span class="o">+</span> <span class="n">extra_from_clusters</span>
+
+    <span class="c1"># ---------- validation (strict, no warnings) ----------</span>
+
+    <span class="nd">@model_validator</span><span class="p">(</span><span class="n">mode</span><span class="o">=</span><span class="s2">&quot;before&quot;</span><span class="p">)</span>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_normalize_and_validate</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Normalize incoming raw_config BEFORE model construction.</span>
+
+<span class="sd">        This is a &#39;before&#39; validator, so it works on raw input data. It fills in</span>
+<span class="sd">        missing n_features and enforces n_features &gt;= required minimum.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            cls: The DatasetConfig class.</span>
+<span class="sd">            data: The raw input data (any mapping-like).</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            A mapping with normalized/validated fields, suitable for model construction.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            TypeError: If data is not a mapping or if fields have wrong types.</span>
+<span class="sd">            ValueError: If n_features is too small or if other value constraints are violated.</span>
+
+<span class="sd">        Note:</span>
+<span class="sd">            This does NOT modify the original data dict.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="bp">cls</span><span class="p">):</span>
+            <span class="c1"># already a DatasetConfig instance</span>
+            <span class="k">return</span> <span class="n">data</span>
+
+        <span class="c1"># ensure we work on a mutable mapping copy</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">Mapping</span><span class="p">):</span>
+            <span class="n">d</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;DatasetConfig expects a mapping-like raw_config, got </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">data</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+        <span class="c1"># n_features fill/check</span>
+        <span class="n">required</span> <span class="o">=</span> <span class="bp">cls</span><span class="o">.</span><span class="n">_required_n_features</span><span class="p">(</span><span class="n">d</span><span class="p">)</span>
+        <span class="n">n_features</span> <span class="o">=</span> <span class="n">d</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;n_features&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">n_features</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">d</span><span class="p">[</span><span class="s2">&quot;n_features&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">required</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">n_features_int</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">n_features</span><span class="p">)</span>
+            <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>  <span class="c1"># noqa: BLE001</span>
+                <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;n_features must be an integer, got </span><span class="si">{</span><span class="n">n_features</span><span class="si">!r}</span><span class="s2">&quot;</span><span class="p">)</span> <span class="kn">from</span><span class="w"> </span><span class="nn">e</span>
+            <span class="k">if</span> <span class="n">n_features_int</span> <span class="o">&lt;</span> <span class="n">required</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;n_features=</span><span class="si">{</span><span class="n">n_features_int</span><span class="si">}</span><span class="s2"> is too small; requires at least </span><span class="si">{</span><span class="n">required</span><span class="si">}</span><span class="s2"> &quot;</span>
+                    <span class="sa">f</span><span class="s2">&quot;(given roles + correlated clusters).&quot;</span>
+                <span class="p">)</span>
+            <span class="n">d</span><span class="p">[</span><span class="s2">&quot;n_features&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">n_features_int</span>
+
+        <span class="c1"># n_classes ≥ 2</span>
+        <span class="n">n_classes</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">d</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;n_classes&quot;</span><span class="p">,</span> <span class="mi">2</span><span class="p">))</span>
+        <span class="k">if</span> <span class="n">n_classes</span> <span class="o">&lt;</span> <span class="mi">2</span><span class="p">:</span>
+            <span class="c1"># Tests expect ValueError (they call generate_dataset with n_classes=1 inside a raises())</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;n_classes must be &gt;= 2&quot;</span><span class="p">)</span>
+        <span class="n">d</span><span class="p">[</span><span class="s2">&quot;n_classes&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">n_classes</span>
+
+        <span class="c1"># weights length (if provided) must match n_classes</span>
+        <span class="n">weights</span> <span class="o">=</span> <span class="n">d</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;weights&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">weights</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">weights</span><span class="p">,</span> <span class="nb">list</span><span class="p">)</span> <span class="ow">or</span> <span class="ow">not</span> <span class="nb">all</span><span class="p">(</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">))</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">weights</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;weights must be a list of numbers&quot;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">weights</span><span class="p">)</span> <span class="o">!=</span> <span class="n">n_classes</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;weights length (</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">weights</span><span class="p">)</span><span class="si">}</span><span class="s2">) must equal n_classes (</span><span class="si">{</span><span class="n">n_classes</span><span class="si">}</span><span class="s2">)&quot;</span><span class="p">)</span>
+
+        <span class="c1"># class_sep must be finite (basic sanity)</span>
+        <span class="n">class_separation</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">d</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;class_sep&quot;</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">))</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="n">class_separation</span> <span class="o">==</span> <span class="n">class_separation</span><span class="p">)</span> <span class="ow">or</span> <span class="n">class_separation</span> <span class="o">==</span> <span class="nb">float</span><span class="p">(</span><span class="s2">&quot;inf&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="n">class_separation</span> <span class="o">==</span> <span class="nb">float</span><span class="p">(</span><span class="s2">&quot;-inf&quot;</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;class_sep must be a finite float&quot;</span><span class="p">)</span>
+        <span class="n">d</span><span class="p">[</span><span class="s2">&quot;class_sep&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">class_separation</span>
+
+        <span class="k">return</span> <span class="n">d</span>
+
+    <span class="c1"># ---------- convenience factories ----------</span>
+
+<div class="viewcode-block" id="DatasetConfig.relaxed">
+<a class="viewcode-back" href="../../_autosummary/biomedical_data_generator.DatasetConfig.html#biomedical_data_generator.DatasetConfig.relaxed">[docs]</a>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">relaxed</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;DatasetConfig&quot;</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Convenience factory that silently &#39;autofixes&#39; n_features to the required minimum.</span>
+
+<span class="sd">        Prefer this in teaching notebooks to avoid interruptions.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            **kwargs: Any valid DatasetConfig field.</span>
+<span class="sd">        Returns:</span>
+<span class="sd">            A validated DatasetConfig instance with n_features &gt;= required minimum.</span>
+<span class="sd">        Note:</span>
+<span class="sd">            This does NOT modify the original kwargs dict.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">d</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="n">required</span> <span class="o">=</span> <span class="bp">cls</span><span class="o">.</span><span class="n">_required_n_features</span><span class="p">(</span><span class="n">d</span><span class="p">)</span>
+        <span class="n">nf</span> <span class="o">=</span> <span class="n">d</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;n_features&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">nf</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="nb">int</span><span class="p">(</span><span class="n">nf</span><span class="p">)</span> <span class="o">&lt;</span> <span class="n">required</span><span class="p">:</span>
+            <span class="n">d</span><span class="p">[</span><span class="s2">&quot;n_features&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">required</span>
+        <span class="k">return</span> <span class="bp">cls</span><span class="o">.</span><span class="n">model_validate</span><span class="p">(</span><span class="n">d</span><span class="p">)</span></div>
+
 
 <div class="viewcode-block" id="DatasetConfig.from_yaml">
 <a class="viewcode-back" href="../../_autosummary/biomedical_data_generator.DatasetConfig.html#biomedical_data_generator.DatasetConfig.from_yaml">[docs]</a>
     <span class="nd">@classmethod</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">from_yaml</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">path</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">Path</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">DatasetConfig</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Load a DatasetConfig from a YAML file.&quot;&quot;&quot;</span>
-        <span class="n">data</span> <span class="o">=</span> <span class="n">yaml</span><span class="o">.</span><span class="n">safe_load</span><span class="p">(</span><span class="n">Path</span><span class="p">(</span><span class="n">path</span><span class="p">)</span><span class="o">.</span><span class="n">read_text</span><span class="p">(</span><span class="n">encoding</span><span class="o">=</span><span class="s2">&quot;utf-8&quot;</span><span class="p">))</span>
-        <span class="k">return</span> <span class="bp">cls</span><span class="o">.</span><span class="n">model_validate</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>  <span class="c1"># explicit v2 API</span></div>
+    <span class="k">def</span><span class="w"> </span><span class="nf">from_yaml</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">path</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;DatasetConfig&quot;</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Load from YAML and validate via the same &#39;before&#39; pipeline.</span>
 
+<span class="sd">        Args:</span>
+<span class="sd">            cls: The DatasetConfig class.</span>
+<span class="sd">            path: Path to a YAML file.</span>
 
-    <span class="nd">@staticmethod</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">_proxies_from_clusters</span><span class="p">(</span><span class="n">clusters</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">CorrCluster</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Count additional proxy features contributed by correlated clusters.&quot;&quot;&quot;</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="n">clusters</span><span class="p">:</span>
-            <span class="k">return</span> <span class="mi">0</span>
-        <span class="n">proxies</span> <span class="o">=</span> <span class="mi">0</span>
-        <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">clusters</span><span class="p">:</span>
-            <span class="k">if</span> <span class="n">c</span><span class="o">.</span><span class="n">anchor_role</span> <span class="o">==</span> <span class="s2">&quot;informative&quot;</span><span class="p">:</span>
-                <span class="c1"># anchor is informative; remaining (size - 1) columns are proxies</span>
-                <span class="n">proxies</span> <span class="o">+=</span> <span class="nb">max</span><span class="p">(</span><span class="n">c</span><span class="o">.</span><span class="n">size</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
-            <span class="k">else</span><span class="p">:</span>
-                <span class="c1"># entire cluster is pseudo (latent anchor), so all columns are proxies</span>
-                <span class="n">proxies</span> <span class="o">+=</span> <span class="n">c</span><span class="o">.</span><span class="n">size</span>
-        <span class="k">return</span> <span class="n">proxies</span>
+<span class="sd">        Returns:</span>
+<span class="sd">            A validated DatasetConfig instance.</span>
 
-<div class="viewcode-block" id="DatasetConfig.expected_n_features">
-<a class="viewcode-back" href="../../_autosummary/biomedical_data_generator.DatasetConfig.html#biomedical_data_generator.DatasetConfig.expected_n_features">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">expected_n_features</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Compute n_informative + n_pseudo + n_noise + proxies_from_clusters.&quot;&quot;&quot;</span>
-        <span class="n">proxies</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_proxies_from_clusters</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">corr_clusters</span><span class="p">)</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_informative</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_pseudo</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_noise</span> <span class="o">+</span> <span class="n">proxies</span></div>
+<span class="sd">        Raises:</span>
+<span class="sd">            FileNotFoundError: If the file does not exist.</span>
+<span class="sd">            yaml.YAMLError: If the file cannot be parsed as YAML.</span>
+<span class="sd">            pydantic.ValidationError: If the loaded config is invalid.</span>
 
+<span class="sd">        Note:</span>
+<span class="sd">            This requires PyYAML to be installed.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="kn">import</span><span class="w"> </span><span class="nn">yaml</span>  <span class="c1"># local import to keep core dependencies lean</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="s2">&quot;r&quot;</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s2">&quot;utf-8&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+            <span class="n">raw_config</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">=</span> <span class="n">yaml</span><span class="o">.</span><span class="n">safe_load</span><span class="p">(</span><span class="n">f</span><span class="p">)</span> <span class="ow">or</span> <span class="p">{}</span>
+        <span class="k">return</span> <span class="bp">cls</span><span class="o">.</span><span class="n">model_validate</span><span class="p">(</span><span class="n">raw_config</span><span class="p">)</span></div>
 
-    <span class="c1"># @model_validator(mode=&quot;after&quot;)</span>
-    <span class="c1"># def _validate_feature_counts(self) -&gt; &quot;DatasetConfig&quot;:</span>
-    <span class="c1">#     &quot;&quot;&quot;Validate counts and raise a clear error if they are inconsistent.&quot;&quot;&quot;</span>
-    <span class="c1">#     # informative anchors must be counted inside n_informative</span>
-    <span class="c1">#     n_anchors = sum(1 for c in (self.corr_clusters or []) if c.anchor_role == &quot;informative&quot;)</span>
-    <span class="c1">#     if self.n_informative &lt; n_anchors:</span>
-    <span class="c1">#         raise ValueError(</span>
-    <span class="c1">#             f&quot;n_informative ({self.n_informative}) &lt; number of informative anchors ({n_anchors}).&quot;</span>
-    <span class="c1">#         )</span>
-    <span class="c1">#</span>
-    <span class="c1">#     expected = self.expected_n_features()</span>
-    <span class="c1">#     if self.n_features != expected:</span>
-    <span class="c1">#         proxies = self._proxies_from_clusters(self.corr_clusters)</span>
-    <span class="c1">#         raise ValueError(</span>
-    <span class="c1">#             &quot;cfg.n_features must equal n_informative + n_pseudo + n_noise + proxies_from_clusters &quot;</span>
-    <span class="c1">#             f&quot;= {self.n_informative} + {self.n_pseudo} + {self.n_noise} + {proxies} &quot;</span>
-    <span class="c1">#             f&quot;= {expected}, but got n_features={self.n_features}.&quot;</span>
-    <span class="c1">#         )</span>
-    <span class="c1">#     return self</span>
-
-    <span class="nd">@model_validator</span><span class="p">(</span><span class="n">mode</span><span class="o">=</span><span class="s2">&quot;after&quot;</span><span class="p">)</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">_normalize_feature_counts</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">DatasetConfig</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Ensure counts are consistent; auto-correct n_features with a warning.&quot;&quot;&quot;</span>
-        <span class="c1"># Informative anchors must be counted inside n_informative</span>
-        <span class="n">n_anchors</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="mi">1</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">corr_clusters</span> <span class="ow">or</span> <span class="p">[])</span> <span class="k">if</span> <span class="n">c</span><span class="o">.</span><span class="n">anchor_role</span> <span class="o">==</span> <span class="s2">&quot;informative&quot;</span><span class="p">)</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_informative</span> <span class="o">&lt;</span> <span class="n">n_anchors</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;n_informative (</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">n_informative</span><span class="si">}</span><span class="s2">) &lt; number of informative anchors (</span><span class="si">{</span><span class="n">n_anchors</span><span class="si">}</span><span class="s2">).&quot;</span><span class="p">)</span>
-
-        <span class="n">expected</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">expected_n_features</span><span class="p">()</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_features</span> <span class="o">!=</span> <span class="n">expected</span><span class="p">:</span>
-            <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span>
-                <span class="s2">&quot;Adjusted n_features to match n_informative + n_pseudo + n_noise + proxies_from_clusters: &quot;</span>
-                <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">n_informative</span><span class="si">}</span><span class="s2"> + </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">n_pseudo</span><span class="si">}</span><span class="s2"> + </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">n_noise</span><span class="si">}</span><span class="s2"> + &quot;</span>
-                <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_proxies_from_clusters</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">corr_clusters</span><span class="p">)</span><span class="si">}</span><span class="s2"> = </span><span class="si">{</span><span class="n">expected</span><span class="si">}</span><span class="s2"> &quot;</span>
-                <span class="sa">f</span><span class="s2">&quot;(was </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">n_features</span><span class="si">}</span><span class="s2">).&quot;</span><span class="p">,</span>
-                <span class="ne">UserWarning</span><span class="p">,</span>
-                <span class="n">stacklevel</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>
-            <span class="p">)</span>
-            <span class="c1"># Return a new model with corrected n_features (avoid in-place mutation)</span>
-            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">model_copy</span><span class="p">(</span><span class="n">update</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;n_features&quot;</span><span class="p">:</span> <span class="n">expected</span><span class="p">})</span>
-
-        <span class="k">return</span> <span class="bp">self</span>
 
     <span class="c1"># --- Convenience helpers for introspection ---------------------------------</span>
 
 <div class="viewcode-block" id="DatasetConfig.count_informative_anchors">
 <a class="viewcode-back" href="../../_autosummary/biomedical_data_generator.DatasetConfig.html#biomedical_data_generator.DatasetConfig.count_informative_anchors">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">count_informative_anchors</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Count clusters whose anchor contributes as &#39;informative&#39;.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Count clusters whose anchor contributes as &#39;informative&#39;.</span>
+
+<span class="sd">        Note: This is a subset of n_informative, not a separate count.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            The number of clusters with anchor_role == &quot;informative&quot;.</span>
+
+<span class="sd">        Note:</span>
+<span class="sd">            If you want the number of *additional* features contributed by clusters,</span>
+<span class="sd">            use `self._proxies_from_clusters(self.corr_clusters)`.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="nb">sum</span><span class="p">(</span><span class="mi">1</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">corr_clusters</span> <span class="ow">or</span> <span class="p">[])</span> <span class="k">if</span> <span class="n">c</span><span class="o">.</span><span class="n">anchor_role</span> <span class="o">==</span> <span class="s2">&quot;informative&quot;</span><span class="p">)</span></div>
+
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_proxies_from_clusters</span><span class="p">(</span>
+        <span class="n">clusters</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Iterable</span><span class="p">[</span><span class="n">CorrCluster</span><span class="p">]]</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Number of *additional* features contributed by clusters beyond their anchor.</span>
+
+<span class="sd">        For a cluster of size k, proxies = max(0, k - 1) regardless of anchor_role.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            clusters: An iterable of CorrCluster instances (or None).</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            The total number of additional features contributed by all clusters.</span>
+
+<span class="sd">        Note:</span>
+<span class="sd">            This is consistent with the required_n_features calculation.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">clusters</span><span class="p">:</span>
+            <span class="k">return</span> <span class="mi">0</span>
+        <span class="k">return</span> <span class="nb">sum</span><span class="p">(</span><span class="nb">max</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">int</span><span class="p">(</span><span class="n">c</span><span class="o">.</span><span class="n">size</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">clusters</span><span class="p">)</span>
 
 
 <div class="viewcode-block" id="DatasetConfig.breakdown">
 <a class="viewcode-back" href="../../_autosummary/biomedical_data_generator.DatasetConfig.html#biomedical_data_generator.DatasetConfig.breakdown">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">breakdown</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">int</span><span class="p">]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return a structured breakdown of feature counts, incl. cluster proxies.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return a structured breakdown of feature counts, incl. cluster proxies.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            A dict with keys:</span>
+<span class="sd">            - n_informative_total</span>
+<span class="sd">            - n_informative_anchors</span>
+<span class="sd">            - n_informative_free</span>
+<span class="sd">            - n_pseudo_free</span>
+<span class="sd">            - n_noise</span>
+<span class="sd">            - proxies_from_clusters</span>
+<span class="sd">            - n_features_expected</span>
+<span class="sd">            - n_features_configured</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            ValueError: If self.n_features is inconsistent (should not happen if validated).</span>
+
+<span class="sd">            This is a safeguard against manual tampering with the instance attributes. This should not happen if the</span>
+<span class="sd">            instance was created via the normal validators. If you encounter this, please report a bug.</span>
+
+<span class="sd">        Note:</span>
+<span class="sd">            n_features_expected = n_informative + n_pseudo + n_noise + proxies_from_clusters</span>
+<span class="sd">            n_features_configured = self.n_features (may be larger than expected)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
         <span class="n">proxies</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_proxies_from_clusters</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">corr_clusters</span><span class="p">)</span>
-        <span class="n">n_anchors</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">count_informative_anchors</span><span class="p">()</span>
+        <span class="n">n_inf_anchors</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">count_informative_anchors</span><span class="p">()</span>
         <span class="k">return</span> <span class="p">{</span>
             <span class="s2">&quot;n_informative_total&quot;</span><span class="p">:</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">n_informative</span><span class="p">),</span>
-            <span class="s2">&quot;n_informative_anchors&quot;</span><span class="p">:</span> <span class="nb">int</span><span class="p">(</span><span class="n">n_anchors</span><span class="p">),</span>
-            <span class="s2">&quot;n_informative_free&quot;</span><span class="p">:</span> <span class="nb">int</span><span class="p">(</span><span class="nb">max</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">n_informative</span> <span class="o">-</span> <span class="n">n_anchors</span><span class="p">,</span> <span class="mi">0</span><span class="p">)),</span>
+            <span class="s2">&quot;n_informative_anchors&quot;</span><span class="p">:</span> <span class="nb">int</span><span class="p">(</span><span class="n">n_inf_anchors</span><span class="p">),</span>
+            <span class="s2">&quot;n_informative_free&quot;</span><span class="p">:</span> <span class="nb">int</span><span class="p">(</span><span class="nb">max</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">n_informative</span> <span class="o">-</span> <span class="n">n_inf_anchors</span><span class="p">,</span> <span class="mi">0</span><span class="p">)),</span>
+            <span class="c1"># If you want symmetry, you could also subtract pseudo/noise anchors here.</span>
             <span class="s2">&quot;n_pseudo_free&quot;</span><span class="p">:</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">n_pseudo</span><span class="p">),</span>
             <span class="s2">&quot;n_noise&quot;</span><span class="p">:</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">n_noise</span><span class="p">),</span>
             <span class="s2">&quot;proxies_from_clusters&quot;</span><span class="p">:</span> <span class="nb">int</span><span class="p">(</span><span class="n">proxies</span><span class="p">),</span>
@@ -326,7 +525,6 @@
             <span class="n">lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;- n_features_configured  : </span><span class="si">{</span><span class="n">b</span><span class="p">[</span><span class="s1">&#39;n_features_configured&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="n">per_cluster</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">corr_clusters</span><span class="p">:</span>
-            <span class="n">lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;&quot;</span> <span class="k">if</span> <span class="n">as_markdown</span> <span class="k">else</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
             <span class="n">header</span> <span class="o">=</span> <span class="p">(</span>
                 <span class="s2">&quot;| id | size | role | rho | structure | label | proxies |&quot;</span>
                 <span class="k">if</span> <span class="n">as_markdown</span>
@@ -342,18 +540,17 @@
                 <span class="n">lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">header</span><span class="p">)</span>
 
             <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">c</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">corr_clusters</span><span class="p">,</span> <span class="n">start</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
-                <span class="n">role</span> <span class="o">=</span> <span class="n">c</span><span class="o">.</span><span class="n">anchor_role</span>  <span class="c1"># expected field in your model</span>
-                <span class="n">proxies</span> <span class="o">=</span> <span class="p">(</span><span class="n">c</span><span class="o">.</span><span class="n">size</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="k">if</span> <span class="n">role</span> <span class="o">==</span> <span class="s2">&quot;informative&quot;</span> <span class="k">else</span> <span class="n">c</span><span class="o">.</span><span class="n">size</span>
-                <span class="n">label</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">c</span><span class="p">,</span> <span class="s2">&quot;label&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+                <span class="n">proxies</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">c</span><span class="o">.</span><span class="n">size</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>  <span class="c1"># consistent with required_n_features</span>
+                <span class="n">label</span> <span class="o">=</span> <span class="n">c</span><span class="o">.</span><span class="n">label</span> <span class="ow">or</span> <span class="s2">&quot;&quot;</span>
                 <span class="k">if</span> <span class="n">as_markdown</span><span class="p">:</span>
                     <span class="n">lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
-                        <span class="sa">f</span><span class="s2">&quot;| </span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2"> | </span><span class="si">{</span><span class="n">c</span><span class="o">.</span><span class="n">size</span><span class="si">}</span><span class="s2"> | </span><span class="si">{</span><span class="n">role</span><span class="si">}</span><span class="s2"> | </span><span class="si">{</span><span class="n">c</span><span class="o">.</span><span class="n">rho</span><span class="si">}</span><span class="s2"> | </span><span class="si">{</span><span class="n">c</span><span class="o">.</span><span class="n">structure</span><span class="si">}</span><span class="s2"> | &quot;</span>
-                        <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">label</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="n">label</span><span class="w"> </span><span class="ow">is</span><span class="w"> </span><span class="ow">not</span><span class="w"> </span><span class="kc">None</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="s1">&#39;&#39;</span><span class="si">}</span><span class="s2"> | </span><span class="si">{</span><span class="n">proxies</span><span class="si">}</span><span class="s2"> |&quot;</span>
+                        <span class="sa">f</span><span class="s2">&quot;| </span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2"> | </span><span class="si">{</span><span class="n">c</span><span class="o">.</span><span class="n">size</span><span class="si">}</span><span class="s2"> | </span><span class="si">{</span><span class="n">c</span><span class="o">.</span><span class="n">anchor_role</span><span class="si">}</span><span class="s2"> | </span><span class="si">{</span><span class="n">c</span><span class="o">.</span><span class="n">rho</span><span class="si">}</span><span class="s2"> | </span><span class="si">{</span><span class="n">c</span><span class="o">.</span><span class="n">structure</span><span class="si">}</span><span class="s2"> | &quot;</span>
+                        <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">label</span><span class="si">}</span><span class="s2"> | </span><span class="si">{</span><span class="n">proxies</span><span class="si">}</span><span class="s2"> |&quot;</span>
                     <span class="p">)</span>
                 <span class="k">else</span><span class="p">:</span>
                     <span class="n">lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
-                        <span class="sa">f</span><span class="s2">&quot;- #</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2">: size=</span><span class="si">{</span><span class="n">c</span><span class="o">.</span><span class="n">size</span><span class="si">}</span><span class="s2">, role=</span><span class="si">{</span><span class="n">role</span><span class="si">}</span><span class="s2">, rho=</span><span class="si">{</span><span class="n">c</span><span class="o">.</span><span class="n">rho</span><span class="si">}</span><span class="s2">, structure=</span><span class="si">{</span><span class="n">c</span><span class="o">.</span><span class="n">structure</span><span class="si">}</span><span class="s2">, &quot;</span>
-                        <span class="sa">f</span><span class="s2">&quot;label=</span><span class="si">{</span><span class="n">label</span><span class="si">}</span><span class="s2">, proxies=</span><span class="si">{</span><span class="n">proxies</span><span class="si">}</span><span class="s2">&quot;</span>
+                        <span class="sa">f</span><span class="s2">&quot;- #</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2">: size=</span><span class="si">{</span><span class="n">c</span><span class="o">.</span><span class="n">size</span><span class="si">}</span><span class="s2">, role=</span><span class="si">{</span><span class="n">c</span><span class="o">.</span><span class="n">anchor_role</span><span class="si">}</span><span class="s2">, rho=</span><span class="si">{</span><span class="n">c</span><span class="o">.</span><span class="n">rho</span><span class="si">}</span><span class="s2">, &quot;</span>
+                        <span class="sa">f</span><span class="s2">&quot;structure=</span><span class="si">{</span><span class="n">c</span><span class="o">.</span><span class="n">structure</span><span class="si">}</span><span class="s2">, label=</span><span class="si">{</span><span class="n">label</span><span class="si">}</span><span class="s2">, proxies=</span><span class="si">{</span><span class="n">proxies</span><span class="si">}</span><span class="s2">&quot;</span>
                     <span class="p">)</span>
 
         <span class="k">return</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">lines</span><span class="p">)</span></div>

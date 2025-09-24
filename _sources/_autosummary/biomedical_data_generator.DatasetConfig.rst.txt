@@ -19,7 +19,6 @@
       ~DatasetConfig.copy
       ~DatasetConfig.count_informative_anchors
       ~DatasetConfig.dict
-      ~DatasetConfig.expected_n_features
       ~DatasetConfig.from_orm
       ~DatasetConfig.from_yaml
       ~DatasetConfig.json
@@ -37,6 +36,7 @@
       ~DatasetConfig.parse_file
       ~DatasetConfig.parse_obj
       ~DatasetConfig.parse_raw
+      ~DatasetConfig.relaxed
       ~DatasetConfig.schema
       ~DatasetConfig.schema_json
       ~DatasetConfig.summary
@@ -61,16 +61,17 @@
       ~DatasetConfig.n_informative
       ~DatasetConfig.n_pseudo
       ~DatasetConfig.n_noise
-      ~DatasetConfig.class_sep
       ~DatasetConfig.n_classes
       ~DatasetConfig.weights
-      ~DatasetConfig.corr_between
-      ~DatasetConfig.corr_clusters
+      ~DatasetConfig.class_sep
       ~DatasetConfig.feature_naming
       ~DatasetConfig.prefix_informative
-      ~DatasetConfig.prefix_corr
       ~DatasetConfig.prefix_pseudo
       ~DatasetConfig.prefix_noise
+      ~DatasetConfig.prefix_corr
+      ~DatasetConfig.corr_clusters
+      ~DatasetConfig.corr_between
+      ~DatasetConfig.effect_size
       ~DatasetConfig.random_state
    
    
