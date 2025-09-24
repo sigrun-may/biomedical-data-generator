@@ -205,6 +205,7 @@ def find_seed_for_correlation(
         _, m = generate_correlated_cluster(n_samples, size, rho_target, structure, random_state=seed)
         mean_off = cast(float, m["mean_offdiag"])
         min_off = cast(float, m["min_offdiag"])
+        min_off = cast(float, m["min_offdiag"])
 
         ok = False
         if tol is not None:
@@ -531,16 +532,14 @@ def find_dataset_seed_for_class_weights(
         return_dataframe: Return X as DataFrame (default) or ndarray.
         **overrides: Optional keyword overrides merged into cfg for generation.
 
-    Returns
-    -------
+    Returns:
         tuple:
             - seed (int): The seed that satisfied the tolerance.
             - X (pandas.DataFrame | np.ndarray): Feature matrix for that seed.
             - y (np.ndarray): Labels for that seed.
             - meta (DatasetMeta): Metadata for that seed.
 
-    Raises
-    ------
+    Raises:
         RuntimeError: If no seed satisfies the tolerance within max_tries.
         ValueError: If cfg.n_classes < 2 or weights length mismatches n_classes.
     """
