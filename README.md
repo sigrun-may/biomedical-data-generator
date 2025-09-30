@@ -96,6 +96,7 @@ $ pip install biomedical-data-generator
 ```
 
 ## Quickstart example
+
 This is an example of how to generate a synthetic dataset:
 
 ```python
