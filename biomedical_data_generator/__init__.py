@@ -8,7 +8,7 @@
 
 """Data generator main package."""
 
-from .config import CorrCluster, DatasetConfig
+from .config import CorrCluster, DatasetConfig, NoiseDistribution
 from .generator import (
     DatasetMeta,
     find_seed_for_correlation,
@@ -19,6 +19,7 @@ from .generator import (
 __all__ = [
     "DatasetConfig",
     "CorrCluster",
+    "NoiseDistribution",
     "DatasetMeta",
     "generate_dataset",
     "generate_correlated_cluster",

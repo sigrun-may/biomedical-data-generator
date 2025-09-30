@@ -8,16 +8,16 @@
 
 from __future__ import annotations
 
-from collections.abc import Callable
+from collections.abc import Callable, Mapping
 from dataclasses import asdict, dataclass, field
-from typing import Literal, cast
+from typing import Any, Literal, cast
 
 import numpy as np
 import pandas as pd
 from numpy.typing import NDArray
 from pandas import DataFrame
 
-from .config import CorrCluster, DatasetConfig
+from .config import CorrCluster, DatasetConfig, NoiseDistribution
 
 
 # =========================
@@ -36,7 +36,7 @@ class DatasetMeta:
     # Correlated cluster structure
     corr_cluster_indices: dict[int, list[int]]  # cluster_id -> column indices
     anchor_idx: dict[int, int | None]  # cluster_id -> anchor col (or None)
-    anchor_role: dict[int, str]  # "informative" | "latent"
+    anchor_role: dict[int, str]  # "informative" | "pseudo" | "noise"
     anchor_beta: dict[int, float]  # 0.0 if latent
     cluster_label: dict[int, str | None]  # didactic tags per cluster
 
@@ -56,6 +56,42 @@ class DatasetMeta:
         return asdict(self)
 
 
+def _sample_noise(rng: np.random.Generator,
+                  n: int,
+                  dist: str,
+                  scale: float,
+                  params: Mapping[str, Any] | None = None) -> np.ndarray:
+    """Sample n noise values from the specified distribution.
+
+    Args:
+        rng: Random number generator.
+        n: Number of samples.
+        dist: Distribution name ("normal", "uniform", "laplace").
+        scale: Scale parameter (stddev for normal/laplace, half-width for uniform).
+        params: Additional distribution-specific parameters.
+
+    Returns
+    -------
+        np.ndarray: Array of shape (n,) with sampled noise values.
+
+    Raises
+    ------
+        ValueError: If dist is unsupported or parameters are invalid.
+    """
+    params = dict(params or {})
+    if dist == "normal":
+        loc = float(params.pop("loc", 0.0))
+        return rng.normal(loc=loc, scale=scale, size=n)
+    elif dist == "uniform":
+        low  = float(params.pop("low", -scale))
+        high = float(params.pop("high", scale))
+        return rng.uniform(low=low, high=high, size=n)
+    elif dist == "laplace":
+        loc = float(params.pop("loc", 0.0))
+        return rng.laplace(loc=loc, scale=scale, size=n)
+    else:
+        raise ValueError(f"Unsupported noise_distribution: {dist}")
+
 # =========================
 # Small covariance helpers
 # =========================
@@ -65,7 +101,7 @@ def _cov_equicorr(size: int, rho: float) -> NDArray[np.float64]:
     return (1 - rho) * identity + rho * ones
 
 
-def _cov_ar1(size: int, rho: float) -> NDArray[np.float64]:
+def _cov_toeplitz(size: int, rho: float) -> NDArray[np.float64]:
     idx = np.arange(size, dtype=np.int64)
     D: NDArray[np.float64] = np.abs(idx[:, None] - idx[None, :]).astype(np.float64, copy=False)
     # ensure float64 ndarray for typing
@@ -76,7 +112,7 @@ def _sample_cluster_matrix(n: int, cluster: CorrCluster, rng: np.random.Generato
     Sigma = (
         _cov_equicorr(cluster.size, cluster.rho)
         if cluster.structure == "equicorrelated"
-        else _cov_ar1(cluster.size, cluster.rho)
+        else _cov_toeplitz(cluster.size, cluster.rho)
     )
     L = np.linalg.cholesky(Sigma)
     Z: NDArray[np.float64] = rng.normal(size=(n, cluster.size)).astype(np.float64, copy=False)
@@ -93,7 +129,7 @@ def generate_correlated_cluster(
     n_samples: int,
     size: int,
     rho: float = 0.7,
-    structure: Literal["equicorrelated", "ar1"] = "equicorrelated",
+    structure: Literal["equicorrelated", "toeplitz"] = "equicorrelated",
     random_state: int | None = None,
     label: str | None = None,
 ) -> tuple[NDArray[np.float64], dict[str, object]]:
@@ -105,7 +141,7 @@ def generate_correlated_cluster(
         n_samples: Number of samples (rows).
         size: Number of features (columns).
         rho: Target correlation between features (0 ≤ rho < 1).
-        structure: "equicorrelated" or "ar1".
+        structure: "equicorrelated" or "toeplitz".
         random_state: Random seed for reproducibility.
         label: Optional didactic tag for this cluster.
 
@@ -123,11 +159,16 @@ def generate_correlated_cluster(
     """
     if size < 1:
         raise ValueError("size must be >= 1")
-    if not (0.0 <= rho < 1.0):
-        raise ValueError("rho must be in [0, 1)")
+
+    if structure == "equicorrelated":
+        if not (0.0 <= rho < 1.0):
+            raise ValueError("for equicorrelated: rho must be in [0, 1)")
+    else:  # toeplitz (AR(1)-artige Struktur)
+        if not (-0.999 < rho < 0.999):
+            raise ValueError("for toeplitz: |rho| must be < 1")
 
     rng = np.random.default_rng(random_state)
-    Sigma: NDArray[np.float64] = _cov_equicorr(size, rho) if structure == "equicorrelated" else _cov_ar1(size, rho)
+    Sigma: NDArray[np.float64] = _cov_equicorr(size, rho) if structure == "equicorrelated" else _cov_toeplitz(size, rho)
     L = np.linalg.cholesky(Sigma)
     Z: NDArray[np.float64] = rng.normal(size=(n_samples, size)).astype(np.float64, copy=False)
     X: NDArray[np.float64] = cast(NDArray[np.float64], Z @ L.T)
@@ -204,7 +245,6 @@ def find_seed_for_correlation(
     for _ in range(max_tries):
         _, m = generate_correlated_cluster(n_samples, size, rho_target, structure, random_state=seed)
         mean_off = cast(float, m["mean_offdiag"])
-        min_off = cast(float, m["min_offdiag"])
         min_off = cast(float, m["min_offdiag"])
 
         ok = False
@@ -324,6 +364,63 @@ def _softmax(Z: NDArray[np.float64]) -> NDArray[np.float64]:
     return Z
 
 
+def _resolve_noise_params(dist: str, noise_scale: float, noise_params: Mapping[str, Any] | None) -> dict[str, float]:
+    """Resolve noise distribution parameters with defaults.
+
+    Returns a params dict that _always_ includes the required keys for the chosen dist.
+    - normal/laplace: {'loc', 'scale'}
+    - uniform: {'low', 'high'}
+    Any keys given in noise_params override these defaults.
+
+    Args:
+        dist: Distribution name ("normal", "uniform", "laplace").
+        noise_scale: Scale parameter (stddev for normal/laplace, half-width for uniform).
+        noise_params: Additional distribution-specific parameters.
+
+    Returns
+    -------
+        dict: Resolved parameters for the specified distribution.
+
+    Raises
+    ------
+        ValueError: If dist is unsupported.
+    """
+    # normalize
+    if isinstance(dist, NoiseDistribution):
+        key = dist.value
+    else:
+        key = str(dist)
+        # handle accidental Enum stringification like "NoiseDistribution.uniform"
+        if key.startswith("NoiseDistribution."):
+            key = key.split(".", 1)[1]
+        key = key.lower()
+
+    if key == "normal":
+        params = {"loc": 0.0, "scale": float(noise_scale)}
+        if noise_params:
+            params.update({k: float(v) for k, v in noise_params.items() if k in ("loc", "scale")})
+        return params
+
+    if key == "laplace":
+        params = {"loc": 0.0, "scale": float(noise_scale)}
+        if noise_params:
+            params.update({k: float(v) for k, v in noise_params.items() if k in ("loc", "scale")})
+        return params
+
+    if key == "uniform":
+        # default to symmetric interval around 0 with width 2*scale unless params given
+        if noise_params and {"low", "high"} <= set(noise_params.keys()):
+            low = float(noise_params["low"])
+            high = float(noise_params["high"])
+            if not (low < high):
+                raise ValueError("For uniform noise, require low < high.")
+            return {"low": low, "high": high}
+        s = float(noise_scale)
+        return {"low": -s, "high": s}
+
+    raise ValueError(f"Unsupported noise_distribution: {dist}")
+
+
 # =================
 # Public generator
 # =================
@@ -366,7 +463,7 @@ def generate_dataset(
     if overrides:
         cfg = cfg.model_copy(update=overrides)
 
-    if cfg.n_classes < 2:
+    if int(cfg.n_classes) < 2:
         raise ValueError("n_classes must be >= 2.")
     if cfg.weights is not None:
         if len(cfg.weights) != cfg.n_classes:
@@ -419,12 +516,31 @@ def generate_dataset(
     )
 
     # 4) noise
-    X_noise = rng_global.normal(size=(cfg.n_samples, cfg.n_noise)) if cfg.n_noise > 0 else np.empty((cfg.n_samples, 0))
+    if cfg.n_noise > 0:
+        params = _resolve_noise_params(cfg.noise_distribution, cfg.noise_scale, cfg.noise_params)
+        distribution = (
+            cfg.noise_distribution.value if hasattr(cfg.noise_distribution, "value") else str(cfg.noise_distribution))
+        noise_cols = np.stack(
+            [
+                _sample_noise(
+                    rng_global,
+                    n=cfg.n_samples,
+                    dist=distribution,
+                    scale=float(params.get("scale", cfg.noise_scale)),
+                    params=params,
+                )
+                for _ in range(cfg.n_noise)
+            ],
+            axis=1,
+        )
+        X_noise = noise_cols
+    else:
+        X_noise = np.empty((cfg.n_samples, 0))
 
     # Concatenate in naming order: [clusters] + [free informative] + [free pseudo] + [noise]
     X = np.concatenate([X_clusters, X_inf, X_pseudo, X_noise], axis=1)
 
-    # Sicherheit: Spaltenzahl prüfen (soll == len(names) == cfg.n_features)
+    # Check totals
     assert X.shape[1] == len(names) == cfg.n_features, (X.shape[1], len(names), cfg.n_features)
 
     # ----- logits for n_classes
@@ -532,14 +648,16 @@ def find_dataset_seed_for_class_weights(
         return_dataframe: Return X as DataFrame (default) or ndarray.
         **overrides: Optional keyword overrides merged into cfg for generation.
 
-    Returns:
+    Returns
+    -------
         tuple:
             - seed (int): The seed that satisfied the tolerance.
             - X (pandas.DataFrame | np.ndarray): Feature matrix for that seed.
             - y (np.ndarray): Labels for that seed.
             - meta (DatasetMeta): Metadata for that seed.
 
-    Raises:
+    Raises
+    ------
         RuntimeError: If no seed satisfies the tolerance within max_tries.
         ValueError: If cfg.n_classes < 2 or weights length mismatches n_classes.
     """

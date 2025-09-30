@@ -8,82 +8,137 @@
 
 from __future__ import annotations
 
-from typing import Any, Iterable, Mapping, MutableMapping, Optional, Literal, TypeAlias, List, Dict
-from pydantic import BaseModel, Field, ConfigDict, model_validator
+from collections.abc import Iterable, Mapping, MutableMapping
+from enum import Enum
+from typing import Any, Literal, TypeAlias
+
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 RawConfig: TypeAlias = Mapping[str, Any]
 MutableRawConfig: TypeAlias = MutableMapping[str, Any]
 
 
+class NoiseDistribution(str, Enum):
+    """Supported noise distributions for generating noise features.
+
+    Semantics:
+    - `noise_distribution`: choice of distribution used *during sampling*:
+        * normal  → Gaussian (normal) distribution
+        * laplace → Laplace distribution (heavy tails; useful for simulating outliers)
+        * uniform → Uniform distribution (bounded noise)
+    - `noise_scale`: scale parameter used *during sampling*:
+        * normal  → standard deviation σ
+        * laplace → diversity b
+        * uniform → half-width (samples are in [−noise_scale, +noise_scale] by default)
+      Distribution-specific values in `noise_params` (e.g. 'scale', 'low', 'high', 'loc')
+      take precedence over `noise_scale`.
+
+    - `noise_params` (optional): fine-grained overrides passed to the sampler:
+        * normal  → {'loc': float, 'scale': float}
+        * uniform → {'low': float, 'high': float}
+        * laplace → {'loc': float, 'scale': float}
+      If a key is omitted, sensible defaults are used:
+        * normal  → loc=0.0, scale=noise_scale
+        * uniform → low=−noise_scale, high=+noise_scale
+        * laplace → loc=0.0, scale=noise_scale
+
+    Args:
+        normal: Gaussian (normal) distribution.
+        uniform: Uniform distribution.
+        laplace: Laplace distribution (heavy tails; useful for simulating outliers).
+
+    Examples
+    --------
+        ```python
+        from biomedical_data_generator import DatasetConfig, NoiseDistribution
+        cfg = DatasetConfig(
+            n_samples=100,
+            n_features=10,
+            n_informative=2,
+            n_noise=5,
+            noise_distribution=NoiseDistribution.laplace,
+            noise_params={'loc': 0.0, 'scale': 0.5},
+            noise_scale=2.0,
+            random_state=42
+        )
+        ```
+    See also:
+         - numpy.random.Generator documentation for parameters:
+              https://numpy.org/doc/stable/reference/random/generator.html#distributions
+
+    Note:
+        - The chosen distribution `noise_distribution` is applied to all noise features uniformly.
+        - The `noise_params` can be used to fine-tune the noise characteristics.
+        - For teaching outliers/heavy tails, `laplace` is useful; for bounded noise, use `uniform`.
+
+    """
+
+    normal = "normal"
+    uniform = "uniform"
+    laplace = "laplace"  # heavy tails; nice to show outliers
+
+
 class CorrCluster(BaseModel):
     """One correlated feature block anchored at a role feature.
 
-    Notes
-    -----
-    - The cluster contributes 'size' features, of which one is the anchor.
-    - The anchor feature contributes to the role count (informative/pseudo/noise).
-    - The other (size - 1) features are proxies, contributing additional features.
-    - The anchor_beta controls the effect size of the anchor feature on the target.
-        The proxies have no direct effect on the target, but are correlated to the anchor.
-    - If anchor_class is set (0..n_classes-1), the anchor has a stronger effect for that class.
-        This is useful to create class-specific patterns.  The anchor_class allows boosting a
-        specific class for the anchor feature.
-    - The structure controls the correlation pattern within the cluster.
-    - The random_state can be set for reproducible results.
-    -----------
-    Attributes
-    ----------
-    size : int
-        Number of features in the cluster (including the anchor).
-    rho : float
-        Correlation coefficient (0 < rho < 1).
-    structure : Literal["equicorrelated", "toeplitz"]
-        Correlation structure within the cluster.
-        - "equicorrelated": All features have the same pairwise correlation rho.
-        - "toeplitz": Correlation decreases with distance: rho^|i-j|.
-    anchor_role : Literal["informative", "pseudo", "noise"]
-        Role of the anchor feature.
-    anchor_beta : float
-        Effect size of the anchor feature on the target (default: 1.0).
-    anchor_class : Optional[int]
-        If set, the anchor has a stronger effect for this class (0..n_classes-1).
-    random_state : Optional[int]
-        Random seed for reproducibility.
-    label : Optional[str]
-        Optional label for the cluster (for display purposes).
-    -----------
+    Cluster of correlated features with one anchor feature that contributes to the target. The cluster
+    consists of `size` features, of which one is the anchor. The anchor has a specified role
+    (informative/pseudo/noise) and effect size (`anchor_beta`). Optionally, the anchor can have a stronger effect for a
+    specific class (`anchor_class`). If `anchor_class` is set (0..n_classes-1), the anchor has a stronger effect for
+    that class. This is useful to create class-specific patterns. The `anchor_class` allows boosting a specific class
+    for the anchor feature.
+    The other features in the cluster are proxies, correlated to the anchor but not
+    directly affecting the target. The correlation structure within the cluster can be either equicorrelated or
+    Toeplitz. Toeplitz is defined as correlation decreasing with distance: `rho**|i-j|`.  This `structure` controls the
+    correlation pattern within the cluster.
+
+    Args:
+       size (int): Number of features in the cluster (including the anchor).
+       rho (float): Correlation coefficient (0 < rho < 1).
+       structure (Literal["equicorrelated", "toeplitz"]): Correlation structure within the cluster.
+           - "equicorrelated": All features have the same pairwise correlation `rho`.
+           - "toeplitz": Correlation decreases with distance: `rho**|i-j|`.
+       anchor_role (Literal["informative", "pseudo", "noise"]): Role of the anchor feature.
+       anchor_beta (float): Effect size of the anchor feature on the target (default: 1.0).
+       anchor_class (Optional[int]): If set, the anchor has a stronger effect for this class (0..n_classes-1).
+       random_state (Optional[int]): Random seed for reproducibility.
+       label (Optional[str]): Optional label for the cluster (for display purposes).
+
     Examples
     --------
-    >>> from biomedical_data_generator import CorrCluster
-    >>> c1 = CorrCluster(size=3, rho=0.7, anchor_role="informative", anchor_beta=1.0)
-    >>> c2 = CorrCluster(size=2, rho=0.5, anchor_role="pseudo")
-    >>> print(c1)
-    size=3 rho=0.7 structure='equicorrelated' anchor_role='informative' anchor_beta=1.0 anchor_class=None random_state=None label=None
-    >>> print(c2)
-    size=2 rho=0.5 structure='equicorrelated' anchor_role='pseudo' anchor_beta=1.0 anchor_class=None random_state=None label=None
-    -----------
+       ```python
+       from biomedical_data_generator import CorrCluster
+       c1 = CorrCluster(size=3, rho=0.7, anchor_role="informative", anchor_beta=1.0)
+       c2 = CorrCluster(size=2, rho=0.5, anchor_role="pseudo")
+       print(c1)
+       # size=3 rho=0.7 structure='equicorrelated' anchor_role='informative' anchor_beta=1.0 anchor_class=None
+        random_state=None label=None
+       print(c2)
+       # size=2 rho=0.5 structure='equicorrelated' anchor_role='pseudo' anchor_beta=1.0 anchor_class=None
+        random_state=None label=None
+       ```
+
     References
     ----------
-    - May, S., Bischl, B., & Lang, M. (2022). A Benchmark for Data Generation Methods in Classification.
-      In Proceedings of the 25th International Conference on Artificial Intelligence and Statistics (pp. 3433-3443). PMLR.
-    - sklearn.datasets.make_classification (for the general idea of informative/pseudo/noise features)
-    - https://en.wikipedia.org/wiki/Equicorrelated_random_variables
-    - https://en.wikipedia.org/wiki/Toeplitz_matrix
-    -----------
+       May, S., Bischl, B., & Lang, M. (2022). A Benchmark for Data Generation Methods in Classification.
+       In Proceedings of the 25th International Conference on Artificial Intelligence and Statistics (pp. 3433-3443).
+       PMLR.
+       sklearn.datasets.make_classification (for the general idea of informative/pseudo/noise features)
+       https://en.wikipedia.org/wiki/Equicorrelated_random_variables
+       https://en.wikipedia.org/wiki/Toeplitz_matrix
+
     See Also
     --------
-    - DatasetConfig for the overall dataset configuration.
-    - generate_dataset for generating datasets from the configuration.
-    -----------
-    -----------
-    Warning
-    -------
-    - This model does not enforce value constraints (e.g., 0 < rho < 1).
-        Such checks are performed during dataset generation.
-    - The random_state is per-cluster; if you want overall reproducibility,
-        set the DatasetConfig.random_state instead.
-    -----------
+       DatasetConfig: for the overall dataset configuration.
+       generate_dataset: for generating datasets from the configuration.
+
+    Warning:
+       - This model does not enforce value constraints (e.g., 0 < rho < 1).
+         Such checks are performed during dataset generation.
+       - The `random_state` is per-cluster; if you want overall reproducibility,
+         set the `DatasetConfig.random_state` instead.
     """
+
     model_config = ConfigDict(extra="forbid")
 
     size: int
@@ -91,9 +146,9 @@ class CorrCluster(BaseModel):
     structure: Literal["equicorrelated", "toeplitz"] = "equicorrelated"
     anchor_role: Literal["informative", "pseudo", "noise"] = "informative"
     anchor_beta: float = 1.0
-    anchor_class: Optional[int] = None
-    random_state: Optional[int] = None # aka ‘seed’: set to an integer for reproducible results
-    label: Optional[str] = None  # optional display label
+    anchor_class: int | None = None
+    random_state: int | None = None  # aka ‘seed’: set to an integer for reproducible results
+    label: str | None = None  # optional display label
 
 
 class DatasetConfig(BaseModel):
@@ -102,24 +157,27 @@ class DatasetConfig(BaseModel):
 
     The strict `mode="before"` normalizer fills/validates `n_features` without Pydantic warnings.
 
-    Notes
-    -----
+    Note:
     - The 'before' validator normalizes *raw* inputs:
       * fills n_features if omitted,
       * enforces n_features >= minimal requirement (strict).
     - Use `DatasetConfig.relaxed(...)` if you want silent auto-fix instead of a validation error.
     """
-    model_config = ConfigDict(extra="forbid")
+
+    model_config = ConfigDict(extra="forbid", use_enum_values=True)
 
     n_samples: int = 100
-    n_features: Optional[int] = None
+    n_features: int | None = None
     n_informative: int = 2
     n_pseudo: int = 0
     n_noise: int = 0
+    noise_distribution: NoiseDistribution = NoiseDistribution.normal
+    noise_scale: float = 1.0
+    noise_params: Mapping[str, Any] | None = Field(default=None)
 
     # multi-class controls
     n_classes: int = 2
-    weights: Optional[List[float]] = None  # will be normalized by generator; only length is checked here
+    weights: list[float] | None = None  # will be normalized by generator; only length is checked here
     class_sep: float = 1.0
 
     # naming
@@ -130,41 +188,40 @@ class DatasetConfig(BaseModel):
     prefix_corr: str = "corr"
 
     # structure
-    corr_clusters: List[CorrCluster] = Field(default_factory=list)
+    corr_clusters: list[CorrCluster] = Field(default_factory=list)
     corr_between: float = 0.0  # correlation between different clusters/roles (0 = independent)
     effect_size: Literal["small", "medium", "large"] = "medium"  # controls default anchor_beta
-    random_state: Optional[int] = None
+    random_state: int | None = None
 
     # ---------- helpers (typed) ----------
-
     @staticmethod
     def _iter_cluster_dicts(raw_config: RawConfig) -> Iterable[Mapping[str, Any]]:
         """Yield cluster dicts from raw_config, regardless of whether items are dicts or CorrCluster instances.
 
         Args:
             raw_config: The raw input config mapping.
-        Yields:
+
+        Yields
+        ------
             An iterable of cluster dicts.
-        Raises:
+
+        Raises
+        ------
             TypeError: If any entry is neither a dict nor a CorrCluster instance.
-        -----------
         Note:
         This is a static method because it operates on raw input data before model instantiation.
-        -----------
         """
         clusters: Any = raw_config.get("corr_clusters")  # could be None / list[dict] / list[CorrCluster]
         if not clusters:
             return []
-        out: List[Mapping[str, Any]] = []
+        out: list[Mapping[str, Any]] = []
         for cc in clusters:
             if isinstance(cc, CorrCluster):
                 out.append(cc.model_dump())
             elif isinstance(cc, Mapping):
                 out.append(cc)
             else:
-                raise TypeError(
-                    f"corr_clusters entries must be Mapping or CorrCluster, got {type(cc).__name__}"
-                )
+                raise TypeError(f"corr_clusters entries must be Mapping or CorrCluster, got {type(cc).__name__}")
         return out
 
     @classmethod
@@ -177,7 +234,11 @@ class DatasetConfig(BaseModel):
         Each cluster of size 'k' contributes (k - 1) *additional* features,
         because its anchor is already counted in the base role counts.
         """
-        base = int(raw_config.get("n_informative", 0)) + int(raw_config.get("n_pseudo", 0)) + int(raw_config.get("n_noise", 0))
+        base = (
+            int(raw_config.get("n_informative", 0))
+            + int(raw_config.get("n_pseudo", 0))
+            + int(raw_config.get("n_noise", 0))
+        )
         extra_from_clusters = 0
         for c in cls._iter_cluster_dicts(raw_config):
             size = int(c.get("size", 0))
@@ -185,6 +246,20 @@ class DatasetConfig(BaseModel):
         return base + extra_from_clusters
 
     # ---------- validation (strict, no warnings) ----------
+    @model_validator(mode="after")
+    def __post_init__(self):
+        if self.n_noise < 0:
+            raise ValueError("n_noise must be >= 0")
+        if self.noise_scale <= 0:
+            raise ValueError("noise_scale must be > 0")
+        # Optional: validate uniform bounds if both provided
+        if self.noise_distribution == NoiseDistribution.uniform and self.noise_params:
+            low = self.noise_params.get("low", None)
+            high = self.noise_params.get("high", None)
+            if low is not None and high is not None and not (float(low) < float(high)):
+                raise ValueError("For uniform noise, require low < high.")
+        return self
+
 
     @model_validator(mode="before")
     @classmethod
@@ -198,10 +273,12 @@ class DatasetConfig(BaseModel):
             cls: The DatasetConfig class.
             data: The raw input data (any mapping-like).
 
-        Returns:
+        Returns
+        -------
             A mapping with normalized/validated fields, suitable for model construction.
 
-        Raises:
+        Raises
+        ------
             TypeError: If data is not a mapping or if fields have wrong types.
             ValueError: If n_features is too small or if other value constraints are violated.
 
@@ -214,7 +291,7 @@ class DatasetConfig(BaseModel):
 
         # ensure we work on a mutable mapping copy
         if isinstance(data, Mapping):
-            d: Dict[str, Any] = dict(data)
+            d: dict[str, Any] = dict(data)
         else:
             raise TypeError(f"DatasetConfig expects a mapping-like raw_config, got {type(data).__name__}")
 
@@ -235,11 +312,11 @@ class DatasetConfig(BaseModel):
                 )
             d["n_features"] = n_features_int
 
-        # n_classes ≥ 2
-        n_classes = int(d.get("n_classes", 2))
-        if n_classes < 2:
-            # Tests expect ValueError (they call generate_dataset with n_classes=1 inside a raises())
-            raise ValueError("n_classes must be >= 2")
+        # n_classes: defer strict check to runtime; keep type sanity here
+        try:
+            n_classes = int(d.get("n_classes", 2))
+        except Exception as e:  # noqa: BLE001
+            raise TypeError("n_classes must be an integer") from e
         d["n_classes"] = n_classes
 
         # weights length (if provided) must match n_classes
@@ -252,7 +329,11 @@ class DatasetConfig(BaseModel):
 
         # class_sep must be finite (basic sanity)
         class_separation = float(d.get("class_sep", 1.0))
-        if not (class_separation == class_separation) or class_separation == float("inf") or class_separation == float("-inf"):
+        if (
+            not (class_separation == class_separation)
+            or class_separation == float("inf")
+            or class_separation == float("-inf")
+        ):
             raise ValueError("class_sep must be a finite float")
         d["class_sep"] = class_separation
 
@@ -261,37 +342,64 @@ class DatasetConfig(BaseModel):
     # ---------- convenience factories ----------
 
     @classmethod
-    def relaxed(cls, **kwargs: Any) -> "DatasetConfig":
-        """Convenience factory that silently 'autofixes' n_features to the required minimum.
+    def relaxed(cls, **kwargs: Any) -> DatasetConfig:
+        """Create a configuration, silently autofixing n_features to the required minimum.
 
-        Prefer this in teaching notebooks to avoid interruptions.
+        Convenience factory that silently 'autofixes' n_features to the required minimum. Prefer this in teaching
+        notebooks to avoid interruptions.
 
         Args:
             **kwargs: Any valid DatasetConfig field.
-        Returns:
+
+        Returns
+        -------
             A validated DatasetConfig instance with n_features >= required minimum.
         Note:
             This does NOT modify the original kwargs dict.
         """
-        d: Dict[str, Any] = dict(kwargs)
-        required = cls._required_n_features(d)
-        nf = d.get("n_features")
-        if nf is None or int(nf) < required:
-            d["n_features"] = required
-        return cls.model_validate(d)
+        raw = kwargs.get("corr_clusters") or []
+        norm_clusters = []
+        for c in raw:
+            if isinstance(c, CorrCluster):
+                norm_clusters.append(c)
+            else:
+                norm_clusters.append(CorrCluster.model_validate(c))
+        kwargs["corr_clusters"] = norm_clusters
+
+        # Compute required n_features = free informative + free pseudo + free noise + sum(size-1 per cluster)
+        n_inf = int(kwargs.get("n_informative", 0))
+        n_pse = int(kwargs.get("n_pseudo", 0))
+        n_noise = int(kwargs.get("n_noise", 0))
+        proxies = sum(cc.size - 1 for cc in norm_clusters)
+        required = n_inf + n_pse + n_noise + proxies
+
+        n_feat = kwargs.get("n_features")
+        if n_feat is None or int(n_feat) < required:
+            kwargs["n_features"] = required
+
+        return cls(**kwargs)
+
+        # d: dict[str, Any] = dict(kwargs)
+        # required = cls._required_n_features(d)
+        # nf = d.get("n_features")
+        # if nf is None or int(nf) < required:
+        #     d["n_features"] = required
+        # return cls.model_validate(d)
 
     @classmethod
-    def from_yaml(cls, path: str) -> "DatasetConfig":
+    def from_yaml(cls, path: str) -> DatasetConfig:
         """Load from YAML and validate via the same 'before' pipeline.
 
         Args:
             cls: The DatasetConfig class.
             path: Path to a YAML file.
 
-        Returns:
+        Returns
+        -------
             A validated DatasetConfig instance.
 
-        Raises:
+        Raises
+        ------
             FileNotFoundError: If the file does not exist.
             yaml.YAMLError: If the file cannot be parsed as YAML.
             pydantic.ValidationError: If the loaded config is invalid.
@@ -300,8 +408,9 @@ class DatasetConfig(BaseModel):
             This requires PyYAML to be installed.
         """
         import yaml  # local import to keep core dependencies lean
-        with open(path, "r", encoding="utf-8") as f:
-            raw_config: Dict[str, Any] = yaml.safe_load(f) or {}
+
+        with open(path, encoding="utf-8") as f:
+            raw_config: dict[str, Any] = yaml.safe_load(f) or {}
         return cls.model_validate(raw_config)
 
     # --- Convenience helpers for introspection ---------------------------------
@@ -311,7 +420,8 @@ class DatasetConfig(BaseModel):
 
         Note: This is a subset of n_informative, not a separate count.
 
-        Returns:
+        Returns
+        -------
             The number of clusters with anchor_role == "informative".
 
         Note:
@@ -321,17 +431,17 @@ class DatasetConfig(BaseModel):
         return sum(1 for c in (self.corr_clusters or []) if c.anchor_role == "informative")
 
     @staticmethod
-    def _proxies_from_clusters(
-        clusters: Optional[Iterable[CorrCluster]]
-    ) -> int:
-        """Number of *additional* features contributed by clusters beyond their anchor.
+    def _proxies_from_clusters(clusters: Iterable[CorrCluster] | None) -> int:
+        """Compute the number of additional features contributed by clusters beyond their anchor.
 
-        For a cluster of size k, proxies = max(0, k - 1) regardless of anchor_role.
+        Number of *additional* features contributed by clusters beyond their anchor. For a cluster of size k,
+        proxies = max(0, k - 1) regardless of anchor_role.
 
         Args:
             clusters: An iterable of CorrCluster instances (or None).
 
-        Returns:
+        Returns
+        -------
             The total number of additional features contributed by all clusters.
 
         Note:
@@ -341,11 +451,11 @@ class DatasetConfig(BaseModel):
             return 0
         return sum(max(0, int(c.size) - 1) for c in clusters)
 
-
     def breakdown(self) -> dict[str, int]:
         """Return a structured breakdown of feature counts, incl. cluster proxies.
 
-        Returns:
+        Returns
+        -------
             A dict with keys:
             - n_informative_total
             - n_informative_anchors
@@ -356,7 +466,8 @@ class DatasetConfig(BaseModel):
             - n_features_expected
             - n_features_configured
 
-        Raises:
+        Raises
+        ------
             ValueError: If self.n_features is inconsistent (should not happen if validated).
 
             This is a safeguard against manual tampering with the instance attributes. This should not happen if the
@@ -366,7 +477,6 @@ class DatasetConfig(BaseModel):
             n_features_expected = n_informative + n_pseudo + n_noise + proxies_from_clusters
             n_features_configured = self.n_features (may be larger than expected)
         """
-
         proxies = self._proxies_from_clusters(self.corr_clusters)
         n_inf_anchors = self.count_informative_anchors()
         return {
@@ -388,7 +498,8 @@ class DatasetConfig(BaseModel):
             per_cluster: Include one line per cluster (size/role/rho/etc.).
             as_markdown: Render as a Markdown table-like text.
 
-        Returns:
+        Returns
+        -------
             A formatted string summarizing the feature layout and counts.
         """
         b = self.breakdown()
@@ -422,11 +533,7 @@ class DatasetConfig(BaseModel):
             lines.append(f"- n_features_configured  : {b['n_features_configured']}")
 
         if per_cluster and self.corr_clusters:
-            header = (
-                "| id | size | role | rho | structure | label | proxies |"
-                if as_markdown
-                else "Clusters:"
-            )
+            header = "| id | size | role | rho | structure | label | proxies |" if as_markdown else "Clusters:"
             if as_markdown:
                 lines.append("")
                 lines.append("### Clusters")
@@ -441,8 +548,7 @@ class DatasetConfig(BaseModel):
                 label = c.label or ""
                 if as_markdown:
                     lines.append(
-                        f"| {i} | {c.size} | {c.anchor_role} | {c.rho} | {c.structure} | "
-                        f"{label} | {proxies} |"
+                        f"| {i} | {c.size} | {c.anchor_role} | {c.rho} | {c.structure} | " f"{label} | {proxies} |"
                     )
                 else:
                     lines.append(
