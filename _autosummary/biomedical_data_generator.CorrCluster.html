@@ -58,14 +58,6 @@
 <li class="toctree-l1"><a class="reference internal" href="biomedical_data_generator.DatasetConfig.html">biomedical_data_generator.DatasetConfig</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">biomedical_data_generator.CorrCluster</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#biomedical_data_generator.CorrCluster"><code class="docutils literal notranslate"><span class="pre">CorrCluster</span></code></a><ul>
-<li class="toctree-l3"><a class="reference internal" href="#biomedical_data_generator.CorrCluster.size"><code class="docutils literal notranslate"><span class="pre">CorrCluster.size</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="#biomedical_data_generator.CorrCluster.rho"><code class="docutils literal notranslate"><span class="pre">CorrCluster.rho</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="#biomedical_data_generator.CorrCluster.structure"><code class="docutils literal notranslate"><span class="pre">CorrCluster.structure</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="#biomedical_data_generator.CorrCluster.anchor_role"><code class="docutils literal notranslate"><span class="pre">CorrCluster.anchor_role</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="#biomedical_data_generator.CorrCluster.anchor_beta"><code class="docutils literal notranslate"><span class="pre">CorrCluster.anchor_beta</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="#biomedical_data_generator.CorrCluster.anchor_class"><code class="docutils literal notranslate"><span class="pre">CorrCluster.anchor_class</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="#biomedical_data_generator.CorrCluster.random_state"><code class="docutils literal notranslate"><span class="pre">CorrCluster.random_state</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="#biomedical_data_generator.CorrCluster.label"><code class="docutils literal notranslate"><span class="pre">CorrCluster.label</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#biomedical_data_generator.CorrCluster.__init__"><code class="docutils literal notranslate"><span class="pre">CorrCluster.__init__()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#biomedical_data_generator.CorrCluster.model_config"><code class="docutils literal notranslate"><span class="pre">CorrCluster.model_config</span></code></a></li>
 </ul>
@@ -106,172 +98,71 @@
 <em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">biomedical_data_generator.</span></span><span class="sig-name descname"><span class="pre">CorrCluster</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">size</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rho</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">structure</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'equicorrelated'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">anchor_role</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'informative'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">anchor_beta</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">anchor_class</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">random_state</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">label</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/biomedical_data_generator/config.html#CorrCluster"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#biomedical_data_generator.CorrCluster" title="Link to this definition"></a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">BaseModel</span></code></p>
 <p>One correlated feature block anchored at a role feature.</p>
-<p class="rubric">Notes</p>
-<ul class="simple">
-<li><p>The cluster contributes ‘size’ features, of which one is the anchor.</p></li>
-<li><p>The anchor feature contributes to the role count (informative/pseudo/noise).</p></li>
-<li><p>The other (size - 1) features are proxies, contributing additional features.</p></li>
-<li><dl class="simple">
-<dt>The anchor_beta controls the effect size of the anchor feature on the target.</dt><dd><p>The proxies have no direct effect on the target, but are correlated to the anchor.</p>
-</dd>
-</dl>
-</li>
-<li><dl class="simple">
-<dt>If anchor_class is set (0..n_classes-1), the anchor has a stronger effect for that class.</dt><dd><p>This is useful to create class-specific patterns.  The anchor_class allows boosting a
-specific class for the anchor feature.</p>
-</dd>
-</dl>
-</li>
-<li><p>The structure controls the correlation pattern within the cluster.</p></li>
-<li><p>The random_state can be set for reproducible results.</p></li>
-</ul>
-<hr class="docutils" />
+<p>Cluster of correlated features with one anchor feature that contributes to the target. The cluster
+consists of <cite>size</cite> features, of which one is the anchor. The anchor has a specified role
+(informative/pseudo/noise) and effect size (<cite>anchor_beta</cite>). Optionally, the anchor can have a stronger effect for a
+specific class (<cite>anchor_class</cite>). If <cite>anchor_class</cite> is set (0..n_classes-1), the anchor has a stronger effect for
+that class. This is useful to create class-specific patterns. The <cite>anchor_class</cite> allows boosting a specific class
+for the anchor feature.
+The other features in the cluster are proxies, correlated to the anchor but not
+directly affecting the target. The correlation structure within the cluster can be either equicorrelated or
+Toeplitz. Toeplitz is defined as correlation decreasing with distance: <cite>rho**|i-j|</cite>.  This <cite>structure</cite> controls the
+correlation pattern within the cluster.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>size</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.13)"><em>int</em></a>)</p></li>
-<li><p><strong>rho</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.13)"><em>float</em></a>)</p></li>
-<li><p><strong>structure</strong> (<a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Literal" title="(in Python v3.13)"><em>Literal</em></a><em>[</em><em>'equicorrelated'</em><em>, </em><em>'toeplitz'</em><em>]</em>)</p></li>
-<li><p><strong>anchor_role</strong> (<a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Literal" title="(in Python v3.13)"><em>Literal</em></a><em>[</em><em>'informative'</em><em>, </em><em>'pseudo'</em><em>, </em><em>'noise'</em><em>]</em>)</p></li>
-<li><p><strong>anchor_beta</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.13)"><em>float</em></a>)</p></li>
-<li><p><strong>anchor_class</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.13)"><em>int</em></a><em> | </em><em>None</em>)</p></li>
-<li><p><strong>random_state</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.13)"><em>int</em></a><em> | </em><em>None</em>)</p></li>
-<li><p><strong>label</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a><em> | </em><em>None</em>)</p></li>
+<li><p><strong>size</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.13)"><code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code></a>) – Number of features in the cluster (including the anchor).</p></li>
+<li><p><strong>rho</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.13)"><code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code></a>) – Correlation coefficient (0 &lt; rho &lt; 1).</p></li>
+<li><p><strong>structure</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">Literal[``</span></code>”equicorrelated”<code class="docutils literal notranslate"><span class="pre">,</span> <span class="pre">``&quot;toeplitz&quot;</span></code><code class="xref py py-class docutils literal notranslate"><span class="pre">]</span></code>) – Correlation structure within the cluster.
+- “equicorrelated”: All features have the same pairwise correlation <cite>rho</cite>.
+- “toeplitz”: Correlation decreases with distance: <cite>rho**|i-j|</cite>.</p></li>
+<li><p><strong>anchor_role</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">Literal[``</span></code>”informative”<code class="docutils literal notranslate"><span class="pre">,</span> <span class="pre">``&quot;pseudo&quot;</span></code>, <code class="docutils literal notranslate"><span class="pre">&quot;noise&quot;</span></code><code class="xref py py-class docutils literal notranslate"><span class="pre">]</span></code>) – Role of the anchor feature.</p></li>
+<li><p><strong>anchor_beta</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.13)"><code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code></a>) – Effect size of the anchor feature on the target (default: 1.0).</p></li>
+<li><p><strong>anchor_class</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">Optional[int]</span></code>) – If set, the anchor has a stronger effect for this class (0..n_classes-1).</p></li>
+<li><p><strong>random_state</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">Optional[int]</span></code>) – Random seed for reproducibility.</p></li>
+<li><p><strong>label</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">Optional[str]</span></code>) – Optional label for the cluster (for display purposes).</p></li>
 </ul>
 </dd>
 </dl>
-<dl class="py attribute">
-<dt class="sig sig-object py" id="biomedical_data_generator.CorrCluster.size">
-<span class="sig-name descname"><span class="pre">size</span></span><a class="headerlink" href="#biomedical_data_generator.CorrCluster.size" title="Link to this definition"></a></dt>
-<dd><p>Number of features in the cluster (including the anchor).</p>
-<dl class="field-list simple">
-<dt class="field-odd">Type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.13)"><code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code></a></p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="biomedical_data_generator.CorrCluster.rho">
-<span class="sig-name descname"><span class="pre">rho</span></span><a class="headerlink" href="#biomedical_data_generator.CorrCluster.rho" title="Link to this definition"></a></dt>
-<dd><p>Correlation coefficient (0 &lt; rho &lt; 1).</p>
-<dl class="field-list simple">
-<dt class="field-odd">Type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.13)"><code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code></a></p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="biomedical_data_generator.CorrCluster.structure">
-<span class="sig-name descname"><span class="pre">structure</span></span><a class="headerlink" href="#biomedical_data_generator.CorrCluster.structure" title="Link to this definition"></a></dt>
-<dd><p>Correlation structure within the cluster.
-- “equicorrelated”: All features have the same pairwise correlation rho.
-- “toeplitz”: Correlation decreases with distance: rho^|i-j|.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">Literal[``</span></code>”equicorrelated”<code class="docutils literal notranslate"><span class="pre">,</span> <span class="pre">``&quot;toeplitz&quot;</span></code><code class="xref py py-class docutils literal notranslate"><span class="pre">]</span></code></p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="biomedical_data_generator.CorrCluster.anchor_role">
-<span class="sig-name descname"><span class="pre">anchor_role</span></span><a class="headerlink" href="#biomedical_data_generator.CorrCluster.anchor_role" title="Link to this definition"></a></dt>
-<dd><p>Role of the anchor feature.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">Literal[``</span></code>”informative”<code class="docutils literal notranslate"><span class="pre">,</span> <span class="pre">``&quot;pseudo&quot;</span></code>, <code class="docutils literal notranslate"><span class="pre">&quot;noise&quot;</span></code><code class="xref py py-class docutils literal notranslate"><span class="pre">]</span></code></p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="biomedical_data_generator.CorrCluster.anchor_beta">
-<span class="sig-name descname"><span class="pre">anchor_beta</span></span><a class="headerlink" href="#biomedical_data_generator.CorrCluster.anchor_beta" title="Link to this definition"></a></dt>
-<dd><p>Effect size of the anchor feature on the target (default: 1.0).</p>
-<dl class="field-list simple">
-<dt class="field-odd">Type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.13)"><code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code></a></p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="biomedical_data_generator.CorrCluster.anchor_class">
-<span class="sig-name descname"><span class="pre">anchor_class</span></span><a class="headerlink" href="#biomedical_data_generator.CorrCluster.anchor_class" title="Link to this definition"></a></dt>
-<dd><p>If set, the anchor has a stronger effect for this class (0..n_classes-1).</p>
-<dl class="field-list simple">
-<dt class="field-odd">Type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">Optional[int]</span></code></p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="biomedical_data_generator.CorrCluster.random_state">
-<span class="sig-name descname"><span class="pre">random_state</span></span><a class="headerlink" href="#biomedical_data_generator.CorrCluster.random_state" title="Link to this definition"></a></dt>
-<dd><p>Random seed for reproducibility.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">Optional[int]</span></code></p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="biomedical_data_generator.CorrCluster.label">
-<span class="sig-name descname"><span class="pre">label</span></span><a class="headerlink" href="#biomedical_data_generator.CorrCluster.label" title="Link to this definition"></a></dt>
-<dd><p>Optional label for the cluster (for display purposes).</p>
-<dl class="field-list simple">
-<dt class="field-odd">Type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">Optional[str]</span></code></p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py">
-<span class="sig-name descname"><span class="pre">-----------</span></span></dt>
-<dd></dd></dl>
-
 <p class="rubric">Examples</p>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">biomedical_data_generator</span><span class="w"> </span><span class="kn">import</span> <span class="n">CorrCluster</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">c1</span> <span class="o">=</span> <span class="n">CorrCluster</span><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">rho</span><span class="o">=</span><span class="mf">0.7</span><span class="p">,</span> <span class="n">anchor_role</span><span class="o">=</span><span class="s2">&quot;informative&quot;</span><span class="p">,</span> <span class="n">anchor_beta</span><span class="o">=</span><span class="mf">1.0</span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">c2</span> <span class="o">=</span> <span class="n">CorrCluster</span><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">rho</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span> <span class="n">anchor_role</span><span class="o">=</span><span class="s2">&quot;pseudo&quot;</span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">c1</span><span class="p">)</span>
-<span class="go">size=3 rho=0.7 structure=&#39;equicorrelated&#39; anchor_role=&#39;informative&#39; anchor_beta=1.0 anchor_class=None random_state=None label=None</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">c2</span><span class="p">)</span>
-<span class="go">size=2 rho=0.5 structure=&#39;equicorrelated&#39; anchor_role=&#39;pseudo&#39; anchor_beta=1.0 anchor_class=None random_state=None label=None</span>
-<span class="go">-----------</span>
-</pre></div>
-</div>
+<p><a href="#id1"><span class="problematic" id="id2">``</span></a><a href="#id3"><span class="problematic" id="id4">`</span></a>python
+from biomedical_data_generator import CorrCluster
+c1 = CorrCluster(size=3, rho=0.7, anchor_role=”informative”, anchor_beta=1.0)
+c2 = CorrCluster(size=2, rho=0.5, anchor_role=”pseudo”)
+print(c1)
+# size=3 rho=0.7 structure=’equicorrelated’ anchor_role=’informative’ anchor_beta=1.0 anchor_class=None</p>
+<blockquote>
+<div><p>random_state=None label=None</p>
+</div></blockquote>
+<p>print(c2)
+# size=2 rho=0.5 structure=’equicorrelated’ anchor_role=’pseudo’ anchor_beta=1.0 anchor_class=None</p>
+<blockquote>
+<div><p>random_state=None label=None</p>
+</div></blockquote>
+<p><a href="#id5"><span class="problematic" id="id6">``</span></a><a href="#id7"><span class="problematic" id="id8">`</span></a></p>
 <p class="rubric">References</p>
-<ul class="simple">
-<li><p>May, S., Bischl, B., &amp; Lang, M. (2022). A Benchmark for Data Generation Methods in Classification.
-In Proceedings of the 25th International Conference on Artificial Intelligence and Statistics (pp. 3433-3443). PMLR.</p></li>
-<li><p>sklearn.datasets.make_classification (for the general idea of informative/pseudo/noise features)</p></li>
-<li><p><a class="reference external" href="https://en.wikipedia.org/wiki/Equicorrelated_random_variables">https://en.wikipedia.org/wiki/Equicorrelated_random_variables</a></p></li>
-<li><p><a class="reference external" href="https://en.wikipedia.org/wiki/Toeplitz_matrix">https://en.wikipedia.org/wiki/Toeplitz_matrix</a></p></li>
-</ul>
-<hr class="docutils" />
+<p>May, S., Bischl, B., &amp; Lang, M. (2022). A Benchmark for Data Generation Methods in Classification.
+In Proceedings of the 25th International Conference on Artificial Intelligence and Statistics (pp. 3433-3443).
+PMLR.
+sklearn.datasets.make_classification (for the general idea of informative/pseudo/noise features)
+<a class="reference external" href="https://en.wikipedia.org/wiki/Equicorrelated_random_variables">https://en.wikipedia.org/wiki/Equicorrelated_random_variables</a>
+<a class="reference external" href="https://en.wikipedia.org/wiki/Toeplitz_matrix">https://en.wikipedia.org/wiki/Toeplitz_matrix</a></p>
 <div class="admonition seealso">
 <p class="admonition-title">See also</p>
-<p><code class="xref py py-obj docutils literal notranslate"><span class="pre">-</span></code>, <code class="xref py py-obj docutils literal notranslate"><span class="pre">-</span></code>, <code class="xref py py-obj docutils literal notranslate"><span class="pre">-----------</span></code>, <code class="xref py py-obj docutils literal notranslate"><span class="pre">-----------</span></code></p>
+<dl class="simple">
+<dt><a class="reference internal" href="biomedical_data_generator.DatasetConfig.html#biomedical_data_generator.DatasetConfig" title="biomedical_data_generator.DatasetConfig"><code class="xref py py-obj docutils literal notranslate"><span class="pre">DatasetConfig</span></code></a></dt><dd><p>for the overall dataset configuration.</p>
+</dd>
+<dt><a class="reference internal" href="biomedical_data_generator.generate_dataset.html#biomedical_data_generator.generate_dataset" title="biomedical_data_generator.generate_dataset"><code class="xref py py-obj docutils literal notranslate"><span class="pre">generate_dataset</span></code></a></dt><dd><p>for generating datasets from the configuration.</p>
+</dd>
+</dl>
 </div>
 <div class="admonition warning">
 <p class="admonition-title">Warning</p>
 <ul class="simple">
-<li><dl class="simple">
-<dt>This model does not enforce value constraints (e.g., 0 &lt; rho &lt; 1).</dt><dd><p>Such checks are performed during dataset generation.</p>
-</dd>
-</dl>
-</li>
-<li><dl class="simple">
-<dt>The random_state is per-cluster; if you want overall reproducibility,</dt><dd><p>set the DatasetConfig.random_state instead.</p>
-</dd>
-</dl>
-</li>
+<li><p>This model does not enforce value constraints (e.g., 0 &lt; rho &lt; 1).
+Such checks are performed during dataset generation.</p></li>
+<li><p>The <cite>random_state</cite> is per-cluster; if you want overall reproducibility,
+set the <cite>DatasetConfig.random_state</cite> instead.</p></li>
 </ul>
 </div>
 <p>Create a new model by parsing and validating input data from keyword arguments.</p>
@@ -390,28 +281,28 @@ validated to form a valid model.</p>
 <tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">model_fields_set</span></code></p></td>
 <td><p>Returns the set of fields that have been explicitly set on this model instance.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#biomedical_data_generator.CorrCluster.size" title="biomedical_data_generator.CorrCluster.size"><code class="xref py py-obj docutils literal notranslate"><span class="pre">size</span></code></a></p></td>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">size</span></code></p></td>
 <td><p></p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#biomedical_data_generator.CorrCluster.rho" title="biomedical_data_generator.CorrCluster.rho"><code class="xref py py-obj docutils literal notranslate"><span class="pre">rho</span></code></a></p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">rho</span></code></p></td>
 <td><p></p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#biomedical_data_generator.CorrCluster.structure" title="biomedical_data_generator.CorrCluster.structure"><code class="xref py py-obj docutils literal notranslate"><span class="pre">structure</span></code></a></p></td>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">structure</span></code></p></td>
 <td><p></p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#biomedical_data_generator.CorrCluster.anchor_role" title="biomedical_data_generator.CorrCluster.anchor_role"><code class="xref py py-obj docutils literal notranslate"><span class="pre">anchor_role</span></code></a></p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">anchor_role</span></code></p></td>
 <td><p></p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#biomedical_data_generator.CorrCluster.anchor_beta" title="biomedical_data_generator.CorrCluster.anchor_beta"><code class="xref py py-obj docutils literal notranslate"><span class="pre">anchor_beta</span></code></a></p></td>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">anchor_beta</span></code></p></td>
 <td><p></p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#biomedical_data_generator.CorrCluster.anchor_class" title="biomedical_data_generator.CorrCluster.anchor_class"><code class="xref py py-obj docutils literal notranslate"><span class="pre">anchor_class</span></code></a></p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">anchor_class</span></code></p></td>
 <td><p></p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#biomedical_data_generator.CorrCluster.random_state" title="biomedical_data_generator.CorrCluster.random_state"><code class="xref py py-obj docutils literal notranslate"><span class="pre">random_state</span></code></a></p></td>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">random_state</span></code></p></td>
 <td><p></p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#biomedical_data_generator.CorrCluster.label" title="biomedical_data_generator.CorrCluster.label"><code class="xref py py-obj docutils literal notranslate"><span class="pre">label</span></code></a></p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">label</span></code></p></td>
 <td><p></p></td>
 </tr>
 </tbody>

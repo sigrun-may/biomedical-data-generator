@@ -92,16 +92,16 @@
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">annotations</span>
 
-<span class="kn">from</span><span class="w"> </span><span class="nn">collections.abc</span><span class="w"> </span><span class="kn">import</span> <span class="n">Callable</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">collections.abc</span><span class="w"> </span><span class="kn">import</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">Mapping</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">dataclasses</span><span class="w"> </span><span class="kn">import</span> <span class="n">asdict</span><span class="p">,</span> <span class="n">dataclass</span><span class="p">,</span> <span class="n">field</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Literal</span><span class="p">,</span> <span class="n">cast</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Literal</span><span class="p">,</span> <span class="n">cast</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">numpy.typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">NDArray</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="kn">import</span> <span class="n">DataFrame</span>
 
-<span class="kn">from</span><span class="w"> </span><span class="nn">.config</span><span class="w"> </span><span class="kn">import</span> <span class="n">CorrCluster</span><span class="p">,</span> <span class="n">DatasetConfig</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.config</span><span class="w"> </span><span class="kn">import</span> <span class="n">CorrCluster</span><span class="p">,</span> <span class="n">DatasetConfig</span><span class="p">,</span> <span class="n">NoiseDistribution</span>
 
 
 <span class="c1"># =========================</span>
@@ -122,7 +122,7 @@
     <span class="c1"># Correlated cluster structure</span>
     <span class="n">corr_cluster_indices</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">]]</span>  <span class="c1"># cluster_id -&gt; column indices</span>
     <span class="n">anchor_idx</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span><span class="p">]</span>  <span class="c1"># cluster_id -&gt; anchor col (or None)</span>
-    <span class="n">anchor_role</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">str</span><span class="p">]</span>  <span class="c1"># &quot;informative&quot; | &quot;latent&quot;</span>
+    <span class="n">anchor_role</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">str</span><span class="p">]</span>  <span class="c1"># &quot;informative&quot; | &quot;pseudo&quot; | &quot;noise&quot;</span>
     <span class="n">anchor_beta</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">]</span>  <span class="c1"># 0.0 if latent</span>
     <span class="n">cluster_label</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span><span class="p">]</span>  <span class="c1"># didactic tags per cluster</span>
 
@@ -146,6 +146,42 @@
 
 
 
+<span class="k">def</span><span class="w"> </span><span class="nf">_sample_noise</span><span class="p">(</span><span class="n">rng</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">Generator</span><span class="p">,</span>
+                  <span class="n">n</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+                  <span class="n">dist</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+                  <span class="n">scale</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+                  <span class="n">params</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Sample n noise values from the specified distribution.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        rng: Random number generator.</span>
+<span class="sd">        n: Number of samples.</span>
+<span class="sd">        dist: Distribution name (&quot;normal&quot;, &quot;uniform&quot;, &quot;laplace&quot;).</span>
+<span class="sd">        scale: Scale parameter (stddev for normal/laplace, half-width for uniform).</span>
+<span class="sd">        params: Additional distribution-specific parameters.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">        np.ndarray: Array of shape (n,) with sampled noise values.</span>
+
+<span class="sd">    Raises</span>
+<span class="sd">    ------</span>
+<span class="sd">        ValueError: If dist is unsupported or parameters are invalid.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">params</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">params</span> <span class="ow">or</span> <span class="p">{})</span>
+    <span class="k">if</span> <span class="n">dist</span> <span class="o">==</span> <span class="s2">&quot;normal&quot;</span><span class="p">:</span>
+        <span class="n">loc</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">params</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;loc&quot;</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">rng</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span><span class="n">loc</span><span class="o">=</span><span class="n">loc</span><span class="p">,</span> <span class="n">scale</span><span class="o">=</span><span class="n">scale</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="n">n</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">dist</span> <span class="o">==</span> <span class="s2">&quot;uniform&quot;</span><span class="p">:</span>
+        <span class="n">low</span>  <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">params</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;low&quot;</span><span class="p">,</span> <span class="o">-</span><span class="n">scale</span><span class="p">))</span>
+        <span class="n">high</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">params</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;high&quot;</span><span class="p">,</span> <span class="n">scale</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">rng</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="n">low</span><span class="o">=</span><span class="n">low</span><span class="p">,</span> <span class="n">high</span><span class="o">=</span><span class="n">high</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="n">n</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">dist</span> <span class="o">==</span> <span class="s2">&quot;laplace&quot;</span><span class="p">:</span>
+        <span class="n">loc</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">params</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;loc&quot;</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">rng</span><span class="o">.</span><span class="n">laplace</span><span class="p">(</span><span class="n">loc</span><span class="o">=</span><span class="n">loc</span><span class="p">,</span> <span class="n">scale</span><span class="o">=</span><span class="n">scale</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="n">n</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Unsupported noise_distribution: </span><span class="si">{</span><span class="n">dist</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
 <span class="c1"># =========================</span>
 <span class="c1"># Small covariance helpers</span>
 <span class="c1"># =========================</span>
@@ -155,7 +191,7 @@
     <span class="k">return</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">rho</span><span class="p">)</span> <span class="o">*</span> <span class="n">identity</span> <span class="o">+</span> <span class="n">rho</span> <span class="o">*</span> <span class="n">ones</span>
 
 
-<span class="k">def</span><span class="w"> </span><span class="nf">_cov_ar1</span><span class="p">(</span><span class="n">size</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">rho</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">NDArray</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">]:</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_cov_toeplitz</span><span class="p">(</span><span class="n">size</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">rho</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">NDArray</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">]:</span>
     <span class="n">idx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">size</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int64</span><span class="p">)</span>
     <span class="n">D</span><span class="p">:</span> <span class="n">NDArray</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">idx</span><span class="p">[:,</span> <span class="kc">None</span><span class="p">]</span> <span class="o">-</span> <span class="n">idx</span><span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="p">:])</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">,</span> <span class="n">copy</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
     <span class="c1"># ensure float64 ndarray for typing</span>
@@ -166,7 +202,7 @@
     <span class="n">Sigma</span> <span class="o">=</span> <span class="p">(</span>
         <span class="n">_cov_equicorr</span><span class="p">(</span><span class="n">cluster</span><span class="o">.</span><span class="n">size</span><span class="p">,</span> <span class="n">cluster</span><span class="o">.</span><span class="n">rho</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">cluster</span><span class="o">.</span><span class="n">structure</span> <span class="o">==</span> <span class="s2">&quot;equicorrelated&quot;</span>
-        <span class="k">else</span> <span class="n">_cov_ar1</span><span class="p">(</span><span class="n">cluster</span><span class="o">.</span><span class="n">size</span><span class="p">,</span> <span class="n">cluster</span><span class="o">.</span><span class="n">rho</span><span class="p">)</span>
+        <span class="k">else</span> <span class="n">_cov_toeplitz</span><span class="p">(</span><span class="n">cluster</span><span class="o">.</span><span class="n">size</span><span class="p">,</span> <span class="n">cluster</span><span class="o">.</span><span class="n">rho</span><span class="p">)</span>
     <span class="p">)</span>
     <span class="n">L</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">cholesky</span><span class="p">(</span><span class="n">Sigma</span><span class="p">)</span>
     <span class="n">Z</span><span class="p">:</span> <span class="n">NDArray</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">]</span> <span class="o">=</span> <span class="n">rng</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">cluster</span><span class="o">.</span><span class="n">size</span><span class="p">))</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">,</span> <span class="n">copy</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
@@ -185,7 +221,7 @@
     <span class="n">n_samples</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
     <span class="n">size</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
     <span class="n">rho</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.7</span><span class="p">,</span>
-    <span class="n">structure</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;equicorrelated&quot;</span><span class="p">,</span> <span class="s2">&quot;ar1&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;equicorrelated&quot;</span><span class="p">,</span>
+    <span class="n">structure</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;equicorrelated&quot;</span><span class="p">,</span> <span class="s2">&quot;toeplitz&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;equicorrelated&quot;</span><span class="p">,</span>
     <span class="n">random_state</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">label</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">NDArray</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">],</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">object</span><span class="p">]]:</span>
@@ -197,7 +233,7 @@
 <span class="sd">        n_samples: Number of samples (rows).</span>
 <span class="sd">        size: Number of features (columns).</span>
 <span class="sd">        rho: Target correlation between features (0 ≤ rho &lt; 1).</span>
-<span class="sd">        structure: &quot;equicorrelated&quot; or &quot;ar1&quot;.</span>
+<span class="sd">        structure: &quot;equicorrelated&quot; or &quot;toeplitz&quot;.</span>
 <span class="sd">        random_state: Random seed for reproducibility.</span>
 <span class="sd">        label: Optional didactic tag for this cluster.</span>
 
@@ -215,11 +251,16 @@
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">if</span> <span class="n">size</span> <span class="o">&lt;</span> <span class="mi">1</span><span class="p">:</span>
         <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;size must be &gt;= 1&quot;</span><span class="p">)</span>
-    <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="mf">0.0</span> <span class="o">&lt;=</span> <span class="n">rho</span> <span class="o">&lt;</span> <span class="mf">1.0</span><span class="p">):</span>
-        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;rho must be in [0, 1)&quot;</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">structure</span> <span class="o">==</span> <span class="s2">&quot;equicorrelated&quot;</span><span class="p">:</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="mf">0.0</span> <span class="o">&lt;=</span> <span class="n">rho</span> <span class="o">&lt;</span> <span class="mf">1.0</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;for equicorrelated: rho must be in [0, 1)&quot;</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>  <span class="c1"># toeplitz (AR(1)-artige Struktur)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="o">-</span><span class="mf">0.999</span> <span class="o">&lt;</span> <span class="n">rho</span> <span class="o">&lt;</span> <span class="mf">0.999</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;for toeplitz: |rho| must be &lt; 1&quot;</span><span class="p">)</span>
 
     <span class="n">rng</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">default_rng</span><span class="p">(</span><span class="n">random_state</span><span class="p">)</span>
-    <span class="n">Sigma</span><span class="p">:</span> <span class="n">NDArray</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">]</span> <span class="o">=</span> <span class="n">_cov_equicorr</span><span class="p">(</span><span class="n">size</span><span class="p">,</span> <span class="n">rho</span><span class="p">)</span> <span class="k">if</span> <span class="n">structure</span> <span class="o">==</span> <span class="s2">&quot;equicorrelated&quot;</span> <span class="k">else</span> <span class="n">_cov_ar1</span><span class="p">(</span><span class="n">size</span><span class="p">,</span> <span class="n">rho</span><span class="p">)</span>
+    <span class="n">Sigma</span><span class="p">:</span> <span class="n">NDArray</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">]</span> <span class="o">=</span> <span class="n">_cov_equicorr</span><span class="p">(</span><span class="n">size</span><span class="p">,</span> <span class="n">rho</span><span class="p">)</span> <span class="k">if</span> <span class="n">structure</span> <span class="o">==</span> <span class="s2">&quot;equicorrelated&quot;</span> <span class="k">else</span> <span class="n">_cov_toeplitz</span><span class="p">(</span><span class="n">size</span><span class="p">,</span> <span class="n">rho</span><span class="p">)</span>
     <span class="n">L</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">cholesky</span><span class="p">(</span><span class="n">Sigma</span><span class="p">)</span>
     <span class="n">Z</span><span class="p">:</span> <span class="n">NDArray</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">]</span> <span class="o">=</span> <span class="n">rng</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="n">n_samples</span><span class="p">,</span> <span class="n">size</span><span class="p">))</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">,</span> <span class="n">copy</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
     <span class="n">X</span><span class="p">:</span> <span class="n">NDArray</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">]</span> <span class="o">=</span> <span class="n">cast</span><span class="p">(</span><span class="n">NDArray</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">],</span> <span class="n">Z</span> <span class="o">@</span> <span class="n">L</span><span class="o">.</span><span class="n">T</span><span class="p">)</span>
@@ -299,7 +340,6 @@
     <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">max_tries</span><span class="p">):</span>
         <span class="n">_</span><span class="p">,</span> <span class="n">m</span> <span class="o">=</span> <span class="n">generate_correlated_cluster</span><span class="p">(</span><span class="n">n_samples</span><span class="p">,</span> <span class="n">size</span><span class="p">,</span> <span class="n">rho_target</span><span class="p">,</span> <span class="n">structure</span><span class="p">,</span> <span class="n">random_state</span><span class="o">=</span><span class="n">seed</span><span class="p">)</span>
         <span class="n">mean_off</span> <span class="o">=</span> <span class="n">cast</span><span class="p">(</span><span class="nb">float</span><span class="p">,</span> <span class="n">m</span><span class="p">[</span><span class="s2">&quot;mean_offdiag&quot;</span><span class="p">])</span>
-        <span class="n">min_off</span> <span class="o">=</span> <span class="n">cast</span><span class="p">(</span><span class="nb">float</span><span class="p">,</span> <span class="n">m</span><span class="p">[</span><span class="s2">&quot;min_offdiag&quot;</span><span class="p">])</span>
         <span class="n">min_off</span> <span class="o">=</span> <span class="n">cast</span><span class="p">(</span><span class="nb">float</span><span class="p">,</span> <span class="n">m</span><span class="p">[</span><span class="s2">&quot;min_offdiag&quot;</span><span class="p">])</span>
 
         <span class="n">ok</span> <span class="o">=</span> <span class="kc">False</span>
@@ -420,6 +460,63 @@
     <span class="k">return</span> <span class="n">Z</span>
 
 
+<span class="k">def</span><span class="w"> </span><span class="nf">_resolve_noise_params</span><span class="p">(</span><span class="n">dist</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">noise_scale</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">noise_params</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">float</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Resolve noise distribution parameters with defaults.</span>
+
+<span class="sd">    Returns a params dict that _always_ includes the required keys for the chosen dist.</span>
+<span class="sd">    - normal/laplace: {&#39;loc&#39;, &#39;scale&#39;}</span>
+<span class="sd">    - uniform: {&#39;low&#39;, &#39;high&#39;}</span>
+<span class="sd">    Any keys given in noise_params override these defaults.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        dist: Distribution name (&quot;normal&quot;, &quot;uniform&quot;, &quot;laplace&quot;).</span>
+<span class="sd">        noise_scale: Scale parameter (stddev for normal/laplace, half-width for uniform).</span>
+<span class="sd">        noise_params: Additional distribution-specific parameters.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">        dict: Resolved parameters for the specified distribution.</span>
+
+<span class="sd">    Raises</span>
+<span class="sd">    ------</span>
+<span class="sd">        ValueError: If dist is unsupported.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># normalize</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">dist</span><span class="p">,</span> <span class="n">NoiseDistribution</span><span class="p">):</span>
+        <span class="n">key</span> <span class="o">=</span> <span class="n">dist</span><span class="o">.</span><span class="n">value</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">key</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">dist</span><span class="p">)</span>
+        <span class="c1"># handle accidental Enum stringification like &quot;NoiseDistribution.uniform&quot;</span>
+        <span class="k">if</span> <span class="n">key</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;NoiseDistribution.&quot;</span><span class="p">):</span>
+            <span class="n">key</span> <span class="o">=</span> <span class="n">key</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;.&quot;</span><span class="p">,</span> <span class="mi">1</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span>
+        <span class="n">key</span> <span class="o">=</span> <span class="n">key</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+
+    <span class="k">if</span> <span class="n">key</span> <span class="o">==</span> <span class="s2">&quot;normal&quot;</span><span class="p">:</span>
+        <span class="n">params</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;loc&quot;</span><span class="p">:</span> <span class="mf">0.0</span><span class="p">,</span> <span class="s2">&quot;scale&quot;</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="n">noise_scale</span><span class="p">)}</span>
+        <span class="k">if</span> <span class="n">noise_params</span><span class="p">:</span>
+            <span class="n">params</span><span class="o">.</span><span class="n">update</span><span class="p">({</span><span class="n">k</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="n">v</span><span class="p">)</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">noise_params</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="n">k</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;loc&quot;</span><span class="p">,</span> <span class="s2">&quot;scale&quot;</span><span class="p">)})</span>
+        <span class="k">return</span> <span class="n">params</span>
+
+    <span class="k">if</span> <span class="n">key</span> <span class="o">==</span> <span class="s2">&quot;laplace&quot;</span><span class="p">:</span>
+        <span class="n">params</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;loc&quot;</span><span class="p">:</span> <span class="mf">0.0</span><span class="p">,</span> <span class="s2">&quot;scale&quot;</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="n">noise_scale</span><span class="p">)}</span>
+        <span class="k">if</span> <span class="n">noise_params</span><span class="p">:</span>
+            <span class="n">params</span><span class="o">.</span><span class="n">update</span><span class="p">({</span><span class="n">k</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="n">v</span><span class="p">)</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">noise_params</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="n">k</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;loc&quot;</span><span class="p">,</span> <span class="s2">&quot;scale&quot;</span><span class="p">)})</span>
+        <span class="k">return</span> <span class="n">params</span>
+
+    <span class="k">if</span> <span class="n">key</span> <span class="o">==</span> <span class="s2">&quot;uniform&quot;</span><span class="p">:</span>
+        <span class="c1"># default to symmetric interval around 0 with width 2*scale unless params given</span>
+        <span class="k">if</span> <span class="n">noise_params</span> <span class="ow">and</span> <span class="p">{</span><span class="s2">&quot;low&quot;</span><span class="p">,</span> <span class="s2">&quot;high&quot;</span><span class="p">}</span> <span class="o">&lt;=</span> <span class="nb">set</span><span class="p">(</span><span class="n">noise_params</span><span class="o">.</span><span class="n">keys</span><span class="p">()):</span>
+            <span class="n">low</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">noise_params</span><span class="p">[</span><span class="s2">&quot;low&quot;</span><span class="p">])</span>
+            <span class="n">high</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">noise_params</span><span class="p">[</span><span class="s2">&quot;high&quot;</span><span class="p">])</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="n">low</span> <span class="o">&lt;</span> <span class="n">high</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;For uniform noise, require low &lt; high.&quot;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;low&quot;</span><span class="p">:</span> <span class="n">low</span><span class="p">,</span> <span class="s2">&quot;high&quot;</span><span class="p">:</span> <span class="n">high</span><span class="p">}</span>
+        <span class="n">s</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">noise_scale</span><span class="p">)</span>
+        <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;low&quot;</span><span class="p">:</span> <span class="o">-</span><span class="n">s</span><span class="p">,</span> <span class="s2">&quot;high&quot;</span><span class="p">:</span> <span class="n">s</span><span class="p">}</span>
+
+    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Unsupported noise_distribution: </span><span class="si">{</span><span class="n">dist</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+
 <span class="c1"># =================</span>
 <span class="c1"># Public generator</span>
 <span class="c1"># =================</span>
@@ -464,7 +561,7 @@
     <span class="k">if</span> <span class="n">overrides</span><span class="p">:</span>
         <span class="n">cfg</span> <span class="o">=</span> <span class="n">cfg</span><span class="o">.</span><span class="n">model_copy</span><span class="p">(</span><span class="n">update</span><span class="o">=</span><span class="n">overrides</span><span class="p">)</span>
 
-    <span class="k">if</span> <span class="n">cfg</span><span class="o">.</span><span class="n">n_classes</span> <span class="o">&lt;</span> <span class="mi">2</span><span class="p">:</span>
+    <span class="k">if</span> <span class="nb">int</span><span class="p">(</span><span class="n">cfg</span><span class="o">.</span><span class="n">n_classes</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">2</span><span class="p">:</span>
         <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;n_classes must be &gt;= 2.&quot;</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">cfg</span><span class="o">.</span><span class="n">weights</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
         <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">cfg</span><span class="o">.</span><span class="n">weights</span><span class="p">)</span> <span class="o">!=</span> <span class="n">cfg</span><span class="o">.</span><span class="n">n_classes</span><span class="p">:</span>
@@ -517,12 +614,31 @@
     <span class="p">)</span>
 
     <span class="c1"># 4) noise</span>
-    <span class="n">X_noise</span> <span class="o">=</span> <span class="n">rng_global</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="n">cfg</span><span class="o">.</span><span class="n">n_samples</span><span class="p">,</span> <span class="n">cfg</span><span class="o">.</span><span class="n">n_noise</span><span class="p">))</span> <span class="k">if</span> <span class="n">cfg</span><span class="o">.</span><span class="n">n_noise</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="k">else</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">((</span><span class="n">cfg</span><span class="o">.</span><span class="n">n_samples</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span>
+    <span class="k">if</span> <span class="n">cfg</span><span class="o">.</span><span class="n">n_noise</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">params</span> <span class="o">=</span> <span class="n">_resolve_noise_params</span><span class="p">(</span><span class="n">cfg</span><span class="o">.</span><span class="n">noise_distribution</span><span class="p">,</span> <span class="n">cfg</span><span class="o">.</span><span class="n">noise_scale</span><span class="p">,</span> <span class="n">cfg</span><span class="o">.</span><span class="n">noise_params</span><span class="p">)</span>
+        <span class="n">distribution</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="n">cfg</span><span class="o">.</span><span class="n">noise_distribution</span><span class="o">.</span><span class="n">value</span> <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">cfg</span><span class="o">.</span><span class="n">noise_distribution</span><span class="p">,</span> <span class="s2">&quot;value&quot;</span><span class="p">)</span> <span class="k">else</span> <span class="nb">str</span><span class="p">(</span><span class="n">cfg</span><span class="o">.</span><span class="n">noise_distribution</span><span class="p">))</span>
+        <span class="n">noise_cols</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">stack</span><span class="p">(</span>
+            <span class="p">[</span>
+                <span class="n">_sample_noise</span><span class="p">(</span>
+                    <span class="n">rng_global</span><span class="p">,</span>
+                    <span class="n">n</span><span class="o">=</span><span class="n">cfg</span><span class="o">.</span><span class="n">n_samples</span><span class="p">,</span>
+                    <span class="n">dist</span><span class="o">=</span><span class="n">distribution</span><span class="p">,</span>
+                    <span class="n">scale</span><span class="o">=</span><span class="nb">float</span><span class="p">(</span><span class="n">params</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;scale&quot;</span><span class="p">,</span> <span class="n">cfg</span><span class="o">.</span><span class="n">noise_scale</span><span class="p">)),</span>
+                    <span class="n">params</span><span class="o">=</span><span class="n">params</span><span class="p">,</span>
+                <span class="p">)</span>
+                <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">cfg</span><span class="o">.</span><span class="n">n_noise</span><span class="p">)</span>
+            <span class="p">],</span>
+            <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="n">X_noise</span> <span class="o">=</span> <span class="n">noise_cols</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">X_noise</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">((</span><span class="n">cfg</span><span class="o">.</span><span class="n">n_samples</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span>
 
     <span class="c1"># Concatenate in naming order: [clusters] + [free informative] + [free pseudo] + [noise]</span>
     <span class="n">X</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">([</span><span class="n">X_clusters</span><span class="p">,</span> <span class="n">X_inf</span><span class="p">,</span> <span class="n">X_pseudo</span><span class="p">,</span> <span class="n">X_noise</span><span class="p">],</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
 
-    <span class="c1"># Sicherheit: Spaltenzahl prüfen (soll == len(names) == cfg.n_features)</span>
+    <span class="c1"># Check totals</span>
     <span class="k">assert</span> <span class="n">X</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="n">names</span><span class="p">)</span> <span class="o">==</span> <span class="n">cfg</span><span class="o">.</span><span class="n">n_features</span><span class="p">,</span> <span class="p">(</span><span class="n">X</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="nb">len</span><span class="p">(</span><span class="n">names</span><span class="p">),</span> <span class="n">cfg</span><span class="o">.</span><span class="n">n_features</span><span class="p">)</span>
 
     <span class="c1"># ----- logits for n_classes</span>
@@ -631,14 +747,16 @@
 <span class="sd">        return_dataframe: Return X as DataFrame (default) or ndarray.</span>
 <span class="sd">        **overrides: Optional keyword overrides merged into cfg for generation.</span>
 
-<span class="sd">    Returns:</span>
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
 <span class="sd">        tuple:</span>
 <span class="sd">            - seed (int): The seed that satisfied the tolerance.</span>
 <span class="sd">            - X (pandas.DataFrame | np.ndarray): Feature matrix for that seed.</span>
 <span class="sd">            - y (np.ndarray): Labels for that seed.</span>
 <span class="sd">            - meta (DatasetMeta): Metadata for that seed.</span>
 
-<span class="sd">    Raises:</span>
+<span class="sd">    Raises</span>
+<span class="sd">    ------</span>
 <span class="sd">        RuntimeError: If no seed satisfies the tolerance within max_tries.</span>
 <span class="sd">        ValueError: If cfg.n_classes &lt; 2 or weights length mismatches n_classes.</span>
 <span class="sd">    &quot;&quot;&quot;</span>

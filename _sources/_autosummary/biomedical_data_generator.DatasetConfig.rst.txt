@@ -61,6 +61,9 @@
       ~DatasetConfig.n_informative
       ~DatasetConfig.n_pseudo
       ~DatasetConfig.n_noise
+      ~DatasetConfig.noise_distribution
+      ~DatasetConfig.noise_scale
+      ~DatasetConfig.noise_params
       ~DatasetConfig.n_classes
       ~DatasetConfig.weights
       ~DatasetConfig.class_sep
