@@ -349,7 +349,6 @@
                 <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;For uniform noise, require low &lt; high.&quot;</span><span class="p">)</span>
         <span class="k">return</span> <span class="bp">self</span>
 
-
     <span class="nd">@model_validator</span><span class="p">(</span><span class="n">mode</span><span class="o">=</span><span class="s2">&quot;before&quot;</span><span class="p">)</span>
     <span class="nd">@classmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">_normalize_and_validate</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
@@ -588,7 +587,8 @@
             <span class="s2">&quot;n_noise&quot;</span><span class="p">:</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">n_noise</span><span class="p">),</span>
             <span class="s2">&quot;proxies_from_clusters&quot;</span><span class="p">:</span> <span class="nb">int</span><span class="p">(</span><span class="n">proxies</span><span class="p">),</span>
             <span class="s2">&quot;n_features_expected&quot;</span><span class="p">:</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">n_informative</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_pseudo</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_noise</span> <span class="o">+</span> <span class="n">proxies</span><span class="p">),</span>
-            <span class="s2">&quot;n_features_configured&quot;</span><span class="p">:</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">n_features</span><span class="p">),</span>
+            <span class="c1"># n_features is Optional during early normalization; coerce safely for summarization</span>
+            <span class="s2">&quot;n_features_configured&quot;</span><span class="p">:</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">n_features</span> <span class="ow">or</span> <span class="mi">0</span><span class="p">),</span>
         <span class="p">}</span></div>
 
 
