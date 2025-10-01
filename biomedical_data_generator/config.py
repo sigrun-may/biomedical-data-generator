@@ -260,7 +260,6 @@ class DatasetConfig(BaseModel):
                 raise ValueError("For uniform noise, require low < high.")
         return self
 
-
     @model_validator(mode="before")
     @classmethod
     def _normalize_and_validate(cls, data: Any) -> Any:
@@ -488,7 +487,8 @@ class DatasetConfig(BaseModel):
             "n_noise": int(self.n_noise),
             "proxies_from_clusters": int(proxies),
             "n_features_expected": int(self.n_informative + self.n_pseudo + self.n_noise + proxies),
-            "n_features_configured": int(self.n_features),
+            # n_features is Optional during early normalization; coerce safely for summarization
+            "n_features_configured": int(self.n_features or 0),
         }
 
     def summary(self, *, per_cluster: bool = False, as_markdown: bool = False) -> str:

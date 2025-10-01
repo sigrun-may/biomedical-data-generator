@@ -8,14 +8,10 @@
 
 from __future__ import annotations
 
-import numpy as np
+from typing import Any
 
-try:
-    # Prefer top-level re-exports if you provide them
-    from biomedical_data_generator import DatasetConfig, generate_dataset  # type: ignore
-except Exception:
-    from biomedical_data_generator.config import DatasetConfig  # type: ignore
-    from biomedical_data_generator.generator import generate_dataset  # type: ignore
+from biomedical_data_generator.config import DatasetConfig
+from biomedical_data_generator.generator import generate_dataset
 
 
 def make_biomedical_dataset(
@@ -31,7 +27,7 @@ def make_biomedical_dataset(
     *,
     return_meta: bool = False,
     return_pandas: bool = False,
-) -> tuple[np.ndarray, np.ndarray] | tuple[np.ndarray, np.ndarray, object]:
+) -> tuple[Any, Any] | tuple[Any, Any, object]:
     """
     Sklearn-like convenience wrapper around the biomedical-data-generator.
 
@@ -51,7 +47,7 @@ def make_biomedical_dataset(
         weights=weights,
         random_state=random_state,
         n_noise=n_noise,
-        noise_dist=noise_dist,
+        noise_distribution=noise_dist,
     )
     X, y, meta = generate_dataset(cfg)
 

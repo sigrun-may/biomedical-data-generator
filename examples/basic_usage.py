@@ -21,7 +21,7 @@ def main() -> None:
         n_pseudo=2,
         n_noise=4,
         n_classes=2,
-        class_weights=[0.6, 0.4],
+        weights=[0.6, 0.4],
         effect_size="medium",
         corr_between=0.1,
         corr_clusters=[
@@ -29,7 +29,7 @@ def main() -> None:
                 size=3,
                 rho=0.7,
                 structure="equicorrelated",
-                role="informative",
+                anchor_role="informative",
                 anchor_beta=1.0,
             )
         ],

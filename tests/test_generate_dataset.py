@@ -6,13 +6,6 @@
 
 """Tests for the multiclass synthetic dataset generator."""
 
-# Pytest suite for the multiclass synthetic dataset generator
-# Requires: pytest, numpy, pandas
-# Package layout assumed:
-#   biomedical_data_generator/
-#       config.py
-#       generator.py
-
 from __future__ import annotations
 
 import numpy as np

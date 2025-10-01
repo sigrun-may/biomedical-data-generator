@@ -1,3 +1,11 @@
+# Copyright (c) 2025 Sigrun May,
+# Ostfalia Hochschule für angewandte Wissenschaften
+#
+# This software is distributed under the terms of the MIT license
+# which is available at https://opensource.org/licenses/MIT
+
+"""Basic tests for the dataset generator."""
+
 import numpy as np
 import pytest
 
@@ -8,8 +16,13 @@ from biomedical_data_generator.generator import generate_dataset
 def test_shapes_and_roles_with_cluster_proxies():
     # One cluster size 4 => (4-1)=3 proxies + 2 free informative + 1 noise = 6 total features
     cfg = DatasetConfig(
-        n_samples=120, n_informative=2, n_pseudo=0, n_noise=1,
-        corr_clusters=[CorrCluster(size=4, rho=0.7, structure="equicorrelated", anchor_role="informative", anchor_beta=1.0)],
+        n_samples=120,
+        n_informative=2,
+        n_pseudo=0,
+        n_noise=1,
+        corr_clusters=[
+            CorrCluster(size=4, rho=0.7, structure="equicorrelated", anchor_role="informative", anchor_beta=1.0)
+        ],
         n_features=2 + 0 + 1 + (4 - 1),
         random_state=11,
     )
@@ -22,12 +35,17 @@ def test_shapes_and_roles_with_cluster_proxies():
     # cluster index map present
     assert isinstance(meta.corr_cluster_indices, dict) and len(meta.corr_cluster_indices) >= 1
 
+
 def test_class_weights_bias_matches_priors_approximately():
     cfg = DatasetConfig(
-        n_samples=400, n_informative=3, n_pseudo=0, n_noise=0,
+        n_samples=400,
+        n_informative=3,
+        n_pseudo=0,
+        n_noise=0,
         corr_clusters=[CorrCluster(size=3, rho=0.6, structure="toeplitz", anchor_role="informative", anchor_beta=1.0)],
         n_features=3 + (3 - 1),
-        n_classes=3, weights=[0.2, 0.5, 0.3],
+        n_classes=3,
+        weights=[0.2, 0.5, 0.3],
         class_sep=1.2,
         random_state=123,
     )
@@ -37,6 +55,7 @@ def test_class_weights_bias_matches_priors_approximately():
     tgt = np.array(cfg.weights, dtype=float) / np.sum(cfg.weights)
     # allow some tolerance
     assert np.abs(emp - tgt).sum() <= 0.15
+
 
 def test_invalid_n_classes_raises():
     cfg = DatasetConfig(n_samples=50, n_informative=2, n_pseudo=0, n_noise=0, n_features=2, n_classes=1)

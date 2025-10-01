@@ -56,11 +56,9 @@ class DatasetMeta:
         return asdict(self)
 
 
-def _sample_noise(rng: np.random.Generator,
-                  n: int,
-                  dist: str,
-                  scale: float,
-                  params: Mapping[str, Any] | None = None) -> np.ndarray:
+def _sample_noise(
+    rng: np.random.Generator, n: int, dist: str, scale: float, params: Mapping[str, Any] | None = None
+) -> np.ndarray:
     """Sample n noise values from the specified distribution.
 
     Args:
@@ -83,7 +81,7 @@ def _sample_noise(rng: np.random.Generator,
         loc = float(params.pop("loc", 0.0))
         return rng.normal(loc=loc, scale=scale, size=n)
     elif dist == "uniform":
-        low  = float(params.pop("low", -scale))
+        low = float(params.pop("low", -scale))
         high = float(params.pop("high", scale))
         return rng.uniform(low=low, high=high, size=n)
     elif dist == "laplace":
@@ -91,6 +89,7 @@ def _sample_noise(rng: np.random.Generator,
         return rng.laplace(loc=loc, scale=scale, size=n)
     else:
         raise ValueError(f"Unsupported noise_distribution: {dist}")
+
 
 # =========================
 # Small covariance helpers
@@ -199,7 +198,7 @@ def find_seed_for_correlation(
     n_samples: int,
     size: int,
     rho_target: float,
-    structure: Literal["equicorrelated", "ar1"] = "equicorrelated",
+    structure: Literal["equicorrelated", "toeplitz"] = "equicorrelated",
     metric: Literal["mean_offdiag", "min_offdiag"] = "mean_offdiag",
     threshold: float = 0.65,
     op: Literal[">=", "<="] = ">=",
@@ -217,7 +216,7 @@ def find_seed_for_correlation(
         n_samples: Number of samples (rows).
         size: Number of features (columns).
         rho_target: Target correlation between features.
-        structure: "equicorrelated" or "ar1".
+        structure: "equicorrelated" or "toeplitz".
         metric: Empirical metric to use for acceptance.
         threshold: Threshold for the metric (if tol is None).
         op: Operator for threshold comparison ("<=" or ">=").
@@ -519,7 +518,8 @@ def generate_dataset(
     if cfg.n_noise > 0:
         params = _resolve_noise_params(cfg.noise_distribution, cfg.noise_scale, cfg.noise_params)
         distribution = (
-            cfg.noise_distribution.value if hasattr(cfg.noise_distribution, "value") else str(cfg.noise_distribution))
+            cfg.noise_distribution.value if hasattr(cfg.noise_distribution, "value") else str(cfg.noise_distribution)
+        )
         noise_cols = np.stack(
             [
                 _sample_noise(
