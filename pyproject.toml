@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "biomedical-data-generator"
-version = "v0.1.3"
+version = "v0.1.4"
 description = "Generate synthetic data for data science, machine learning, and statistics."
 authors = ["Sigrun May <s.may@ostfalia.de>"]
 license = "MIT"
@@ -48,6 +48,7 @@ statsmodels = "*"
 pydantic = "^2.7"
 
 # ---- Dev groups ----
+notebook = "^7.4.7"
 [tool.poetry.group.lint.dependencies]
 ruff = "^0.13.0"
 black = {extras = ["jupyter"], version = "^25.1.0"}

@@ -10,7 +10,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from biomedical_data_generator.config import DatasetConfig
+from biomedical_data_generator.config import DatasetConfig, NoiseDistribution
 from biomedical_data_generator.generator import generate_dataset
 
 
@@ -23,7 +23,7 @@ def make_biomedical_dataset(
     random_state: int | None = 42,
     # Extensions beyond sklearn:
     n_noise: int = 0,
-    noise_dist: str = "normal",
+    noise_dist: NoiseDistribution = NoiseDistribution.normal,
     *,
     return_meta: bool = False,
     return_pandas: bool = False,
