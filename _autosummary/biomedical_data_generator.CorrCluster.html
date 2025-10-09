@@ -111,13 +111,13 @@ correlation pattern within the cluster.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>size</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.13)"><code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code></a>) – Number of features in the cluster (including the anchor).</p></li>
-<li><p><strong>rho</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.13)"><code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code></a>) – Correlation coefficient (0 &lt; rho &lt; 1).</p></li>
+<li><p><strong>size</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code></a>) – Number of features in the cluster (including the anchor).</p></li>
+<li><p><strong>rho</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code></a>) – Correlation coefficient (0 &lt; rho &lt; 1).</p></li>
 <li><p><strong>structure</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">Literal[``</span></code>”equicorrelated”<code class="docutils literal notranslate"><span class="pre">,</span> <span class="pre">``&quot;toeplitz&quot;</span></code><code class="xref py py-class docutils literal notranslate"><span class="pre">]</span></code>) – Correlation structure within the cluster.
 - “equicorrelated”: All features have the same pairwise correlation <cite>rho</cite>.
 - “toeplitz”: Correlation decreases with distance: <cite>rho**|i-j|</cite>.</p></li>
 <li><p><strong>anchor_role</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">Literal[``</span></code>”informative”<code class="docutils literal notranslate"><span class="pre">,</span> <span class="pre">``&quot;pseudo&quot;</span></code>, <code class="docutils literal notranslate"><span class="pre">&quot;noise&quot;</span></code><code class="xref py py-class docutils literal notranslate"><span class="pre">]</span></code>) – Role of the anchor feature.</p></li>
-<li><p><strong>anchor_beta</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.13)"><code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code></a>) – Effect size of the anchor feature on the target (default: 1.0).</p></li>
+<li><p><strong>anchor_beta</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code></a>) – Effect size of the anchor feature on the target (default: 1.0).</p></li>
 <li><p><strong>anchor_class</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">Optional[int]</span></code>) – If set, the anchor has a stronger effect for this class (0..n_classes-1).</p></li>
 <li><p><strong>random_state</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">Optional[int]</span></code>) – Random seed for reproducibility.</p></li>
 <li><p><strong>label</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">Optional[str]</span></code>) – Optional label for the cluster (for display purposes).</p></li>
@@ -178,7 +178,7 @@ validated to form a valid model.</p>
 <p><cite>self</cite> is explicitly positional-only to allow <cite>self</cite> as a field name.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>data</strong> (<a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.13)"><em>Any</em></a>)</p>
+<dd class="field-odd"><p><strong>data</strong> (<a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.14)"><em>Any</em></a>)</p>
 </dd>
 <dt class="field-even">Return type<span class="colon">:</span></dt>
 <dd class="field-even"><p>None</p>
@@ -216,7 +216,7 @@ validated to form a valid model.</p>
 <tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">model_dump</span></code>(*[, mode, include, exclude, ...])</p></td>
 <td><p>!!! abstract &quot;Usage Documentation&quot;</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">model_dump_json</span></code>(*[, indent, include, ...])</p></td>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">model_dump_json</span></code>(*[, indent, ensure_ascii, ...])</p></td>
 <td><p>!!! abstract &quot;Usage Documentation&quot;</p></td>
 </tr>
 <tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">model_json_schema</span></code>([by_alias, ref_template, ...])</p></td>
@@ -231,7 +231,7 @@ validated to form a valid model.</p>
 <tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">model_rebuild</span></code>(*[, force, raise_errors, ...])</p></td>
 <td><p>Try to rebuild the pydantic-core schema for the model.</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">model_validate</span></code>(obj, *[, strict, ...])</p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">model_validate</span></code>(obj, *[, strict, extra, ...])</p></td>
 <td><p>Validate a pydantic model instance.</p></td>
 </tr>
 <tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">model_validate_json</span></code>(json_data, *[, strict, ...])</p></td>

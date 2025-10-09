@@ -124,16 +124,23 @@
     <span class="n">anchor_idx</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span><span class="p">]</span>  <span class="c1"># cluster_id -&gt; anchor col (or None)</span>
     <span class="n">anchor_role</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">str</span><span class="p">]</span>  <span class="c1"># &quot;informative&quot; | &quot;pseudo&quot; | &quot;noise&quot;</span>
     <span class="n">anchor_beta</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">]</span>  <span class="c1"># 0.0 if latent</span>
+    <span class="n">anchor_target_cls</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span><span class="p">]</span> <span class="c1"># target class for the anchor (one-vs-rest)</span>
     <span class="n">cluster_label</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span><span class="p">]</span>  <span class="c1"># didactic tags per cluster</span>
 
     <span class="c1"># Class distribution</span>
     <span class="n">y_weights</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span>
     <span class="n">y_counts</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">]</span>
 
-    <span class="c1"># Provenance</span>
+    <span class="c1"># Provenance / signal settings</span>
     <span class="n">n_classes</span><span class="p">:</span> <span class="nb">int</span>
     <span class="n">class_sep</span><span class="p">:</span> <span class="nb">float</span>
     <span class="n">corr_between</span><span class="p">:</span> <span class="nb">float</span>
+
+    <span class="c1"># --- optional (with defaults) ---</span>
+    <span class="n">anchor_strength</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1.0</span>
+    <span class="n">anchor_mode</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;equalized&quot;</span><span class="p">,</span> <span class="s2">&quot;strong&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;equalized&quot;</span>
+    <span class="n">spread_non_anchors</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span>
+
     <span class="n">random_state</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
     <span class="n">resolved_config</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">object</span><span class="p">]</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="nb">dict</span><span class="p">)</span>
 
@@ -143,6 +150,92 @@
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Convert to a dictionary (e.g., for JSON serialization).&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="n">asdict</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span></div>
 </div>
+
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_shift_classes</span><span class="p">(</span>
+    <span class="n">X</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+    <span class="n">y</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+    <span class="o">*</span><span class="p">,</span>
+    <span class="n">informative_idx</span><span class="p">:</span> <span class="n">Iterable</span><span class="p">[</span><span class="nb">int</span><span class="p">],</span>
+    <span class="n">anchor_contrib</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">int</span><span class="p">]]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>  <span class="c1"># col -&gt; (beta, cls)</span>
+    <span class="n">class_sep</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1.0</span><span class="p">,</span>
+    <span class="n">anchor_strength</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1.0</span><span class="p">,</span>
+    <span class="n">anchor_mode</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;equalized&quot;</span><span class="p">,</span>      <span class="c1"># &quot;equalized&quot; or &quot;strong&quot;</span>
+    <span class="n">spread_non_anchors</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Minimal, readable class-wise shifting with two knobs.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        X: Feature matrix (modified in place).</span>
+<span class="sd">        y: Class labels in {0, ..., K-1}.</span>
+<span class="sd">        informative_idx: indices of informative (non-anchor) features.</span>
+<span class="sd">        anchor_contrib: optional mapping col -&gt; (beta, cls)</span>
+<span class="sd">            - beta scales the anchor contribution per feature.</span>
+<span class="sd">            - cls is the target class for the one-vs-rest anchor.</span>
+<span class="sd">        class_sep: global separation scale for non-anchors (spread across classes).</span>
+<span class="sd">        anchor_strength: additional scale for anchors (one-vs-rest).</span>
+<span class="sd">        anchor_mode: &quot;equalized&quot; (default) or &quot;strong&quot;.</span>
+<span class="sd">            - &quot;equalized&quot;: anchor strength is independent of K (recommended).</span>
+<span class="sd">            - &quot;strong&quot;: anchor strength grows with K (can overwhelm non-anchors).</span>
+<span class="sd">        spread_non_anchors: if True (default), spread non-anchor informative features across classes.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">X</span><span class="o">.</span><span class="n">size</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">return</span>
+    <span class="n">K</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">y</span><span class="p">))</span> <span class="o">+</span> <span class="mi">1</span>
+    <span class="k">if</span> <span class="n">K</span> <span class="o">&lt;=</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="k">return</span>
+
+    <span class="c1"># 1) Spread for non-anchors</span>
+    <span class="k">if</span> <span class="n">spread_non_anchors</span> <span class="ow">and</span> <span class="n">K</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="n">denom</span> <span class="o">=</span> <span class="n">K</span> <span class="o">-</span> <span class="mi">1</span>
+        <span class="n">spread_vec</span> <span class="o">=</span> <span class="n">class_sep</span> <span class="o">*</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">K</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span> <span class="o">-</span> <span class="p">(</span><span class="n">K</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">/</span> <span class="mi">2</span><span class="p">)</span> <span class="o">/</span> <span class="n">denom</span>
+        <span class="n">anchor_cols</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">anchor_contrib</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span> <span class="k">if</span> <span class="n">anchor_contrib</span> <span class="k">else</span> <span class="nb">set</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">idx</span> <span class="ow">in</span> <span class="n">informative_idx</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">idx</span> <span class="ow">in</span> <span class="n">anchor_cols</span><span class="p">:</span>
+                <span class="k">continue</span>
+            <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">K</span><span class="p">):</span>
+                <span class="n">X</span><span class="p">[</span><span class="n">y</span> <span class="o">==</span> <span class="n">k</span><span class="p">,</span> <span class="n">idx</span><span class="p">]</span> <span class="o">+=</span> <span class="n">spread_vec</span><span class="p">[</span><span class="n">k</span><span class="p">]</span>
+
+    <span class="c1"># 2) Anchors: one-vs-rest</span>
+    <span class="k">if</span> <span class="n">anchor_contrib</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">col</span><span class="p">,</span> <span class="p">(</span><span class="n">beta</span><span class="p">,</span> <span class="bp">cls</span><span class="p">)</span> <span class="ow">in</span> <span class="n">anchor_contrib</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="k">if</span> <span class="n">anchor_mode</span> <span class="o">==</span> <span class="s2">&quot;equalized&quot;</span><span class="p">:</span>
+                <span class="n">A</span> <span class="o">=</span> <span class="n">class_sep</span> <span class="o">*</span> <span class="n">anchor_strength</span> <span class="o">*</span> <span class="nb">float</span><span class="p">(</span><span class="n">beta</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="n">K</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">/</span> <span class="n">K</span>
+            <span class="k">elif</span> <span class="n">anchor_mode</span> <span class="o">==</span> <span class="s2">&quot;strong&quot;</span><span class="p">:</span>
+                <span class="n">A</span> <span class="o">=</span> <span class="n">class_sep</span> <span class="o">*</span> <span class="n">anchor_strength</span> <span class="o">*</span> <span class="nb">float</span><span class="p">(</span><span class="n">beta</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="n">K</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">/</span> <span class="mi">2</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Unknown anchor_mode=</span><span class="si">{</span><span class="n">anchor_mode</span><span class="si">!r}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="n">X</span><span class="p">[</span><span class="n">y</span> <span class="o">==</span> <span class="bp">cls</span><span class="p">,</span> <span class="n">col</span><span class="p">]</span> <span class="o">+=</span> <span class="n">A</span>
+            <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">K</span><span class="p">):</span>
+                <span class="k">if</span> <span class="n">k</span> <span class="o">!=</span> <span class="bp">cls</span><span class="p">:</span>
+                    <span class="n">X</span><span class="p">[</span><span class="n">y</span> <span class="o">==</span> <span class="n">k</span><span class="p">,</span> <span class="n">col</span><span class="p">]</span> <span class="o">-=</span> <span class="n">A</span> <span class="o">/</span> <span class="p">(</span><span class="n">K</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
+    <span class="c1"># # Determine number of classes</span>
+    <span class="c1"># K = int(np.max(y)) + 1 if X.shape[0] &gt; 0 else 0</span>
+    <span class="c1"># if K &lt;= 1 or class_sep == 0.0:</span>
+    <span class="c1">#     return</span>
+    <span class="c1">#</span>
+    <span class="c1"># # 1) Spread for non-anchors (optional)</span>
+    <span class="c1"># if spread_non_anchors and K &gt; 1:</span>
+    <span class="c1">#     denom = K - 1</span>
+    <span class="c1">#     spread_vec = class_sep * (np.arange(K, dtype=float) - (K - 1) / 2) / denom</span>
+    <span class="c1">#     anchor_cols = set(anchor_contrib.keys()) if anchor_contrib else set()</span>
+    <span class="c1">#</span>
+    <span class="c1">#     for idx in informative_idx:</span>
+    <span class="c1">#         if idx in anchor_cols:</span>
+    <span class="c1">#             continue</span>
+    <span class="c1">#         for k in range(K):</span>
+    <span class="c1">#             X[y == k, idx] += spread_vec[k]</span>
+    <span class="c1">#</span>
+    <span class="c1"># # 2) Anchors (one-vs-rest), K-invariant strength:</span>
+    <span class="c1"># #    A = class_sep * anchor_strength * beta * (K-1) / K</span>
+    <span class="c1"># if anchor_contrib:</span>
+    <span class="c1">#     for col, (beta, cls) in anchor_contrib.items():</span>
+    <span class="c1">#         A = class_sep * anchor_strength * float(beta) * (K - 1) / K</span>
+    <span class="c1">#         X[y == cls, col] += A</span>
+    <span class="c1">#         for k in range(K):</span>
+    <span class="c1">#             if k != cls:</span>
+    <span class="c1">#                 X[y == k, col] -= A / (K - 1)</span>
 
 
 
@@ -572,6 +665,9 @@
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;sum(weights) must be &gt; 0.&quot;</span><span class="p">)</span>
 
     <span class="n">rng_global</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">default_rng</span><span class="p">(</span><span class="n">cfg</span><span class="o">.</span><span class="n">random_state</span><span class="p">)</span>
+    <span class="n">anchor_contrib</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">int</span><span class="p">]]</span> <span class="o">=</span> <span class="p">{}</span>  <span class="c1"># col -&gt; (beta, cls)</span>
+    <span class="n">cluster_label_map</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="n">anchor_target_cls_map</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
 
     <span class="c1"># names &amp; roles (+ totals validation inside)</span>
     <span class="n">names</span><span class="p">,</span> <span class="n">inf_idx</span><span class="p">,</span> <span class="n">pse_idx</span><span class="p">,</span> <span class="n">noi_idx</span><span class="p">,</span> <span class="n">cluster_idx</span><span class="p">,</span> <span class="n">anch_idx</span> <span class="o">=</span> <span class="n">_make_names_and_roles</span><span class="p">(</span><span class="n">cfg</span><span class="p">)</span>
@@ -595,8 +691,13 @@
                 <span class="n">anchor_col</span> <span class="o">=</span> <span class="n">col_start</span>  <span class="c1"># first column of this cluster in global X</span>
                 <span class="n">anchor_cls</span> <span class="o">=</span> <span class="mi">0</span> <span class="k">if</span> <span class="n">c</span><span class="o">.</span><span class="n">anchor_class</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="nb">int</span><span class="p">(</span><span class="n">c</span><span class="o">.</span><span class="n">anchor_class</span><span class="p">)</span>
                 <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="mi">0</span> <span class="o">&lt;=</span> <span class="n">anchor_cls</span> <span class="o">&lt;</span> <span class="n">cfg</span><span class="o">.</span><span class="n">n_classes</span><span class="p">):</span>
-                    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;anchor_class </span><span class="si">{</span><span class="n">anchor_cls</span><span class="si">}</span><span class="s2"> out of range for n_classes=</span><span class="si">{</span><span class="n">cfg</span><span class="o">.</span><span class="n">n_classes</span><span class="si">}</span><span class="s2">.&quot;</span><span class="p">)</span>
+                    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                        <span class="sa">f</span><span class="s2">&quot;anchor_class </span><span class="si">{</span><span class="n">anchor_cls</span><span class="si">}</span><span class="s2"> out of range for n_classes=</span><span class="si">{</span><span class="n">cfg</span><span class="o">.</span><span class="n">n_classes</span><span class="si">}</span><span class="s2">.&quot;</span>
+                    <span class="p">)</span>
                 <span class="n">anchor_contrib</span><span class="p">[</span><span class="n">anchor_col</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">c</span><span class="o">.</span><span class="n">anchor_beta</span><span class="p">),</span> <span class="n">anchor_cls</span><span class="p">)</span>
+                <span class="n">anchor_target_cls_map</span><span class="p">[</span><span class="n">cid</span><span class="p">]</span> <span class="o">=</span> <span class="n">anchor_cls</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">anchor_target_cls_map</span><span class="p">[</span><span class="n">cid</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
             <span class="n">cluster_label_map</span><span class="p">[</span><span class="n">cid</span><span class="p">]</span> <span class="o">=</span> <span class="n">c</span><span class="o">.</span><span class="n">label</span>
             <span class="n">cluster_matrices</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">B</span><span class="p">)</span>
             <span class="n">col_start</span> <span class="o">+=</span> <span class="n">c</span><span class="o">.</span><span class="n">size</span>
@@ -652,7 +753,7 @@
     <span class="c1"># Free informative: round-robin across classes with beta=0.8</span>
     <span class="n">rr</span> <span class="o">=</span> <span class="mi">0</span>
     <span class="k">for</span> <span class="n">idx</span> <span class="ow">in</span> <span class="n">inf_idx</span><span class="p">:</span>
-        <span class="c1"># Skip anchor indices (already handled as anchors, although sie in informative_idx enthalten sind)</span>
+        <span class="c1"># Skip anchor indices already handled above</span>
         <span class="k">if</span> <span class="n">idx</span> <span class="ow">in</span> <span class="n">anchor_contrib</span><span class="p">:</span>
             <span class="k">continue</span>
         <span class="n">logits</span><span class="p">[:,</span> <span class="n">rr</span><span class="p">]</span> <span class="o">+=</span> <span class="mf">0.8</span> <span class="o">*</span> <span class="n">X</span><span class="p">[:,</span> <span class="n">idx</span><span class="p">]</span>
@@ -694,6 +795,40 @@
             <span class="n">anchor_beta_map</span><span class="p">[</span><span class="n">cid</span><span class="p">]</span> <span class="o">=</span> <span class="n">c</span><span class="o">.</span><span class="n">anchor_beta</span> <span class="k">if</span> <span class="n">c</span><span class="o">.</span><span class="n">anchor_role</span> <span class="o">==</span> <span class="s2">&quot;informative&quot;</span> <span class="k">else</span> <span class="mf">0.0</span>
             <span class="n">i</span> <span class="o">+=</span> <span class="n">c</span><span class="o">.</span><span class="n">size</span>
 
+    <span class="c1"># Shift feature values for classes</span>
+    <span class="n">_shift_classes</span><span class="p">(</span>
+        <span class="n">X</span><span class="p">,</span>
+        <span class="n">y</span><span class="p">,</span>
+        <span class="n">informative_idx</span><span class="o">=</span><span class="n">inf_idx</span><span class="p">,</span>
+        <span class="n">anchor_contrib</span><span class="o">=</span><span class="n">anchor_contrib</span><span class="p">,</span>  <span class="c1"># do not gate anchors with the spread flag</span>
+        <span class="n">class_sep</span><span class="o">=</span><span class="nb">float</span><span class="p">(</span><span class="n">cfg</span><span class="o">.</span><span class="n">class_sep</span><span class="p">),</span>
+        <span class="n">anchor_strength</span><span class="o">=</span><span class="nb">float</span><span class="p">(</span><span class="nb">getattr</span><span class="p">(</span><span class="n">cfg</span><span class="p">,</span> <span class="s2">&quot;anchor_strength&quot;</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">)),</span>
+        <span class="n">anchor_mode</span><span class="o">=</span><span class="nb">str</span><span class="p">(</span><span class="nb">getattr</span><span class="p">(</span><span class="n">cfg</span><span class="p">,</span> <span class="s2">&quot;anchor_mode&quot;</span><span class="p">,</span> <span class="s2">&quot;equalized&quot;</span><span class="p">)),</span>
+        <span class="n">spread_non_anchors</span><span class="o">=</span><span class="nb">bool</span><span class="p">(</span><span class="nb">getattr</span><span class="p">(</span><span class="n">cfg</span><span class="p">,</span> <span class="s2">&quot;spread_non_anchors&quot;</span><span class="p">,</span> <span class="kc">True</span><span class="p">)),</span>
+    <span class="p">)</span>
+    <span class="c1">#</span>
+    <span class="c1">#</span>
+    <span class="c1"># K = int(cfg.n_classes)</span>
+    <span class="c1"># sep = float(cfg.class_sep)</span>
+    <span class="c1"># for idx in inf_idx:</span>
+    <span class="c1">#     if idx in anchor_contrib:</span>
+    <span class="c1">#         continue</span>
+    <span class="c1">#     # Spread means across classes</span>
+    <span class="c1">#     for k in range(K):</span>
+    <span class="c1">#         # Example: class 0 gets -sep/2, class 1 gets +sep/2</span>
+    <span class="c1">#         shift = sep * (k - (K - 1) / 2) / (K - 1) if K &gt; 1 else 0.0</span>
+    <span class="c1">#         X[y == k, idx] += shift</span>
+    <span class="c1">#</span>
+    <span class="c1"># # Shift anchors strongly for better class separation</span>
+    <span class="c1"># for col, (beta, cls) in anchor_contrib.items():</span>
+    <span class="c1">#     shift = sep * beta * (K - 1) / 2  # strong shift towards assigned class</span>
+    <span class="c1">#     for k in range(K):</span>
+    <span class="c1">#         if k == cls:</span>
+    <span class="c1">#             X[y == k, col] += shift</span>
+    <span class="c1">#         else:</span>
+    <span class="c1">#             X[y == k, col] -= shift / (K - 1)</span>
+
+    <span class="c1"># Final metadata</span>
     <span class="n">meta</span> <span class="o">=</span> <span class="n">DatasetMeta</span><span class="p">(</span>
         <span class="n">feature_names</span><span class="o">=</span><span class="n">names</span><span class="p">,</span>
         <span class="n">informative_idx</span><span class="o">=</span><span class="n">inf_idx</span><span class="p">,</span>
@@ -703,11 +838,15 @@
         <span class="n">anchor_idx</span><span class="o">=</span><span class="n">anch_idx</span><span class="p">,</span>
         <span class="n">anchor_role</span><span class="o">=</span><span class="n">anchor_role_map</span><span class="p">,</span>
         <span class="n">anchor_beta</span><span class="o">=</span><span class="n">anchor_beta_map</span><span class="p">,</span>
+        <span class="n">anchor_target_cls</span><span class="o">=</span><span class="n">anchor_target_cls_map</span><span class="p">,</span>
         <span class="n">cluster_label</span><span class="o">=</span><span class="n">cluster_label_map</span><span class="p">,</span>
         <span class="n">y_weights</span><span class="o">=</span><span class="n">y_weights</span><span class="p">,</span>
         <span class="n">y_counts</span><span class="o">=</span><span class="n">y_counts</span><span class="p">,</span>
         <span class="n">n_classes</span><span class="o">=</span><span class="n">K</span><span class="p">,</span>
         <span class="n">class_sep</span><span class="o">=</span><span class="nb">float</span><span class="p">(</span><span class="n">cfg</span><span class="o">.</span><span class="n">class_sep</span><span class="p">),</span>
+        <span class="n">anchor_strength</span><span class="o">=</span><span class="nb">float</span><span class="p">(</span><span class="nb">getattr</span><span class="p">(</span><span class="n">cfg</span><span class="p">,</span> <span class="s2">&quot;anchor_strength&quot;</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">)),</span>
+        <span class="n">anchor_mode</span><span class="o">=</span><span class="nb">str</span><span class="p">(</span><span class="nb">getattr</span><span class="p">(</span><span class="n">cfg</span><span class="p">,</span> <span class="s2">&quot;anchor_mode&quot;</span><span class="p">,</span> <span class="s2">&quot;equalized&quot;</span><span class="p">)),</span>
+        <span class="n">spread_non_anchors</span><span class="o">=</span><span class="nb">bool</span><span class="p">(</span><span class="nb">getattr</span><span class="p">(</span><span class="n">cfg</span><span class="p">,</span> <span class="s2">&quot;spread_non_anchors&quot;</span><span class="p">,</span> <span class="kc">True</span><span class="p">)),</span>
         <span class="n">corr_between</span><span class="o">=</span><span class="nb">float</span><span class="p">(</span><span class="n">cfg</span><span class="o">.</span><span class="n">corr_between</span><span class="p">),</span>
         <span class="n">random_state</span><span class="o">=</span><span class="n">cfg</span><span class="o">.</span><span class="n">random_state</span><span class="p">,</span>
         <span class="n">resolved_config</span><span class="o">=</span><span class="n">cfg</span><span class="o">.</span><span class="n">model_dump</span><span class="p">(),</span>
@@ -852,6 +991,7 @@
         <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;No dataset seed met the threshold within max_tries.&quot;</span><span class="p">)</span>
     <span class="k">assert</span> <span class="n">best</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
     <span class="n">s</span><span class="p">,</span> <span class="n">seed</span><span class="p">,</span> <span class="n">X</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">meta</span> <span class="o">=</span> <span class="n">best</span>
+
     <span class="k">return</span> <span class="n">seed</span><span class="p">,</span> <span class="n">X</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">meta</span><span class="p">,</span> <span class="n">s</span>
 </pre></div>
 

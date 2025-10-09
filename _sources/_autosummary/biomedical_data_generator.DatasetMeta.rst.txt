@@ -24,7 +24,10 @@
 
    .. autosummary::
    
+      ~DatasetMeta.anchor_mode
+      ~DatasetMeta.anchor_strength
       ~DatasetMeta.random_state
+      ~DatasetMeta.spread_non_anchors
       ~DatasetMeta.feature_names
       ~DatasetMeta.informative_idx
       ~DatasetMeta.pseudo_idx
@@ -33,6 +36,7 @@
       ~DatasetMeta.anchor_idx
       ~DatasetMeta.anchor_role
       ~DatasetMeta.anchor_beta
+      ~DatasetMeta.anchor_target_cls
       ~DatasetMeta.cluster_label
       ~DatasetMeta.y_weights
       ~DatasetMeta.y_counts
