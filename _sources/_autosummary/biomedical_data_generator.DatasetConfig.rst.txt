@@ -66,6 +66,7 @@
       ~DatasetConfig.noise_params
       ~DatasetConfig.n_classes
       ~DatasetConfig.weights
+      ~DatasetConfig.class_counts
       ~DatasetConfig.class_sep
       ~DatasetConfig.feature_naming
       ~DatasetConfig.prefix_informative
@@ -74,6 +75,7 @@
       ~DatasetConfig.prefix_corr
       ~DatasetConfig.corr_clusters
       ~DatasetConfig.corr_between
+      ~DatasetConfig.anchor_mode
       ~DatasetConfig.effect_size
       ~DatasetConfig.random_state
    
