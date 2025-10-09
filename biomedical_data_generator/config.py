@@ -12,10 +12,11 @@ from collections.abc import Iterable, Mapping, MutableMapping
 from enum import Enum
 from typing import Any, Literal, TypeAlias
 
-from pydantic import BaseModel, ConfigDict, Field, model_validator, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 RawConfig: TypeAlias = Mapping[str, Any]
 MutableRawConfig: TypeAlias = MutableMapping[str, Any]
+AnchorMode: TypeAlias = Literal["equalized", "strong"]
 
 
 class NoiseDistribution(str, Enum):
@@ -178,6 +179,7 @@ class DatasetConfig(BaseModel):
     # multi-class controls
     n_classes: int = 2
     weights: list[float] | None = None  # will be normalized by generator; only length is checked here
+    class_counts: dict[int, int] | None = None  # exact class sizes; overrides weights if provided
     class_sep: float = 1.5
 
     # naming
@@ -190,6 +192,7 @@ class DatasetConfig(BaseModel):
     # structure
     corr_clusters: list[CorrCluster] = Field(default_factory=list)
     corr_between: float = 0.0  # correlation between different clusters/roles (0 = independent)
+    anchor_mode: AnchorMode = "equalized"
     effect_size: Literal["small", "medium", "large"] = "medium"  # controls default anchor_beta
     random_state: int | None = None
 
@@ -341,18 +344,36 @@ class DatasetConfig(BaseModel):
     @field_validator("weights")
     @classmethod
     def _validate_weights(cls, v, info):
+        """Non-negative, correct length; normalization happens in the generator."""
         if v is None:
             return v
         n_classes = info.data.get("n_classes", None)
         if n_classes is not None and len(v) != n_classes:
-            raise ValueError(
-                f"weights length must equal n_classes (got {len(v)} vs {n_classes})"
-            )
+            raise ValueError(f"weights length must equal n_classes (got {len(v)} vs {n_classes})")
         if any(w < 0 for w in v):
             raise ValueError("weights must be non-negative.")
         if all(w == 0 for w in v):
             raise ValueError("at least one weight must be > 0.")
         return v
+
+    @field_validator("class_counts")
+    @classmethod
+    def _validate_class_counts(cls, v, info):
+        """Exact counts must cover all classes and sum to n_samples."""
+        if v is None:
+            return v
+        n_samples = info.data.get("n_samples")
+        n_classes = info.data.get("n_classes")
+        keys = set(v.keys())
+        expected = set(range(n_classes))
+        if keys != expected:
+            raise ValueError(f"class_counts keys must be {expected} (got {keys}).")
+        total = sum(int(c) for c in v.values())
+        if total != n_samples:
+            raise ValueError(f"sum(class_counts) must equal n_samples (got {total} vs {n_samples}).")
+        if any(int(c) < 0 for c in v.values()):
+            raise ValueError("class_counts must be non-negative.")
+        return {int(k): int(c) for k, c in v.items()}
 
     # ---------- convenience factories ----------
 

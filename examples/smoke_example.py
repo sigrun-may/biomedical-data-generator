@@ -1,3 +1,11 @@
+# Copyright (c) 2025 Sigrun May,
+# Ostfalia Hochschule für angewandte Wissenschaften
+#
+# This software is distributed under the terms of the MIT license
+# which is available at https://opensource.org/licenses/MIT
+
+"""Smoke test with several usage examples for biomedical_data_generator."""
+
 import numpy as np
 
 from biomedical_data_generator import CorrCluster, DatasetConfig, NoiseDistribution
@@ -8,7 +16,7 @@ Xc, meta_c = generate_correlated_cluster(200, 5, rho=0.6, structure="toeplitz", 
 C = np.corrcoef(Xc, rowvar=False)
 assert C.shape == (5, 5) and np.allclose(np.diag(C), 1, atol=1e-6)
 
-# 2) Noise-Verteilungen
+# 2) Noise-Distribution uniform
 cfg = DatasetConfig(
     n_samples=150,
     n_informative=2,
@@ -21,11 +29,11 @@ cfg = DatasetConfig(
 )
 X, y, meta = generate_dataset(cfg, return_dataframe=False)
 assert X.shape == (150, cfg.n_features) and y.shape == (150,)
-# Uniform sollte grob in [-2, 2] liegen:
+# Uniform should be in [-3, 3] for scale=2.0:
 noise_block = X[:, meta.noise_idx]
 assert np.max(noise_block) <= 3 and np.min(noise_block) >= -3
 
-# 3) equicorrelated/weights funktionieren
+# 3) equicorrelated/weights/multiclass
 cfg2 = DatasetConfig(
     n_samples=300,
     n_informative=2,

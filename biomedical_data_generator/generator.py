@@ -8,7 +8,7 @@
 
 from __future__ import annotations
 
-from collections.abc import Callable, Mapping
+from collections.abc import Callable, Iterable, Mapping
 from dataclasses import asdict, dataclass, field
 from typing import Any, Literal, cast
 
@@ -17,7 +17,7 @@ import pandas as pd
 from numpy.typing import NDArray
 from pandas import DataFrame
 
-from .config import CorrCluster, DatasetConfig, NoiseDistribution
+from .config import AnchorMode, CorrCluster, DatasetConfig, NoiseDistribution
 
 
 # =========================
@@ -38,7 +38,7 @@ class DatasetMeta:
     anchor_idx: dict[int, int | None]  # cluster_id -> anchor col (or None)
     anchor_role: dict[int, str]  # "informative" | "pseudo" | "noise"
     anchor_beta: dict[int, float]  # 0.0 if latent
-    anchor_target_cls: dict[int, int | None] # target class for the anchor (one-vs-rest)
+    anchor_target_cls: dict[int, int | None]  # target class for the anchor (one-vs-rest)
     cluster_label: dict[int, str | None]  # didactic tags per cluster
 
     # Class distribution
@@ -52,7 +52,7 @@ class DatasetMeta:
 
     # --- optional (with defaults) ---
     anchor_strength: float = 1.0
-    anchor_mode: Literal["equalized", "strong"] = "equalized"
+    anchor_mode: AnchorMode = "equalized"
     spread_non_anchors: bool = True
 
     random_state: int | None = None
@@ -63,15 +63,101 @@ class DatasetMeta:
         return asdict(self)
 
 
+def _normalize_priors(weights: Iterable[float] | None, n_classes: int) -> np.ndarray:
+    """
+    Normalize non-negative weights into a probability vector of length n_classes.
+
+    If weights is None, returns uniform priors.
+
+    Args:
+        weights: Iterable of non-negative weights (length n_classes) or None.
+        n_classes: Number of classes (must be >= 2).
+
+    Returns
+    -------
+        np.ndarray: Normalized probability vector of shape (n_classes,).
+
+    Raises
+    ------
+        ValueError: If weights length != n_classes or sum(weights) <= 0.
+    """
+    if weights is None:
+        return np.ones(n_classes, dtype=float) / n_classes
+    p = np.asarray(list(weights), dtype=float)
+    if p.shape[0] != n_classes:
+        raise ValueError(f"weights length must equal n_classes (got {p.shape[0]} vs {n_classes})")
+    s = float(p.sum())
+    if s <= 0:
+        raise ValueError("sum(weights) must be > 0.")
+    return p / s
+
+
+def _labels_from_counts(counts: dict[int, int], n_classes: int, rng: np.random.Generator) -> np.ndarray:
+    """Build label vector y exactly matching the requested counts and shuffle it.
+
+    Args:
+        counts: Mapping class -> count (non-negative integers).
+        n_classes: Number of classes (must be >= 2).
+        rng: Random number generator for shuffling.
+
+    Returns
+    -------
+        np.ndarray: Label vector of shape (sum(counts.values()),) with values in {0, ..., n_classes-1}.
+
+    Raises
+    ------
+        ValueError: If any count is negative or if counts keys are out of range.
+        RuntimeError: If the assembled label vector size does not match the sum of counts.
+    """
+    y_parts = []
+    for k in range(n_classes):
+        c = int(counts.get(k, 0))
+        if c < 0:
+            raise ValueError("class_counts must be non-negative.")
+        if c > 0:
+            y_parts.append(np.full(c, k, dtype=int))
+    y = np.concatenate(y_parts) if y_parts else np.empty((0,), dtype=int)
+    if y.size != sum(int(counts[k]) for k in range(n_classes)):
+        raise RuntimeError("Counts assembly mismatch.")
+    rng.shuffle(y)
+    return y
+
+
+def _make_labels(cfg, rng: np.random.Generator) -> np.ndarray:
+    """Make label vector y according to cfg.
+
+    Choose label source with precedence:
+      1) cfg.class_counts -> exact class sizes (best for small n)
+      2) cfg.weights      -> stochastic sampling by normalized priors
+      3) uniform          -> equal priors.
+
+    Args:
+        cfg: DatasetConfig with n_samples, n_classes, optional class_counts or weights.
+        rng: Random number generator for sampling/shuffling.
+
+    Returns
+    -------
+        np.ndarray: Label vector of shape (n_samples,) with values in {0, ..., n_classes-1}.
+
+    Raises
+    ------
+        ValueError: If cfg is invalid (e.g., n_classes < 2).
+    """
+    if getattr(cfg, "class_counts", None) is not None:
+        return _labels_from_counts(cfg.class_counts, cfg.n_classes, rng)
+    priors = _normalize_priors(getattr(cfg, "weights", None), cfg.n_classes)
+    return rng.choice(cfg.n_classes, size=cfg.n_samples, p=priors).astype(int)
+
+
 def _shift_classes(
     X: np.ndarray,
     y: np.ndarray,
     *,
     informative_idx: Iterable[int],
-    anchor_contrib: Dict[int, Tuple[float, int]] | None = None,  # col -> (beta, cls)
+    anchor_contrib: dict[int, tuple[float, int]] | None = None,  # col -> (beta, cls)
     class_sep: float = 1.0,
     anchor_strength: float = 1.0,
-    anchor_mode: str = "equalized",      # "equalized" or "strong"
+    anchor_mode: str = "equalized",  # "equalized" or "strong"
     spread_non_anchors: bool = True,
 ) -> None:
     """Minimal, readable class-wise shifting with two knobs.
@@ -146,7 +232,6 @@ def _shift_classes(
     #         for k in range(K):
     #             if k != cls:
     #                 X[y == k, col] -= A / (K - 1)
-
 
 
 def _sample_noise(
@@ -567,8 +652,6 @@ def generate_dataset(
             raise ValueError("sum(weights) must be > 0.")
 
     rng_global = np.random.default_rng(cfg.random_state)
-    anchor_contrib: dict[int, tuple[float, int]] = {}  # col -> (beta, cls)
-    cluster_label_map: dict[int, str | None] = {}
     anchor_target_cls_map: dict[int, int | None] = {}
 
     # names & roles (+ totals validation inside)
@@ -593,9 +676,7 @@ def generate_dataset(
                 anchor_col = col_start  # first column of this cluster in global X
                 anchor_cls = 0 if c.anchor_class is None else int(c.anchor_class)
                 if not (0 <= anchor_cls < cfg.n_classes):
-                    raise ValueError(
-                        f"anchor_class {anchor_cls} out of range for n_classes={cfg.n_classes}."
-                    )
+                    raise ValueError(f"anchor_class {anchor_cls} out of range for n_classes={cfg.n_classes}.")
                 anchor_contrib[anchor_col] = (float(c.anchor_beta), anchor_cls)
                 anchor_target_cls_map[cid] = anchor_cls
             else:
@@ -644,48 +725,45 @@ def generate_dataset(
     # Check totals
     assert X.shape[1] == len(names) == cfg.n_features, (X.shape[1], len(names), cfg.n_features)
 
-    # ----- logits for n_classes
+    # Label generation
     K = int(cfg.n_classes)
-    logits = np.zeros((cfg.n_samples, K), dtype=float)
 
-    # Anchors: add to their assigned class only
-    for col, (beta, cls) in anchor_contrib.items():
-        logits[:, cls] += beta * X[:, col]
+    use_controlled = (getattr(cfg, "class_counts", None) is not None) or (getattr(cfg, "weights", None) is not None)
 
-    # Free informative: round-robin across classes with beta=0.8
-    rr = 0
-    for idx in inf_idx:
-        # Skip anchor indices already handled above
-        if idx in anchor_contrib:
-            continue
-        logits[:, rr] += 0.8 * X[:, idx]
-        rr = (rr + 1) % K
+    if use_controlled:
+        # Exact counts or stochastic priors (class_counts > weights > uniform)
+        y = _make_labels(cfg, rng_global)  # shape (n_samples,), dtype=int
 
-    # Scale by class_sep
-    logits *= float(cfg.class_sep)
+    else:
+        # Fallback: build logits from informative features and sample via softmax
+        logits = np.zeros((cfg.n_samples, K), dtype=float)
 
-    # Optional class prior matching via per-class intercepts
-    if cfg.weights is not None:
-        target = np.array(cfg.weights, dtype=float)
-        target = target / target.sum()
-        mean_logits = logits.mean(axis=0)  # shape (K,)
-        with np.errstate(divide="ignore"):
-            b = np.log(target) - mean_logits  # shift so softmax(mean+b) ≈ target
-        logits = logits + b[None, :]
+        # Anchors: add to their assigned class only
+        for col, (beta, cls) in anchor_contrib.items():
+            logits[:, cls] += beta * X[:, col]
 
-    # Sample labels
-    P = _softmax(logits.copy())  # copy because _softmax is in-place
-    cdf = P.cumsum(axis=1)
-    r = rng_global.random(size=cfg.n_samples)[:, None]
-    y = (r > cdf[:, :-1]).sum(axis=1).astype(np.int64)  # categorical draw
+        # Free informative: round-robin across classes with beta=0.8
+        rr = 0
+        for idx in inf_idx:
+            # Skip anchor indices already handled above
+            if idx in anchor_contrib:
+                continue
+            logits[:, rr] += 0.8 * X[:, idx]
+            rr = (rr + 1) % K
 
-    # Empirical class stats
-    y_counts = {int(k): int((y == k).sum()) for k in range(K)}
-    y_weights = (
-        tuple(float(y_counts[k] / cfg.n_samples) for k in range(K))
-        if cfg.weights is None
-        else tuple(float(w) / float(sum(cfg.weights)) for w in cfg.weights)
-    )
+        # Scale by class_sep
+        logits *= float(cfg.class_sep)
+
+        # Sample labels from softmax(logits)
+        P = _softmax(logits.copy())  # copy because _softmax is in-place
+        cdf = P.cumsum(axis=1)
+        r = rng_global.random(size=(cfg.n_samples, 1))
+        y = (r > cdf[:, :-1]).sum(axis=1).astype(np.int64)
+
+    # empirical class stats (always compute from y)
+    counts = np.bincount(y, minlength=K).astype(int)
+    y_counts = {int(k): int(counts[k]) for k in range(K)}
+    y_weights = tuple((counts / counts.sum()).tolist())
 
     # per-cluster role/beta maps for meta
     anchor_role_map: dict[int, str] = {}
@@ -705,30 +783,9 @@ def generate_dataset(
         anchor_contrib=anchor_contrib,  # do not gate anchors with the spread flag
         class_sep=float(cfg.class_sep),
         anchor_strength=float(getattr(cfg, "anchor_strength", 1.0)),
-        anchor_mode=str(getattr(cfg, "anchor_mode", "equalized")),
+        anchor_mode=cfg.anchor_mode,
         spread_non_anchors=bool(getattr(cfg, "spread_non_anchors", True)),
     )
-    #
-    #
-    # K = int(cfg.n_classes)
-    # sep = float(cfg.class_sep)
-    # for idx in inf_idx:
-    #     if idx in anchor_contrib:
-    #         continue
-    #     # Spread means across classes
-    #     for k in range(K):
-    #         # Example: class 0 gets -sep/2, class 1 gets +sep/2
-    #         shift = sep * (k - (K - 1) / 2) / (K - 1) if K > 1 else 0.0
-    #         X[y == k, idx] += shift
-    #
-    # # Shift anchors strongly for better class separation
-    # for col, (beta, cls) in anchor_contrib.items():
-    #     shift = sep * beta * (K - 1) / 2  # strong shift towards assigned class
-    #     for k in range(K):
-    #         if k == cls:
-    #             X[y == k, col] += shift
-    #         else:
-    #             X[y == k, col] -= shift / (K - 1)
 
     # Final metadata
     meta = DatasetMeta(
@@ -747,7 +804,7 @@ def generate_dataset(
         n_classes=K,
         class_sep=float(cfg.class_sep),
         anchor_strength=float(getattr(cfg, "anchor_strength", 1.0)),
-        anchor_mode=str(getattr(cfg, "anchor_mode", "equalized")),
+        anchor_mode=cfg.anchor_mode,
         spread_non_anchors=bool(getattr(cfg, "spread_non_anchors", True)),
         corr_between=float(cfg.corr_between),
         random_state=cfg.random_state,
