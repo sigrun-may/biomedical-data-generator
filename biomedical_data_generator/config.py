@@ -12,7 +12,7 @@ from collections.abc import Iterable, Mapping, MutableMapping
 from enum import Enum
 from typing import Any, Literal, TypeAlias
 
-from pydantic import BaseModel, ConfigDict, Field, model_validator
+from pydantic import BaseModel, ConfigDict, Field, model_validator, field_validator
 
 RawConfig: TypeAlias = Mapping[str, Any]
 MutableRawConfig: TypeAlias = MutableMapping[str, Any]
@@ -178,7 +178,7 @@ class DatasetConfig(BaseModel):
     # multi-class controls
     n_classes: int = 2
     weights: list[float] | None = None  # will be normalized by generator; only length is checked here
-    class_sep: float = 1.0
+    class_sep: float = 1.5
 
     # naming
     feature_naming: Literal["prefixed", "simple"] = "prefixed"
@@ -337,6 +337,22 @@ class DatasetConfig(BaseModel):
         d["class_sep"] = class_separation
 
         return d
+
+    @field_validator("weights")
+    @classmethod
+    def _validate_weights(cls, v, info):
+        if v is None:
+            return v
+        n_classes = info.data.get("n_classes", None)
+        if n_classes is not None and len(v) != n_classes:
+            raise ValueError(
+                f"weights length must equal n_classes (got {len(v)} vs {n_classes})"
+            )
+        if any(w < 0 for w in v):
+            raise ValueError("weights must be non-negative.")
+        if all(w == 0 for w in v):
+            raise ValueError("at least one weight must be > 0.")
+        return v
 
     # ---------- convenience factories ----------
 

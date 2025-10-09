@@ -38,22 +38,115 @@ class DatasetMeta:
     anchor_idx: dict[int, int | None]  # cluster_id -> anchor col (or None)
     anchor_role: dict[int, str]  # "informative" | "pseudo" | "noise"
     anchor_beta: dict[int, float]  # 0.0 if latent
+    anchor_target_cls: dict[int, int | None] # target class for the anchor (one-vs-rest)
     cluster_label: dict[int, str | None]  # didactic tags per cluster
 
     # Class distribution
     y_weights: tuple[float, ...]
     y_counts: dict[int, int]
 
-    # Provenance
+    # Provenance / signal settings
     n_classes: int
     class_sep: float
     corr_between: float
+
+    # --- optional (with defaults) ---
+    anchor_strength: float = 1.0
+    anchor_mode: Literal["equalized", "strong"] = "equalized"
+    spread_non_anchors: bool = True
+
     random_state: int | None = None
     resolved_config: dict[str, object] = field(default_factory=dict)
 
     def to_dict(self) -> dict[str, object]:
         """Convert to a dictionary (e.g., for JSON serialization)."""
         return asdict(self)
+
+
+def _shift_classes(
+    X: np.ndarray,
+    y: np.ndarray,
+    *,
+    informative_idx: Iterable[int],
+    anchor_contrib: Dict[int, Tuple[float, int]] | None = None,  # col -> (beta, cls)
+    class_sep: float = 1.0,
+    anchor_strength: float = 1.0,
+    anchor_mode: str = "equalized",      # "equalized" or "strong"
+    spread_non_anchors: bool = True,
+) -> None:
+    """Minimal, readable class-wise shifting with two knobs.
+
+    Args:
+        X: Feature matrix (modified in place).
+        y: Class labels in {0, ..., K-1}.
+        informative_idx: indices of informative (non-anchor) features.
+        anchor_contrib: optional mapping col -> (beta, cls)
+            - beta scales the anchor contribution per feature.
+            - cls is the target class for the one-vs-rest anchor.
+        class_sep: global separation scale for non-anchors (spread across classes).
+        anchor_strength: additional scale for anchors (one-vs-rest).
+        anchor_mode: "equalized" (default) or "strong".
+            - "equalized": anchor strength is independent of K (recommended).
+            - "strong": anchor strength grows with K (can overwhelm non-anchors).
+        spread_non_anchors: if True (default), spread non-anchor informative features across classes.
+    """
+    if X.size == 0:
+        return
+    K = int(np.max(y)) + 1
+    if K <= 1:
+        return
+
+    # 1) Spread for non-anchors
+    if spread_non_anchors and K > 1:
+        denom = K - 1
+        spread_vec = class_sep * (np.arange(K, dtype=float) - (K - 1) / 2) / denom
+        anchor_cols = set(anchor_contrib.keys()) if anchor_contrib else set()
+        for idx in informative_idx:
+            if idx in anchor_cols:
+                continue
+            for k in range(K):
+                X[y == k, idx] += spread_vec[k]
+
+    # 2) Anchors: one-vs-rest
+    if anchor_contrib:
+        for col, (beta, cls) in anchor_contrib.items():
+            if anchor_mode == "equalized":
+                A = class_sep * anchor_strength * float(beta) * (K - 1) / K
+            elif anchor_mode == "strong":
+                A = class_sep * anchor_strength * float(beta) * (K - 1) / 2
+            else:
+                raise ValueError(f"Unknown anchor_mode={anchor_mode!r}")
+            X[y == cls, col] += A
+            for k in range(K):
+                if k != cls:
+                    X[y == k, col] -= A / (K - 1)
+    # # Determine number of classes
+    # K = int(np.max(y)) + 1 if X.shape[0] > 0 else 0
+    # if K <= 1 or class_sep == 0.0:
+    #     return
+    #
+    # # 1) Spread for non-anchors (optional)
+    # if spread_non_anchors and K > 1:
+    #     denom = K - 1
+    #     spread_vec = class_sep * (np.arange(K, dtype=float) - (K - 1) / 2) / denom
+    #     anchor_cols = set(anchor_contrib.keys()) if anchor_contrib else set()
+    #
+    #     for idx in informative_idx:
+    #         if idx in anchor_cols:
+    #             continue
+    #         for k in range(K):
+    #             X[y == k, idx] += spread_vec[k]
+    #
+    # # 2) Anchors (one-vs-rest), K-invariant strength:
+    # #    A = class_sep * anchor_strength * beta * (K-1) / K
+    # if anchor_contrib:
+    #     for col, (beta, cls) in anchor_contrib.items():
+    #         A = class_sep * anchor_strength * float(beta) * (K - 1) / K
+    #         X[y == cls, col] += A
+    #         for k in range(K):
+    #             if k != cls:
+    #                 X[y == k, col] -= A / (K - 1)
+
 
 
 def _sample_noise(
@@ -474,6 +567,9 @@ def generate_dataset(
             raise ValueError("sum(weights) must be > 0.")
 
     rng_global = np.random.default_rng(cfg.random_state)
+    anchor_contrib: dict[int, tuple[float, int]] = {}  # col -> (beta, cls)
+    cluster_label_map: dict[int, str | None] = {}
+    anchor_target_cls_map: dict[int, int | None] = {}
 
     # names & roles (+ totals validation inside)
     names, inf_idx, pse_idx, noi_idx, cluster_idx, anch_idx = _make_names_and_roles(cfg)
@@ -497,8 +593,13 @@ def generate_dataset(
                 anchor_col = col_start  # first column of this cluster in global X
                 anchor_cls = 0 if c.anchor_class is None else int(c.anchor_class)
                 if not (0 <= anchor_cls < cfg.n_classes):
-                    raise ValueError(f"anchor_class {anchor_cls} out of range for n_classes={cfg.n_classes}.")
+                    raise ValueError(
+                        f"anchor_class {anchor_cls} out of range for n_classes={cfg.n_classes}."
+                    )
                 anchor_contrib[anchor_col] = (float(c.anchor_beta), anchor_cls)
+                anchor_target_cls_map[cid] = anchor_cls
+            else:
+                anchor_target_cls_map[cid] = None
             cluster_label_map[cid] = c.label
             cluster_matrices.append(B)
             col_start += c.size
@@ -554,7 +655,7 @@ def generate_dataset(
     # Free informative: round-robin across classes with beta=0.8
     rr = 0
     for idx in inf_idx:
-        # Skip anchor indices (already handled as anchors, although sie in informative_idx enthalten sind)
+        # Skip anchor indices already handled above
         if idx in anchor_contrib:
             continue
         logits[:, rr] += 0.8 * X[:, idx]
@@ -596,6 +697,40 @@ def generate_dataset(
             anchor_beta_map[cid] = c.anchor_beta if c.anchor_role == "informative" else 0.0
             i += c.size
 
+    # Shift feature values for classes
+    _shift_classes(
+        X,
+        y,
+        informative_idx=inf_idx,
+        anchor_contrib=anchor_contrib,  # do not gate anchors with the spread flag
+        class_sep=float(cfg.class_sep),
+        anchor_strength=float(getattr(cfg, "anchor_strength", 1.0)),
+        anchor_mode=str(getattr(cfg, "anchor_mode", "equalized")),
+        spread_non_anchors=bool(getattr(cfg, "spread_non_anchors", True)),
+    )
+    #
+    #
+    # K = int(cfg.n_classes)
+    # sep = float(cfg.class_sep)
+    # for idx in inf_idx:
+    #     if idx in anchor_contrib:
+    #         continue
+    #     # Spread means across classes
+    #     for k in range(K):
+    #         # Example: class 0 gets -sep/2, class 1 gets +sep/2
+    #         shift = sep * (k - (K - 1) / 2) / (K - 1) if K > 1 else 0.0
+    #         X[y == k, idx] += shift
+    #
+    # # Shift anchors strongly for better class separation
+    # for col, (beta, cls) in anchor_contrib.items():
+    #     shift = sep * beta * (K - 1) / 2  # strong shift towards assigned class
+    #     for k in range(K):
+    #         if k == cls:
+    #             X[y == k, col] += shift
+    #         else:
+    #             X[y == k, col] -= shift / (K - 1)
+
+    # Final metadata
     meta = DatasetMeta(
         feature_names=names,
         informative_idx=inf_idx,
@@ -605,11 +740,15 @@ def generate_dataset(
         anchor_idx=anch_idx,
         anchor_role=anchor_role_map,
         anchor_beta=anchor_beta_map,
+        anchor_target_cls=anchor_target_cls_map,
         cluster_label=cluster_label_map,
         y_weights=y_weights,
         y_counts=y_counts,
         n_classes=K,
         class_sep=float(cfg.class_sep),
+        anchor_strength=float(getattr(cfg, "anchor_strength", 1.0)),
+        anchor_mode=str(getattr(cfg, "anchor_mode", "equalized")),
+        spread_non_anchors=bool(getattr(cfg, "spread_non_anchors", True)),
         corr_between=float(cfg.corr_between),
         random_state=cfg.random_state,
         resolved_config=cfg.model_dump(),
@@ -753,4 +892,5 @@ def find_dataset_seed_for_score(
         raise RuntimeError("No dataset seed met the threshold within max_tries.")
     assert best is not None
     s, seed, X, y, meta = best
+
     return seed, X, y, meta, s

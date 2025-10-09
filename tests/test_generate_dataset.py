@@ -156,6 +156,39 @@ def test_class_weights_bias_matches_priors_approximately():
     assert l1 <= 0.08  # reasonably tight with n=3000
 
 
+def test_informative_separation():
+    cfg = DatasetConfig(
+        n_samples=200,
+        n_informative=2,
+        n_pseudo=0,
+        n_noise=0,
+        n_features=2,
+        n_classes=2,
+        class_sep=10,
+        random_state=42,
+    )
+    X, y, meta = generate_dataset(cfg)
+    for idx in meta.informative_idx:
+        mean0 = X.iloc[y == 0, idx].mean()
+        mean1 = X.iloc[y == 1, idx].mean()
+        print(f"Feature {idx}: mean0={mean0}, mean1={mean1}, separation={abs(mean0 - mean1)}")
+        assert abs(mean0 - mean1) > 5  # separation threshold
+
+
+def test_output_shapes():
+    cfg = DatasetConfig(
+        n_samples=100,
+        n_informative=1,
+        n_pseudo=1,
+        n_noise=1,
+        n_features=3,
+        n_classes=2,
+    )
+    X, y, meta = generate_dataset(cfg)
+    assert X.shape == (cfg.n_samples, cfg.n_features)
+    assert y.shape == (cfg.n_samples,)
+
+
 def test_generate_correlated_cluster_and_find_seed_for_correlation():
     n = 400
     size = 5
