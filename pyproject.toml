@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "biomedical-data-generator"
-version = "v0.1.4"
+version = "v0.1.5rc1"
 description = "Generate synthetic data for data science, machine learning, and statistics."
 authors = ["Sigrun May <s.may@ostfalia.de>"]
 license = "MIT"
@@ -87,7 +87,7 @@ ignore = ["D105", "D107"]  # magic methods & __init__ docstrings nicht verpflich
 per-file-ignores = { "tests/**" = ["D"] }
 
 [tool.ruff.lint.pydocstyle]
-convention = "numpy"
+convention = "google"
 
 # ---- Pytest / Coverage ----
 [tool.pytest.ini_options]

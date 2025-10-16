@@ -9,63 +9,22 @@
 from __future__ import annotations
 
 from collections.abc import Callable, Iterable, Mapping
-from dataclasses import asdict, dataclass, field
-from typing import Any, Literal, cast
+from typing import Any, Literal
 
 import numpy as np
 import pandas as pd
 from numpy.typing import NDArray
 from pandas import DataFrame
 
-from .config import AnchorMode, CorrCluster, DatasetConfig, NoiseDistribution
-
-
-# =========================
-# Ground-truth meta
-# =========================
-@dataclass(frozen=True)
-class DatasetMeta:
-    """Metadata about the generated dataset."""
-
-    feature_names: list[str]
-
-    informative_idx: list[int]  # includes cluster anchors + free i*
-    pseudo_idx: list[int]  # corr* proxies + free p*
-    noise_idx: list[int]
-
-    # Correlated cluster structure
-    corr_cluster_indices: dict[int, list[int]]  # cluster_id -> column indices
-    anchor_idx: dict[int, int | None]  # cluster_id -> anchor col (or None)
-    anchor_role: dict[int, str]  # "informative" | "pseudo" | "noise"
-    anchor_beta: dict[int, float]  # 0.0 if latent
-    anchor_target_cls: dict[int, int | None]  # target class for the anchor (one-vs-rest)
-    cluster_label: dict[int, str | None]  # didactic tags per cluster
-
-    # Class distribution
-    y_weights: tuple[float, ...]
-    y_counts: dict[int, int]
-
-    # Provenance / signal settings
-    n_classes: int
-    class_sep: float
-    corr_between: float
-
-    # --- optional (with defaults) ---
-    anchor_strength: float = 1.0
-    anchor_mode: AnchorMode = "equalized"
-    spread_non_anchors: bool = True
-
-    random_state: int | None = None
-    resolved_config: dict[str, object] = field(default_factory=dict)
-
-    def to_dict(self) -> dict[str, object]:
-        """Convert to a dictionary (e.g., for JSON serialization)."""
-        return asdict(self)
+from .config import DatasetConfig, NoiseDistribution
+from .features.correlated import sample_cluster_matrix
+from .features.informative import shift_classes
+from .features.noise import sample_noise
+from .meta import DatasetMeta
 
 
 def _normalize_priors(weights: Iterable[float] | None, n_classes: int) -> np.ndarray:
-    """
-    Normalize non-negative weights into a probability vector of length n_classes.
+    """Normalize non-negative weights into a probability vector of length n_classes.
 
     If weights is None, returns uniform priors.
 
@@ -73,11 +32,11 @@ def _normalize_priors(weights: Iterable[float] | None, n_classes: int) -> np.nda
         weights: Iterable of non-negative weights (length n_classes) or None.
         n_classes: Number of classes (must be >= 2).
 
-    Returns
+    Returns:
     -------
         np.ndarray: Normalized probability vector of shape (n_classes,).
 
-    Raises
+    Raises:
     ------
         ValueError: If weights length != n_classes or sum(weights) <= 0.
     """
@@ -100,11 +59,11 @@ def _labels_from_counts(counts: dict[int, int], n_classes: int, rng: np.random.G
         n_classes: Number of classes (must be >= 2).
         rng: Random number generator for shuffling.
 
-    Returns
+    Returns:
     -------
         np.ndarray: Label vector of shape (sum(counts.values()),) with values in {0, ..., n_classes-1}.
 
-    Raises
+    Raises:
     ------
         ValueError: If any count is negative or if counts keys are out of range.
         RuntimeError: If the assembled label vector size does not match the sum of counts.
@@ -135,11 +94,11 @@ def _make_labels(cfg, rng: np.random.Generator) -> np.ndarray:
         cfg: DatasetConfig with n_samples, n_classes, optional class_counts or weights.
         rng: Random number generator for sampling/shuffling.
 
-    Returns
+    Returns:
     -------
         np.ndarray: Label vector of shape (n_samples,) with values in {0, ..., n_classes-1}.
 
-    Raises
+    Raises:
     ------
         ValueError: If cfg is invalid (e.g., n_classes < 2).
     """
@@ -147,294 +106,6 @@ def _make_labels(cfg, rng: np.random.Generator) -> np.ndarray:
         return _labels_from_counts(cfg.class_counts, cfg.n_classes, rng)
     priors = _normalize_priors(getattr(cfg, "weights", None), cfg.n_classes)
     return rng.choice(cfg.n_classes, size=cfg.n_samples, p=priors).astype(int)
-
-
-def _shift_classes(
-    X: np.ndarray,
-    y: np.ndarray,
-    *,
-    informative_idx: Iterable[int],
-    anchor_contrib: dict[int, tuple[float, int]] | None = None,  # col -> (beta, cls)
-    class_sep: float = 1.0,
-    anchor_strength: float = 1.0,
-    anchor_mode: str = "equalized",  # "equalized" or "strong"
-    spread_non_anchors: bool = True,
-) -> None:
-    """Minimal, readable class-wise shifting with two knobs.
-
-    Args:
-        X: Feature matrix (modified in place).
-        y: Class labels in {0, ..., K-1}.
-        informative_idx: indices of informative (non-anchor) features.
-        anchor_contrib: optional mapping col -> (beta, cls)
-            - beta scales the anchor contribution per feature.
-            - cls is the target class for the one-vs-rest anchor.
-        class_sep: global separation scale for non-anchors (spread across classes).
-        anchor_strength: additional scale for anchors (one-vs-rest).
-        anchor_mode: "equalized" (default) or "strong".
-            - "equalized": anchor strength is independent of K (recommended).
-            - "strong": anchor strength grows with K (can overwhelm non-anchors).
-        spread_non_anchors: if True (default), spread non-anchor informative features across classes.
-    """
-    if X.size == 0:
-        return
-    K = int(np.max(y)) + 1
-    if K <= 1:
-        return
-
-    # 1) Spread for non-anchors
-    if spread_non_anchors and K > 1:
-        denom = K - 1
-        spread_vec = class_sep * (np.arange(K, dtype=float) - (K - 1) / 2) / denom
-        anchor_cols = set(anchor_contrib.keys()) if anchor_contrib else set()
-        for idx in informative_idx:
-            if idx in anchor_cols:
-                continue
-            for k in range(K):
-                X[y == k, idx] += spread_vec[k]
-
-    # 2) Anchors: one-vs-rest
-    if anchor_contrib:
-        for col, (beta, cls) in anchor_contrib.items():
-            if anchor_mode == "equalized":
-                A = class_sep * anchor_strength * float(beta) * (K - 1) / K
-            elif anchor_mode == "strong":
-                A = class_sep * anchor_strength * float(beta) * (K - 1) / 2
-            else:
-                raise ValueError(f"Unknown anchor_mode={anchor_mode!r}")
-            X[y == cls, col] += A
-            for k in range(K):
-                if k != cls:
-                    X[y == k, col] -= A / (K - 1)
-    # # Determine number of classes
-    # K = int(np.max(y)) + 1 if X.shape[0] > 0 else 0
-    # if K <= 1 or class_sep == 0.0:
-    #     return
-    #
-    # # 1) Spread for non-anchors (optional)
-    # if spread_non_anchors and K > 1:
-    #     denom = K - 1
-    #     spread_vec = class_sep * (np.arange(K, dtype=float) - (K - 1) / 2) / denom
-    #     anchor_cols = set(anchor_contrib.keys()) if anchor_contrib else set()
-    #
-    #     for idx in informative_idx:
-    #         if idx in anchor_cols:
-    #             continue
-    #         for k in range(K):
-    #             X[y == k, idx] += spread_vec[k]
-    #
-    # # 2) Anchors (one-vs-rest), K-invariant strength:
-    # #    A = class_sep * anchor_strength * beta * (K-1) / K
-    # if anchor_contrib:
-    #     for col, (beta, cls) in anchor_contrib.items():
-    #         A = class_sep * anchor_strength * float(beta) * (K - 1) / K
-    #         X[y == cls, col] += A
-    #         for k in range(K):
-    #             if k != cls:
-    #                 X[y == k, col] -= A / (K - 1)
-
-
-def _sample_noise(
-    rng: np.random.Generator, n: int, dist: str, scale: float, params: Mapping[str, Any] | None = None
-) -> np.ndarray:
-    """Sample n noise values from the specified distribution.
-
-    Args:
-        rng: Random number generator.
-        n: Number of samples.
-        dist: Distribution name ("normal", "uniform", "laplace").
-        scale: Scale parameter (stddev for normal/laplace, half-width for uniform).
-        params: Additional distribution-specific parameters.
-
-    Returns
-    -------
-        np.ndarray: Array of shape (n,) with sampled noise values.
-
-    Raises
-    ------
-        ValueError: If dist is unsupported or parameters are invalid.
-    """
-    params = dict(params or {})
-    if dist == "normal":
-        loc = float(params.pop("loc", 0.0))
-        return rng.normal(loc=loc, scale=scale, size=n)
-    elif dist == "uniform":
-        low = float(params.pop("low", -scale))
-        high = float(params.pop("high", scale))
-        return rng.uniform(low=low, high=high, size=n)
-    elif dist == "laplace":
-        loc = float(params.pop("loc", 0.0))
-        return rng.laplace(loc=loc, scale=scale, size=n)
-    else:
-        raise ValueError(f"Unsupported noise_distribution: {dist}")
-
-
-# =========================
-# Small covariance helpers
-# =========================
-def _cov_equicorr(size: int, rho: float) -> NDArray[np.float64]:
-    identity: NDArray[np.float64] = np.eye(size, dtype=np.float64)
-    ones: NDArray[np.float64] = np.ones((size, size), dtype=np.float64)
-    return (1 - rho) * identity + rho * ones
-
-
-def _cov_toeplitz(size: int, rho: float) -> NDArray[np.float64]:
-    idx = np.arange(size, dtype=np.int64)
-    D: NDArray[np.float64] = np.abs(idx[:, None] - idx[None, :]).astype(np.float64, copy=False)
-    # ensure float64 ndarray for typing
-    return np.asarray(rho**D, dtype=np.float64)
-
-
-def _sample_cluster_matrix(n: int, cluster: CorrCluster, rng: np.random.Generator) -> NDArray[np.float64]:
-    Sigma = (
-        _cov_equicorr(cluster.size, cluster.rho)
-        if cluster.structure == "equicorrelated"
-        else _cov_toeplitz(cluster.size, cluster.rho)
-    )
-    L = np.linalg.cholesky(Sigma)
-    Z: NDArray[np.float64] = rng.normal(size=(n, cluster.size)).astype(np.float64, copy=False)
-    X: NDArray[np.float64] = cast(NDArray[np.float64], Z @ L.T)
-    # standardize columns to ~unit variance (helpful for teaching consistency)
-    X = (X - X.mean(axis=0)) / (X.std(axis=0) + 1e-9)
-    return X  # (n, size)
-
-
-# ============================================
-# Public: generate a single correlated cluster
-# ============================================
-def generate_correlated_cluster(
-    n_samples: int,
-    size: int,
-    rho: float = 0.7,
-    structure: Literal["equicorrelated", "toeplitz"] = "equicorrelated",
-    random_state: int | None = None,
-    label: str | None = None,
-) -> tuple[NDArray[np.float64], dict[str, object]]:
-    """Generate a single correlated feature cluster (no labels y involved).
-
-    Returns (X_cluster, meta) where meta contains the empirical correlation matrix.
-
-    Args:
-        n_samples: Number of samples (rows).
-        size: Number of features (columns).
-        rho: Target correlation between features (0 ≤ rho < 1).
-        structure: "equicorrelated" or "toeplitz".
-        random_state: Random seed for reproducibility.
-        label: Optional didactic tag for this cluster.
-
-    Returns
-    -------
-        tuple:
-            - X (np.ndarray): Shape (n_samples, size) with standardized columns.
-            - meta (dict): Metadata with keys:
-              size, rho, structure, random_state, label, corr_matrix (size x size),
-              mean_offdiag, min_offdiag.
-
-    Raises
-    ------
-        ValueError: If size < 1 or rho not in [0, 1).
-    """
-    if size < 1:
-        raise ValueError("size must be >= 1")
-
-    if structure == "equicorrelated":
-        if not (0.0 <= rho < 1.0):
-            raise ValueError("for equicorrelated: rho must be in [0, 1)")
-    else:  # toeplitz (AR(1)-artige Struktur)
-        if not (-0.999 < rho < 0.999):
-            raise ValueError("for toeplitz: |rho| must be < 1")
-
-    rng = np.random.default_rng(random_state)
-    Sigma: NDArray[np.float64] = _cov_equicorr(size, rho) if structure == "equicorrelated" else _cov_toeplitz(size, rho)
-    L = np.linalg.cholesky(Sigma)
-    Z: NDArray[np.float64] = rng.normal(size=(n_samples, size)).astype(np.float64, copy=False)
-    X: NDArray[np.float64] = cast(NDArray[np.float64], Z @ L.T)
-    X = (X - X.mean(axis=0)) / (X.std(axis=0) + 1e-9)
-    C: NDArray[np.float64] = np.asarray(np.corrcoef(X, rowvar=False), dtype=np.float64)
-
-    # boolean diagonal mask (NumPy 2.0 compatible)
-    diag_mask = np.eye(size, dtype=bool)
-    off_diag = C[~diag_mask]
-
-    meta: dict[str, object] = {
-        "size": int(size),
-        "rho": float(rho),
-        "structure": structure,
-        "random_state": random_state,
-        "label": label,
-        "corr_matrix": C,  # empirical correlation (size x size)
-        "mean_offdiag": float(off_diag.mean()) if size > 1 else 1.0,
-        "min_offdiag": float(off_diag.min()) if size > 1 else 1.0,
-    }
-    return X, meta
-
-
-# =====================================================
-# Public: search a seed until correlation is sufficient
-# =====================================================
-def find_seed_for_correlation(
-    n_samples: int,
-    size: int,
-    rho_target: float,
-    structure: Literal["equicorrelated", "toeplitz"] = "equicorrelated",
-    metric: Literal["mean_offdiag", "min_offdiag"] = "mean_offdiag",
-    threshold: float = 0.65,
-    op: Literal[">=", "<="] = ">=",
-    tol: float | None = 0.02,
-    start_seed: int = 0,
-    max_tries: int = 500,
-) -> tuple[int, dict[str, object]]:
-    """Try seeds until the empirical correlation satisfies the rule.
-
-    Try seeds starting from `start_seed` until one of the following is satisfied:
-      - |mean_offdiag - rho_target| <= tol (if tol is not None), else
-      - (metric op threshold) with metric in {"mean_offdiag", "min_offdiag"} and op in {">=", "<="}.
-
-    Args:
-        n_samples: Number of samples (rows).
-        size: Number of features (columns).
-        rho_target: Target correlation between features.
-        structure: "equicorrelated" or "toeplitz".
-        metric: Empirical metric to use for acceptance.
-        threshold: Threshold for the metric (if tol is None).
-        op: Operator for threshold comparison ("<=" or ">=").
-        tol: Optional tolerance around rho_target for acceptance.
-        start_seed: First seed to try.
-        max_tries: Maximum number of seeds to try before giving up.
-
-    Returns
-    -------
-        tuple:
-            - seed (int): The first seed that satisfied the condition.
-            - meta (dict): Metadata as returned by generate_correlated_cluster.
-
-    Raises
-    ------
-        RuntimeError: If no seed satisfied the rule within max_tries.
-        ValueError: If size < 1 or rho_target not in [0, 1).
-    """
-    if size < 1:
-        raise ValueError("size must be >= 1")
-    if not (0.0 <= rho_target < 1.0):
-        raise ValueError("rho_target must be in [0, 1)")
-
-    seed = start_seed
-    for _ in range(max_tries):
-        _, m = generate_correlated_cluster(n_samples, size, rho_target, structure, random_state=seed)
-        mean_off = cast(float, m["mean_offdiag"])
-        min_off = cast(float, m["min_offdiag"])
-
-        ok = False
-        if tol is not None:
-            ok = abs(mean_off - rho_target) <= tol
-        if not ok:
-            val = mean_off if metric == "mean_offdiag" else min_off
-            ok = (val >= threshold) if op == ">=" else (val <= threshold)
-
-        if ok:
-            return seed, m
-        seed += 1
-    raise RuntimeError("No seed satisfied the correlation rule within max_tries.")
 
 
 # ==================
@@ -554,11 +225,11 @@ def _resolve_noise_params(dist: str, noise_scale: float, noise_params: Mapping[s
         noise_scale: Scale parameter (stddev for normal/laplace, half-width for uniform).
         noise_params: Additional distribution-specific parameters.
 
-    Returns
+    Returns:
     -------
         dict: Resolved parameters for the specified distribution.
 
-    Raises
+    Raises:
     ------
         ValueError: If dist is unsupported.
     """
@@ -628,7 +299,7 @@ def generate_dataset(
             with column names. If False, return `X` as a NumPy array in the same column order.
         **overrides: Optional config overrides merged into `cfg` (e.g., `n_samples=...`).
 
-    Returns
+    Returns:
     -------
         tuple:
             - X (pandas.DataFrame | np.ndarray): Shape (n_samples, n_features). By default a DataFrame
@@ -652,7 +323,6 @@ def generate_dataset(
             raise ValueError("sum(weights) must be > 0.")
 
     rng_global = np.random.default_rng(cfg.random_state)
-    anchor_target_cls_map: dict[int, int | None] = {}
 
     # names & roles (+ totals validation inside)
     names, inf_idx, pse_idx, noi_idx, cluster_idx, anch_idx = _make_names_and_roles(cfg)
@@ -661,13 +331,14 @@ def generate_dataset(
     cluster_matrices: list[NDArray[np.float64]] = []
     # Map: anchor feature column -> (beta, class_id)
     anchor_contrib: dict[int, tuple[float, int]] = {}
+    anchor_target_cls_map: dict[int, int | None] = {}
     cluster_label_map: dict[int, str | None] = {}
     col_start = 0
     if cfg.corr_clusters:
         for cid, c in enumerate(cfg.corr_clusters, start=1):
             seed = c.random_state if c.random_state is not None else cfg.random_state
             rng = np.random.default_rng(seed)
-            B = _sample_cluster_matrix(cfg.n_samples, c, rng)
+            B = sample_cluster_matrix(cfg.n_samples, c, rng)
             # weak global coupling (same g for all cluster columns)
             if cfg.corr_between > 0.0:
                 g = rng_global.normal(0.0, 1.0, size=(cfg.n_samples, 1))
@@ -684,6 +355,7 @@ def generate_dataset(
             cluster_label_map[cid] = c.label
             cluster_matrices.append(B)
             col_start += c.size
+
     X_clusters = np.concatenate(cluster_matrices, axis=1) if cluster_matrices else np.empty((cfg.n_samples, 0))
 
     # 2) free informative (exactly n_informative - n_anchors)
@@ -704,7 +376,7 @@ def generate_dataset(
         )
         noise_cols = np.stack(
             [
-                _sample_noise(
+                sample_noise(
                     rng_global,
                     n=cfg.n_samples,
                     dist=distribution,
@@ -776,7 +448,7 @@ def generate_dataset(
             i += c.size
 
     # Shift feature values for classes
-    _shift_classes(
+    shift_classes(
         X,
         y,
         informative_idx=inf_idx,
@@ -844,7 +516,7 @@ def find_dataset_seed_for_class_weights(
         return_dataframe: Return X as DataFrame (default) or ndarray.
         **overrides: Optional keyword overrides merged into cfg for generation.
 
-    Returns
+    Returns:
     -------
         tuple:
             - seed (int): The seed that satisfied the tolerance.
@@ -852,7 +524,7 @@ def find_dataset_seed_for_class_weights(
             - y (np.ndarray): Labels for that seed.
             - meta (DatasetMeta): Metadata for that seed.
 
-    Raises
+    Raises:
     ------
         RuntimeError: If no seed satisfies the tolerance within max_tries.
         ValueError: If cfg.n_classes < 2 or weights length mismatches n_classes.
@@ -912,7 +584,7 @@ def find_dataset_seed_for_score(
         return_dataframe: Return X as DataFrame (default) or ndarray.
         **overrides: Optional keyword overrides merged into cfg for generation.
 
-    Returns
+    Returns:
     -------
         tuple:
             - seed (int): The selected seed.
@@ -921,7 +593,7 @@ def find_dataset_seed_for_score(
             - meta (DatasetMeta): Metadata for that seed.
             - score (float): The achieved score.
 
-    Raises
+    Raises:
     ------
         ValueError: If mode is invalid.
         RuntimeError: If threshold is given but not met within max_tries.

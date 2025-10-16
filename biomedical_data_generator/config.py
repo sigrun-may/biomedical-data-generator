@@ -48,7 +48,7 @@ class NoiseDistribution(str, Enum):
         uniform: Uniform distribution.
         laplace: Laplace distribution (heavy tails; useful for simulating outliers).
 
-    Examples
+    Examples:
     --------
         ```python
         from biomedical_data_generator import DatasetConfig, NoiseDistribution
@@ -79,6 +79,28 @@ class NoiseDistribution(str, Enum):
     laplace = "laplace"  # heavy tails; nice to show outliers
 
 
+class BatchConfig(BaseModel):
+    """Configuration for simulating batch effects.
+
+    Simulate batch effects by adding random intercepts to specified columns. The intercepts are drawn from a normal
+    distribution with mean 0 and standard deviation `sigma`. Optionally, the batch assignment can
+    be confounded with the class labels.
+
+    Args:
+        n_batches (int): Number of batches (0 or 1 means no batch effect).
+        sigma (float): Standard deviation of the batch intercepts.
+        confounding (float): Degree of confounding with class labels, in [-1,
+            1]. 0 means no confounding, 1 means perfect confounding.
+        cols (list[int] | None): 0-based column indices to which batch effects are
+            applied. If None, batch effects are applied to all features.
+    """
+
+    n_batches: int = 0  # 0 oder 1 => kein Batch-Effekt
+    sigma: float = 0.5  # Std der Intercepts
+    confounding: float = 0.0  # in [-1, 1]
+    cols: list[int] | None = None  # 0-based column indices; None => all
+
+
 class CorrCluster(BaseModel):
     """One correlated feature block anchored at a role feature.
 
@@ -105,7 +127,7 @@ class CorrCluster(BaseModel):
        random_state (Optional[int]): Random seed for reproducibility.
        label (Optional[str]): Optional label for the cluster (for display purposes).
 
-    Examples
+    Examples:
     --------
        ```python
        from biomedical_data_generator import CorrCluster
@@ -119,7 +141,7 @@ class CorrCluster(BaseModel):
         random_state=None label=None
        ```
 
-    References
+    References:
     ----------
        May, S., Bischl, B., & Lang, M. (2022). A Benchmark for Data Generation Methods in Classification.
        In Proceedings of the 25th International Conference on Artificial Intelligence and Statistics (pp. 3433-3443).
@@ -128,7 +150,7 @@ class CorrCluster(BaseModel):
        https://en.wikipedia.org/wiki/Equicorrelated_random_variables
        https://en.wikipedia.org/wiki/Toeplitz_matrix
 
-    See Also
+    See Also:
     --------
        DatasetConfig: for the overall dataset configuration.
        generate_dataset: for generating datasets from the configuration.
@@ -153,8 +175,7 @@ class CorrCluster(BaseModel):
 
 
 class DatasetConfig(BaseModel):
-    """
-    Configuration for synthetic dataset generation.
+    """Configuration for synthetic dataset generation.
 
     The strict `mode="before"` normalizer fills/validates `n_features` without Pydantic warnings.
 
@@ -194,6 +215,7 @@ class DatasetConfig(BaseModel):
     corr_between: float = 0.0  # correlation between different clusters/roles (0 = independent)
     anchor_mode: AnchorMode = "equalized"
     effect_size: Literal["small", "medium", "large"] = "medium"  # controls default anchor_beta
+    batch: BatchConfig | None = None
     random_state: int | None = None
 
     # ---------- helpers (typed) ----------
@@ -204,13 +226,14 @@ class DatasetConfig(BaseModel):
         Args:
             raw_config: The raw input config mapping.
 
-        Yields
+        Yields:
         ------
             An iterable of cluster dicts.
 
-        Raises
+        Raises:
         ------
             TypeError: If any entry is neither a dict nor a CorrCluster instance.
+
         Note:
         This is a static method because it operates on raw input data before model instantiation.
         """
@@ -229,8 +252,7 @@ class DatasetConfig(BaseModel):
 
     @classmethod
     def _required_n_features(cls, raw_config: RawConfig) -> int:
-        """
-        Compute the minimal number of features needed based on roles and correlated clusters.
+        """Compute the minimal number of features needed based on roles and correlated clusters.
 
         Assumption
         ----------
@@ -275,11 +297,11 @@ class DatasetConfig(BaseModel):
             cls: The DatasetConfig class.
             data: The raw input data (any mapping-like).
 
-        Returns
+        Returns:
         -------
             A mapping with normalized/validated fields, suitable for model construction.
 
-        Raises
+        Raises:
         ------
             TypeError: If data is not a mapping or if fields have wrong types.
             ValueError: If n_features is too small or if other value constraints are violated.
@@ -387,9 +409,10 @@ class DatasetConfig(BaseModel):
         Args:
             **kwargs: Any valid DatasetConfig field.
 
-        Returns
+        Returns:
         -------
             A validated DatasetConfig instance with n_features >= required minimum.
+
         Note:
             This does NOT modify the original kwargs dict.
         """
@@ -430,11 +453,11 @@ class DatasetConfig(BaseModel):
             cls: The DatasetConfig class.
             path: Path to a YAML file.
 
-        Returns
+        Returns:
         -------
             A validated DatasetConfig instance.
 
-        Raises
+        Raises:
         ------
             FileNotFoundError: If the file does not exist.
             yaml.YAMLError: If the file cannot be parsed as YAML.
@@ -456,7 +479,7 @@ class DatasetConfig(BaseModel):
 
         Note: This is a subset of n_informative, not a separate count.
 
-        Returns
+        Returns:
         -------
             The number of clusters with anchor_role == "informative".
 
@@ -476,7 +499,7 @@ class DatasetConfig(BaseModel):
         Args:
             clusters: An iterable of CorrCluster instances (or None).
 
-        Returns
+        Returns:
         -------
             The total number of additional features contributed by all clusters.
 
@@ -490,7 +513,7 @@ class DatasetConfig(BaseModel):
     def breakdown(self) -> dict[str, int]:
         """Return a structured breakdown of feature counts, incl. cluster proxies.
 
-        Returns
+        Returns:
         -------
             A dict with keys:
             - n_informative_total
@@ -502,7 +525,7 @@ class DatasetConfig(BaseModel):
             - n_features_expected
             - n_features_configured
 
-        Raises
+        Raises:
         ------
             ValueError: If self.n_features is inconsistent (should not happen if validated).
 
@@ -535,7 +558,7 @@ class DatasetConfig(BaseModel):
             per_cluster: Include one line per cluster (size/role/rho/etc.).
             as_markdown: Render as a Markdown table-like text.
 
-        Returns
+        Returns:
         -------
             A formatted string summarizing the feature layout and counts.
         """

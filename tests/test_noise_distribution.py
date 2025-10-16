@@ -9,7 +9,7 @@
 import numpy as np
 import pytest
 
-from biomedical_data_generator import DatasetConfig, NoiseDistribution
+from biomedical_data_generator.config import DatasetConfig, NoiseDistribution
 from biomedical_data_generator.generator import generate_dataset
 
 

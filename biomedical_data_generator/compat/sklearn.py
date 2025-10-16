@@ -28,8 +28,7 @@ def make_biomedical_dataset(
     return_meta: bool = False,
     return_pandas: bool = False,
 ) -> tuple[Any, Any] | tuple[Any, Any, object]:
-    """
-    Sklearn-like convenience wrapper around the biomedical-data-generator.
+    """Sklearn-like convenience wrapper around the biomedical-data-generator.
 
     Parameters mirror sklearn.make_classification where sensible; extras map to DatasetConfig.
     By default returns (X, y) as numpy arrays for broad compatibility.

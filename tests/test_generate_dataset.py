@@ -13,12 +13,11 @@ import pandas as pd
 import pytest
 
 from biomedical_data_generator.config import CorrCluster, DatasetConfig
+from biomedical_data_generator.features.correlated import find_seed_for_correlation, generate_correlated_cluster
 from biomedical_data_generator.generator import (
     DatasetMeta,
     find_dataset_seed_for_class_weights,
     find_dataset_seed_for_score,
-    find_seed_for_correlation,
-    generate_correlated_cluster,
     generate_dataset,
 )
 

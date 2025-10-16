@@ -11,10 +11,11 @@ from typing import Literal
 import numpy as np
 import pytest
 
-from biomedical_data_generator.generator import generate_correlated_cluster
+from biomedical_data_generator.features.correlated import generate_correlated_cluster
 
 Structure = Literal["equicorrelated", "toeplitz"]
 STRUCTURES: tuple[Structure, ...] = ("equicorrelated", "toeplitz")
+rng = np.random.default_rng(42)
 
 
 def _mean_offdiag(corr: np.ndarray) -> float:
@@ -25,7 +26,7 @@ def _mean_offdiag(corr: np.ndarray) -> float:
 
 @pytest.mark.parametrize("structure", STRUCTURES)
 def test_generate_correlated_cluster_shapes_and_correlation(structure: Structure) -> None:
-    X, meta = generate_correlated_cluster(n_samples=200, size=5, rho=0.6, structure=structure, random_state=123)
+    X, meta = generate_correlated_cluster(n_samples=200, size=5, rho=0.6, structure=structure, rng=rng)
     assert X.shape == (200, 5)
     assert "corr_matrix" in meta and isinstance(meta["corr_matrix"], np.ndarray)
     C = meta["corr_matrix"]
@@ -39,7 +40,7 @@ def test_generate_correlated_cluster_shapes_and_correlation(structure: Structure
 
 def test_toeplitz_accepts_negative_rho():
     # AR(1)/Toeplitz is defined for |rho|<1 even if rho < 0
-    X, meta = generate_correlated_cluster(n_samples=150, size=6, rho=-0.4, structure="toeplitz", random_state=1)
+    X, meta = generate_correlated_cluster(n_samples=150, size=6, rho=-0.4, structure="toeplitz", rng=rng)
     C = meta["corr_matrix"]
     assert C.shape == (6, 6)
     # alternating signs across distance: first off-diagonal should be ~rho
