@@ -5,7 +5,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>biomedical_data_generator.config &mdash; Biomedical Data Generator 0.1.4 documentation</title>
+  <title>biomedical_data_generator.config &mdash; Biomedical Data Generator 0.1.5rc1 documentation</title>
       <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=b86133f3" />
       <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=e59714d7" />
       <link rel="stylesheet" type="text/css" href="../../_static/copybutton.css?v=76b2166b" />
@@ -14,7 +14,7 @@
   
       <script src="../../_static/jquery.js?v=5d32c60e"></script>
       <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="../../_static/documentation_options.js?v=fd825880"></script>
+      <script src="../../_static/documentation_options.js?v=cd91370b"></script>
       <script src="../../_static/doctools.js?v=9bcbadda"></script>
       <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
       <script src="../../_static/clipboard.min.js?v=a7894cd8"></script>
@@ -132,7 +132,7 @@
 <span class="sd">        uniform: Uniform distribution.</span>
 <span class="sd">        laplace: Laplace distribution (heavy tails; useful for simulating outliers).</span>
 
-<span class="sd">    Examples</span>
+<span class="sd">    Examples:</span>
 <span class="sd">    --------</span>
 <span class="sd">        ```python</span>
 <span class="sd">        from biomedical_data_generator import DatasetConfig, NoiseDistribution</span>
@@ -163,6 +163,28 @@
     <span class="n">laplace</span> <span class="o">=</span> <span class="s2">&quot;laplace&quot;</span>  <span class="c1"># heavy tails; nice to show outliers</span>
 
 
+<span class="k">class</span><span class="w"> </span><span class="nc">BatchConfig</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Configuration for simulating batch effects.</span>
+
+<span class="sd">    Simulate batch effects by adding random intercepts to specified columns. The intercepts are drawn from a normal</span>
+<span class="sd">    distribution with mean 0 and standard deviation `sigma`. Optionally, the batch assignment can</span>
+<span class="sd">    be confounded with the class labels.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        n_batches (int): Number of batches (0 or 1 means no batch effect).</span>
+<span class="sd">        sigma (float): Standard deviation of the batch intercepts.</span>
+<span class="sd">        confounding (float): Degree of confounding with class labels, in [-1,</span>
+<span class="sd">            1]. 0 means no confounding, 1 means perfect confounding.</span>
+<span class="sd">        cols (list[int] | None): 0-based column indices to which batch effects are</span>
+<span class="sd">            applied. If None, batch effects are applied to all features.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">n_batches</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span>  <span class="c1"># 0 oder 1 =&gt; kein Batch-Effekt</span>
+    <span class="n">sigma</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.5</span>  <span class="c1"># Std der Intercepts</span>
+    <span class="n">confounding</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.0</span>  <span class="c1"># in [-1, 1]</span>
+    <span class="n">cols</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>  <span class="c1"># 0-based column indices; None =&gt; all</span>
+
+
 <div class="viewcode-block" id="CorrCluster">
 <a class="viewcode-back" href="../../_autosummary/biomedical_data_generator.CorrCluster.html#biomedical_data_generator.CorrCluster">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">CorrCluster</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
@@ -191,7 +213,7 @@
 <span class="sd">       random_state (Optional[int]): Random seed for reproducibility.</span>
 <span class="sd">       label (Optional[str]): Optional label for the cluster (for display purposes).</span>
 
-<span class="sd">    Examples</span>
+<span class="sd">    Examples:</span>
 <span class="sd">    --------</span>
 <span class="sd">       ```python</span>
 <span class="sd">       from biomedical_data_generator import CorrCluster</span>
@@ -205,7 +227,7 @@
 <span class="sd">        random_state=None label=None</span>
 <span class="sd">       ```</span>
 
-<span class="sd">    References</span>
+<span class="sd">    References:</span>
 <span class="sd">    ----------</span>
 <span class="sd">       May, S., Bischl, B., &amp; Lang, M. (2022). A Benchmark for Data Generation Methods in Classification.</span>
 <span class="sd">       In Proceedings of the 25th International Conference on Artificial Intelligence and Statistics (pp. 3433-3443).</span>
@@ -214,7 +236,7 @@
 <span class="sd">       https://en.wikipedia.org/wiki/Equicorrelated_random_variables</span>
 <span class="sd">       https://en.wikipedia.org/wiki/Toeplitz_matrix</span>
 
-<span class="sd">    See Also</span>
+<span class="sd">    See Also:</span>
 <span class="sd">    --------</span>
 <span class="sd">       DatasetConfig: for the overall dataset configuration.</span>
 <span class="sd">       generate_dataset: for generating datasets from the configuration.</span>
@@ -242,8 +264,7 @@
 <div class="viewcode-block" id="DatasetConfig">
 <a class="viewcode-back" href="../../_autosummary/biomedical_data_generator.DatasetConfig.html#biomedical_data_generator.DatasetConfig">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">DatasetConfig</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Configuration for synthetic dataset generation.</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Configuration for synthetic dataset generation.</span>
 
 <span class="sd">    The strict `mode=&quot;before&quot;` normalizer fills/validates `n_features` without Pydantic warnings.</span>
 
@@ -283,6 +304,7 @@
     <span class="n">corr_between</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.0</span>  <span class="c1"># correlation between different clusters/roles (0 = independent)</span>
     <span class="n">anchor_mode</span><span class="p">:</span> <span class="n">AnchorMode</span> <span class="o">=</span> <span class="s2">&quot;equalized&quot;</span>
     <span class="n">effect_size</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;small&quot;</span><span class="p">,</span> <span class="s2">&quot;medium&quot;</span><span class="p">,</span> <span class="s2">&quot;large&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;medium&quot;</span>  <span class="c1"># controls default anchor_beta</span>
+    <span class="n">batch</span><span class="p">:</span> <span class="n">BatchConfig</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
     <span class="n">random_state</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
 
     <span class="c1"># ---------- helpers (typed) ----------</span>
@@ -293,13 +315,14 @@
 <span class="sd">        Args:</span>
 <span class="sd">            raw_config: The raw input config mapping.</span>
 
-<span class="sd">        Yields</span>
+<span class="sd">        Yields:</span>
 <span class="sd">        ------</span>
 <span class="sd">            An iterable of cluster dicts.</span>
 
-<span class="sd">        Raises</span>
+<span class="sd">        Raises:</span>
 <span class="sd">        ------</span>
 <span class="sd">            TypeError: If any entry is neither a dict nor a CorrCluster instance.</span>
+
 <span class="sd">        Note:</span>
 <span class="sd">        This is a static method because it operates on raw input data before model instantiation.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
@@ -318,8 +341,7 @@
 
     <span class="nd">@classmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">_required_n_features</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">raw_config</span><span class="p">:</span> <span class="n">RawConfig</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Compute the minimal number of features needed based on roles and correlated clusters.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Compute the minimal number of features needed based on roles and correlated clusters.</span>
 
 <span class="sd">        Assumption</span>
 <span class="sd">        ----------</span>
@@ -364,11 +386,11 @@
 <span class="sd">            cls: The DatasetConfig class.</span>
 <span class="sd">            data: The raw input data (any mapping-like).</span>
 
-<span class="sd">        Returns</span>
+<span class="sd">        Returns:</span>
 <span class="sd">        -------</span>
 <span class="sd">            A mapping with normalized/validated fields, suitable for model construction.</span>
 
-<span class="sd">        Raises</span>
+<span class="sd">        Raises:</span>
 <span class="sd">        ------</span>
 <span class="sd">            TypeError: If data is not a mapping or if fields have wrong types.</span>
 <span class="sd">            ValueError: If n_features is too small or if other value constraints are violated.</span>
@@ -478,9 +500,10 @@
 <span class="sd">        Args:</span>
 <span class="sd">            **kwargs: Any valid DatasetConfig field.</span>
 
-<span class="sd">        Returns</span>
+<span class="sd">        Returns:</span>
 <span class="sd">        -------</span>
 <span class="sd">            A validated DatasetConfig instance with n_features &gt;= required minimum.</span>
+
 <span class="sd">        Note:</span>
 <span class="sd">            This does NOT modify the original kwargs dict.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
@@ -524,11 +547,11 @@
 <span class="sd">            cls: The DatasetConfig class.</span>
 <span class="sd">            path: Path to a YAML file.</span>
 
-<span class="sd">        Returns</span>
+<span class="sd">        Returns:</span>
 <span class="sd">        -------</span>
 <span class="sd">            A validated DatasetConfig instance.</span>
 
-<span class="sd">        Raises</span>
+<span class="sd">        Raises:</span>
 <span class="sd">        ------</span>
 <span class="sd">            FileNotFoundError: If the file does not exist.</span>
 <span class="sd">            yaml.YAMLError: If the file cannot be parsed as YAML.</span>
@@ -553,7 +576,7 @@
 
 <span class="sd">        Note: This is a subset of n_informative, not a separate count.</span>
 
-<span class="sd">        Returns</span>
+<span class="sd">        Returns:</span>
 <span class="sd">        -------</span>
 <span class="sd">            The number of clusters with anchor_role == &quot;informative&quot;.</span>
 
@@ -574,7 +597,7 @@
 <span class="sd">        Args:</span>
 <span class="sd">            clusters: An iterable of CorrCluster instances (or None).</span>
 
-<span class="sd">        Returns</span>
+<span class="sd">        Returns:</span>
 <span class="sd">        -------</span>
 <span class="sd">            The total number of additional features contributed by all clusters.</span>
 
@@ -590,7 +613,7 @@
     <span class="k">def</span><span class="w"> </span><span class="nf">breakdown</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">int</span><span class="p">]:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Return a structured breakdown of feature counts, incl. cluster proxies.</span>
 
-<span class="sd">        Returns</span>
+<span class="sd">        Returns:</span>
 <span class="sd">        -------</span>
 <span class="sd">            A dict with keys:</span>
 <span class="sd">            - n_informative_total</span>
@@ -602,7 +625,7 @@
 <span class="sd">            - n_features_expected</span>
 <span class="sd">            - n_features_configured</span>
 
-<span class="sd">        Raises</span>
+<span class="sd">        Raises:</span>
 <span class="sd">        ------</span>
 <span class="sd">            ValueError: If self.n_features is inconsistent (should not happen if validated).</span>
 
@@ -638,7 +661,7 @@
 <span class="sd">            per_cluster: Include one line per cluster (size/role/rho/etc.).</span>
 <span class="sd">            as_markdown: Render as a Markdown table-like text.</span>
 
-<span class="sd">        Returns</span>
+<span class="sd">        Returns:</span>
 <span class="sd">        -------</span>
 <span class="sd">            A formatted string summarizing the feature layout and counts.</span>
 <span class="sd">        &quot;&quot;&quot;</span>

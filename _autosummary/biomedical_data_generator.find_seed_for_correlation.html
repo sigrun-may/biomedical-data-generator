@@ -6,7 +6,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>biomedical_data_generator.find_seed_for_correlation &mdash; Biomedical Data Generator 0.1.4 documentation</title>
+  <title>biomedical_data_generator.find_seed_for_correlation &mdash; Biomedical Data Generator 0.1.5rc1 documentation</title>
       <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=b86133f3" />
       <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=e59714d7" />
       <link rel="stylesheet" type="text/css" href="../_static/copybutton.css?v=76b2166b" />
@@ -15,7 +15,7 @@
   
       <script src="../_static/jquery.js?v=5d32c60e"></script>
       <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="../_static/documentation_options.js?v=fd825880"></script>
+      <script src="../_static/documentation_options.js?v=cd91370b"></script>
       <script src="../_static/doctools.js?v=9bcbadda"></script>
       <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
       <script src="../_static/clipboard.min.js?v=a7894cd8"></script>
@@ -91,7 +91,7 @@
 <h1>biomedical_data_generator.find_seed_for_correlation<a class="headerlink" href="#biomedical-data-generator-find-seed-for-correlation" title="Link to this heading"></a></h1>
 <dl class="py function">
 <dt class="sig sig-object py" id="biomedical_data_generator.find_seed_for_correlation">
-<span class="sig-prename descclassname"><span class="pre">biomedical_data_generator.</span></span><span class="sig-name descname"><span class="pre">find_seed_for_correlation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">n_samples</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">size</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rho_target</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">structure</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'equicorrelated'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">metric</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'mean_offdiag'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">threshold</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.65</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">op</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'&gt;='</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tol</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.02</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">start_seed</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_tries</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">500</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/biomedical_data_generator/generator.html#find_seed_for_correlation"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#biomedical_data_generator.find_seed_for_correlation" title="Link to this definition"></a></dt>
+<span class="sig-prename descclassname"><span class="pre">biomedical_data_generator.</span></span><span class="sig-name descname"><span class="pre">find_seed_for_correlation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">n_samples</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">size</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rho_target</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">structure</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'equicorrelated'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">metric</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'mean_offdiag'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">threshold</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.65</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">op</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'&gt;='</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tol</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.02</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">start_seed</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_tries</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">500</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/biomedical_data_generator/features/correlated.html#find_seed_for_correlation"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#biomedical_data_generator.find_seed_for_correlation" title="Link to this definition"></a></dt>
 <dd><p>Try seeds until the empirical correlation satisfies the rule.</p>
 <dl class="simple">
 <dt>Try seeds starting from <cite>start_seed</cite> until one of the following is satisfied:</dt><dd><ul class="simple">
@@ -116,19 +116,16 @@
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p><ul class="simple">
-<li><p>seed (int): The first seed that satisfied the condition.</p></li>
-<li><p>meta (dict): Metadata as returned by generate_correlated_cluster.</p></li>
-</ul>
-</p>
+<dd class="field-even"><p>seed (int): The first seed that satisfied the condition.
+meta (dict): Metadata as returned by generate_correlated_cluster.</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">tuple</span></code></a></p>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.14)">tuple</a></p>
 </dd>
 <dt class="field-even">Raises<span class="colon">:</span></dt>
 <dd class="field-even"><ul class="simple">
-<li><p><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#RuntimeError" title="(in Python v3.14)"><strong>RuntimeError</strong></a> – </p></li>
-<li><p><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#ValueError" title="(in Python v3.14)"><strong>ValueError</strong></a> – </p></li>
+<li><p><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#RuntimeError" title="(in Python v3.14)"><strong>RuntimeError</strong></a> – If no seed satisfied the rule within max_tries.</p></li>
+<li><p><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#ValueError" title="(in Python v3.14)"><strong>ValueError</strong></a> – If size &lt; 1 or rho_target not in [0, 1).</p></li>
 </ul>
 </dd>
 </dl>

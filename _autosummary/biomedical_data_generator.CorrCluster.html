@@ -6,7 +6,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>biomedical_data_generator.CorrCluster &mdash; Biomedical Data Generator 0.1.4 documentation</title>
+  <title>biomedical_data_generator.CorrCluster &mdash; Biomedical Data Generator 0.1.5rc1 documentation</title>
       <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=b86133f3" />
       <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=e59714d7" />
       <link rel="stylesheet" type="text/css" href="../_static/copybutton.css?v=76b2166b" />
@@ -15,7 +15,7 @@
   
       <script src="../_static/jquery.js?v=5d32c60e"></script>
       <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="../_static/documentation_options.js?v=fd825880"></script>
+      <script src="../_static/documentation_options.js?v=cd91370b"></script>
       <script src="../_static/doctools.js?v=9bcbadda"></script>
       <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
       <script src="../_static/clipboard.min.js?v=a7894cd8"></script>
@@ -124,8 +124,10 @@ correlation pattern within the cluster.</p>
 </ul>
 </dd>
 </dl>
-<p class="rubric">Examples</p>
-<p><a href="#id1"><span class="problematic" id="id2">``</span></a><a href="#id3"><span class="problematic" id="id4">`</span></a>python
+<section id="examples">
+<h2>Examples:<a class="headerlink" href="#examples" title="Link to this heading"></a></h2>
+<blockquote>
+<div><p><a href="#id1"><span class="problematic" id="id2">``</span></a><a href="#id3"><span class="problematic" id="id4">`</span></a>python
 from biomedical_data_generator import CorrCluster
 c1 = CorrCluster(size=3, rho=0.7, anchor_role=”informative”, anchor_beta=1.0)
 c2 = CorrCluster(size=2, rho=0.5, anchor_role=”pseudo”)
@@ -140,22 +142,25 @@ print(c1)
 <div><p>random_state=None label=None</p>
 </div></blockquote>
 <p><a href="#id5"><span class="problematic" id="id6">``</span></a><a href="#id7"><span class="problematic" id="id8">`</span></a></p>
-<p class="rubric">References</p>
-<p>May, S., Bischl, B., &amp; Lang, M. (2022). A Benchmark for Data Generation Methods in Classification.
+</div></blockquote>
+</section>
+<section id="references">
+<h2>References:<a class="headerlink" href="#references" title="Link to this heading"></a></h2>
+<blockquote>
+<div><p>May, S., Bischl, B., &amp; Lang, M. (2022). A Benchmark for Data Generation Methods in Classification.
 In Proceedings of the 25th International Conference on Artificial Intelligence and Statistics (pp. 3433-3443).
 PMLR.
 sklearn.datasets.make_classification (for the general idea of informative/pseudo/noise features)
 <a class="reference external" href="https://en.wikipedia.org/wiki/Equicorrelated_random_variables">https://en.wikipedia.org/wiki/Equicorrelated_random_variables</a>
 <a class="reference external" href="https://en.wikipedia.org/wiki/Toeplitz_matrix">https://en.wikipedia.org/wiki/Toeplitz_matrix</a></p>
-<div class="admonition seealso">
-<p class="admonition-title">See also</p>
-<dl class="simple">
-<dt><a class="reference internal" href="biomedical_data_generator.DatasetConfig.html#biomedical_data_generator.DatasetConfig" title="biomedical_data_generator.DatasetConfig"><code class="xref py py-obj docutils literal notranslate"><span class="pre">DatasetConfig</span></code></a></dt><dd><p>for the overall dataset configuration.</p>
-</dd>
-<dt><a class="reference internal" href="biomedical_data_generator.generate_dataset.html#biomedical_data_generator.generate_dataset" title="biomedical_data_generator.generate_dataset"><code class="xref py py-obj docutils literal notranslate"><span class="pre">generate_dataset</span></code></a></dt><dd><p>for generating datasets from the configuration.</p>
-</dd>
-</dl>
-</div>
+</div></blockquote>
+</section>
+<section id="see-also">
+<h2>See Also:<a class="headerlink" href="#see-also" title="Link to this heading"></a></h2>
+<blockquote>
+<div><p>DatasetConfig: for the overall dataset configuration.
+generate_dataset: for generating datasets from the configuration.</p>
+</div></blockquote>
 <div class="admonition warning">
 <p class="admonition-title">Warning</p>
 <ul class="simple">
@@ -313,6 +318,7 @@ validated to form a valid model.</p>
 <dd><p>Configuration for the model, should be a dictionary conforming to [<cite>ConfigDict</cite>][pydantic.config.ConfigDict].</p>
 </dd></dl>
 
+</section>
 </dd></dl>
 
 </section>

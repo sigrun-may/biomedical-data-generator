@@ -6,7 +6,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>biomedical_data_generator.generate_dataset &mdash; Biomedical Data Generator 0.1.4 documentation</title>
+  <title>biomedical_data_generator.generate_dataset &mdash; Biomedical Data Generator 0.1.5rc1 documentation</title>
       <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=b86133f3" />
       <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=e59714d7" />
       <link rel="stylesheet" type="text/css" href="../_static/copybutton.css?v=76b2166b" />
@@ -15,7 +15,7 @@
   
       <script src="../_static/jquery.js?v=5d32c60e"></script>
       <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="../_static/documentation_options.js?v=fd825880"></script>
+      <script src="../_static/documentation_options.js?v=cd91370b"></script>
       <script src="../_static/doctools.js?v=9bcbadda"></script>
       <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
       <script src="../_static/clipboard.min.js?v=a7894cd8"></script>
@@ -113,20 +113,25 @@ with column names. If False, return <cite>X</cite> as a NumPy array in the same 
 <li><p><strong>**overrides</strong> – Optional config overrides merged into <cite>cfg</cite> (e.g., <cite>n_samples=…</cite>).</p></li>
 </ul>
 </dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p><ul class="simple">
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.14)">tuple</a>[<em>DataFrame</em> | <a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.3)"><em>ndarray</em></a>[<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.14)">tuple</a>[<a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.14)"><em>Any</em></a>, …], <a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.dtype.html#numpy.dtype" title="(in NumPy v2.3)"><em>dtype</em></a>[<em>float64</em>]], <a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.3)"><em>ndarray</em></a>[<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.14)">tuple</a>[<a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.14)"><em>Any</em></a>, …], <a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.dtype.html#numpy.dtype" title="(in NumPy v2.3)"><em>dtype</em></a>[<em>int64</em>]], <a class="reference internal" href="biomedical_data_generator.DatasetMeta.html#biomedical_data_generator.DatasetMeta" title="biomedical_data_generator.meta.DatasetMeta"><em>DatasetMeta</em></a>]</p>
+</dd>
+</dl>
+<section id="returns">
+<h2>Returns:<a class="headerlink" href="#returns" title="Link to this heading"></a></h2>
+<blockquote>
+<div><dl class="simple">
+<dt>tuple:</dt><dd><ul class="simple">
 <li><p>X (pandas.DataFrame | np.ndarray): Shape (n_samples, n_features). By default a DataFrame
 with feature names in canonical order (clusters → free informative → free pseudo → noise).</p></li>
 <li><p>y (np.ndarray): Shape (n_samples,). Integer labels in {0, 1, …, n_classes-1}.</p></li>
 <li><p>meta (DatasetMeta): Metadata including role masks, cluster indices/labels, empirical class
 weights, and the resolved configuration.</p></li>
 </ul>
-</p>
-</dd>
-<dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">tuple</span></code></a></p>
 </dd>
 </dl>
+</div></blockquote>
+</section>
 </dd></dl>
 
 </section>

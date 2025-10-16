@@ -6,7 +6,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>biomedical_data_generator.generate_correlated_cluster &mdash; Biomedical Data Generator 0.1.4 documentation</title>
+  <title>biomedical_data_generator.generate_correlated_cluster &mdash; Biomedical Data Generator 0.1.5rc1 documentation</title>
       <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=b86133f3" />
       <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=e59714d7" />
       <link rel="stylesheet" type="text/css" href="../_static/copybutton.css?v=76b2166b" />
@@ -15,7 +15,7 @@
   
       <script src="../_static/jquery.js?v=5d32c60e"></script>
       <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="../_static/documentation_options.js?v=fd825880"></script>
+      <script src="../_static/documentation_options.js?v=cd91370b"></script>
       <script src="../_static/doctools.js?v=9bcbadda"></script>
       <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
       <script src="../_static/clipboard.min.js?v=a7894cd8"></script>
@@ -91,7 +91,7 @@
 <h1>biomedical_data_generator.generate_correlated_cluster<a class="headerlink" href="#biomedical-data-generator-generate-correlated-cluster" title="Link to this heading"></a></h1>
 <dl class="py function">
 <dt class="sig sig-object py" id="biomedical_data_generator.generate_correlated_cluster">
-<span class="sig-prename descclassname"><span class="pre">biomedical_data_generator.</span></span><span class="sig-name descname"><span class="pre">generate_correlated_cluster</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">n_samples</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">size</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rho</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.7</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">structure</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'equicorrelated'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">random_state</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">label</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/biomedical_data_generator/generator.html#generate_correlated_cluster"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#biomedical_data_generator.generate_correlated_cluster" title="Link to this definition"></a></dt>
+<span class="sig-prename descclassname"><span class="pre">biomedical_data_generator.</span></span><span class="sig-name descname"><span class="pre">generate_correlated_cluster</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">n_samples</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">size</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rho</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.7</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">structure</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'equicorrelated'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rng</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">label</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/biomedical_data_generator/features/correlated.html#generate_correlated_cluster"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#biomedical_data_generator.generate_correlated_cluster" title="Link to this definition"></a></dt>
 <dd><p>Generate a single correlated feature cluster (no labels y involved).</p>
 <p>Returns (X_cluster, meta) where meta contains the empirical correlation matrix.</p>
 <dl class="field-list simple">
@@ -101,24 +101,24 @@
 <li><p><strong>size</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a>) – Number of features (columns).</p></li>
 <li><p><strong>rho</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>) – Target correlation between features (0 ≤ rho &lt; 1).</p></li>
 <li><p><strong>structure</strong> (<a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Literal" title="(in Python v3.14)"><em>Literal</em></a><em>[</em><em>'equicorrelated'</em><em>, </em><em>'toeplitz'</em><em>]</em>) – “equicorrelated” or “toeplitz”.</p></li>
-<li><p><strong>random_state</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a><em> | </em><em>None</em>) – Random seed for reproducibility.</p></li>
+<li><p><strong>rng</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/random/generator.html#numpy.random.Generator" title="(in NumPy v2.3)"><em>Generator</em></a><em> | </em><em>None</em>) – Optional random number generator (if None, a new one is created).</p></li>
 <li><p><strong>label</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a><em> | </em><em>None</em>) – Optional didactic tag for this cluster.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p><ul class="simple">
-<li><p>X (np.ndarray): Shape (n_samples, size) with standardized columns.</p></li>
-<li><p>meta (dict): Metadata with keys:
-size, rho, structure, random_state, label, corr_matrix (size x size),
-mean_offdiag, min_offdiag.</p></li>
-</ul>
+<dd class="field-even"><p><p>X (np.ndarray): Shape (n_samples, size) with standardized columns.
+meta (dict): Metadata with keys:</p>
+<blockquote>
+<div><p>size, rho, structure, label, corr_matrix (size x size),
+mean_offdiag, min_offdiag.</p>
+</div></blockquote>
 </p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">tuple</span></code></a></p>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.14)">tuple</a></p>
 </dd>
 <dt class="field-even">Raises<span class="colon">:</span></dt>
-<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#ValueError" title="(in Python v3.14)"><strong>ValueError</strong></a> – </p>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#ValueError" title="(in Python v3.14)"><strong>ValueError</strong></a> – If size &lt; 1 or rho not in [0, 1).</p>
 </dd>
 </dl>
 </dd></dl>
