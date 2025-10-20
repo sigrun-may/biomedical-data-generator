@@ -407,7 +407,7 @@ class DatasetConfig(BaseModel):
     corr_clusters: list[CorrCluster] = Field(default_factory=list)
     corr_between: float = 0.0  # correlation between different clusters/roles (0 = independent)
     anchor_mode: AnchorMode = "equalized"
-    effect_size: Literal["small", "medium", "large"] = "medium"  # controls default anchor_beta
+    effect_size: Literal["small", "medium", "large"] = "medium"  # controls default anchor_effect_size
     batch: BatchConfig | None = None
     random_state: int | None = None
 
