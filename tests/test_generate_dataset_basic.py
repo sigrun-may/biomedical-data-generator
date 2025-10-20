@@ -49,7 +49,9 @@ def test_class_weights_bias_matches_priors_approximately():
         n_pseudo=0,
         n_noise=0,
         corr_clusters=[
-            CorrCluster(n_cluster_features=3, rho=0.6, structure="toeplitz", anchor_role="informative", anchor_beta=1.0)
+            CorrCluster(
+                n_cluster_features=3, rho=0.6, structure="toeplitz", anchor_role="informative", anchor_effect_size=1.0
+            )
         ],
         n_features=3 + (3 - 1),
         n_classes=3,

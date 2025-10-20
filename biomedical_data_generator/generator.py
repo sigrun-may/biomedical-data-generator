@@ -284,7 +284,7 @@ def generate_dataset(
     Features are ordered as: cluster features (anchors first within each cluster),
     then free informative features, then free pseudo features, then noise features.
     Labels y are sampled from a softmax model over `n_classes`: cluster anchors add a positive
-    contribution to their assigned class (via `anchor_beta`), free informative features contribute
+    contribution to their assigned class (via `anchor_effect_size`), free informative features contribute
     to classes in a simple round-robin assignment (β=0.8). Pseudo and noise features have β=0.
     Reproducibility is controlled by `cfg.random_state` and optional per-cluster seeds. If `weights`
     are specified (length `n_classes`), per-class intercepts are added so that
@@ -348,7 +348,7 @@ def generate_dataset(
                 anchor_cls = 0 if c.anchor_class is None else int(c.anchor_class)
                 if not (0 <= anchor_cls < cfg.n_classes):
                     raise ValueError(f"anchor_class {anchor_cls} out of range for n_classes={cfg.n_classes}.")
-                anchor_contrib[anchor_col] = (float(c.anchor_beta), anchor_cls)
+                anchor_contrib[anchor_col] = (float(c.anchor_effect_size), anchor_cls)
                 anchor_target_cls_map[cid] = anchor_cls
             else:
                 anchor_target_cls_map[cid] = None
@@ -439,12 +439,12 @@ def generate_dataset(
 
     # per-cluster role/beta maps for meta
     anchor_role_map: dict[int, str] = {}
-    anchor_beta_map: dict[int, float] = {}
+    anchor_effect_size_map: dict[int, float] = {}
     if cfg.corr_clusters:
         i = 0
         for cid, c in enumerate(cfg.corr_clusters, start=1):
             anchor_role_map[cid] = c.anchor_role
-            anchor_beta_map[cid] = c.anchor_beta if c.anchor_role == "informative" else 0.0
+            anchor_effect_size_map[cid] = c.anchor_effect_size if c.anchor_role == "informative" else 0.0
             i += c.n_cluster_features
 
     # Shift feature values for classes
@@ -468,7 +468,7 @@ def generate_dataset(
         corr_cluster_indices=cluster_idx,
         anchor_idx=anch_idx,
         anchor_role=anchor_role_map,
-        anchor_beta=anchor_beta_map,
+        anchor_effect_size=anchor_effect_size_map,
         anchor_target_cls=anchor_target_cls_map,
         cluster_label=cluster_label_map,
         y_weights=y_weights,

@@ -30,7 +30,7 @@ def main() -> None:
                 rho=0.7,
                 structure="equicorrelated",
                 anchor_role="informative",
-                anchor_beta=1.0,
+                anchor_effect_size=1.0,
             )
         ],
         random_state=42,
