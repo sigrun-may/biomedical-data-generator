@@ -96,7 +96,6 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">enum</span><span class="w"> </span><span class="kn">import</span> <span class="n">Enum</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Literal</span><span class="p">,</span> <span class="n">TypeAlias</span>
 
-<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ConfigDict</span><span class="p">,</span> <span class="n">Field</span><span class="p">,</span> <span class="n">field_validator</span><span class="p">,</span> <span class="n">model_validator</span>
 
 <span class="n">RawConfig</span><span class="p">:</span> <span class="n">TypeAlias</span> <span class="o">=</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span>
@@ -196,7 +195,7 @@
 <span class="sd">    acts as the &quot;anchor&quot; (driver), while the others are &quot;proxies&quot; (followers).</span>
 
 <span class="sd">    Args:</span>
-<span class="sd">        size: Number of biomarkers in the cluster (including anchor). Must be &gt;= 1.</span>
+<span class="sd">        n_cluster_features: Number of biomarkers in the cluster (including anchor). Must be &gt;= 1.</span>
 <span class="sd">        rho: Correlation strength between biomarkers in the cluster.</span>
 <span class="sd">            - 0.0 = independent</span>
 <span class="sd">            - 0.5 = moderate correlation</span>
@@ -227,7 +226,7 @@
 <span class="sd">        Strong inflammatory pathway in diseased patients:</span>
 
 <span class="sd">        &gt;&gt;&gt; inflammation = CorrCluster(</span>
-<span class="sd">        ...     size=5,</span>
+<span class="sd">        ...     n_cluster_features=5,</span>
 <span class="sd">        ...     rho=0.8,</span>
 <span class="sd">        ...     anchor_role=&quot;informative&quot;,</span>
 <span class="sd">        ...     anchor_effect_size=&quot;large&quot;,</span>
@@ -238,7 +237,7 @@
 <span class="sd">        Confounding variables (e.g., age-related markers):</span>
 
 <span class="sd">        &gt;&gt;&gt; age_confounders = CorrCluster(</span>
-<span class="sd">        ...     size=3,</span>
+<span class="sd">        ...     n_cluster_features=3,</span>
 <span class="sd">        ...     rho=0.6,</span>
 <span class="sd">        ...     anchor_role=&quot;pseudo&quot;,</span>
 <span class="sd">        ...     label=&quot;Age-related markers&quot;</span>
@@ -247,7 +246,7 @@
 <span class="sd">        Weak disease signal with custom effect size:</span>
 
 <span class="sd">        &gt;&gt;&gt; weak_signal = CorrCluster(</span>
-<span class="sd">        ...     size=4,</span>
+<span class="sd">        ...     n_cluster_features=4,</span>
 <span class="sd">        ...     rho=0.5,</span>
 <span class="sd">        ...     anchor_role=&quot;informative&quot;,</span>
 <span class="sd">        ...     anchor_effect_size=0.3,  # custom weak effect</span>
@@ -279,7 +278,7 @@
     <span class="n">model_config</span> <span class="o">=</span> <span class="n">ConfigDict</span><span class="p">(</span><span class="n">extra</span><span class="o">=</span><span class="s2">&quot;forbid&quot;</span><span class="p">)</span>
 
     <span class="c1"># Core cluster structure</span>
-    <span class="n">size</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="o">...</span><span class="p">,</span> <span class="n">ge</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">description</span><span class="o">=</span><span class="s2">&quot;Number of biomarkers in cluster&quot;</span><span class="p">)</span>
+    <span class="n">n_cluster_features</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="o">...</span><span class="p">,</span> <span class="n">ge</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">description</span><span class="o">=</span><span class="s2">&quot;Number of biomarkers in cluster&quot;</span><span class="p">)</span>
     <span class="n">rho</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="o">...</span><span class="p">,</span> <span class="n">description</span><span class="o">=</span><span class="s2">&quot;Correlation strength (0=independent, 0.8+=strong)&quot;</span><span class="p">)</span>
     <span class="n">structure</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;equicorrelated&quot;</span><span class="p">,</span> <span class="s2">&quot;toeplitz&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;equicorrelated&quot;</span>
 
@@ -292,7 +291,7 @@
     <span class="n">random_state</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
     <span class="n">label</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
 
-    <span class="nd">@field_validator</span><span class="p">(</span><span class="s2">&quot;size&quot;</span><span class="p">)</span>
+    <span class="nd">@field_validator</span><span class="p">(</span><span class="s2">&quot;n_cluster_features&quot;</span><span class="p">)</span>
     <span class="nd">@classmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">_validate_size</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">v</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Ensure cluster has at least one marker.&quot;&quot;&quot;</span>
@@ -305,10 +304,7 @@
     <span class="k">def</span><span class="w"> </span><span class="nf">_validate_rho_range</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">v</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Validate correlation strength is in valid range.&quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="o">-</span><span class="mf">1.0</span> <span class="o">&lt;</span> <span class="n">v</span> <span class="o">&lt;</span> <span class="mf">1.0</span><span class="p">):</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                <span class="sa">f</span><span class="s2">&quot;rho must be in (-1, 1), got </span><span class="si">{</span><span class="n">v</span><span class="si">}</span><span class="s2">. &quot;</span>
-                <span class="sa">f</span><span class="s2">&quot;Hint: 0=independent, 0.5=moderate, 0.8=strong&quot;</span>
-            <span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;rho must be in (-1, 1), got </span><span class="si">{</span><span class="n">v</span><span class="si">}</span><span class="s2">. &quot;</span> <span class="sa">f</span><span class="s2">&quot;Hint: 0=independent, 0.5=moderate, 0.8=strong&quot;</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">v</span>
 
     <span class="nd">@field_validator</span><span class="p">(</span><span class="s2">&quot;anchor_effect_size&quot;</span><span class="p">)</span>
@@ -321,9 +317,7 @@
         <span class="c1"># Preset string</span>
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
             <span class="k">if</span> <span class="n">v</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;small&quot;</span><span class="p">,</span> <span class="s2">&quot;medium&quot;</span><span class="p">,</span> <span class="s2">&quot;large&quot;</span><span class="p">):</span>
-                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                    <span class="sa">f</span><span class="s2">&quot;anchor_effect_size must be &#39;small&#39;, &#39;medium&#39;, or &#39;large&#39;, got &#39;</span><span class="si">{</span><span class="n">v</span><span class="si">}</span><span class="s2">&#39;&quot;</span>
-                <span class="p">)</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;anchor_effect_size must be &#39;small&#39;, &#39;medium&#39;, or &#39;large&#39;, got &#39;</span><span class="si">{</span><span class="n">v</span><span class="si">}</span><span class="s2">&#39;&quot;</span><span class="p">)</span>
             <span class="k">return</span> <span class="n">v</span>
 
         <span class="c1"># Custom float</span>
@@ -333,9 +327,7 @@
                 <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;anchor_effect_size must be &gt; 0, got </span><span class="si">{</span><span class="n">val</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
             <span class="k">return</span> <span class="n">val</span>
         <span class="k">except</span> <span class="p">(</span><span class="ne">TypeError</span><span class="p">,</span> <span class="ne">ValueError</span><span class="p">)</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                <span class="sa">f</span><span class="s2">&quot;anchor_effect_size must be &#39;small&#39;/&#39;medium&#39;/&#39;large&#39; or positive float, got </span><span class="si">{</span><span class="n">v</span><span class="si">}</span><span class="s2">&quot;</span>
-            <span class="p">)</span> <span class="kn">from</span><span class="w"> </span><span class="nn">e</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;anchor_effect_size must be &#39;small&#39;/&#39;medium&#39;/&#39;large&#39; or positive float, got </span><span class="si">{</span><span class="n">v</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span> <span class="kn">from</span><span class="w"> </span><span class="nn">e</span>
 
     <span class="nd">@field_validator</span><span class="p">(</span><span class="s2">&quot;anchor_class&quot;</span><span class="p">)</span>
     <span class="nd">@classmethod</span>
@@ -359,15 +351,15 @@
 
 <span class="sd">        Examples:</span>
 <span class="sd">        --------</span>
-<span class="sd">            &gt;&gt;&gt; c = CorrCluster(size=3, rho=0.7, anchor_effect_size=&quot;large&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; c = CorrCluster(n_cluster_features=3, rho=0.7, anchor_effect_size=&quot;large&quot;)</span>
 <span class="sd">            &gt;&gt;&gt; c.resolve_anchor_effect_size()</span>
 <span class="sd">            1.5</span>
 
-<span class="sd">            &gt;&gt;&gt; c = CorrCluster(size=3, rho=0.7, anchor_effect_size=0.8)</span>
+<span class="sd">            &gt;&gt;&gt; c = CorrCluster(n_cluster_features=3, rho=0.7, anchor_effect_size=0.8)</span>
 <span class="sd">            &gt;&gt;&gt; c.resolve_anchor_effect_size()</span>
 <span class="sd">            0.8</span>
 
-<span class="sd">            &gt;&gt;&gt; c = CorrCluster(size=3, rho=0.7)  # default</span>
+<span class="sd">            &gt;&gt;&gt; c = CorrCluster(n_cluster_features=3, rho=0.7)  # default</span>
 <span class="sd">            &gt;&gt;&gt; c.resolve_anchor_effect_size()</span>
 <span class="sd">            1.0</span>
 <span class="sd">        &quot;&quot;&quot;</span>
@@ -401,7 +393,9 @@
 
         <span class="c1"># Cluster structure</span>
         <span class="n">lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;Cluster Structure:&quot;</span><span class="p">)</span>
-        <span class="n">lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Number of markers: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">size</span><span class="si">}</span><span class="s2"> (1 anchor + </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">size</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="mi">1</span><span class="si">}</span><span class="s2"> proxies)&quot;</span><span class="p">)</span>
+        <span class="n">lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;  Number of markers: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">n_cluster_features</span><span class="si">}</span><span class="s2"> (1 anchor + </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">n_cluster_features</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="mi">1</span><span class="si">}</span><span class="s2"> proxies)&quot;</span>
+        <span class="p">)</span>
         <span class="n">lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Correlation strength: rho=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">rho</span><span class="si">}</span><span class="s2"> (</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">structure</span><span class="si">}</span><span class="s2">)&quot;</span><span class="p">)</span>
 
         <span class="c1"># Interpret correlation</span>
@@ -428,20 +422,20 @@
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">anchor_class</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
                 <span class="n">lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Predicts: class </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">anchor_class</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
             <span class="k">else</span><span class="p">:</span>
-                <span class="n">lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Predicts: all classes (round-robin)&quot;</span><span class="p">)</span>
+                <span class="n">lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;  Predicts: all classes (round-robin)&quot;</span><span class="p">)</span>
 
             <span class="c1"># Medical interpretation of effect size</span>
             <span class="k">if</span> <span class="n">effect_value</span> <span class="o">&lt;</span> <span class="mf">0.7</span><span class="p">:</span>
-                <span class="n">lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  → Subtle signal (large sample needed)&quot;</span><span class="p">)</span>
+                <span class="n">lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;  → Subtle signal (large sample needed)&quot;</span><span class="p">)</span>
             <span class="k">elif</span> <span class="n">effect_value</span> <span class="o">&lt;</span> <span class="mf">1.2</span><span class="p">:</span>
-                <span class="n">lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  → Moderate signal (typical biomarker)&quot;</span><span class="p">)</span>
+                <span class="n">lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;  → Moderate signal (typical biomarker)&quot;</span><span class="p">)</span>
             <span class="k">else</span><span class="p">:</span>
-                <span class="n">lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  → Strong signal (easy to detect)&quot;</span><span class="p">)</span>
+                <span class="n">lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;  → Strong signal (easy to detect)&quot;</span><span class="p">)</span>
 
         <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">anchor_role</span> <span class="o">==</span> <span class="s2">&quot;pseudo&quot;</span><span class="p">:</span>
-            <span class="n">lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  → Confounding variable (not causal)&quot;</span><span class="p">)</span>
+            <span class="n">lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;  → Confounding variable (not causal)&quot;</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="n">lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  → Random noise (no signal)&quot;</span><span class="p">)</span>
+            <span class="n">lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;  → Random noise (no signal)&quot;</span><span class="p">)</span>
 
         <span class="n">lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;&quot;</span><span class="p">)</span>
         <span class="n">lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Random seed: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">random_state</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="bp">self</span><span class="o">.</span><span class="n">random_state</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="s1">&#39;from dataset&#39;</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
@@ -451,7 +445,7 @@
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Concise representation for quick reference.&quot;&quot;&quot;</span>
-        <span class="n">parts</span> <span class="o">=</span> <span class="p">[</span><span class="sa">f</span><span class="s2">&quot;size=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">size</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;rho=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">rho</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">]</span>
+        <span class="n">parts</span> <span class="o">=</span> <span class="p">[</span><span class="sa">f</span><span class="s2">&quot;size=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">n_cluster_features</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;rho=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">rho</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">]</span>
 
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">anchor_role</span> <span class="o">!=</span> <span class="s2">&quot;informative&quot;</span><span class="p">:</span>
             <span class="n">parts</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">anchor_role</span><span class="p">)</span>
@@ -463,6 +457,7 @@
             <span class="n">parts</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;&#39;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">label</span><span class="si">}</span><span class="s2">&#39;&quot;</span><span class="p">)</span>
 
         <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;CorrCluster(</span><span class="si">{</span><span class="s1">&#39;, &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">parts</span><span class="p">)</span><span class="si">}</span><span class="s2">)&quot;</span></div>
+
 
 
 <div class="viewcode-block" id="DatasetConfig">
@@ -724,7 +719,7 @@
         <span class="n">n_inf</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;n_informative&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span>
         <span class="n">n_pse</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;n_pseudo&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span>
         <span class="n">n_noise</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;n_noise&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span>
-        <span class="n">proxies</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="n">cc</span><span class="o">.</span><span class="n">size</span> <span class="o">-</span> <span class="mi">1</span> <span class="k">for</span> <span class="n">cc</span> <span class="ow">in</span> <span class="n">norm_clusters</span><span class="p">)</span>
+        <span class="n">proxies</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="n">cc</span><span class="o">.</span><span class="n">n_cluster_features</span> <span class="o">-</span> <span class="mi">1</span> <span class="k">for</span> <span class="n">cc</span> <span class="ow">in</span> <span class="n">norm_clusters</span><span class="p">)</span>
         <span class="n">required</span> <span class="o">=</span> <span class="n">n_inf</span> <span class="o">+</span> <span class="n">n_pse</span> <span class="o">+</span> <span class="n">n_noise</span> <span class="o">+</span> <span class="n">proxies</span>
 
         <span class="n">n_feat</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;n_features&quot;</span><span class="p">)</span>
@@ -810,7 +805,7 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">clusters</span><span class="p">:</span>
             <span class="k">return</span> <span class="mi">0</span>
-        <span class="k">return</span> <span class="nb">sum</span><span class="p">(</span><span class="nb">max</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">int</span><span class="p">(</span><span class="n">c</span><span class="o">.</span><span class="n">size</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">clusters</span><span class="p">)</span>
+        <span class="k">return</span> <span class="nb">sum</span><span class="p">(</span><span class="nb">max</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">int</span><span class="p">(</span><span class="n">c</span><span class="o">.</span><span class="n">n_cluster_features</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">clusters</span><span class="p">)</span>
 
 <div class="viewcode-block" id="DatasetConfig.breakdown">
 <a class="viewcode-back" href="../../_autosummary/biomedical_data_generator.DatasetConfig.html#biomedical_data_generator.DatasetConfig.breakdown">[docs]</a>
@@ -911,15 +906,16 @@
                 <span class="n">lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">header</span><span class="p">)</span>
 
             <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">c</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">corr_clusters</span><span class="p">,</span> <span class="n">start</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
-                <span class="n">proxies</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">c</span><span class="o">.</span><span class="n">size</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>  <span class="c1"># consistent with required_n_features</span>
+                <span class="n">proxies</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">c</span><span class="o">.</span><span class="n">n_cluster_features</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>  <span class="c1"># consistent with required_n_features</span>
                 <span class="n">label</span> <span class="o">=</span> <span class="n">c</span><span class="o">.</span><span class="n">label</span> <span class="ow">or</span> <span class="s2">&quot;&quot;</span>
                 <span class="k">if</span> <span class="n">as_markdown</span><span class="p">:</span>
                     <span class="n">lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
-                        <span class="sa">f</span><span class="s2">&quot;| </span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2"> | </span><span class="si">{</span><span class="n">c</span><span class="o">.</span><span class="n">size</span><span class="si">}</span><span class="s2"> | </span><span class="si">{</span><span class="n">c</span><span class="o">.</span><span class="n">anchor_role</span><span class="si">}</span><span class="s2"> | </span><span class="si">{</span><span class="n">c</span><span class="o">.</span><span class="n">rho</span><span class="si">}</span><span class="s2"> | </span><span class="si">{</span><span class="n">c</span><span class="o">.</span><span class="n">structure</span><span class="si">}</span><span class="s2"> | &quot;</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">label</span><span class="si">}</span><span class="s2"> | </span><span class="si">{</span><span class="n">proxies</span><span class="si">}</span><span class="s2"> |&quot;</span>
+                        <span class="sa">f</span><span class="s2">&quot;| </span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2"> | </span><span class="si">{</span><span class="n">c</span><span class="o">.</span><span class="n">n_cluster_features</span><span class="si">}</span><span class="s2"> | </span><span class="si">{</span><span class="n">c</span><span class="o">.</span><span class="n">anchor_role</span><span class="si">}</span><span class="s2"> | </span><span class="si">{</span><span class="n">c</span><span class="o">.</span><span class="n">rho</span><span class="si">}</span><span class="s2"> | </span><span class="si">{</span><span class="n">c</span><span class="o">.</span><span class="n">structure</span><span class="si">}</span><span class="s2"> | &quot;</span>
+                        <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">label</span><span class="si">}</span><span class="s2"> | </span><span class="si">{</span><span class="n">proxies</span><span class="si">}</span><span class="s2"> |&quot;</span>
                     <span class="p">)</span>
                 <span class="k">else</span><span class="p">:</span>
                     <span class="n">lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
-                        <span class="sa">f</span><span class="s2">&quot;- #</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2">: size=</span><span class="si">{</span><span class="n">c</span><span class="o">.</span><span class="n">size</span><span class="si">}</span><span class="s2">, role=</span><span class="si">{</span><span class="n">c</span><span class="o">.</span><span class="n">anchor_role</span><span class="si">}</span><span class="s2">, rho=</span><span class="si">{</span><span class="n">c</span><span class="o">.</span><span class="n">rho</span><span class="si">}</span><span class="s2">, &quot;</span>
+                        <span class="sa">f</span><span class="s2">&quot;- #</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2">: size=</span><span class="si">{</span><span class="n">c</span><span class="o">.</span><span class="n">n_cluster_features</span><span class="si">}</span><span class="s2">, role=</span><span class="si">{</span><span class="n">c</span><span class="o">.</span><span class="n">anchor_role</span><span class="si">}</span><span class="s2">, rho=</span><span class="si">{</span><span class="n">c</span><span class="o">.</span><span class="n">rho</span><span class="si">}</span><span class="s2">, &quot;</span>
                         <span class="sa">f</span><span class="s2">&quot;structure=</span><span class="si">{</span><span class="n">c</span><span class="o">.</span><span class="n">structure</span><span class="si">}</span><span class="s2">, label=</span><span class="si">{</span><span class="n">label</span><span class="si">}</span><span class="s2">, proxies=</span><span class="si">{</span><span class="n">proxies</span><span class="si">}</span><span class="s2">&quot;</span>
                     <span class="p">)</span>
 

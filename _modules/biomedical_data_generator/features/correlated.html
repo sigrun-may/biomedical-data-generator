@@ -88,8 +88,7 @@
 <span class="c1"># This software is distributed under the terms of the MIT license</span>
 <span class="c1"># which is available at https://opensource.org/licenses/MIT</span>
 
-<span class="sd">&quot;&quot;&quot;Functions to generate correlated feature clusters.&quot;&quot;&quot;</span>
-
+<span class="sd">&quot;&quot;&quot;Functions to generate correlated feature clusters simulating biomarker patterns.&quot;&quot;&quot;</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Literal</span><span class="p">,</span> <span class="n">cast</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
@@ -99,113 +98,246 @@
 
 
 <span class="c1"># =========================</span>
-<span class="c1"># Small covariance helpers</span>
+<span class="c1"># Covariance matrix builders</span>
 <span class="c1"># =========================</span>
-<span class="k">def</span><span class="w"> </span><span class="nf">_cov_equicorr</span><span class="p">(</span><span class="n">size</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">rho</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">NDArray</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">]:</span>
-    <span class="n">identity</span><span class="p">:</span> <span class="n">NDArray</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">eye</span><span class="p">(</span><span class="n">size</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span>
-    <span class="n">ones</span><span class="p">:</span> <span class="n">NDArray</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">((</span><span class="n">size</span><span class="p">,</span> <span class="n">size</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_cov_equicorr</span><span class="p">(</span><span class="n">n_cluster_features</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">rho</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">NDArray</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Build equicorrelated covariance matrix.</span>
+
+<span class="sd">    All pairs have the same correlation rho.</span>
+<span class="sd">    Typical for tightly regulated biological pathways.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        n_cluster_features: Number of markers in the cluster.</span>
+<span class="sd">        rho: Correlation strength (0 ≤ rho &lt; 1).</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Covariance matrix of shape (n_cluster_features, n_cluster_features).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">identity</span><span class="p">:</span> <span class="n">NDArray</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">eye</span><span class="p">(</span><span class="n">n_cluster_features</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span>
+    <span class="n">ones</span><span class="p">:</span> <span class="n">NDArray</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">((</span><span class="n">n_cluster_features</span><span class="p">,</span> <span class="n">n_cluster_features</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span>
     <span class="k">return</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">rho</span><span class="p">)</span> <span class="o">*</span> <span class="n">identity</span> <span class="o">+</span> <span class="n">rho</span> <span class="o">*</span> <span class="n">ones</span>
 
 
-<span class="k">def</span><span class="w"> </span><span class="nf">_cov_toeplitz</span><span class="p">(</span><span class="n">size</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">rho</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">NDArray</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">]:</span>
-    <span class="n">idx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">size</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int64</span><span class="p">)</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_cov_toeplitz</span><span class="p">(</span><span class="n">n_cluster_features</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">rho</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">NDArray</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Build Toeplitz (AR-1 like) covariance matrix.</span>
+
+<span class="sd">    Correlation decays with distance: rho**|i-j|.</span>
+<span class="sd">    Useful for ordered biomarkers (e.g., time series, spatial gradients).</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        n_cluster_features: Number of markers in the cluster.</span>
+<span class="sd">        rho: Base correlation (-1 &lt; rho &lt; 1).</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Covariance matrix of shape (n_cluster_features, n_cluster_features).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">idx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">n_cluster_features</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int64</span><span class="p">)</span>
     <span class="n">D</span><span class="p">:</span> <span class="n">NDArray</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">idx</span><span class="p">[:,</span> <span class="kc">None</span><span class="p">]</span> <span class="o">-</span> <span class="n">idx</span><span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="p">:])</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">,</span> <span class="n">copy</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
-    <span class="c1"># ensure float64 ndarray for typing</span>
     <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">rho</span><span class="o">**</span><span class="n">D</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span>
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">sample_cluster_matrix</span><span class="p">(</span><span class="n">n</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">cluster</span><span class="p">:</span> <span class="n">CorrCluster</span><span class="p">,</span> <span class="n">rng</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">Generator</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">NDArray</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">]:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Sample a feature matrix X for a single correlated cluster.</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Sample a correlated biomarker cluster from a multivariate normal distribution.</span>
 
 <span class="sd">    Args:</span>
-<span class="sd">        n: Number of samples (rows).</span>
-<span class="sd">        cluster: CorrCluster configuration.</span>
-<span class="sd">        rng: Random number generator.</span>
+<span class="sd">        n: Number of samples (patients).</span>
+<span class="sd">        cluster: Cluster configuration with correlation structure.</span>
+<span class="sd">        rng: Random number generator for reproducibility.</span>
 
 <span class="sd">    Returns:</span>
-<span class="sd">        X (np.ndarray): Shape (n, cluster.size) with standardized columns.</span>
+<span class="sd">        Feature matrix of shape (n, cluster.n_cluster_features) with standardized columns.</span>
+<span class="sd">        Columns represent correlated biomarkers.</span>
 
 <span class="sd">    Raises:</span>
-<span class="sd">        ValueError: If cluster.size &lt; 1 or cluster.rho not in valid range.</span>
+<span class="sd">        ValueError: If cluster parameters are invalid.</span>
+
+<span class="sd">    Examples:</span>
+<span class="sd">    --------</span>
+<span class="sd">        &gt;&gt;&gt; from biomedical_data_generator import CorrCluster</span>
+<span class="sd">        &gt;&gt;&gt; import numpy as np</span>
+<span class="sd">        &gt;&gt;&gt;</span>
+<span class="sd">        &gt;&gt;&gt; inflammation = CorrCluster(n_cluster_features=5, rho=0.8, label=&quot;Cytokines&quot;)</span>
+<span class="sd">        &gt;&gt;&gt; rng = np.random.default_rng(42)</span>
+<span class="sd">        &gt;&gt;&gt; X = sample_cluster_matrix(n=200, cluster=inflammation, rng=rng)</span>
+<span class="sd">        &gt;&gt;&gt; X.shape</span>
+<span class="sd">        (200, 5)</span>
+<span class="sd">        &gt;&gt;&gt; np.corrcoef(X, rowvar=False).mean()  # should be close to 0.8</span>
+<span class="sd">        0.79...</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">Sigma</span> <span class="o">=</span> <span class="p">(</span>
-        <span class="n">_cov_equicorr</span><span class="p">(</span><span class="n">cluster</span><span class="o">.</span><span class="n">size</span><span class="p">,</span> <span class="n">cluster</span><span class="o">.</span><span class="n">rho</span><span class="p">)</span>
-        <span class="k">if</span> <span class="n">cluster</span><span class="o">.</span><span class="n">structure</span> <span class="o">==</span> <span class="s2">&quot;equicorrelated&quot;</span>
-        <span class="k">else</span> <span class="n">_cov_toeplitz</span><span class="p">(</span><span class="n">cluster</span><span class="o">.</span><span class="n">size</span><span class="p">,</span> <span class="n">cluster</span><span class="o">.</span><span class="n">rho</span><span class="p">)</span>
-    <span class="p">)</span>
+    <span class="c1"># Build covariance matrix based on structure</span>
+    <span class="k">if</span> <span class="n">cluster</span><span class="o">.</span><span class="n">structure</span> <span class="o">==</span> <span class="s2">&quot;equicorrelated&quot;</span><span class="p">:</span>
+        <span class="n">Sigma</span> <span class="o">=</span> <span class="n">_cov_equicorr</span><span class="p">(</span><span class="n">cluster</span><span class="o">.</span><span class="n">n_cluster_features</span><span class="p">,</span> <span class="n">cluster</span><span class="o">.</span><span class="n">rho</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>  <span class="c1"># toeplitz</span>
+        <span class="n">Sigma</span> <span class="o">=</span> <span class="n">_cov_toeplitz</span><span class="p">(</span><span class="n">cluster</span><span class="o">.</span><span class="n">n_cluster_features</span><span class="p">,</span> <span class="n">cluster</span><span class="o">.</span><span class="n">rho</span><span class="p">)</span>
+
+    <span class="c1"># Cholesky decomposition for efficient sampling</span>
     <span class="n">L</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">cholesky</span><span class="p">(</span><span class="n">Sigma</span><span class="p">)</span>
-    <span class="n">Z</span><span class="p">:</span> <span class="n">NDArray</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">]</span> <span class="o">=</span> <span class="n">rng</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">cluster</span><span class="o">.</span><span class="n">size</span><span class="p">))</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">,</span> <span class="n">copy</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+
+    <span class="c1"># Sample from standard normal and transform</span>
+    <span class="n">Z</span><span class="p">:</span> <span class="n">NDArray</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">]</span> <span class="o">=</span> <span class="n">rng</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">cluster</span><span class="o">.</span><span class="n">n_cluster_features</span><span class="p">))</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">,</span> <span class="n">copy</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
     <span class="n">X</span><span class="p">:</span> <span class="n">NDArray</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">]</span> <span class="o">=</span> <span class="n">cast</span><span class="p">(</span><span class="n">NDArray</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">],</span> <span class="n">Z</span> <span class="o">@</span> <span class="n">L</span><span class="o">.</span><span class="n">T</span><span class="p">)</span>
-    <span class="c1"># standardize columns to ~unit variance (helpful for teaching consistency)</span>
+
+    <span class="c1"># Standardize columns to unit variance (helpful for consistent effect sizes)</span>
     <span class="n">X</span> <span class="o">=</span> <span class="p">(</span><span class="n">X</span> <span class="o">-</span> <span class="n">X</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">))</span> <span class="o">/</span> <span class="p">(</span><span class="n">X</span><span class="o">.</span><span class="n">std</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span> <span class="o">+</span> <span class="mf">1e-9</span><span class="p">)</span>
-    <span class="k">return</span> <span class="n">X</span>  <span class="c1"># (n, size)</span>
+
+    <span class="k">return</span> <span class="n">X</span>
 
 
 <span class="c1"># ============================================</span>
-<span class="c1"># Public: generate a single correlated cluster</span>
+<span class="c1"># Public API: Standalone cluster generation</span>
 <span class="c1"># ============================================</span>
+<span class="c1"># NOTE: These functions are primarily for educational/exploratory purposes.</span>
+<span class="c1"># For production use, prefer using CorrCluster within generate_dataset().</span>
+
+
 <div class="viewcode-block" id="generate_correlated_cluster">
 <a class="viewcode-back" href="../../../_autosummary/biomedical_data_generator.generate_correlated_cluster.html#biomedical_data_generator.generate_correlated_cluster">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">generate_correlated_cluster</span><span class="p">(</span>
     <span class="n">n_samples</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
-    <span class="n">size</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+    <span class="n">n_cluster_features</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
     <span class="n">rho</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.7</span><span class="p">,</span>
     <span class="n">structure</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;equicorrelated&quot;</span><span class="p">,</span> <span class="s2">&quot;toeplitz&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;equicorrelated&quot;</span><span class="p">,</span>
     <span class="n">rng</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">Generator</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">label</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">NDArray</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">],</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">object</span><span class="p">]]:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Generate a single correlated feature cluster (no labels y involved).</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Generate a single correlated biomarker cluster without class labels.</span>
+
+<span class="sd">    **Educational Use**:  Generate a single correlated feature cluster (no labels y involved). Explore correlation</span>
+<span class="sd">    patterns in isolation before integrating into a full dataset. For production datasets, use CorrCluster</span>
+<span class="sd">    with generate_dataset() instead.</span>
 
 <span class="sd">    Returns (X_cluster, meta) where meta contains the empirical correlation matrix.</span>
 
 <span class="sd">    Args:</span>
-<span class="sd">        n_samples: Number of samples (rows).</span>
-<span class="sd">        size: Number of features (columns).</span>
-<span class="sd">        rho: Target correlation between features (0 ≤ rho &lt; 1).</span>
-<span class="sd">        structure: &quot;equicorrelated&quot; or &quot;toeplitz&quot;.</span>
-<span class="sd">        rng: Optional random number generator (if None, a new one is created).</span>
-<span class="sd">        label: Optional didactic tag for this cluster.</span>
+<span class="sd">        n_samples: Number of samples (patients/observations).</span>
+<span class="sd">        n_cluster_features: Number of biomarkers in the cluster.</span>
+<span class="sd">        rho: Target correlation strength.</span>
+<span class="sd">            - 0.0 = independent</span>
+<span class="sd">            - 0.5 = moderate correlation</span>
+<span class="sd">            - 0.8+ = strong correlation (pathway-like)</span>
+<span class="sd">        structure: Correlation pattern.</span>
+<span class="sd">            - &quot;equicorrelated&quot;: constant pairwise correlation</span>
+<span class="sd">            - &quot;toeplitz&quot;: correlation decays with distance</span>
+<span class="sd">        rng: Random number generator (if None, creates a new one).</span>
+<span class="sd">        label: Optional descriptive label (e.g., &quot;Inflammation panel&quot;).</span>
 
 <span class="sd">    Returns:</span>
 <span class="sd">        tuple:</span>
-<span class="sd">            X (np.ndarray): Shape (n_samples, size) with standardized columns.</span>
-<span class="sd">            meta (dict): Metadata with keys:</span>
-<span class="sd">              size, rho, structure, label, corr_matrix (size x size),</span>
-<span class="sd">              mean_offdiag, min_offdiag.</span>
+<span class="sd">            - X (np.ndarray): Shape (n_samples, n_cluster_features) with standardized columns.</span>
+<span class="sd">            - meta (dict): Metadata containing:</span>
+<span class="sd">                * n_cluster_features: cluster size</span>
+<span class="sd">                * rho: target correlation</span>
+<span class="sd">                * structure: correlation pattern</span>
+<span class="sd">                * label: descriptive label</span>
+<span class="sd">                * corr_matrix: empirical correlation matrix (n_cluster_features × n_cluster_features)</span>
+<span class="sd">                * mean_offdiag: mean of off-diagonal correlations</span>
+<span class="sd">                * min_offdiag: minimum off-diagonal correlation</span>
 
 <span class="sd">    Raises:</span>
-<span class="sd">        ValueError: If size &lt; 1 or rho not in [0, 1).</span>
+<span class="sd">        ValueError: If n_cluster_features &lt; 1 or rho not in [0, 1).</span>
+
+<span class="sd">    Examples:</span>
+<span class="sd">    --------</span>
+<span class="sd">        Generate a strong inflammatory marker cluster:</span>
+
+<span class="sd">        &gt;&gt;&gt; X, meta = generate_correlated_cluster(</span>
+<span class="sd">        ...     n_samples=200,</span>
+<span class="sd">        ...     n_cluster_features=5,</span>
+<span class="sd">        ...     rho=0.85,</span>
+<span class="sd">        ...     label=&quot;Acute phase proteins&quot;</span>
+<span class="sd">        ... )</span>
+<span class="sd">        &gt;&gt;&gt; X.shape</span>
+<span class="sd">        (200, 5)</span>
+<span class="sd">        &gt;&gt;&gt; meta[&#39;mean_offdiag&#39;]  # actual correlation achieved</span>
+<span class="sd">        0.84...</span>
+
+<span class="sd">        Weak age-related confounders:</span>
+
+<span class="sd">        &gt;&gt;&gt; X, meta = generate_correlated_cluster(</span>
+<span class="sd">        ...     n_samples=150,</span>
+<span class="sd">        ...     n_cluster_features=3,</span>
+<span class="sd">        ...     rho=0.4,</span>
+<span class="sd">        ...     label=&quot;Age effects&quot;</span>
+<span class="sd">        ... )</span>
+
+<span class="sd">    Notes:</span>
+<span class="sd">    -----</span>
+<span class="sd">        Medical interpretation:</span>
+<span class="sd">        - rho=0.85: Very strong (tightly regulated pathway)</span>
+<span class="sd">        - rho=0.60: Strong (coordinated response)</span>
+<span class="sd">        - rho=0.40: Moderate (loose biological coupling)</span>
+<span class="sd">        - rho=0.20: Weak (barely related markers)</span>
+
+<span class="sd">        The empirical correlation may deviate slightly from rho due to</span>
+<span class="sd">        finite sample size. Use find_seed_for_correlation() for precise control.</span>
+
+<span class="sd">        For production use, prefer using CorrCluster within generate_dataset().</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">if</span> <span class="n">size</span> <span class="o">&lt;</span> <span class="mi">1</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;size must be &gt;= 1&quot;</span><span class="p">)</span>
+    <span class="c1"># Validation</span>
+    <span class="k">if</span> <span class="n">n_cluster_features</span> <span class="o">&lt;</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;n_cluster_features must be &gt;= 1&quot;</span><span class="p">)</span>
 
     <span class="k">if</span> <span class="n">structure</span> <span class="o">==</span> <span class="s2">&quot;equicorrelated&quot;</span><span class="p">:</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="mf">0.0</span> <span class="o">&lt;=</span> <span class="n">rho</span> <span class="o">&lt;</span> <span class="mf">1.0</span><span class="p">):</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;for equicorrelated: rho must be in [0, 1)&quot;</span><span class="p">)</span>
-    <span class="k">else</span><span class="p">:</span>  <span class="c1"># toeplitz (AR(1)-artige Struktur)</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;For equicorrelated structure, rho must be in [0, 1), got </span><span class="si">{</span><span class="n">rho</span><span class="si">}</span><span class="s2">. &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;Hint: 0=independent, 0.5=moderate, 0.8=strong&quot;</span>
+            <span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>  <span class="c1"># toeplitz</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="o">-</span><span class="mf">0.999</span> <span class="o">&lt;</span> <span class="n">rho</span> <span class="o">&lt;</span> <span class="mf">0.999</span><span class="p">):</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;for toeplitz: |rho| must be &lt; 1&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;For toeplitz structure, |rho| must be &lt; 1, got </span><span class="si">{</span><span class="n">rho</span><span class="si">}</span><span class="s2">. &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;Note: Negative rho creates alternating correlations.&quot;</span>
+            <span class="p">)</span>
 
+    <span class="c1"># Initialize RNG if not provided</span>
     <span class="n">rng</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">default_rng</span><span class="p">()</span> <span class="k">if</span> <span class="n">rng</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">rng</span>
-    <span class="n">Sigma</span><span class="p">:</span> <span class="n">NDArray</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">]</span> <span class="o">=</span> <span class="n">_cov_equicorr</span><span class="p">(</span><span class="n">size</span><span class="p">,</span> <span class="n">rho</span><span class="p">)</span> <span class="k">if</span> <span class="n">structure</span> <span class="o">==</span> <span class="s2">&quot;equicorrelated&quot;</span> <span class="k">else</span> <span class="n">_cov_toeplitz</span><span class="p">(</span><span class="n">size</span><span class="p">,</span> <span class="n">rho</span><span class="p">)</span>
-    <span class="n">L</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">cholesky</span><span class="p">(</span><span class="n">Sigma</span><span class="p">)</span>
-    <span class="n">Z</span><span class="p">:</span> <span class="n">NDArray</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">]</span> <span class="o">=</span> <span class="n">rng</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="n">n_samples</span><span class="p">,</span> <span class="n">size</span><span class="p">))</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">,</span> <span class="n">copy</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
-    <span class="n">X</span><span class="p">:</span> <span class="n">NDArray</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">]</span> <span class="o">=</span> <span class="n">cast</span><span class="p">(</span><span class="n">NDArray</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">],</span> <span class="n">Z</span> <span class="o">@</span> <span class="n">L</span><span class="o">.</span><span class="n">T</span><span class="p">)</span>
+
+    <span class="c1"># Choose structure for the target covariance</span>
+    <span class="n">cov</span><span class="p">:</span> <span class="n">NDArray</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="n">_cov_equicorr</span><span class="p">(</span><span class="n">n_cluster_features</span><span class="p">,</span> <span class="n">rho</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">structure</span> <span class="o">==</span> <span class="s2">&quot;equicorrelated&quot;</span>
+        <span class="k">else</span> <span class="n">_cov_toeplitz</span><span class="p">(</span><span class="n">n_cluster_features</span><span class="p">,</span> <span class="n">rho</span><span class="p">)</span>
+    <span class="p">)</span>
+
+    <span class="c1"># Cholesky factor: cov = chol_lower @ chol_lower.T  (lower-triangular)</span>
+    <span class="n">chol_lower</span><span class="p">:</span> <span class="n">NDArray</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">cholesky</span><span class="p">(</span><span class="n">cov</span><span class="p">)</span>
+
+    <span class="c1"># Standard-normal noise: shape = (n_samples, n_cluster_features)</span>
+    <span class="n">noise_std</span><span class="p">:</span> <span class="n">NDArray</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">]</span> <span class="o">=</span> <span class="n">rng</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="n">n_samples</span><span class="p">,</span> <span class="n">n_cluster_features</span><span class="p">))</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">,</span> <span class="n">copy</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+
+    <span class="c1"># Impose the target covariance: X has Cov ≈ cov</span>
+    <span class="c1"># (matrix multiply with chol_lower.T)</span>
+    <span class="n">X</span><span class="p">:</span> <span class="n">NDArray</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">]</span> <span class="o">=</span> <span class="n">cast</span><span class="p">(</span><span class="n">NDArray</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">],</span> <span class="n">noise_std</span> <span class="o">@</span> <span class="n">chol_lower</span><span class="o">.</span><span class="n">T</span><span class="p">)</span>
+
+    <span class="c1"># Standardize to unit variance</span>
     <span class="n">X</span> <span class="o">=</span> <span class="p">(</span><span class="n">X</span> <span class="o">-</span> <span class="n">X</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">))</span> <span class="o">/</span> <span class="p">(</span><span class="n">X</span><span class="o">.</span><span class="n">std</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span> <span class="o">+</span> <span class="mf">1e-9</span><span class="p">)</span>
+
+    <span class="c1"># Compute empirical correlation</span>
     <span class="n">C</span><span class="p">:</span> <span class="n">NDArray</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">corrcoef</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">rowvar</span><span class="o">=</span><span class="kc">False</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span>
 
-    <span class="c1"># boolean diagonal mask (NumPy 2.0 compatible)</span>
-    <span class="n">diag_mask</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">eye</span><span class="p">(</span><span class="n">size</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">bool</span><span class="p">)</span>
-    <span class="n">off_diag</span> <span class="o">=</span> <span class="n">C</span><span class="p">[</span><span class="o">~</span><span class="n">diag_mask</span><span class="p">]</span>
+    <span class="c1"># Size-1 edge case: np.corrcoef may return a 0-D scalar -&gt; promote to (1, 1)</span>
+    <span class="k">if</span> <span class="n">C</span><span class="o">.</span><span class="n">ndim</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">C</span> <span class="o">=</span> <span class="n">C</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+
+    <span class="c1"># Off-diagonal metrics</span>
+    <span class="k">if</span> <span class="n">n_cluster_features</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="n">diag_mask</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">eye</span><span class="p">(</span><span class="n">n_cluster_features</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">bool</span><span class="p">)</span>  <span class="c1"># boolean diagonal mask (NumPy 2.0 compatible)</span>
+        <span class="n">off_diag</span> <span class="o">=</span> <span class="n">C</span><span class="p">[</span><span class="o">~</span><span class="n">diag_mask</span><span class="p">]</span>
+        <span class="n">mean_offdiag</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">off_diag</span><span class="o">.</span><span class="n">mean</span><span class="p">())</span> <span class="k">if</span> <span class="n">off_diag</span><span class="o">.</span><span class="n">size</span> <span class="k">else</span> <span class="mf">1.0</span>
+        <span class="n">min_offdiag</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">off_diag</span><span class="o">.</span><span class="n">min</span><span class="p">())</span> <span class="k">if</span> <span class="n">off_diag</span><span class="o">.</span><span class="n">size</span> <span class="k">else</span> <span class="mf">1.0</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">mean_offdiag</span> <span class="o">=</span> <span class="mf">1.0</span>
+        <span class="n">min_offdiag</span> <span class="o">=</span> <span class="mf">1.0</span>
 
     <span class="n">meta</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">object</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
-        <span class="s2">&quot;size&quot;</span><span class="p">:</span> <span class="nb">int</span><span class="p">(</span><span class="n">size</span><span class="p">),</span>
+        <span class="s2">&quot;n_cluster_features&quot;</span><span class="p">:</span> <span class="nb">int</span><span class="p">(</span><span class="n">n_cluster_features</span><span class="p">),</span>
         <span class="s2">&quot;rho&quot;</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="n">rho</span><span class="p">),</span>
         <span class="s2">&quot;structure&quot;</span><span class="p">:</span> <span class="n">structure</span><span class="p">,</span>
         <span class="s2">&quot;label&quot;</span><span class="p">:</span> <span class="n">label</span><span class="p">,</span>
-        <span class="s2">&quot;corr_matrix&quot;</span><span class="p">:</span> <span class="n">C</span><span class="p">,</span>  <span class="c1"># empirical correlation (size x size)</span>
-        <span class="s2">&quot;mean_offdiag&quot;</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="n">off_diag</span><span class="o">.</span><span class="n">mean</span><span class="p">())</span> <span class="k">if</span> <span class="n">size</span> <span class="o">&gt;</span> <span class="mi">1</span> <span class="k">else</span> <span class="mf">1.0</span><span class="p">,</span>
-        <span class="s2">&quot;min_offdiag&quot;</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="n">off_diag</span><span class="o">.</span><span class="n">min</span><span class="p">())</span> <span class="k">if</span> <span class="n">size</span> <span class="o">&gt;</span> <span class="mi">1</span> <span class="k">else</span> <span class="mf">1.0</span><span class="p">,</span>
+        <span class="s2">&quot;corr_matrix&quot;</span><span class="p">:</span> <span class="n">C</span><span class="p">,</span>  <span class="c1"># empirical correlation (n_cluster_features x n_cluster_features)</span>
+        <span class="s2">&quot;mean_offdiag&quot;</span><span class="p">:</span> <span class="n">mean_offdiag</span><span class="p">,</span>
+        <span class="s2">&quot;min_offdiag&quot;</span><span class="p">:</span> <span class="n">min_offdiag</span><span class="p">,</span>
     <span class="p">}</span>
     <span class="k">return</span> <span class="n">X</span><span class="p">,</span> <span class="n">meta</span></div>
 
@@ -218,7 +350,7 @@
 <a class="viewcode-back" href="../../../_autosummary/biomedical_data_generator.find_seed_for_correlation.html#biomedical_data_generator.find_seed_for_correlation">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">find_seed_for_correlation</span><span class="p">(</span>
     <span class="n">n_samples</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
-    <span class="n">size</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+    <span class="n">n_cluster_features</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
     <span class="n">rho_target</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
     <span class="n">structure</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;equicorrelated&quot;</span><span class="p">,</span> <span class="s2">&quot;toeplitz&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;equicorrelated&quot;</span><span class="p">,</span>
     <span class="n">metric</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;mean_offdiag&quot;</span><span class="p">,</span> <span class="s2">&quot;min_offdiag&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;mean_offdiag&quot;</span><span class="p">,</span>
@@ -228,21 +360,27 @@
     <span class="n">start_seed</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span>
     <span class="n">max_tries</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">500</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">object</span><span class="p">]]:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Try seeds until the empirical correlation satisfies the rule.</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Search for a random seed that achieves target correlation quality.</span>
 
-<span class="sd">    Try seeds starting from `start_seed` until one of the following is satisfied:</span>
+<span class="sd">        Tries multiple seeds until finding one where the empirical correlation</span>
+<span class="sd">        matches the target within tolerance. Useful where precise correlation is needed.</span>
+
+<span class="sd">        Try seeds starting from `start_seed` until one of the following is satisfied:</span>
 <span class="sd">      - |mean_offdiag - rho_target| &lt;= tol (if tol is not None), else</span>
 <span class="sd">      - (metric op threshold) with metric in {&quot;mean_offdiag&quot;, &quot;min_offdiag&quot;} and op in {&quot;&gt;=&quot;, &quot;&lt;=&quot;}.</span>
 
 <span class="sd">    Args:</span>
 <span class="sd">        n_samples: Number of samples (rows).</span>
-<span class="sd">        size: Number of features (columns).</span>
-<span class="sd">        rho_target: Target correlation between features.</span>
+<span class="sd">        n_cluster_features: Number of features (columns) within cluster.</span>
+<span class="sd">        rho_target: Desired correlation strength.</span>
 <span class="sd">        structure: &quot;equicorrelated&quot; or &quot;toeplitz&quot;.</span>
-<span class="sd">        metric: Empirical metric to use for acceptance.</span>
-<span class="sd">        threshold: Threshold for the metric (if tol is None).</span>
-<span class="sd">        op: Operator for threshold comparison (&quot;&lt;=&quot; or &quot;&gt;=&quot;).</span>
-<span class="sd">        tol: Optional tolerance around rho_target for acceptance.</span>
+<span class="sd">        metric: Quality metric to optimize.</span>
+<span class="sd">            - &quot;mean_offdiag&quot;: average off-diagonal correlation</span>
+<span class="sd">            - &quot;min_offdiag&quot;: minimum off-diagonal correlation</span>
+<span class="sd">        threshold: Minimum acceptable value for metric (if tol is None).</span>
+<span class="sd">        op: Comparison operator for threshold (&quot;&gt;=&quot;, &quot;&lt;=&quot;).</span>
+<span class="sd">        tol: If provided, accept when |mean_offdiag - rho_target| &lt;= tol.</span>
+<span class="sd">            This takes precedence over threshold.</span>
 <span class="sd">        start_seed: First seed to try.</span>
 <span class="sd">        max_tries: Maximum number of seeds to try before giving up.</span>
 
@@ -253,31 +391,82 @@
 
 <span class="sd">    Raises:</span>
 <span class="sd">        RuntimeError: If no seed satisfied the rule within max_tries.</span>
-<span class="sd">        ValueError: If size &lt; 1 or rho_target not in [0, 1).</span>
+<span class="sd">        ValueError: If n_cluster_features &lt; 1 or rho_target not in [0, 1).</span>
+
+<span class="sd">    Examples:</span>
+<span class="sd">    --------</span>
+<span class="sd">        Find seed for very strong inflammation markers:</span>
+
+<span class="sd">        &gt;&gt;&gt; seed, meta = find_seed_for_correlation(</span>
+<span class="sd">        ...     n_samples=200,</span>
+<span class="sd">        ...     n_cluster_features=6,</span>
+<span class="sd">        ...     rho_target=0.85,</span>
+<span class="sd">        ...     tol=0.03</span>
+<span class="sd">        ... )</span>
+<span class="sd">        &gt;&gt;&gt; meta[&#39;mean_offdiag&#39;]</span>
+<span class="sd">        0.847...</span>
+
+<span class="sd">        Ensure minimum correlation for teaching:</span>
+
+<span class="sd">        &gt;&gt;&gt; seed, meta = find_seed_for_correlation(</span>
+<span class="sd">        ...     n_samples=150,</span>
+<span class="sd">        ...     n_cluster_features=4,</span>
+<span class="sd">        ...     rho_target=0.70,</span>
+<span class="sd">        ...     metric=&quot;min_offdiag&quot;,</span>
+<span class="sd">        ...     threshold=0.65,</span>
+<span class="sd">        ...     tol=None</span>
+<span class="sd">        ... )</span>
+
+<span class="sd">    Notes:</span>
+<span class="sd">    -----</span>
+<span class="sd">        Medical interpretation:</span>
+<span class="sd">        - Use this when demonstrating correlation patterns in teaching</span>
+<span class="sd">        - Higher n_cluster_features and rho_target may require more tries</span>
+<span class="sd">        - For large clusters (n_cluster_features &gt; 10), consider increasing max_tries</span>
+
+<span class="sd">        For tol-based acceptance we require n_cluster_features &lt;= n_samples.</span>
+<span class="sd">        When p &gt;&gt; n, the mean off-diagonal can appear artificially close to rho_target</span>
+<span class="sd">        due to heavy averaging; in such cases, prefer threshold mode or increase n.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">if</span> <span class="n">size</span> <span class="o">&lt;</span> <span class="mi">1</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;size must be &gt;= 1&quot;</span><span class="p">)</span>
-    <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="mf">0.0</span> <span class="o">&lt;=</span> <span class="n">rho_target</span> <span class="o">&lt;</span> <span class="mf">1.0</span><span class="p">):</span>
-        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;rho_target must be in [0, 1)&quot;</span><span class="p">)</span>
+    <span class="c1"># Validation</span>
+    <span class="k">if</span> <span class="n">n_cluster_features</span> <span class="o">&lt;</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;n_cluster_features must be &gt;= 1&quot;</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">structure</span> <span class="o">==</span> <span class="s2">&quot;equicorrelated&quot;</span><span class="p">:</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="mf">0.0</span> <span class="o">&lt;=</span> <span class="n">rho_target</span> <span class="o">&lt;</span> <span class="mf">1.0</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;For equicorrelated, rho_target must be in [0, 1), got </span><span class="si">{</span><span class="n">rho_target</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="o">-</span><span class="mf">0.999</span> <span class="o">&lt;</span> <span class="n">rho_target</span> <span class="o">&lt;</span> <span class="mf">0.999</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;For toeplitz, |rho_target| must be &lt; 1, got </span><span class="si">{</span><span class="n">rho_target</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
 
     <span class="n">seed</span> <span class="o">=</span> <span class="n">start_seed</span>
     <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">max_tries</span><span class="p">):</span>
         <span class="n">rng</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">default_rng</span><span class="p">(</span><span class="n">seed</span><span class="p">)</span>
-        <span class="n">_</span><span class="p">,</span> <span class="n">meta_data</span> <span class="o">=</span> <span class="n">generate_correlated_cluster</span><span class="p">(</span><span class="n">n_samples</span><span class="p">,</span> <span class="n">size</span><span class="p">,</span> <span class="n">rho_target</span><span class="p">,</span> <span class="n">structure</span><span class="p">,</span> <span class="n">rng</span><span class="o">=</span><span class="n">rng</span><span class="p">)</span>
+        <span class="n">_</span><span class="p">,</span> <span class="n">meta_data</span> <span class="o">=</span> <span class="n">generate_correlated_cluster</span><span class="p">(</span><span class="n">n_samples</span><span class="p">,</span> <span class="n">n_cluster_features</span><span class="p">,</span> <span class="n">rho_target</span><span class="p">,</span> <span class="n">structure</span><span class="p">,</span> <span class="n">rng</span><span class="o">=</span><span class="n">rng</span><span class="p">)</span>
         <span class="n">mean_off</span> <span class="o">=</span> <span class="n">cast</span><span class="p">(</span><span class="nb">float</span><span class="p">,</span> <span class="n">meta_data</span><span class="p">[</span><span class="s2">&quot;mean_offdiag&quot;</span><span class="p">])</span>
         <span class="n">min_off</span> <span class="o">=</span> <span class="n">cast</span><span class="p">(</span><span class="nb">float</span><span class="p">,</span> <span class="n">meta_data</span><span class="p">[</span><span class="s2">&quot;min_offdiag&quot;</span><span class="p">])</span>
 
-        <span class="n">ok</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="c1"># Acceptance rule:</span>
+        <span class="c1"># If tol is provided -&gt; ONLY use tolerance (ignore threshold).</span>
+        <span class="c1"># Guard: require p &lt;= n for tol-based acceptance to avoid p&gt;&gt;n averaging artifacts.</span>
+        <span class="c1"># If tol is None     -&gt; fall back to (metric op threshold).</span>
         <span class="k">if</span> <span class="n">tol</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">ok</span> <span class="o">=</span> <span class="nb">abs</span><span class="p">(</span><span class="n">mean_off</span> <span class="o">-</span> <span class="n">rho_target</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="n">tol</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="n">ok</span><span class="p">:</span>
-            <span class="n">val</span> <span class="o">=</span> <span class="n">mean_off</span> <span class="k">if</span> <span class="n">metric</span> <span class="o">==</span> <span class="s2">&quot;mean_offdiag&quot;</span> <span class="k">else</span> <span class="n">min_off</span>
-            <span class="n">ok</span> <span class="o">=</span> <span class="p">(</span><span class="n">val</span> <span class="o">&gt;=</span> <span class="n">threshold</span><span class="p">)</span> <span class="k">if</span> <span class="n">op</span> <span class="o">==</span> <span class="s2">&quot;&gt;=&quot;</span> <span class="k">else</span> <span class="p">(</span><span class="n">val</span> <span class="o">&lt;=</span> <span class="n">threshold</span><span class="p">)</span>
-
-        <span class="k">if</span> <span class="n">ok</span><span class="p">:</span>
-            <span class="k">return</span> <span class="n">seed</span><span class="p">,</span> <span class="n">meta_data</span>
+            <span class="c1"># High-dimensional guard</span>
+            <span class="k">if</span> <span class="n">n_cluster_features</span> <span class="o">&lt;=</span> <span class="n">n_samples</span> <span class="ow">and</span> <span class="nb">abs</span><span class="p">(</span><span class="n">mean_off</span> <span class="o">-</span> <span class="n">rho_target</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="n">tol</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">seed</span><span class="p">,</span> <span class="n">meta_data</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">metric_value</span> <span class="o">=</span> <span class="n">mean_off</span> <span class="k">if</span> <span class="n">metric</span> <span class="o">==</span> <span class="s2">&quot;mean_offdiag&quot;</span> <span class="k">else</span> <span class="n">min_off</span>
+            <span class="k">if</span> <span class="p">(</span><span class="n">op</span> <span class="o">==</span> <span class="s2">&quot;&gt;=&quot;</span> <span class="ow">and</span> <span class="n">metric_value</span> <span class="o">&gt;=</span> <span class="n">threshold</span><span class="p">)</span> <span class="ow">or</span> <span class="p">(</span><span class="n">op</span> <span class="o">==</span> <span class="s2">&quot;&lt;=&quot;</span> <span class="ow">and</span> <span class="n">metric_value</span> <span class="o">&lt;=</span> <span class="n">threshold</span><span class="p">):</span>
+                <span class="k">return</span> <span class="n">seed</span><span class="p">,</span> <span class="n">meta_data</span>
         <span class="n">seed</span> <span class="o">+=</span> <span class="mi">1</span>
-    <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;No seed satisfied the correlation rule within max_tries.&quot;</span><span class="p">)</span></div>
+
+    <span class="c1"># Failed to find suitable seed</span>
+    <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span>
+        <span class="sa">f</span><span class="s2">&quot;Failed to find seed satisfying correlation criterion within </span><span class="si">{</span><span class="n">max_tries</span><span class="si">}</span><span class="s2"> tries. &quot;</span>
+        <span class="sa">f</span><span class="s2">&quot;Target: rho=</span><span class="si">{</span><span class="n">rho_target</span><span class="si">}</span><span class="s2">, tol=</span><span class="si">{</span><span class="n">tol</span><span class="si">}</span><span class="s2">, metric=</span><span class="si">{</span><span class="n">metric</span><span class="si">}</span><span class="s2">, threshold=</span><span class="si">{</span><span class="n">threshold</span><span class="si">}</span><span class="s2">. &quot;</span>
+        <span class="sa">f</span><span class="s2">&quot;Consider: (1) increasing max_tries, (2) relaxing tol/threshold, &quot;</span>
+        <span class="sa">f</span><span class="s2">&quot;(3) reducing n_cluster_features or rho_target.&quot;</span>
+    <span class="p">)</span></div>
 
 </pre></div>
 

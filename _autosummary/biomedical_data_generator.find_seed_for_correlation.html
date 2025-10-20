@@ -91,26 +91,33 @@
 <h1>biomedical_data_generator.find_seed_for_correlation<a class="headerlink" href="#biomedical-data-generator-find-seed-for-correlation" title="Link to this heading"></a></h1>
 <dl class="py function">
 <dt class="sig sig-object py" id="biomedical_data_generator.find_seed_for_correlation">
-<span class="sig-prename descclassname"><span class="pre">biomedical_data_generator.</span></span><span class="sig-name descname"><span class="pre">find_seed_for_correlation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">n_samples</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">size</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rho_target</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">structure</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'equicorrelated'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">metric</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'mean_offdiag'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">threshold</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.65</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">op</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'&gt;='</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tol</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.02</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">start_seed</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_tries</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">500</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/biomedical_data_generator/features/correlated.html#find_seed_for_correlation"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#biomedical_data_generator.find_seed_for_correlation" title="Link to this definition"></a></dt>
-<dd><p>Try seeds until the empirical correlation satisfies the rule.</p>
-<dl class="simple">
-<dt>Try seeds starting from <cite>start_seed</cite> until one of the following is satisfied:</dt><dd><ul class="simple">
+<span class="sig-prename descclassname"><span class="pre">biomedical_data_generator.</span></span><span class="sig-name descname"><span class="pre">find_seed_for_correlation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">n_samples</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_cluster_features</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rho_target</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">structure</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'equicorrelated'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">metric</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'mean_offdiag'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">threshold</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.65</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">op</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'&gt;='</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tol</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.02</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">start_seed</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_tries</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">500</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/biomedical_data_generator/features/correlated.html#find_seed_for_correlation"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#biomedical_data_generator.find_seed_for_correlation" title="Link to this definition"></a></dt>
+<dd><p>Search for a random seed that achieves target correlation quality.</p>
+<blockquote>
+<div><blockquote>
+<div><p>Tries multiple seeds until finding one where the empirical correlation
+matches the target within tolerance. Useful where precise correlation is needed.</p>
+<p>Try seeds starting from <cite>start_seed</cite> until one of the following is satisfied:</p>
+</div></blockquote>
+<ul class="simple">
 <li><p><a href="#id1"><span class="problematic" id="id2">|mean_offdiag - rho_target|</span></a> &lt;= tol (if tol is not None), else</p></li>
 <li><p>(metric op threshold) with metric in {“mean_offdiag”, “min_offdiag”} and op in {“&gt;=”, “&lt;=”}.</p></li>
 </ul>
-</dd>
-</dl>
+</div></blockquote>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>n_samples</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a>) – Number of samples (rows).</p></li>
-<li><p><strong>size</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a>) – Number of features (columns).</p></li>
-<li><p><strong>rho_target</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>) – Target correlation between features.</p></li>
+<li><p><strong>n_cluster_features</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a>) – Number of features (columns) within cluster.</p></li>
+<li><p><strong>rho_target</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>) – Desired correlation strength.</p></li>
 <li><p><strong>structure</strong> (<a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Literal" title="(in Python v3.14)"><em>Literal</em></a><em>[</em><em>'equicorrelated'</em><em>, </em><em>'toeplitz'</em><em>]</em>) – “equicorrelated” or “toeplitz”.</p></li>
-<li><p><strong>metric</strong> (<a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Literal" title="(in Python v3.14)"><em>Literal</em></a><em>[</em><em>'mean_offdiag'</em><em>, </em><em>'min_offdiag'</em><em>]</em>) – Empirical metric to use for acceptance.</p></li>
-<li><p><strong>threshold</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>) – Threshold for the metric (if tol is None).</p></li>
-<li><p><strong>op</strong> (<a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Literal" title="(in Python v3.14)"><em>Literal</em></a><em>[</em><em>'&gt;='</em><em>, </em><em>'&lt;='</em><em>]</em>) – Operator for threshold comparison (“&lt;=” or “&gt;=”).</p></li>
-<li><p><strong>tol</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a><em> | </em><em>None</em>) – Optional tolerance around rho_target for acceptance.</p></li>
+<li><p><strong>metric</strong> (<a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Literal" title="(in Python v3.14)"><em>Literal</em></a><em>[</em><em>'mean_offdiag'</em><em>, </em><em>'min_offdiag'</em><em>]</em>) – Quality metric to optimize.
+- “mean_offdiag”: average off-diagonal correlation
+- “min_offdiag”: minimum off-diagonal correlation</p></li>
+<li><p><strong>threshold</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>) – Minimum acceptable value for metric (if tol is None).</p></li>
+<li><p><strong>op</strong> (<a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Literal" title="(in Python v3.14)"><em>Literal</em></a><em>[</em><em>'&gt;='</em><em>, </em><em>'&lt;='</em><em>]</em>) – Comparison operator for threshold (“&gt;=”, “&lt;=”).</p></li>
+<li><p><strong>tol</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a><em> | </em><em>None</em>) – If provided, accept when <a href="#id3"><span class="problematic" id="id4">|mean_offdiag - rho_target|</span></a> &lt;= tol.
+This takes precedence over threshold.</p></li>
 <li><p><strong>start_seed</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a>) – First seed to try.</p></li>
 <li><p><strong>max_tries</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a>) – Maximum number of seeds to try before giving up.</p></li>
 </ul>
@@ -125,10 +132,49 @@ meta (dict): Metadata as returned by generate_correlated_cluster.</p>
 <dt class="field-even">Raises<span class="colon">:</span></dt>
 <dd class="field-even"><ul class="simple">
 <li><p><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#RuntimeError" title="(in Python v3.14)"><strong>RuntimeError</strong></a> – If no seed satisfied the rule within max_tries.</p></li>
-<li><p><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#ValueError" title="(in Python v3.14)"><strong>ValueError</strong></a> – If size &lt; 1 or rho_target not in [0, 1).</p></li>
+<li><p><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#ValueError" title="(in Python v3.14)"><strong>ValueError</strong></a> – If n_cluster_features &lt; 1 or rho_target not in [0, 1).</p></li>
 </ul>
 </dd>
 </dl>
+<section id="examples">
+<h2>Examples:<a class="headerlink" href="#examples" title="Link to this heading"></a></h2>
+<blockquote>
+<div><p>Find seed for very strong inflammation markers:</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">seed</span><span class="p">,</span> <span class="n">meta</span> <span class="o">=</span> <span class="n">find_seed_for_correlation</span><span class="p">(</span>
+<span class="gp">... </span>    <span class="n">n_samples</span><span class="o">=</span><span class="mi">200</span><span class="p">,</span>
+<span class="gp">... </span>    <span class="n">n_cluster_features</span><span class="o">=</span><span class="mi">6</span><span class="p">,</span>
+<span class="gp">... </span>    <span class="n">rho_target</span><span class="o">=</span><span class="mf">0.85</span><span class="p">,</span>
+<span class="gp">... </span>    <span class="n">tol</span><span class="o">=</span><span class="mf">0.03</span>
+<span class="gp">... </span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">meta</span><span class="p">[</span><span class="s1">&#39;mean_offdiag&#39;</span><span class="p">]</span>
+<span class="go">0.847...</span>
+</pre></div>
+</div>
+<p>Ensure minimum correlation for teaching:</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">seed</span><span class="p">,</span> <span class="n">meta</span> <span class="o">=</span> <span class="n">find_seed_for_correlation</span><span class="p">(</span>
+<span class="gp">... </span>    <span class="n">n_samples</span><span class="o">=</span><span class="mi">150</span><span class="p">,</span>
+<span class="gp">... </span>    <span class="n">n_cluster_features</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span>
+<span class="gp">... </span>    <span class="n">rho_target</span><span class="o">=</span><span class="mf">0.70</span><span class="p">,</span>
+<span class="gp">... </span>    <span class="n">metric</span><span class="o">=</span><span class="s2">&quot;min_offdiag&quot;</span><span class="p">,</span>
+<span class="gp">... </span>    <span class="n">threshold</span><span class="o">=</span><span class="mf">0.65</span><span class="p">,</span>
+<span class="gp">... </span>    <span class="n">tol</span><span class="o">=</span><span class="kc">None</span>
+<span class="gp">... </span><span class="p">)</span>
+</pre></div>
+</div>
+</div></blockquote>
+</section>
+<section id="notes">
+<h2>Notes:<a class="headerlink" href="#notes" title="Link to this heading"></a></h2>
+<blockquote>
+<div><p>Medical interpretation:
+- Use this when demonstrating correlation patterns in teaching
+- Higher n_cluster_features and rho_target may require more tries
+- For large clusters (n_cluster_features &gt; 10), consider increasing max_tries</p>
+<p>For tol-based acceptance we require n_cluster_features &lt;= n_samples.
+When p &gt;&gt; n, the mean off-diagonal can appear artificially close to rho_target
+due to heavy averaging; in such cases, prefer threshold mode or increase n.</p>
+</div></blockquote>
+</section>
 </dd></dl>
 
 </section>

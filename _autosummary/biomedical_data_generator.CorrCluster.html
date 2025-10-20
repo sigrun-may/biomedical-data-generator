@@ -97,7 +97,7 @@
 <h1>biomedical_data_generator.CorrCluster<a class="headerlink" href="#biomedical-data-generator-corrcluster" title="Link to this heading"></a></h1>
 <dl class="py class">
 <dt class="sig sig-object py" id="biomedical_data_generator.CorrCluster">
-<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">biomedical_data_generator.</span></span><span class="sig-name descname"><span class="pre">CorrCluster</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">size</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rho</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">structure</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'equicorrelated'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">anchor_role</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'informative'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">anchor_effect_size</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">anchor_class</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">random_state</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">label</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/biomedical_data_generator/config.html#CorrCluster"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#biomedical_data_generator.CorrCluster" title="Link to this definition"></a></dt>
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">biomedical_data_generator.</span></span><span class="sig-name descname"><span class="pre">CorrCluster</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_cluster_features</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rho</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">structure</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'equicorrelated'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">anchor_role</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'informative'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">anchor_effect_size</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">anchor_class</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">random_state</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">label</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/biomedical_data_generator/config.html#CorrCluster"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#biomedical_data_generator.CorrCluster" title="Link to this definition"></a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">BaseModel</span></code></p>
 <p>Correlated feature cluster simulating coordinated biomarker patterns.</p>
 <p>A cluster represents a group of <cite>size</cite> biomarkers that move together, such as
@@ -106,7 +106,7 @@ acts as the “anchor” (driver), while the others are “proxies” (followers
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>size</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a>) – Number of biomarkers in the cluster (including anchor). Must be &gt;= 1.</p></li>
+<li><p><strong>n_cluster_features</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a>) – Number of biomarkers in the cluster (including anchor). Must be &gt;= 1.</p></li>
 <li><p><strong>rho</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>) – Correlation strength between biomarkers in the cluster.
 - 0.0 = independent
 - 0.5 = moderate correlation
@@ -139,7 +139,7 @@ If None, uses the global dataset seed.</p></li>
 <blockquote>
 <div><p>Strong inflammatory pathway in diseased patients:</p>
 <div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">inflammation</span> <span class="o">=</span> <span class="n">CorrCluster</span><span class="p">(</span>
-<span class="gp">... </span>    <span class="n">size</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span>
+<span class="gp">... </span>    <span class="n">n_cluster_features</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span>
 <span class="gp">... </span>    <span class="n">rho</span><span class="o">=</span><span class="mf">0.8</span><span class="p">,</span>
 <span class="gp">... </span>    <span class="n">anchor_role</span><span class="o">=</span><span class="s2">&quot;informative&quot;</span><span class="p">,</span>
 <span class="gp">... </span>    <span class="n">anchor_effect_size</span><span class="o">=</span><span class="s2">&quot;large&quot;</span><span class="p">,</span>
@@ -150,7 +150,7 @@ If None, uses the global dataset seed.</p></li>
 </div>
 <p>Confounding variables (e.g., age-related markers):</p>
 <div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">age_confounders</span> <span class="o">=</span> <span class="n">CorrCluster</span><span class="p">(</span>
-<span class="gp">... </span>    <span class="n">size</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span>
+<span class="gp">... </span>    <span class="n">n_cluster_features</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span>
 <span class="gp">... </span>    <span class="n">rho</span><span class="o">=</span><span class="mf">0.6</span><span class="p">,</span>
 <span class="gp">... </span>    <span class="n">anchor_role</span><span class="o">=</span><span class="s2">&quot;pseudo&quot;</span><span class="p">,</span>
 <span class="gp">... </span>    <span class="n">label</span><span class="o">=</span><span class="s2">&quot;Age-related markers&quot;</span>
@@ -159,7 +159,7 @@ If None, uses the global dataset seed.</p></li>
 </div>
 <p>Weak disease signal with custom effect size:</p>
 <div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">weak_signal</span> <span class="o">=</span> <span class="n">CorrCluster</span><span class="p">(</span>
-<span class="gp">... </span>    <span class="n">size</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span>
+<span class="gp">... </span>    <span class="n">n_cluster_features</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span>
 <span class="gp">... </span>    <span class="n">rho</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span>
 <span class="gp">... </span>    <span class="n">anchor_role</span><span class="o">=</span><span class="s2">&quot;informative&quot;</span><span class="p">,</span>
 <span class="gp">... </span>    <span class="n">anchor_effect_size</span><span class="o">=</span><span class="mf">0.3</span><span class="p">,</span>  <span class="c1"># custom weak effect</span>
@@ -314,7 +314,7 @@ validated to form a valid model.</p>
 <tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">model_fields_set</span></code></p></td>
 <td><p>Returns the set of fields that have been explicitly set on this model instance.</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">size</span></code></p></td>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">n_cluster_features</span></code></p></td>
 <td><p></p></td>
 </tr>
 <tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">rho</span></code></p></td>
@@ -364,17 +364,17 @@ validated to form a valid model.</p>
 </dl>
 <section id="id1">
 <h3>Examples:<a class="headerlink" href="#id1" title="Link to this heading"></a></h3>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">c</span> <span class="o">=</span> <span class="n">CorrCluster</span><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">rho</span><span class="o">=</span><span class="mf">0.7</span><span class="p">,</span> <span class="n">anchor_effect_size</span><span class="o">=</span><span class="s2">&quot;large&quot;</span><span class="p">)</span>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">c</span> <span class="o">=</span> <span class="n">CorrCluster</span><span class="p">(</span><span class="n">n_cluster_features</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">rho</span><span class="o">=</span><span class="mf">0.7</span><span class="p">,</span> <span class="n">anchor_effect_size</span><span class="o">=</span><span class="s2">&quot;large&quot;</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">c</span><span class="o">.</span><span class="n">resolve_anchor_effect_size</span><span class="p">()</span>
 <span class="go">1.5</span>
 </pre></div>
 </div>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">c</span> <span class="o">=</span> <span class="n">CorrCluster</span><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">rho</span><span class="o">=</span><span class="mf">0.7</span><span class="p">,</span> <span class="n">anchor_effect_size</span><span class="o">=</span><span class="mf">0.8</span><span class="p">)</span>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">c</span> <span class="o">=</span> <span class="n">CorrCluster</span><span class="p">(</span><span class="n">n_cluster_features</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">rho</span><span class="o">=</span><span class="mf">0.7</span><span class="p">,</span> <span class="n">anchor_effect_size</span><span class="o">=</span><span class="mf">0.8</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">c</span><span class="o">.</span><span class="n">resolve_anchor_effect_size</span><span class="p">()</span>
 <span class="go">0.8</span>
 </pre></div>
 </div>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">c</span> <span class="o">=</span> <span class="n">CorrCluster</span><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">rho</span><span class="o">=</span><span class="mf">0.7</span><span class="p">)</span>  <span class="c1"># default</span>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">c</span> <span class="o">=</span> <span class="n">CorrCluster</span><span class="p">(</span><span class="n">n_cluster_features</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">rho</span><span class="o">=</span><span class="mf">0.7</span><span class="p">)</span>  <span class="c1"># default</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">c</span><span class="o">.</span><span class="n">resolve_anchor_effect_size</span><span class="p">()</span>
 <span class="go">1.0</span>
 </pre></div>

@@ -53,7 +53,7 @@
       ~CorrCluster.model_extra
       ~CorrCluster.model_fields
       ~CorrCluster.model_fields_set
-      ~CorrCluster.size
+      ~CorrCluster.n_cluster_features
       ~CorrCluster.rho
       ~CorrCluster.structure
       ~CorrCluster.anchor_role
