@@ -96,6 +96,7 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">enum</span><span class="w"> </span><span class="kn">import</span> <span class="n">Enum</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Literal</span><span class="p">,</span> <span class="n">TypeAlias</span>
 
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ConfigDict</span><span class="p">,</span> <span class="n">Field</span><span class="p">,</span> <span class="n">field_validator</span><span class="p">,</span> <span class="n">model_validator</span>
 
 <span class="n">RawConfig</span><span class="p">:</span> <span class="n">TypeAlias</span> <span class="o">=</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span>
@@ -188,77 +189,280 @@
 <div class="viewcode-block" id="CorrCluster">
 <a class="viewcode-back" href="../../_autosummary/biomedical_data_generator.CorrCluster.html#biomedical_data_generator.CorrCluster">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">CorrCluster</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;One correlated feature block anchored at a role feature.</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Correlated feature cluster simulating coordinated biomarker patterns.</span>
 
-<span class="sd">    Cluster of correlated features with one anchor feature that contributes to the target. The cluster</span>
-<span class="sd">    consists of `size` features, of which one is the anchor. The anchor has a specified role</span>
-<span class="sd">    (informative/pseudo/noise) and effect size (`anchor_beta`). Optionally, the anchor can have a stronger effect for a</span>
-<span class="sd">    specific class (`anchor_class`). If `anchor_class` is set (0..n_classes-1), the anchor has a stronger effect for</span>
-<span class="sd">    that class. This is useful to create class-specific patterns. The `anchor_class` allows boosting a specific class</span>
-<span class="sd">    for the anchor feature.</span>
-<span class="sd">    The other features in the cluster are proxies, correlated to the anchor but not</span>
-<span class="sd">    directly affecting the target. The correlation structure within the cluster can be either equicorrelated or</span>
-<span class="sd">    Toeplitz. Toeplitz is defined as correlation decreasing with distance: `rho**|i-j|`.  This `structure` controls the</span>
-<span class="sd">    correlation pattern within the cluster.</span>
+<span class="sd">    A cluster represents a group of `size` biomarkers that move together, such as</span>
+<span class="sd">    markers in a metabolic pathway or proteins in a signaling cascade. One marker</span>
+<span class="sd">    acts as the &quot;anchor&quot; (driver), while the others are &quot;proxies&quot; (followers).</span>
 
 <span class="sd">    Args:</span>
-<span class="sd">       size (int): Number of features in the cluster (including the anchor).</span>
-<span class="sd">       rho (float): Correlation coefficient (0 &lt; rho &lt; 1).</span>
-<span class="sd">       structure (Literal[&quot;equicorrelated&quot;, &quot;toeplitz&quot;]): Correlation structure within the cluster.</span>
-<span class="sd">           - &quot;equicorrelated&quot;: All features have the same pairwise correlation `rho`.</span>
-<span class="sd">           - &quot;toeplitz&quot;: Correlation decreases with distance: `rho**|i-j|`.</span>
-<span class="sd">       anchor_role (Literal[&quot;informative&quot;, &quot;pseudo&quot;, &quot;noise&quot;]): Role of the anchor feature.</span>
-<span class="sd">       anchor_beta (float): Effect size of the anchor feature on the target (default: 1.0).</span>
-<span class="sd">       anchor_class (Optional[int]): If set, the anchor has a stronger effect for this class (0..n_classes-1).</span>
-<span class="sd">       random_state (Optional[int]): Random seed for reproducibility.</span>
-<span class="sd">       label (Optional[str]): Optional label for the cluster (for display purposes).</span>
+<span class="sd">        size: Number of biomarkers in the cluster (including anchor). Must be &gt;= 1.</span>
+<span class="sd">        rho: Correlation strength between biomarkers in the cluster.</span>
+<span class="sd">            - 0.0 = independent</span>
+<span class="sd">            - 0.5 = moderate correlation</span>
+<span class="sd">            - 0.8+ = strong correlation (typical for pathway markers)</span>
+<span class="sd">            - Range: [0, 1) for equicorrelated; (-1, 1) for toeplitz</span>
+<span class="sd">        structure: Pattern of correlation within the cluster.</span>
+<span class="sd">            - &quot;equicorrelated&quot;: all pairs have the same correlation (default)</span>
+<span class="sd">            - &quot;toeplitz&quot;: correlation decreases with distance</span>
+<span class="sd">        anchor_role: Biological relevance of the anchor marker.</span>
+<span class="sd">            - &quot;informative&quot;: true biomarker (predictive of disease)</span>
+<span class="sd">            - &quot;pseudo&quot;: confounding variable (correlated but not causal)</span>
+<span class="sd">            - &quot;noise&quot;: random measurement (no biological signal)</span>
+<span class="sd">        anchor_effect_size: Strength of the anchor&#39;s disease association.</span>
+<span class="sd">            Can be specified as:</span>
+<span class="sd">            - Preset: &quot;small&quot; (0.5), &quot;medium&quot; (1.0), &quot;large&quot; (1.5)</span>
+<span class="sd">            - Custom float: any positive value</span>
+<span class="sd">            - None: defaults to &quot;medium&quot; (1.0)</span>
+<span class="sd">            Only relevant when `anchor_role=&quot;informative&quot;`.</span>
+<span class="sd">        anchor_class: Disease class that this anchor predicts (0, 1, 2, ...).</span>
+<span class="sd">            If None, the anchor contributes to all classes. Only used when</span>
+<span class="sd">            `anchor_role=&quot;informative&quot;`.</span>
+<span class="sd">        random_state: Random seed for reproducibility of this specific cluster.</span>
+<span class="sd">            If None, uses the global dataset seed.</span>
+<span class="sd">        label: Descriptive name for documentation (e.g., &quot;Inflammation markers&quot;).</span>
 
 <span class="sd">    Examples:</span>
 <span class="sd">    --------</span>
-<span class="sd">       ```python</span>
-<span class="sd">       from biomedical_data_generator import CorrCluster</span>
-<span class="sd">       c1 = CorrCluster(size=3, rho=0.7, anchor_role=&quot;informative&quot;, anchor_beta=1.0)</span>
-<span class="sd">       c2 = CorrCluster(size=2, rho=0.5, anchor_role=&quot;pseudo&quot;)</span>
-<span class="sd">       print(c1)</span>
-<span class="sd">       # size=3 rho=0.7 structure=&#39;equicorrelated&#39; anchor_role=&#39;informative&#39; anchor_beta=1.0 anchor_class=None</span>
-<span class="sd">        random_state=None label=None</span>
-<span class="sd">       print(c2)</span>
-<span class="sd">       # size=2 rho=0.5 structure=&#39;equicorrelated&#39; anchor_role=&#39;pseudo&#39; anchor_beta=1.0 anchor_class=None</span>
-<span class="sd">        random_state=None label=None</span>
-<span class="sd">       ```</span>
+<span class="sd">        Strong inflammatory pathway in diseased patients:</span>
 
-<span class="sd">    References:</span>
-<span class="sd">    ----------</span>
-<span class="sd">       May, S., Bischl, B., &amp; Lang, M. (2022). A Benchmark for Data Generation Methods in Classification.</span>
-<span class="sd">       In Proceedings of the 25th International Conference on Artificial Intelligence and Statistics (pp. 3433-3443).</span>
-<span class="sd">       PMLR.</span>
-<span class="sd">       sklearn.datasets.make_classification (for the general idea of informative/pseudo/noise features)</span>
-<span class="sd">       https://en.wikipedia.org/wiki/Equicorrelated_random_variables</span>
-<span class="sd">       https://en.wikipedia.org/wiki/Toeplitz_matrix</span>
+<span class="sd">        &gt;&gt;&gt; inflammation = CorrCluster(</span>
+<span class="sd">        ...     size=5,</span>
+<span class="sd">        ...     rho=0.8,</span>
+<span class="sd">        ...     anchor_role=&quot;informative&quot;,</span>
+<span class="sd">        ...     anchor_effect_size=&quot;large&quot;,</span>
+<span class="sd">        ...     anchor_class=1,  # disease class</span>
+<span class="sd">        ...     label=&quot;Inflammation pathway&quot;</span>
+<span class="sd">        ... )</span>
+
+<span class="sd">        Confounding variables (e.g., age-related markers):</span>
+
+<span class="sd">        &gt;&gt;&gt; age_confounders = CorrCluster(</span>
+<span class="sd">        ...     size=3,</span>
+<span class="sd">        ...     rho=0.6,</span>
+<span class="sd">        ...     anchor_role=&quot;pseudo&quot;,</span>
+<span class="sd">        ...     label=&quot;Age-related markers&quot;</span>
+<span class="sd">        ... )</span>
+
+<span class="sd">        Weak disease signal with custom effect size:</span>
+
+<span class="sd">        &gt;&gt;&gt; weak_signal = CorrCluster(</span>
+<span class="sd">        ...     size=4,</span>
+<span class="sd">        ...     rho=0.5,</span>
+<span class="sd">        ...     anchor_role=&quot;informative&quot;,</span>
+<span class="sd">        ...     anchor_effect_size=0.3,  # custom weak effect</span>
+<span class="sd">        ...     label=&quot;Subtle biomarkers&quot;</span>
+<span class="sd">        ... )</span>
+
+<span class="sd">    Notes:</span>
+<span class="sd">    -----</span>
+<span class="sd">        Medical interpretation:</span>
+<span class="sd">        - **Anchor**: The primary biomarker (e.g., CRP in inflammation)</span>
+<span class="sd">        - **Proxies**: Secondary markers that follow the anchor (e.g., IL-6, TNF-α)</span>
+<span class="sd">        - **rho=0.8**: Typical for tightly regulated biological pathways</span>
+<span class="sd">        - **rho=0.5**: Moderate biological coupling</span>
+<span class="sd">        - **effect_size=&quot;large&quot;**: Strong disease association (easy to detect)</span>
+<span class="sd">        - **effect_size=&quot;small&quot;**: Subtle signal (requires large sample size)</span>
+
+<span class="sd">        Technical details:</span>
+<span class="sd">        - Cluster contributes `size` features to the dataset</span>
+<span class="sd">        - Anchor appears first, followed by `(size-1)` proxies</span>
+<span class="sd">        - Only the anchor has predictive power; proxies are correlated distractors</span>
+<span class="sd">        - Proxies count as additional features beyond n_informative/n_pseudo/n_noise</span>
 
 <span class="sd">    See Also:</span>
 <span class="sd">    --------</span>
-<span class="sd">       DatasetConfig: for the overall dataset configuration.</span>
-<span class="sd">       generate_dataset: for generating datasets from the configuration.</span>
-
-<span class="sd">    Warning:</span>
-<span class="sd">       - This model does not enforce value constraints (e.g., 0 &lt; rho &lt; 1).</span>
-<span class="sd">         Such checks are performed during dataset generation.</span>
-<span class="sd">       - The `random_state` is per-cluster; if you want overall reproducibility,</span>
-<span class="sd">         set the `DatasetConfig.random_state` instead.</span>
+<span class="sd">        DatasetConfig : Overall dataset configuration</span>
+<span class="sd">        generate_dataset : Main generation function</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="n">model_config</span> <span class="o">=</span> <span class="n">ConfigDict</span><span class="p">(</span><span class="n">extra</span><span class="o">=</span><span class="s2">&quot;forbid&quot;</span><span class="p">)</span>
 
-    <span class="n">size</span><span class="p">:</span> <span class="nb">int</span>
-    <span class="n">rho</span><span class="p">:</span> <span class="nb">float</span>
+    <span class="c1"># Core cluster structure</span>
+    <span class="n">size</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="o">...</span><span class="p">,</span> <span class="n">ge</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">description</span><span class="o">=</span><span class="s2">&quot;Number of biomarkers in cluster&quot;</span><span class="p">)</span>
+    <span class="n">rho</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="o">...</span><span class="p">,</span> <span class="n">description</span><span class="o">=</span><span class="s2">&quot;Correlation strength (0=independent, 0.8+=strong)&quot;</span><span class="p">)</span>
     <span class="n">structure</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;equicorrelated&quot;</span><span class="p">,</span> <span class="s2">&quot;toeplitz&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;equicorrelated&quot;</span>
-    <span class="n">anchor_role</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;informative&quot;</span><span class="p">,</span> <span class="s2">&quot;pseudo&quot;</span><span class="p">,</span> <span class="s2">&quot;noise&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;informative&quot;</span>
-    <span class="n">anchor_beta</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1.0</span>
-    <span class="n">anchor_class</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
-    <span class="n">random_state</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>  <span class="c1"># aka ‘seed’: set to an integer for reproducible results</span>
-    <span class="n">label</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>  <span class="c1"># optional display label</span></div>
 
+    <span class="c1"># Biological relevance</span>
+    <span class="n">anchor_role</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;informative&quot;</span><span class="p">,</span> <span class="s2">&quot;pseudo&quot;</span><span class="p">,</span> <span class="s2">&quot;noise&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;informative&quot;</span>
+    <span class="n">anchor_effect_size</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;small&quot;</span><span class="p">,</span> <span class="s2">&quot;medium&quot;</span><span class="p">,</span> <span class="s2">&quot;large&quot;</span><span class="p">]</span> <span class="o">|</span> <span class="nb">float</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">anchor_class</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+
+    <span class="c1"># Metadata</span>
+    <span class="n">random_state</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">label</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+
+    <span class="nd">@field_validator</span><span class="p">(</span><span class="s2">&quot;size&quot;</span><span class="p">)</span>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_validate_size</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">v</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Ensure cluster has at least one marker.&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">v</span> <span class="o">&lt;</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;size must be &gt;= 1, got </span><span class="si">{</span><span class="n">v</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">v</span>
+
+    <span class="nd">@field_validator</span><span class="p">(</span><span class="s2">&quot;rho&quot;</span><span class="p">)</span>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_validate_rho_range</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">v</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Validate correlation strength is in valid range.&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="o">-</span><span class="mf">1.0</span> <span class="o">&lt;</span> <span class="n">v</span> <span class="o">&lt;</span> <span class="mf">1.0</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;rho must be in (-1, 1), got </span><span class="si">{</span><span class="n">v</span><span class="si">}</span><span class="s2">. &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;Hint: 0=independent, 0.5=moderate, 0.8=strong&quot;</span>
+            <span class="p">)</span>
+        <span class="k">return</span> <span class="n">v</span>
+
+    <span class="nd">@field_validator</span><span class="p">(</span><span class="s2">&quot;anchor_effect_size&quot;</span><span class="p">)</span>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_validate_effect_size</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">v</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;small&quot;</span><span class="p">,</span> <span class="s2">&quot;medium&quot;</span><span class="p">,</span> <span class="s2">&quot;large&quot;</span><span class="p">]</span> <span class="o">|</span> <span class="nb">float</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Validate effect size is either a preset or positive float.&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">v</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">v</span>
+
+        <span class="c1"># Preset string</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">v</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;small&quot;</span><span class="p">,</span> <span class="s2">&quot;medium&quot;</span><span class="p">,</span> <span class="s2">&quot;large&quot;</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;anchor_effect_size must be &#39;small&#39;, &#39;medium&#39;, or &#39;large&#39;, got &#39;</span><span class="si">{</span><span class="n">v</span><span class="si">}</span><span class="s2">&#39;&quot;</span>
+                <span class="p">)</span>
+            <span class="k">return</span> <span class="n">v</span>
+
+        <span class="c1"># Custom float</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">val</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">v</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">val</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;anchor_effect_size must be &gt; 0, got </span><span class="si">{</span><span class="n">val</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">val</span>
+        <span class="k">except</span> <span class="p">(</span><span class="ne">TypeError</span><span class="p">,</span> <span class="ne">ValueError</span><span class="p">)</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;anchor_effect_size must be &#39;small&#39;/&#39;medium&#39;/&#39;large&#39; or positive float, got </span><span class="si">{</span><span class="n">v</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="p">)</span> <span class="kn">from</span><span class="w"> </span><span class="nn">e</span>
+
+    <span class="nd">@field_validator</span><span class="p">(</span><span class="s2">&quot;anchor_class&quot;</span><span class="p">)</span>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_validate_anchor_class</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">v</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Ensure disease class is non-negative if specified.&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">v</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">v</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;anchor_class must be &gt;= 0 or None, got </span><span class="si">{</span><span class="n">v</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">v</span>
+
+<div class="viewcode-block" id="CorrCluster.resolve_anchor_effect_size">
+<a class="viewcode-back" href="../../_autosummary/biomedical_data_generator.CorrCluster.html#biomedical_data_generator.CorrCluster.resolve_anchor_effect_size">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">resolve_anchor_effect_size</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Convert anchor_effect_size to numeric value.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Numeric effect size for calculations.</span>
+<span class="sd">            - &quot;small&quot; → 0.5</span>
+<span class="sd">            - &quot;medium&quot; → 1.0  (default)</span>
+<span class="sd">            - &quot;large&quot; → 1.5</span>
+<span class="sd">            - custom float → as specified</span>
+
+<span class="sd">        Examples:</span>
+<span class="sd">        --------</span>
+<span class="sd">            &gt;&gt;&gt; c = CorrCluster(size=3, rho=0.7, anchor_effect_size=&quot;large&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; c.resolve_anchor_effect_size()</span>
+<span class="sd">            1.5</span>
+
+<span class="sd">            &gt;&gt;&gt; c = CorrCluster(size=3, rho=0.7, anchor_effect_size=0.8)</span>
+<span class="sd">            &gt;&gt;&gt; c.resolve_anchor_effect_size()</span>
+<span class="sd">            0.8</span>
+
+<span class="sd">            &gt;&gt;&gt; c = CorrCluster(size=3, rho=0.7)  # default</span>
+<span class="sd">            &gt;&gt;&gt; c.resolve_anchor_effect_size()</span>
+<span class="sd">            1.0</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">anchor_effect_size</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="mf">1.0</span>  <span class="c1"># default to medium</span>
+
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">anchor_effect_size</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+            <span class="n">effect_map</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s2">&quot;small&quot;</span><span class="p">:</span> <span class="mf">0.5</span><span class="p">,</span>
+                <span class="s2">&quot;medium&quot;</span><span class="p">:</span> <span class="mf">1.0</span><span class="p">,</span>
+                <span class="s2">&quot;large&quot;</span><span class="p">:</span> <span class="mf">1.5</span><span class="p">,</span>
+            <span class="p">}</span>
+            <span class="k">return</span> <span class="n">effect_map</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">anchor_effect_size</span><span class="p">]</span>
+
+        <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">anchor_effect_size</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="CorrCluster.summary">
+<a class="viewcode-back" href="../../_autosummary/biomedical_data_generator.CorrCluster.html#biomedical_data_generator.CorrCluster.summary">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">summary</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return human-readable summary in medical terms.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Formatted summary of cluster configuration.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">lines</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="s1">&#39;=&#39;</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="mi">60</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="n">lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Biomarker Cluster: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">label</span><span class="w"> </span><span class="ow">or</span><span class="w"> </span><span class="s1">&#39;Unnamed&#39;</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="n">lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="s1">&#39;=&#39;</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="mi">60</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="n">lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Cluster structure</span>
+        <span class="n">lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;Cluster Structure:&quot;</span><span class="p">)</span>
+        <span class="n">lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Number of markers: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">size</span><span class="si">}</span><span class="s2"> (1 anchor + </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">size</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="mi">1</span><span class="si">}</span><span class="s2"> proxies)&quot;</span><span class="p">)</span>
+        <span class="n">lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Correlation strength: rho=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">rho</span><span class="si">}</span><span class="s2"> (</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">structure</span><span class="si">}</span><span class="s2">)&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Interpret correlation</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">rho</span> <span class="o">&lt;</span> <span class="mf">0.3</span><span class="p">:</span>
+            <span class="n">corr_desc</span> <span class="o">=</span> <span class="s2">&quot;weak/independent&quot;</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">rho</span> <span class="o">&lt;</span> <span class="mf">0.6</span><span class="p">:</span>
+            <span class="n">corr_desc</span> <span class="o">=</span> <span class="s2">&quot;moderate&quot;</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">rho</span> <span class="o">&lt;</span> <span class="mf">0.8</span><span class="p">:</span>
+            <span class="n">corr_desc</span> <span class="o">=</span> <span class="s2">&quot;strong&quot;</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">corr_desc</span> <span class="o">=</span> <span class="s2">&quot;very strong (pathway-like)&quot;</span>
+        <span class="n">lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Interpretation: </span><span class="si">{</span><span class="n">corr_desc</span><span class="si">}</span><span class="s2"> biological coupling&quot;</span><span class="p">)</span>
+        <span class="n">lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Anchor properties</span>
+        <span class="n">lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;Anchor Marker:&quot;</span><span class="p">)</span>
+        <span class="n">lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Role: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">anchor_role</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">anchor_role</span> <span class="o">==</span> <span class="s2">&quot;informative&quot;</span><span class="p">:</span>
+            <span class="n">effect_value</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">resolve_anchor_effect_size</span><span class="p">()</span>
+            <span class="n">effect_str</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">anchor_effect_size</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">anchor_effect_size</span> <span class="k">else</span> <span class="s2">&quot;medium&quot;</span>
+            <span class="n">lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Effect size: </span><span class="si">{</span><span class="n">effect_str</span><span class="si">}</span><span class="s2"> (value=</span><span class="si">{</span><span class="n">effect_value</span><span class="si">}</span><span class="s2">)&quot;</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">anchor_class</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Predicts: class </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">anchor_class</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Predicts: all classes (round-robin)&quot;</span><span class="p">)</span>
+
+            <span class="c1"># Medical interpretation of effect size</span>
+            <span class="k">if</span> <span class="n">effect_value</span> <span class="o">&lt;</span> <span class="mf">0.7</span><span class="p">:</span>
+                <span class="n">lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  → Subtle signal (large sample needed)&quot;</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="n">effect_value</span> <span class="o">&lt;</span> <span class="mf">1.2</span><span class="p">:</span>
+                <span class="n">lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  → Moderate signal (typical biomarker)&quot;</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  → Strong signal (easy to detect)&quot;</span><span class="p">)</span>
+
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">anchor_role</span> <span class="o">==</span> <span class="s2">&quot;pseudo&quot;</span><span class="p">:</span>
+            <span class="n">lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  → Confounding variable (not causal)&quot;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  → Random noise (no signal)&quot;</span><span class="p">)</span>
+
+        <span class="n">lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;&quot;</span><span class="p">)</span>
+        <span class="n">lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Random seed: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">random_state</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="bp">self</span><span class="o">.</span><span class="n">random_state</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="s1">&#39;from dataset&#39;</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">lines</span><span class="p">)</span></div>
+
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Concise representation for quick reference.&quot;&quot;&quot;</span>
+        <span class="n">parts</span> <span class="o">=</span> <span class="p">[</span><span class="sa">f</span><span class="s2">&quot;size=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">size</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;rho=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">rho</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">]</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">anchor_role</span> <span class="o">!=</span> <span class="s2">&quot;informative&quot;</span><span class="p">:</span>
+            <span class="n">parts</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">anchor_role</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">anchor_effect_size</span><span class="p">:</span>
+            <span class="n">parts</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;effect=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">anchor_effect_size</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">label</span><span class="p">:</span>
+            <span class="n">parts</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;&#39;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">label</span><span class="si">}</span><span class="s2">&#39;&quot;</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;CorrCluster(</span><span class="si">{</span><span class="s1">&#39;, &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">parts</span><span class="p">)</span><span class="si">}</span><span class="s2">)&quot;</span></div>
 
 
 <div class="viewcode-block" id="DatasetConfig">

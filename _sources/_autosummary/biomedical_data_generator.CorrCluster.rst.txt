@@ -33,8 +33,10 @@
       ~CorrCluster.parse_file
       ~CorrCluster.parse_obj
       ~CorrCluster.parse_raw
+      ~CorrCluster.resolve_anchor_effect_size
       ~CorrCluster.schema
       ~CorrCluster.schema_json
+      ~CorrCluster.summary
       ~CorrCluster.update_forward_refs
       ~CorrCluster.validate
    
@@ -55,7 +57,7 @@
       ~CorrCluster.rho
       ~CorrCluster.structure
       ~CorrCluster.anchor_role
-      ~CorrCluster.anchor_beta
+      ~CorrCluster.anchor_effect_size
       ~CorrCluster.anchor_class
       ~CorrCluster.random_state
       ~CorrCluster.label
