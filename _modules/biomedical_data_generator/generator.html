@@ -370,7 +370,7 @@
 <span class="sd">    Features are ordered as: cluster features (anchors first within each cluster),</span>
 <span class="sd">    then free informative features, then free pseudo features, then noise features.</span>
 <span class="sd">    Labels y are sampled from a softmax model over `n_classes`: cluster anchors add a positive</span>
-<span class="sd">    contribution to their assigned class (via `anchor_beta`), free informative features contribute</span>
+<span class="sd">    contribution to their assigned class (via `anchor_effect_size`), free informative features contribute</span>
 <span class="sd">    to classes in a simple round-robin assignment (β=0.8). Pseudo and noise features have β=0.</span>
 <span class="sd">    Reproducibility is controlled by `cfg.random_state` and optional per-cluster seeds. If `weights`</span>
 <span class="sd">    are specified (length `n_classes`), per-class intercepts are added so that</span>
@@ -434,7 +434,7 @@
                 <span class="n">anchor_cls</span> <span class="o">=</span> <span class="mi">0</span> <span class="k">if</span> <span class="n">c</span><span class="o">.</span><span class="n">anchor_class</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="nb">int</span><span class="p">(</span><span class="n">c</span><span class="o">.</span><span class="n">anchor_class</span><span class="p">)</span>
                 <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="mi">0</span> <span class="o">&lt;=</span> <span class="n">anchor_cls</span> <span class="o">&lt;</span> <span class="n">cfg</span><span class="o">.</span><span class="n">n_classes</span><span class="p">):</span>
                     <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;anchor_class </span><span class="si">{</span><span class="n">anchor_cls</span><span class="si">}</span><span class="s2"> out of range for n_classes=</span><span class="si">{</span><span class="n">cfg</span><span class="o">.</span><span class="n">n_classes</span><span class="si">}</span><span class="s2">.&quot;</span><span class="p">)</span>
-                <span class="n">anchor_contrib</span><span class="p">[</span><span class="n">anchor_col</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">c</span><span class="o">.</span><span class="n">anchor_beta</span><span class="p">),</span> <span class="n">anchor_cls</span><span class="p">)</span>
+                <span class="n">anchor_contrib</span><span class="p">[</span><span class="n">anchor_col</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">c</span><span class="o">.</span><span class="n">anchor_effect_size</span><span class="p">),</span> <span class="n">anchor_cls</span><span class="p">)</span>
                 <span class="n">anchor_target_cls_map</span><span class="p">[</span><span class="n">cid</span><span class="p">]</span> <span class="o">=</span> <span class="n">anchor_cls</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="n">anchor_target_cls_map</span><span class="p">[</span><span class="n">cid</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
@@ -525,12 +525,12 @@
 
     <span class="c1"># per-cluster role/beta maps for meta</span>
     <span class="n">anchor_role_map</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
-    <span class="n">anchor_beta_map</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="n">anchor_effect_size_map</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
     <span class="k">if</span> <span class="n">cfg</span><span class="o">.</span><span class="n">corr_clusters</span><span class="p">:</span>
         <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span>
         <span class="k">for</span> <span class="n">cid</span><span class="p">,</span> <span class="n">c</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">cfg</span><span class="o">.</span><span class="n">corr_clusters</span><span class="p">,</span> <span class="n">start</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
             <span class="n">anchor_role_map</span><span class="p">[</span><span class="n">cid</span><span class="p">]</span> <span class="o">=</span> <span class="n">c</span><span class="o">.</span><span class="n">anchor_role</span>
-            <span class="n">anchor_beta_map</span><span class="p">[</span><span class="n">cid</span><span class="p">]</span> <span class="o">=</span> <span class="n">c</span><span class="o">.</span><span class="n">anchor_beta</span> <span class="k">if</span> <span class="n">c</span><span class="o">.</span><span class="n">anchor_role</span> <span class="o">==</span> <span class="s2">&quot;informative&quot;</span> <span class="k">else</span> <span class="mf">0.0</span>
+            <span class="n">anchor_effect_size_map</span><span class="p">[</span><span class="n">cid</span><span class="p">]</span> <span class="o">=</span> <span class="n">c</span><span class="o">.</span><span class="n">anchor_effect_size</span> <span class="k">if</span> <span class="n">c</span><span class="o">.</span><span class="n">anchor_role</span> <span class="o">==</span> <span class="s2">&quot;informative&quot;</span> <span class="k">else</span> <span class="mf">0.0</span>
             <span class="n">i</span> <span class="o">+=</span> <span class="n">c</span><span class="o">.</span><span class="n">n_cluster_features</span>
 
     <span class="c1"># Shift feature values for classes</span>
@@ -554,7 +554,7 @@
         <span class="n">corr_cluster_indices</span><span class="o">=</span><span class="n">cluster_idx</span><span class="p">,</span>
         <span class="n">anchor_idx</span><span class="o">=</span><span class="n">anch_idx</span><span class="p">,</span>
         <span class="n">anchor_role</span><span class="o">=</span><span class="n">anchor_role_map</span><span class="p">,</span>
-        <span class="n">anchor_beta</span><span class="o">=</span><span class="n">anchor_beta_map</span><span class="p">,</span>
+        <span class="n">anchor_effect_size</span><span class="o">=</span><span class="n">anchor_effect_size_map</span><span class="p">,</span>
         <span class="n">anchor_target_cls</span><span class="o">=</span><span class="n">anchor_target_cls_map</span><span class="p">,</span>
         <span class="n">cluster_label</span><span class="o">=</span><span class="n">cluster_label_map</span><span class="p">,</span>
         <span class="n">y_weights</span><span class="o">=</span><span class="n">y_weights</span><span class="p">,</span>

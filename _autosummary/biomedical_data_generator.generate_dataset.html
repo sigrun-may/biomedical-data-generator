@@ -96,7 +96,7 @@
 <p>Features are ordered as: cluster features (anchors first within each cluster),
 then free informative features, then free pseudo features, then noise features.
 Labels y are sampled from a softmax model over <cite>n_classes</cite>: cluster anchors add a positive
-contribution to their assigned class (via <cite>anchor_beta</cite>), free informative features contribute
+contribution to their assigned class (via <cite>anchor_effect_size</cite>), free informative features contribute
 to classes in a simple round-robin assignment (β=0.8). Pseudo and noise features have β=0.
 Reproducibility is controlled by <cite>cfg.random_state</cite> and optional per-cluster seeds. If <cite>weights</cite>
 are specified (length <cite>n_classes</cite>), per-class intercepts are added so that
