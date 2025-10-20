@@ -22,7 +22,11 @@ def test_shapes_and_roles_with_cluster_proxies():
         n_noise=1,
         corr_clusters=[
             CorrCluster(
-                n_cluster_features=4, rho=0.7, structure="equicorrelated", anchor_role="informative", anchor_beta=1.0
+                n_cluster_features=4,
+                rho=0.7,
+                structure="equicorrelated",
+                anchor_role="informative",
+                anchor_effect_size=1.0,
             )
         ],
         n_features=2 + 0 + 1 + (4 - 1),

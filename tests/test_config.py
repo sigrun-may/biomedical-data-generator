@@ -68,7 +68,7 @@ def test_corr_clusters_accept_dicts_and_models():
         n_samples=1,
         n_informative=1,
         corr_clusters=[
-            {"size": 3, "rho": 0.7, "anchor_role": "informative"},
+            {"n_cluster_features": 3, "rho": 0.7, "anchor_role": "informative"},
             CorrCluster(n_cluster_features=2, rho=0.5),
         ],
     )
