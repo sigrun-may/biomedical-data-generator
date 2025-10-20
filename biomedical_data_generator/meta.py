@@ -41,7 +41,7 @@ class DatasetMeta:
     corr_cluster_indices: dict[int, list[int]]  # cluster_id -> column indices
     anchor_idx: dict[int, int | None]  # cluster_id -> anchor col (or None)
     anchor_role: dict[int, str]  # "informative" | "pseudo" | "noise"
-    anchor_beta: dict[int, float]  # 0.0 if latent
+    anchor_effect_size: dict[int, float]  # effect size (beta) for the anchor
     anchor_target_cls: dict[int, int | None]  # target class for the anchor (one-vs-rest)
     cluster_label: dict[int, str | None]  # didactic tags per cluster
 

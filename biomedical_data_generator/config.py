@@ -12,6 +12,7 @@ from collections.abc import Iterable, Mapping, MutableMapping
 from enum import Enum
 from typing import Any, Literal, TypeAlias
 
+import numpy as np
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 RawConfig: TypeAlias = Mapping[str, Any]
@@ -102,77 +103,274 @@ class BatchConfig(BaseModel):
 
 
 class CorrCluster(BaseModel):
-    """One correlated feature block anchored at a role feature.
+    """Correlated feature cluster simulating coordinated biomarker patterns.
 
-    Cluster of correlated features with one anchor feature that contributes to the target. The cluster
-    consists of `size` features, of which one is the anchor. The anchor has a specified role
-    (informative/pseudo/noise) and effect size (`anchor_beta`). Optionally, the anchor can have a stronger effect for a
-    specific class (`anchor_class`). If `anchor_class` is set (0..n_classes-1), the anchor has a stronger effect for
-    that class. This is useful to create class-specific patterns. The `anchor_class` allows boosting a specific class
-    for the anchor feature.
-    The other features in the cluster are proxies, correlated to the anchor but not
-    directly affecting the target. The correlation structure within the cluster can be either equicorrelated or
-    Toeplitz. Toeplitz is defined as correlation decreasing with distance: `rho**|i-j|`.  This `structure` controls the
-    correlation pattern within the cluster.
+    A cluster represents a group of `size` biomarkers that move together, such as
+    markers in a metabolic pathway or proteins in a signaling cascade. One marker
+    acts as the "anchor" (driver), while the others are "proxies" (followers).
 
     Args:
-       size (int): Number of features in the cluster (including the anchor).
-       rho (float): Correlation coefficient (0 < rho < 1).
-       structure (Literal["equicorrelated", "toeplitz"]): Correlation structure within the cluster.
-           - "equicorrelated": All features have the same pairwise correlation `rho`.
-           - "toeplitz": Correlation decreases with distance: `rho**|i-j|`.
-       anchor_role (Literal["informative", "pseudo", "noise"]): Role of the anchor feature.
-       anchor_beta (float): Effect size of the anchor feature on the target (default: 1.0).
-       anchor_class (Optional[int]): If set, the anchor has a stronger effect for this class (0..n_classes-1).
-       random_state (Optional[int]): Random seed for reproducibility.
-       label (Optional[str]): Optional label for the cluster (for display purposes).
+        size: Number of biomarkers in the cluster (including anchor). Must be >= 1.
+        rho: Correlation strength between biomarkers in the cluster.
+            - 0.0 = independent
+            - 0.5 = moderate correlation
+            - 0.8+ = strong correlation (typical for pathway markers)
+            - Range: [0, 1) for equicorrelated; (-1, 1) for toeplitz
+        structure: Pattern of correlation within the cluster.
+            - "equicorrelated": all pairs have the same correlation (default)
+            - "toeplitz": correlation decreases with distance
+        anchor_role: Biological relevance of the anchor marker.
+            - "informative": true biomarker (predictive of disease)
+            - "pseudo": confounding variable (correlated but not causal)
+            - "noise": random measurement (no biological signal)
+        anchor_effect_size: Strength of the anchor's disease association.
+            Can be specified as:
+            - Preset: "small" (0.5), "medium" (1.0), "large" (1.5)
+            - Custom float: any positive value
+            - None: defaults to "medium" (1.0)
+            Only relevant when `anchor_role="informative"`.
+        anchor_class: Disease class that this anchor predicts (0, 1, 2, ...).
+            If None, the anchor contributes to all classes. Only used when
+            `anchor_role="informative"`.
+        random_state: Random seed for reproducibility of this specific cluster.
+            If None, uses the global dataset seed.
+        label: Descriptive name for documentation (e.g., "Inflammation markers").
 
     Examples:
     --------
-       ```python
-       from biomedical_data_generator import CorrCluster
-       c1 = CorrCluster(size=3, rho=0.7, anchor_role="informative", anchor_beta=1.0)
-       c2 = CorrCluster(size=2, rho=0.5, anchor_role="pseudo")
-       print(c1)
-       # size=3 rho=0.7 structure='equicorrelated' anchor_role='informative' anchor_beta=1.0 anchor_class=None
-        random_state=None label=None
-       print(c2)
-       # size=2 rho=0.5 structure='equicorrelated' anchor_role='pseudo' anchor_beta=1.0 anchor_class=None
-        random_state=None label=None
-       ```
+        Strong inflammatory pathway in diseased patients:
 
-    References:
-    ----------
-       May, S., Bischl, B., & Lang, M. (2022). A Benchmark for Data Generation Methods in Classification.
-       In Proceedings of the 25th International Conference on Artificial Intelligence and Statistics (pp. 3433-3443).
-       PMLR.
-       sklearn.datasets.make_classification (for the general idea of informative/pseudo/noise features)
-       https://en.wikipedia.org/wiki/Equicorrelated_random_variables
-       https://en.wikipedia.org/wiki/Toeplitz_matrix
+        >>> inflammation = CorrCluster(
+        ...     size=5,
+        ...     rho=0.8,
+        ...     anchor_role="informative",
+        ...     anchor_effect_size="large",
+        ...     anchor_class=1,  # disease class
+        ...     label="Inflammation pathway"
+        ... )
+
+        Confounding variables (e.g., age-related markers):
+
+        >>> age_confounders = CorrCluster(
+        ...     size=3,
+        ...     rho=0.6,
+        ...     anchor_role="pseudo",
+        ...     label="Age-related markers"
+        ... )
+
+        Weak disease signal with custom effect size:
+
+        >>> weak_signal = CorrCluster(
+        ...     size=4,
+        ...     rho=0.5,
+        ...     anchor_role="informative",
+        ...     anchor_effect_size=0.3,  # custom weak effect
+        ...     label="Subtle biomarkers"
+        ... )
+
+    Notes:
+    -----
+        Medical interpretation:
+        - **Anchor**: The primary biomarker (e.g., CRP in inflammation)
+        - **Proxies**: Secondary markers that follow the anchor (e.g., IL-6, TNF-α)
+        - **rho=0.8**: Typical for tightly regulated biological pathways
+        - **rho=0.5**: Moderate biological coupling
+        - **effect_size="large"**: Strong disease association (easy to detect)
+        - **effect_size="small"**: Subtle signal (requires large sample size)
+
+        Technical details:
+        - Cluster contributes `size` features to the dataset
+        - Anchor appears first, followed by `(size-1)` proxies
+        - Only the anchor has predictive power; proxies are correlated distractors
+        - Proxies count as additional features beyond n_informative/n_pseudo/n_noise
 
     See Also:
     --------
-       DatasetConfig: for the overall dataset configuration.
-       generate_dataset: for generating datasets from the configuration.
-
-    Warning:
-       - This model does not enforce value constraints (e.g., 0 < rho < 1).
-         Such checks are performed during dataset generation.
-       - The `random_state` is per-cluster; if you want overall reproducibility,
-         set the `DatasetConfig.random_state` instead.
+        DatasetConfig : Overall dataset configuration
+        generate_dataset : Main generation function
     """
 
     model_config = ConfigDict(extra="forbid")
 
-    size: int
-    rho: float
+    # Core cluster structure
+    size: int = Field(..., ge=1, description="Number of biomarkers in cluster")
+    rho: float = Field(..., description="Correlation strength (0=independent, 0.8+=strong)")
     structure: Literal["equicorrelated", "toeplitz"] = "equicorrelated"
-    anchor_role: Literal["informative", "pseudo", "noise"] = "informative"
-    anchor_beta: float = 1.0
-    anchor_class: int | None = None
-    random_state: int | None = None  # aka ‘seed’: set to an integer for reproducible results
-    label: str | None = None  # optional display label
 
+    # Biological relevance
+    anchor_role: Literal["informative", "pseudo", "noise"] = "informative"
+    anchor_effect_size: Literal["small", "medium", "large"] | float | None = None
+    anchor_class: int | None = None
+
+    # Metadata
+    random_state: int | None = None
+    label: str | None = None
+
+    @field_validator("size")
+    @classmethod
+    def _validate_size(cls, v: int) -> int:
+        """Ensure cluster has at least one marker."""
+        if v < 1:
+            raise ValueError(f"size must be >= 1, got {v}")
+        return v
+
+    @field_validator("rho")
+    @classmethod
+    def _validate_rho_range(cls, v: float) -> float:
+        """Validate correlation strength is in valid range."""
+        if not (-1.0 < v < 1.0):
+            raise ValueError(
+                f"rho must be in (-1, 1), got {v}. "
+                f"Hint: 0=independent, 0.5=moderate, 0.8=strong"
+            )
+        return v
+
+    @field_validator("anchor_effect_size")
+    @classmethod
+    def _validate_effect_size(cls, v) -> Literal["small", "medium", "large"] | float | None:
+        """Validate effect size is either a preset or positive float."""
+        if v is None:
+            return v
+
+        # Preset string
+        if isinstance(v, str):
+            if v not in ("small", "medium", "large"):
+                raise ValueError(
+                    f"anchor_effect_size must be 'small', 'medium', or 'large', got '{v}'"
+                )
+            return v
+
+        # Custom float
+        try:
+            val = float(v)
+            if val <= 0:
+                raise ValueError(f"anchor_effect_size must be > 0, got {val}")
+            return val
+        except (TypeError, ValueError) as e:
+            raise ValueError(
+                f"anchor_effect_size must be 'small'/'medium'/'large' or positive float, got {v}"
+            ) from e
+
+    @field_validator("anchor_class")
+    @classmethod
+    def _validate_anchor_class(cls, v: int | None) -> int | None:
+        """Ensure disease class is non-negative if specified."""
+        if v is not None and v < 0:
+            raise ValueError(f"anchor_class must be >= 0 or None, got {v}")
+        return v
+
+    def resolve_anchor_effect_size(self) -> float:
+        """Convert anchor_effect_size to numeric value.
+
+        Returns:
+            Numeric effect size for calculations.
+            - "small" → 0.5
+            - "medium" → 1.0  (default)
+            - "large" → 1.5
+            - custom float → as specified
+
+        Examples:
+        --------
+            >>> c = CorrCluster(size=3, rho=0.7, anchor_effect_size="large")
+            >>> c.resolve_anchor_effect_size()
+            1.5
+
+            >>> c = CorrCluster(size=3, rho=0.7, anchor_effect_size=0.8)
+            >>> c.resolve_anchor_effect_size()
+            0.8
+
+            >>> c = CorrCluster(size=3, rho=0.7)  # default
+            >>> c.resolve_anchor_effect_size()
+            1.0
+        """
+        if self.anchor_effect_size is None:
+            return 1.0  # default to medium
+
+        if isinstance(self.anchor_effect_size, str):
+            effect_map = {
+                "small": 0.5,
+                "medium": 1.0,
+                "large": 1.5,
+            }
+            return effect_map[self.anchor_effect_size]
+
+        return float(self.anchor_effect_size)
+
+    def summary(self) -> str:
+        """Return human-readable summary in medical terms.
+
+        Returns:
+            Formatted summary of cluster configuration.
+        """
+        lines = []
+        lines.append(f"{'=' * 60}")
+        lines.append(f"Biomarker Cluster: {self.label or 'Unnamed'}")
+        lines.append(f"{'=' * 60}")
+        lines.append("")
+
+        # Cluster structure
+        lines.append("Cluster Structure:")
+        lines.append(f"  Number of markers: {self.size} (1 anchor + {self.size - 1} proxies)")
+        lines.append(f"  Correlation strength: rho={self.rho} ({self.structure})")
+
+        # Interpret correlation
+        if self.rho < 0.3:
+            corr_desc = "weak/independent"
+        elif self.rho < 0.6:
+            corr_desc = "moderate"
+        elif self.rho < 0.8:
+            corr_desc = "strong"
+        else:
+            corr_desc = "very strong (pathway-like)"
+        lines.append(f"  Interpretation: {corr_desc} biological coupling")
+        lines.append("")
+
+        # Anchor properties
+        lines.append("Anchor Marker:")
+        lines.append(f"  Role: {self.anchor_role}")
+
+        if self.anchor_role == "informative":
+            effect_value = self.resolve_anchor_effect_size()
+            effect_str = self.anchor_effect_size if self.anchor_effect_size else "medium"
+            lines.append(f"  Effect size: {effect_str} (value={effect_value})")
+
+            if self.anchor_class is not None:
+                lines.append(f"  Predicts: class {self.anchor_class}")
+            else:
+                lines.append(f"  Predicts: all classes (round-robin)")
+
+            # Medical interpretation of effect size
+            if effect_value < 0.7:
+                lines.append(f"  → Subtle signal (large sample needed)")
+            elif effect_value < 1.2:
+                lines.append(f"  → Moderate signal (typical biomarker)")
+            else:
+                lines.append(f"  → Strong signal (easy to detect)")
+
+        elif self.anchor_role == "pseudo":
+            lines.append(f"  → Confounding variable (not causal)")
+        else:
+            lines.append(f"  → Random noise (no signal)")
+
+        lines.append("")
+        lines.append(f"Random seed: {self.random_state if self.random_state else 'from dataset'}")
+
+        return "\n".join(lines)
+
+    def __str__(self) -> str:
+        """Concise representation for quick reference."""
+        parts = [f"size={self.size}", f"rho={self.rho}"]
+
+        if self.anchor_role != "informative":
+            parts.append(self.anchor_role)
+
+        if self.anchor_effect_size:
+            parts.append(f"effect={self.anchor_effect_size}")
+
+        if self.label:
+            parts.append(f"'{self.label}'")
+
+        return f"CorrCluster({', '.join(parts)})"
 
 class DatasetConfig(BaseModel):
     """Configuration for synthetic dataset generation.
