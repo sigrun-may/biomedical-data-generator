@@ -18,7 +18,7 @@ def test_n_features_too_small_raises():
             n_informative=2,
             n_pseudo=0,
             n_noise=0,
-            corr_clusters=[CorrCluster(size=5, rho=0.7)],
+            corr_clusters=[CorrCluster(n_cluster_features=5, rho=0.7)],
             n_features=3,  # too small: needs 2 + (5-1) = 6
         )
 
@@ -31,7 +31,7 @@ def test_relaxed_autofixes_n_features():
         n_informative=2,
         n_pseudo=0,
         n_noise=0,
-        corr_clusters=[CorrCluster(size=5, rho=0.7)],
+        corr_clusters=[CorrCluster(n_cluster_features=5, rho=0.7)],
         n_features=3,  # will be raised to 6
     )
     assert cfg.n_features == 6
@@ -52,7 +52,7 @@ def test_breakdown_matches_required_n_features():
         n_informative=3,
         n_pseudo=1,
         n_noise=2,
-        corr_clusters=[CorrCluster(size=4, rho=0.6), CorrCluster(size=3, rho=0.5)],
+        corr_clusters=[CorrCluster(n_cluster_features=4, rho=0.6), CorrCluster(n_cluster_features=3, rho=0.5)],
     )
     b = cfg.breakdown()
     # proxies = (4-1) + (3-1) = 5
@@ -69,7 +69,7 @@ def test_corr_clusters_accept_dicts_and_models():
         n_informative=1,
         corr_clusters=[
             {"size": 3, "rho": 0.7, "anchor_role": "informative"},
-            CorrCluster(size=2, rho=0.5),
+            CorrCluster(n_cluster_features=2, rho=0.5),
         ],
     )
     assert cfg.n_features == 1 + (3 - 1) + (2 - 1) == 4

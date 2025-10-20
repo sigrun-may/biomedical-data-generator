@@ -135,7 +135,7 @@ def _make_names_and_roles(
     # 1) clusters first for contiguous columns
     if cfg.corr_clusters:
         for cid, c in enumerate(cfg.corr_clusters, start=1):
-            cols = list(range(current, current + c.size))
+            cols = list(range(current, current + c.n_cluster_features))
             cluster_indices[cid] = cols
             if c.anchor_role == "informative":
                 # first col is anchor -> named as informative
@@ -153,7 +153,7 @@ def _make_names_and_roles(
                         f"{cfg.prefix_corr}{cid}_{k}" if cfg.feature_naming == "prefixed" else f"feature_{len(names)+1}"
                     )
                     pseudo_idx.append(col)
-                proxies_from_clusters += max(c.size - 1, 0)
+                proxies_from_clusters += max(c.n_cluster_features - 1, 0)
             else:
                 anchor_idx[cid] = None
                 for k, col in enumerate(cols, start=1):
@@ -161,8 +161,8 @@ def _make_names_and_roles(
                         f"{cfg.prefix_corr}{cid}_{k}" if cfg.feature_naming == "prefixed" else f"feature_{len(names)+1}"
                     )
                     pseudo_idx.append(col)
-                proxies_from_clusters += c.size
-            current += c.size
+                proxies_from_clusters += c.n_cluster_features
+            current += c.n_cluster_features
 
     # 2) free informative outside clusters
     n_anchors = sum(1 for c in (cfg.corr_clusters or []) if c.anchor_role == "informative")
@@ -354,7 +354,7 @@ def generate_dataset(
                 anchor_target_cls_map[cid] = None
             cluster_label_map[cid] = c.label
             cluster_matrices.append(B)
-            col_start += c.size
+            col_start += c.n_cluster_features
 
     X_clusters = np.concatenate(cluster_matrices, axis=1) if cluster_matrices else np.empty((cfg.n_samples, 0))
 
@@ -445,7 +445,7 @@ def generate_dataset(
         for cid, c in enumerate(cfg.corr_clusters, start=1):
             anchor_role_map[cid] = c.anchor_role
             anchor_beta_map[cid] = c.anchor_beta if c.anchor_role == "informative" else 0.0
-            i += c.size
+            i += c.n_cluster_features
 
     # Shift feature values for classes
     shift_classes(

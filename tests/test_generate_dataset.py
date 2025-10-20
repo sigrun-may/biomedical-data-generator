@@ -41,7 +41,9 @@ def test_default_returns_dataframe_and_meta_types():
         n_noise=2,
         n_classes=3,
         random_state=42,
-        corr_clusters=[CorrCluster(size=3, rho=0.6, anchor_role="informative", anchor_beta=1.0, anchor_class=2)],
+        corr_clusters=[
+            CorrCluster(n_cluster_features=3, rho=0.6, anchor_role="informative", anchor_beta=1.0, anchor_class=2)
+        ],
     )
     X, y, meta = generate_dataset(cfg)  # default: DataFrame
 
@@ -89,7 +91,9 @@ def test_feature_order_and_prefixes_prefixed_naming():
         n_classes=2,
         random_state=0,
         feature_naming="prefixed",
-        corr_clusters=[CorrCluster(size=3, rho=0.5, anchor_role="informative", anchor_beta=1.0, anchor_class=1)],
+        corr_clusters=[
+            CorrCluster(n_cluster_features=3, rho=0.5, anchor_role="informative", anchor_beta=1.0, anchor_class=1)
+        ],
     )
     X, y, meta = generate_dataset(cfg)
     cols = list(X.columns)
@@ -119,7 +123,9 @@ def test_multiclass_anchor_influences_its_class_mean():
         n_classes=3,
         class_sep=1.5,
         random_state=11,
-        corr_clusters=[CorrCluster(size=4, rho=0.6, anchor_role="informative", anchor_beta=1.2, anchor_class=2)],
+        corr_clusters=[
+            CorrCluster(n_cluster_features=4, rho=0.6, anchor_role="informative", anchor_beta=1.2, anchor_class=2)
+        ],
     )
     X, y, meta = generate_dataset(cfg)
 
@@ -145,7 +151,9 @@ def test_class_weights_bias_matches_priors_approximately():
         weights=weights,
         class_sep=1.0,
         random_state=123,
-        corr_clusters=[CorrCluster(size=3, rho=0.5, anchor_role="informative", anchor_beta=1.0, anchor_class=0)],
+        corr_clusters=[
+            CorrCluster(n_cluster_features=3, rho=0.5, anchor_role="informative", anchor_beta=1.0, anchor_class=0)
+        ],
     )
     X, y, meta = generate_dataset(cfg)
 
@@ -194,7 +202,7 @@ def test_generate_correlated_cluster_and_find_seed_for_correlation():
     rho_target = 0.65
     seed, meta = find_seed_for_correlation(
         n_samples=n,
-        size=size,
+        n_cluster_features=size,
         rho_target=rho_target,
         structure="equicorrelated",
         tol=0.03,
@@ -216,7 +224,9 @@ def test_dataset_seed_for_class_weights_helper():
         n_classes=3,
         weights=[0.5, 0.3, 0.2],
         random_state=None,  # will be set by the helper
-        corr_clusters=[CorrCluster(size=3, rho=0.6, anchor_role="informative", anchor_beta=1.0, anchor_class=1)],
+        corr_clusters=[
+            CorrCluster(n_cluster_features=3, rho=0.6, anchor_role="informative", anchor_beta=1.0, anchor_class=1)
+        ],
     )
     seed, X, y, meta = find_dataset_seed_for_class_weights(cfg, tol=0.06, start_seed=0, max_tries=200)
     assert isinstance(seed, int)
@@ -250,7 +260,9 @@ def test_dataset_seed_for_score_helper_max_mode():
         n_classes=3,
         class_sep=1.0,
         random_state=None,
-        corr_clusters=[CorrCluster(size=3, rho=0.5, anchor_role="informative", anchor_beta=1.0, anchor_class=0)],
+        corr_clusters=[
+            CorrCluster(n_cluster_features=3, rho=0.5, anchor_role="informative", anchor_beta=1.0, anchor_class=0)
+        ],
     )
     seed, X, y, meta, score = find_dataset_seed_for_score(
         cfg, sep_score, mode="max", threshold=0.12, start_seed=0, max_tries=150

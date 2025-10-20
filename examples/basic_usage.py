@@ -26,7 +26,7 @@ def main() -> None:
         corr_between=0.1,
         corr_clusters=[
             CorrCluster(
-                size=3,
+                n_cluster_features=3,
                 rho=0.7,
                 structure="equicorrelated",
                 anchor_role="informative",

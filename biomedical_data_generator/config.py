@@ -12,7 +12,6 @@ from collections.abc import Iterable, Mapping, MutableMapping
 from enum import Enum
 from typing import Any, Literal, TypeAlias
 
-import numpy as np
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 RawConfig: TypeAlias = Mapping[str, Any]
@@ -110,7 +109,7 @@ class CorrCluster(BaseModel):
     acts as the "anchor" (driver), while the others are "proxies" (followers).
 
     Args:
-        size: Number of biomarkers in the cluster (including anchor). Must be >= 1.
+        n_cluster_features: Number of biomarkers in the cluster (including anchor). Must be >= 1.
         rho: Correlation strength between biomarkers in the cluster.
             - 0.0 = independent
             - 0.5 = moderate correlation
@@ -141,7 +140,7 @@ class CorrCluster(BaseModel):
         Strong inflammatory pathway in diseased patients:
 
         >>> inflammation = CorrCluster(
-        ...     size=5,
+        ...     n_cluster_features=5,
         ...     rho=0.8,
         ...     anchor_role="informative",
         ...     anchor_effect_size="large",
@@ -152,7 +151,7 @@ class CorrCluster(BaseModel):
         Confounding variables (e.g., age-related markers):
 
         >>> age_confounders = CorrCluster(
-        ...     size=3,
+        ...     n_cluster_features=3,
         ...     rho=0.6,
         ...     anchor_role="pseudo",
         ...     label="Age-related markers"
@@ -161,7 +160,7 @@ class CorrCluster(BaseModel):
         Weak disease signal with custom effect size:
 
         >>> weak_signal = CorrCluster(
-        ...     size=4,
+        ...     n_cluster_features=4,
         ...     rho=0.5,
         ...     anchor_role="informative",
         ...     anchor_effect_size=0.3,  # custom weak effect
@@ -193,7 +192,7 @@ class CorrCluster(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     # Core cluster structure
-    size: int = Field(..., ge=1, description="Number of biomarkers in cluster")
+    n_cluster_features: int = Field(..., ge=1, description="Number of biomarkers in cluster")
     rho: float = Field(..., description="Correlation strength (0=independent, 0.8+=strong)")
     structure: Literal["equicorrelated", "toeplitz"] = "equicorrelated"
 
@@ -206,7 +205,7 @@ class CorrCluster(BaseModel):
     random_state: int | None = None
     label: str | None = None
 
-    @field_validator("size")
+    @field_validator("n_cluster_features")
     @classmethod
     def _validate_size(cls, v: int) -> int:
         """Ensure cluster has at least one marker."""
@@ -219,10 +218,7 @@ class CorrCluster(BaseModel):
     def _validate_rho_range(cls, v: float) -> float:
         """Validate correlation strength is in valid range."""
         if not (-1.0 < v < 1.0):
-            raise ValueError(
-                f"rho must be in (-1, 1), got {v}. "
-                f"Hint: 0=independent, 0.5=moderate, 0.8=strong"
-            )
+            raise ValueError(f"rho must be in (-1, 1), got {v}. " f"Hint: 0=independent, 0.5=moderate, 0.8=strong")
         return v
 
     @field_validator("anchor_effect_size")
@@ -235,9 +231,7 @@ class CorrCluster(BaseModel):
         # Preset string
         if isinstance(v, str):
             if v not in ("small", "medium", "large"):
-                raise ValueError(
-                    f"anchor_effect_size must be 'small', 'medium', or 'large', got '{v}'"
-                )
+                raise ValueError(f"anchor_effect_size must be 'small', 'medium', or 'large', got '{v}'")
             return v
 
         # Custom float
@@ -247,9 +241,7 @@ class CorrCluster(BaseModel):
                 raise ValueError(f"anchor_effect_size must be > 0, got {val}")
             return val
         except (TypeError, ValueError) as e:
-            raise ValueError(
-                f"anchor_effect_size must be 'small'/'medium'/'large' or positive float, got {v}"
-            ) from e
+            raise ValueError(f"anchor_effect_size must be 'small'/'medium'/'large' or positive float, got {v}") from e
 
     @field_validator("anchor_class")
     @classmethod
@@ -271,15 +263,15 @@ class CorrCluster(BaseModel):
 
         Examples:
         --------
-            >>> c = CorrCluster(size=3, rho=0.7, anchor_effect_size="large")
+            >>> c = CorrCluster(n_cluster_features=3, rho=0.7, anchor_effect_size="large")
             >>> c.resolve_anchor_effect_size()
             1.5
 
-            >>> c = CorrCluster(size=3, rho=0.7, anchor_effect_size=0.8)
+            >>> c = CorrCluster(n_cluster_features=3, rho=0.7, anchor_effect_size=0.8)
             >>> c.resolve_anchor_effect_size()
             0.8
 
-            >>> c = CorrCluster(size=3, rho=0.7)  # default
+            >>> c = CorrCluster(n_cluster_features=3, rho=0.7)  # default
             >>> c.resolve_anchor_effect_size()
             1.0
         """
@@ -310,7 +302,9 @@ class CorrCluster(BaseModel):
 
         # Cluster structure
         lines.append("Cluster Structure:")
-        lines.append(f"  Number of markers: {self.size} (1 anchor + {self.size - 1} proxies)")
+        lines.append(
+            f"  Number of markers: {self.n_cluster_features} (1 anchor + {self.n_cluster_features - 1} proxies)"
+        )
         lines.append(f"  Correlation strength: rho={self.rho} ({self.structure})")
 
         # Interpret correlation
@@ -337,20 +331,20 @@ class CorrCluster(BaseModel):
             if self.anchor_class is not None:
                 lines.append(f"  Predicts: class {self.anchor_class}")
             else:
-                lines.append(f"  Predicts: all classes (round-robin)")
+                lines.append("  Predicts: all classes (round-robin)")
 
             # Medical interpretation of effect size
             if effect_value < 0.7:
-                lines.append(f"  → Subtle signal (large sample needed)")
+                lines.append("  → Subtle signal (large sample needed)")
             elif effect_value < 1.2:
-                lines.append(f"  → Moderate signal (typical biomarker)")
+                lines.append("  → Moderate signal (typical biomarker)")
             else:
-                lines.append(f"  → Strong signal (easy to detect)")
+                lines.append("  → Strong signal (easy to detect)")
 
         elif self.anchor_role == "pseudo":
-            lines.append(f"  → Confounding variable (not causal)")
+            lines.append("  → Confounding variable (not causal)")
         else:
-            lines.append(f"  → Random noise (no signal)")
+            lines.append("  → Random noise (no signal)")
 
         lines.append("")
         lines.append(f"Random seed: {self.random_state if self.random_state else 'from dataset'}")
@@ -359,7 +353,7 @@ class CorrCluster(BaseModel):
 
     def __str__(self) -> str:
         """Concise representation for quick reference."""
-        parts = [f"size={self.size}", f"rho={self.rho}"]
+        parts = [f"size={self.n_cluster_features}", f"rho={self.rho}"]
 
         if self.anchor_role != "informative":
             parts.append(self.anchor_role)
@@ -371,6 +365,7 @@ class CorrCluster(BaseModel):
             parts.append(f"'{self.label}'")
 
         return f"CorrCluster({', '.join(parts)})"
+
 
 class DatasetConfig(BaseModel):
     """Configuration for synthetic dataset generation.
@@ -627,7 +622,7 @@ class DatasetConfig(BaseModel):
         n_inf = int(kwargs.get("n_informative", 0))
         n_pse = int(kwargs.get("n_pseudo", 0))
         n_noise = int(kwargs.get("n_noise", 0))
-        proxies = sum(cc.size - 1 for cc in norm_clusters)
+        proxies = sum(cc.n_cluster_features - 1 for cc in norm_clusters)
         required = n_inf + n_pse + n_noise + proxies
 
         n_feat = kwargs.get("n_features")
@@ -706,7 +701,7 @@ class DatasetConfig(BaseModel):
         """
         if not clusters:
             return 0
-        return sum(max(0, int(c.size) - 1) for c in clusters)
+        return sum(max(0, int(c.n_cluster_features) - 1) for c in clusters)
 
     def breakdown(self) -> dict[str, int]:
         """Return a structured breakdown of feature counts, incl. cluster proxies.
@@ -802,15 +797,16 @@ class DatasetConfig(BaseModel):
                 lines.append(header)
 
             for i, c in enumerate(self.corr_clusters, start=1):
-                proxies = max(0, c.size - 1)  # consistent with required_n_features
+                proxies = max(0, c.n_cluster_features - 1)  # consistent with required_n_features
                 label = c.label or ""
                 if as_markdown:
                     lines.append(
-                        f"| {i} | {c.size} | {c.anchor_role} | {c.rho} | {c.structure} | " f"{label} | {proxies} |"
+                        f"| {i} | {c.n_cluster_features} | {c.anchor_role} | {c.rho} | {c.structure} | "
+                        f"{label} | {proxies} |"
                     )
                 else:
                     lines.append(
-                        f"- #{i}: size={c.size}, role={c.anchor_role}, rho={c.rho}, "
+                        f"- #{i}: size={c.n_cluster_features}, role={c.anchor_role}, rho={c.rho}, "
                         f"structure={c.structure}, label={label}, proxies={proxies}"
                     )
 

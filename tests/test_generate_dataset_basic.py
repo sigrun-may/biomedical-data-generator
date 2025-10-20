@@ -21,7 +21,9 @@ def test_shapes_and_roles_with_cluster_proxies():
         n_pseudo=0,
         n_noise=1,
         corr_clusters=[
-            CorrCluster(size=4, rho=0.7, structure="equicorrelated", anchor_role="informative", anchor_beta=1.0)
+            CorrCluster(
+                n_cluster_features=4, rho=0.7, structure="equicorrelated", anchor_role="informative", anchor_beta=1.0
+            )
         ],
         n_features=2 + 0 + 1 + (4 - 1),
         random_state=11,
@@ -42,7 +44,9 @@ def test_class_weights_bias_matches_priors_approximately():
         n_informative=3,
         n_pseudo=0,
         n_noise=0,
-        corr_clusters=[CorrCluster(size=3, rho=0.6, structure="toeplitz", anchor_role="informative", anchor_beta=1.0)],
+        corr_clusters=[
+            CorrCluster(n_cluster_features=3, rho=0.6, structure="toeplitz", anchor_role="informative", anchor_beta=1.0)
+        ],
         n_features=3 + (3 - 1),
         n_classes=3,
         weights=[0.2, 0.5, 0.3],
