@@ -107,15 +107,11 @@ def test_anchor_improves_classification_accuracy():
     )
 
 
-@pytest.mark.skip(reason="class_rho not yet implemented - labels generated after features")
 def test_class_specific_correlation_in_clusters():
     """Verify class_rho creates class-specific correlations.
 
     Features should be more correlated within target class samples.
-
-    NOTE: Currently skipped because class_rho requires labels to be known
-    during feature generation, but current implementation generates labels
-    AFTER features. This is a known limitation.
+    Labels are now generated BEFORE features, so class_rho works correctly.
     """
     cfg = DatasetConfig(
         n_samples=200,
