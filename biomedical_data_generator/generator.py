@@ -23,34 +23,6 @@ from .features.noise import sample_noise
 from .meta import DatasetMeta
 
 
-def _normalize_priors(weights: Iterable[float] | None, n_classes: int) -> np.ndarray:
-    """Normalize non-negative weights into a probability vector of length n_classes.
-
-    If weights is None, returns uniform priors.
-
-    Args:
-        weights: Iterable of non-negative weights (length n_classes) or None.
-        n_classes: Number of classes (must be >= 2).
-
-    Returns:
-    -------
-        np.ndarray: Normalized probability vector of shape (n_classes,).
-
-    Raises:
-    ------
-        ValueError: If weights length != n_classes or sum(weights) <= 0.
-    """
-    if weights is None:
-        return np.ones(n_classes, dtype=float) / n_classes
-    p = np.asarray(list(weights), dtype=float)
-    if p.shape[0] != n_classes:
-        raise ValueError(f"weights length must equal n_classes (got {p.shape[0]} vs {n_classes})")
-    s = float(p.sum())
-    if s <= 0:
-        raise ValueError("sum(weights) must be > 0.")
-    return p / s
-
-
 def _labels_from_counts(counts: dict[int, int], n_classes: int, rng: np.random.Generator) -> np.ndarray:
     """Build label vector y exactly matching the requested counts and shuffle it.
 
@@ -76,36 +48,10 @@ def _labels_from_counts(counts: dict[int, int], n_classes: int, rng: np.random.G
         if c > 0:
             y_parts.append(np.full(c, k, dtype=int))
     y = np.concatenate(y_parts) if y_parts else np.empty((0,), dtype=int)
-    if y.size != sum(int(counts[k]) for k in range(n_classes)):
+    if y.size != sum(int(counts.get(k, 0)) for k in range(n_classes)):
         raise RuntimeError("Counts assembly mismatch.")
     rng.shuffle(y)
     return y
-
-
-def _make_labels(cfg, rng: np.random.Generator) -> np.ndarray:
-    """Make label vector y according to cfg.
-
-    Choose label source with precedence:
-      1) cfg.class_counts -> exact class sizes (best for small n)
-      2) cfg.weights      -> stochastic sampling by normalized priors
-      3) uniform          -> equal priors.
-
-    Args:
-        cfg: DatasetConfig with n_samples, n_classes, optional class_counts or weights.
-        rng: Random number generator for sampling/shuffling.
-
-    Returns:
-    -------
-        np.ndarray: Label vector of shape (n_samples,) with values in {0, ..., n_classes-1}.
-
-    Raises:
-    ------
-        ValueError: If cfg is invalid (e.g., n_classes < 2).
-    """
-    if getattr(cfg, "class_counts", None) is not None:
-        return _labels_from_counts(cfg.class_counts, cfg.n_classes, rng)
-    priors = _normalize_priors(getattr(cfg, "weights", None), cfg.n_classes)
-    return rng.choice(cfg.n_classes, size=cfg.n_samples, p=priors).astype(int)
 
 
 # ==================
@@ -272,9 +218,9 @@ def generate_dataset(
 
     Features are ordered as: cluster features (anchors first within each cluster),
     then free informative features, then free pseudo features, then noise features.
-    Labels y must be explicitly specified via either `cfg.class_counts` (exact per-class sample counts)
-    or `cfg.weights` (target class proportions for stochastic sampling). Class-wise shifts are then
-    applied to informative features and cluster anchors (via `anchor_effect_size`) to create class separation.
+    Labels y must be explicitly specified via `cfg.class_counts` (exact per-class sample counts).
+    Class-wise shifts are then applied to informative features and cluster anchors
+    (via `anchor_effect_size`) to create class separation.
     Reproducibility is controlled by `cfg.random_state` and optional per-cluster seeds.
     Feature names follow either a "prefixed" scheme (e.g., `i*`, `corr{cid}_k`, `p*`, `n*`)
     or a generic `feature_1..p`. The returned `meta` includes role masks, cluster indices,
@@ -282,8 +228,9 @@ def generate_dataset(
 
     Args:
         cfg (DatasetConfig): Configuration including feature counts, cluster layout, correlation
-            parameters, naming policy, randomness controls, `n_classes`, and either `class_counts` or `weights`.
-            At least one of `class_counts` or `weights` must be specified.
+            parameters, naming policy, randomness controls, `n_classes`, and `class_counts`.
+            The `class_counts` parameter is required and must be a dict mapping class indices
+            to exact sample counts (e.g., {0: 50, 1: 50}).
         return_dataframe (bool, optional): If True (default), return `X` as a `pandas.DataFrame`
             with column names. If False, return `X` as a NumPy array in the same column order.
         **overrides: Optional config overrides merged into `cfg` (e.g., `n_samples=...`).
@@ -299,7 +246,7 @@ def generate_dataset(
 
     Raises:
     ------
-        ValueError: If neither `class_counts` nor `weights` is specified.
+        ValueError: If `class_counts` is not specified or if sum(class_counts) != n_samples.
     """
     if overrides:
         cfg = cfg.model_copy(update=overrides)
@@ -307,21 +254,19 @@ def generate_dataset(
     if int(cfg.n_classes) < 2:
         raise ValueError("n_classes must be >= 2.")
 
-    # Require explicit label specification
-    if cfg.class_counts is None and cfg.weights is None:
+    # Require explicit class_counts
+    if cfg.class_counts is None:
         raise ValueError(
-            "Either 'class_counts' or 'weights' must be specified. "
-            "Automatic label generation via softmax is no longer supported."
+            "class_counts must be specified. "
+            "Specify exact per-class sample counts as a dict (e.g., {0: 50, 1: 50})."
         )
 
-    if cfg.weights is not None:
-        if len(cfg.weights) != cfg.n_classes:
-            raise ValueError("weights must have length n_classes.")
-        if any(w < 0 for w in cfg.weights):
-            raise ValueError("weights must be non-negative.")
-        wsum = float(sum(cfg.weights))
-        if wsum <= 0:
-            raise ValueError("sum(weights) must be > 0.")
+    # Validate class_counts
+    if sum(cfg.class_counts.values()) != cfg.n_samples:
+        raise ValueError(
+            f"sum(class_counts) must equal n_samples. "
+            f"Got sum={sum(cfg.class_counts.values())}, expected n_samples={cfg.n_samples}."
+        )
 
     rng_global = np.random.default_rng(cfg.random_state)
 
@@ -408,9 +353,9 @@ def generate_dataset(
     # Check totals
     assert X.shape[1] == len(names) == cfg.n_features, (X.shape[1], len(names), cfg.n_features)
 
-    # Label generation (explicit via class_counts or weights)
+    # Label generation (explicit via class_counts)
     K = int(cfg.n_classes)
-    y = _make_labels(cfg, rng_global)  # shape (n_samples,), dtype=int
+    y = _labels_from_counts(cfg.class_counts, cfg.n_classes, rng_global)  # shape (n_samples,), dtype=int
 
     # Empirical class stats (always compute from y)
     counts = np.bincount(y, minlength=K).astype(int)
@@ -470,72 +415,8 @@ def generate_dataset(
 
 
 # ==========================================================
-# Dataset-level acceptance helpers (multiclass-aware)
+# Dataset-level acceptance helpers
 # ==========================================================
-def find_dataset_seed_for_class_weights(
-    cfg: DatasetConfig,
-    /,
-    *,
-    tol: float = 0.02,
-    start_seed: int = 0,
-    max_tries: int = 500,
-    return_dataframe: bool = True,
-    **overrides,
-) -> tuple[int, DataFrame | NDArray[np.float64], NDArray[np.int64], DatasetMeta]:
-    """Find a random_state such that empirical class proportions approximate cfg.weights.
-
-    Tries seeds starting at `start_seed` and returns the first seed for which the
-    L1 distance between the empirical class proportions and the target weights is <= tol.
-    Works for multiclass (n_classes >= 2). If cfg.weights is None, the target is uniform.
-
-    Args:
-        cfg: Base configuration to use (n_classes may be > 2).
-        tol: L1 tolerance against target weights. Defaults to 0.02.
-        start_seed: First seed to try. Defaults to 0.
-        max_tries: Maximum number of seeds to try. Defaults to 500.
-        return_dataframe: Return X as DataFrame (default) or ndarray.
-        **overrides: Optional keyword overrides merged into cfg for generation.
-
-    Returns:
-    -------
-        tuple:
-            - seed (int): The seed that satisfied the tolerance.
-            - X (pandas.DataFrame | np.ndarray): Feature matrix for that seed.
-            - y (np.ndarray): Labels for that seed.
-            - meta (DatasetMeta): Metadata for that seed.
-
-    Raises:
-    ------
-        RuntimeError: If no seed satisfies the tolerance within max_tries.
-        ValueError: If cfg.n_classes < 2 or weights length mismatches n_classes.
-    """
-    if cfg.n_classes < 2:
-        raise ValueError("n_classes must be >= 2.")
-
-    # Normalize/derive target weights
-    if cfg.weights is None:
-        target = np.full(cfg.n_classes, 1.0 / cfg.n_classes, dtype=float)
-    else:
-        if len(cfg.weights) != cfg.n_classes:
-            raise ValueError("weights must have length n_classes.")
-        target = np.asarray(cfg.weights, dtype=float)
-        s = target.sum()
-        if s <= 0:
-            raise ValueError("sum(weights) must be > 0.")
-        target = target / s
-
-    seed = start_seed
-    for _ in range(max_tries):
-        X, y, meta = generate_dataset(cfg, return_dataframe=return_dataframe, **({"random_state": seed} | overrides))
-        # empirical proportions
-        counts = np.bincount(y, minlength=cfg.n_classes).astype(float)
-        emp = counts / counts.sum()
-        if np.abs(emp - target).sum() <= tol:
-            return seed, X, y, meta
-        seed += 1
-    raise RuntimeError("No dataset seed satisfied class-weights tolerance within max_tries.")
-
-
 def find_dataset_seed_for_score(
     cfg: DatasetConfig,
     scorer: Callable[[DataFrame | NDArray[np.float64], NDArray[np.int64], DatasetMeta], float],
