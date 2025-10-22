@@ -270,10 +270,15 @@ def generate_dataset(
 
     rng_global = np.random.default_rng(cfg.random_state)
 
+    # STEP 1: Generate labels FIRST (before features, so class_rho can use them)
+    K = int(cfg.n_classes)
+    y = _labels_from_counts(cfg.class_counts, cfg.n_classes, rng_global)  # shape (n_samples,), dtype=int
+
     # names & roles (+ totals validation inside)
     names, inf_idx, pse_idx, noi_idx, cluster_idx, anch_idx = _make_names_and_roles(cfg)
 
-    # 1) build matrices per cluster (respect per-cluster seed if provided)
+    # STEP 2: Build features (now with access to labels for class_rho)
+    # 2a) build matrices per cluster (respect per-cluster seed if provided)
     cluster_matrices: list[NDArray[np.float64]] = []
     # Map: anchor feature column -> (beta, class_id)
     anchor_contrib: dict[int, tuple[float, int]] = {}
@@ -290,7 +295,7 @@ def generate_dataset(
                 rng=rng,
                 structure=c.structure,
                 rho=c.rho,
-                class_labels=None,  # Labels not available yet during feature generation
+                class_labels=y,  # NOW labels are available for class_rho!
                 class_rho=c.class_rho,
                 baseline_rho=c.rho_baseline,
             )
@@ -314,17 +319,17 @@ def generate_dataset(
 
     X_clusters = np.concatenate(cluster_matrices, axis=1) if cluster_matrices else np.empty((cfg.n_samples, 0))
 
-    # 2) free informative (exactly n_informative - n_anchors)
+    # 2b) free informative (exactly n_informative - n_anchors)
     n_anchors = sum(1 for c in (cfg.corr_clusters or []) if c.anchor_role == "informative")
     n_inf_free = cfg.n_informative - n_anchors
     X_inf = rng_global.normal(size=(cfg.n_samples, n_inf_free)) if n_inf_free > 0 else np.empty((cfg.n_samples, 0))
 
-    # 3) free pseudo (exactly cfg.n_pseudo, independent of proxies)
+    # 2c) free pseudo (exactly cfg.n_pseudo, independent of proxies)
     X_pseudo = (
         rng_global.normal(size=(cfg.n_samples, cfg.n_pseudo)) if cfg.n_pseudo > 0 else np.empty((cfg.n_samples, 0))
     )
 
-    # 4) noise
+    # 2d) noise
     if cfg.n_noise > 0:
         params = _resolve_noise_params(cfg.noise_distribution, cfg.noise_scale, cfg.noise_params)
         distribution = (
@@ -353,11 +358,7 @@ def generate_dataset(
     # Check totals
     assert X.shape[1] == len(names) == cfg.n_features, (X.shape[1], len(names), cfg.n_features)
 
-    # Label generation (explicit via class_counts)
-    K = int(cfg.n_classes)
-    y = _labels_from_counts(cfg.class_counts, cfg.n_classes, rng_global)  # shape (n_samples,), dtype=int
-
-    # Empirical class stats (always compute from y)
+    # STEP 3: Compute empirical class stats (labels already generated in STEP 1)
     counts = np.bincount(y, minlength=K).astype(int)
     y_counts = {int(k): int(counts[k]) for k in range(K)}
     y_weights = tuple((counts / counts.sum()).tolist())
