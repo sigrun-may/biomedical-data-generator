@@ -166,24 +166,16 @@ def test_class_counts_reproducibility_with_seed():
     assert dict(meta1.y_counts) == dict(meta2.y_counts) == {0: 35, 1: 15}
 
 
-def test_class_counts_vs_weights_api_backward_compat():
-    """If only weights are given, we should still see stochastic proportions (not exact),
-    i.e., not equal to arbitrary fixed target."""
+def test_missing_class_counts_raises():
+    """Without class_counts, generation should raise ValueError."""
     cfg = DatasetConfig(
         n_samples=200,
         n_classes=2,
-        weights=[0.85, 0.15],  # no class_counts here
         n_informative=4,
         n_noise=8,
         class_sep=1.0,
         feature_naming="prefixed",
         random_state=0,
     )
-    X, y, meta = generate_dataset(cfg, return_dataframe=True)
-    obs = _bincount_dict(y, cfg.n_classes)
-    # Approximately 85/15, but not enforced exact (allow binomial fluctuation)
-    ratio = obs[1] / 200.0
-    assert 0.08 <= ratio <= 0.22
-    # meta should store empirical weights
-    assert hasattr(meta, "y_weights")
-    assert pytest.approx(sum(meta.y_weights), rel=0, abs=1e-12) == 1.0
+    with pytest.raises(ValueError, match="class_counts must be specified"):
+        generate_dataset(cfg, return_dataframe=True)

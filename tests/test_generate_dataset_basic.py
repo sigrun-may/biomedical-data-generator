@@ -30,7 +30,7 @@ def test_shapes_and_roles_with_cluster_proxies():
             )
         ],
         n_features=2 + 0 + 1 + (4 - 1),
-        weights=[0.5, 0.5],  # Add explicit class weights
+        class_counts={0: 60, 1: 60},  # Explicit class counts
         random_state=11,
     )
     X, y, meta = generate_dataset(cfg, return_dataframe=False)
@@ -43,7 +43,7 @@ def test_shapes_and_roles_with_cluster_proxies():
     assert isinstance(meta.corr_cluster_indices, dict) and len(meta.corr_cluster_indices) >= 1
 
 
-def test_class_weights_bias_matches_priors_approximately():
+def test_class_counts_exact_match():
     cfg = DatasetConfig(
         n_samples=400,
         n_informative=3,
@@ -56,19 +56,26 @@ def test_class_weights_bias_matches_priors_approximately():
         ],
         n_features=3 + (3 - 1),
         n_classes=3,
-        weights=[0.2, 0.5, 0.3],
+        class_counts={0: 80, 1: 200, 2: 120},  # Explicit class counts
         class_sep=1.2,
         random_state=123,
     )
     X, y, meta = generate_dataset(cfg, return_dataframe=False)
-    counts = np.bincount(y, minlength=cfg.n_classes).astype(float)
-    emp = counts / counts.sum()
-    tgt = np.array(cfg.weights, dtype=float) / np.sum(cfg.weights)
-    # allow some tolerance
-    assert np.abs(emp - tgt).sum() <= 0.15
+    # Check exact match with requested counts
+    assert meta.y_counts == {0: 80, 1: 200, 2: 120}
+    counts = np.bincount(y, minlength=cfg.n_classes)
+    assert counts[0] == 80 and counts[1] == 200 and counts[2] == 120
 
 
 def test_invalid_n_classes_raises():
-    cfg = DatasetConfig(n_samples=50, n_informative=2, n_pseudo=0, n_noise=0, n_features=2, n_classes=1)
+    cfg = DatasetConfig(
+        n_samples=50,
+        n_informative=2,
+        n_pseudo=0,
+        n_noise=0,
+        n_features=2,
+        n_classes=1,
+        class_counts={0: 50}  # Even with class_counts, n_classes=1 should fail
+    )
     with pytest.raises(ValueError):
         generate_dataset(cfg, return_dataframe=False)
