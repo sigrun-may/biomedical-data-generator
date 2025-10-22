@@ -5,255 +5,255 @@
 # which is available at https://opensource.org/licenses/MIT
 
 """Functions to generate correlated feature clusters simulating biomarker patterns."""
-from typing import Literal, cast
+
+# This module provides a building block to generate
+# *correlated* feature clusters.
+# It intentionally focuses on the essentials:
+#   - Build a *target correlation* matrix R (equicorrelated or Toeplitz).
+#   - Factorize R using a robust Cholesky (with diagonal jitter fallback).
+#   - Sample X = Z @ L.T with Z ~ N(0, I), so that corr(X) ≈ R (in expectation).
+#
+# IMPORTANT (for teaching):
+# - We do NOT standardize or rescale here. If you need standardization, do it
+#   later in generator.py (after assembling all blocks), so responsibilities stay clear.
+# - For n very small (e.g., n=30), the *empirical* sample correlations are noisy.
+#   The *population* correlation implied by construction is correct, but your
+#   finite-sample estimate will vary substantially — this is expected.
+# You can extend realism later (copulas, heteroskedasticity, blockwise structures)
+# WITHOUT changing this public API by adding optional post-steps elsewhere.
+
+from __future__ import annotations
+
+from typing import Dict, Literal, Mapping, Optional
 
 import numpy as np
 from numpy.typing import NDArray
 
-from ..config import CorrCluster
+
+CorrelationStructure = Literal["equicorrelated", "toeplitz"]
+
+__all__ = [
+    "CorrelationStructure",
+    "build_correlation_matrix",
+    "sample_cluster",
+]
 
 
-# =========================
-# Covariance matrix builders
-# =========================
-def _cov_equicorr(n_cluster_features: int, rho: float) -> NDArray[np.float64]:
-    """Build equicorrelated covariance matrix.
+# ============================================================================
+# Correlation matrix construction (single source of truth)
+# ============================================================================
 
-    All pairs have the same correlation rho.
-    Typical for tightly regulated biological pathways.
+def build_correlation_matrix(
+    n_features: int,
+    rho: float,
+    structure: CorrelationStructure,
+) -> NDArray[np.float64]:
+    """Build a correlation matrix with the requested structure.
 
-    Args:
-        n_cluster_features: Number of markers in the cluster.
-        rho: Correlation strength (0 ≤ rho < 1).
+    Two supported patterns:
 
-    Returns:
-        Covariance matrix of shape (n_cluster_features, n_cluster_features).
-    """
-    identity: NDArray[np.float64] = np.eye(n_cluster_features, dtype=np.float64)
-    ones: NDArray[np.float64] = np.ones((n_cluster_features, n_cluster_features), dtype=np.float64)
-    return (1 - rho) * identity + rho * ones
+    1) Equicorrelated (compound symmetry)
+       R = (1 - rho) * I + rho * J
+       Positive definite iff  -1/(p-1) < rho < 1  for p = n_features (strict).
+       Intuition: Every pair of features shares the same correlation rho.
 
-
-def _cov_toeplitz(n_cluster_features: int, rho: float) -> NDArray[np.float64]:
-    """Build Toeplitz (AR-1 like) covariance matrix.
-
-    Correlation decays with distance: rho**|i-j|.
-    Useful for ordered biomarkers (e.g., time series, spatial gradients).
-
-    Args:
-        n_cluster_features: Number of markers in the cluster.
-        rho: Base correlation (-1 < rho < 1).
-
-    Returns:
-        Covariance matrix of shape (n_cluster_features, n_cluster_features).
-    """
-    idx = np.arange(n_cluster_features, dtype=np.int64)
-    D: NDArray[np.float64] = np.abs(idx[:, None] - idx[None, :]).astype(np.float64, copy=False)
-    return np.asarray(rho**D, dtype=np.float64)
-
-
-def sample_cluster_matrix(n: int, cluster: CorrCluster, rng: np.random.Generator) -> NDArray[np.float64]:
-    """Sample a correlated biomarker cluster from a multivariate normal distribution.
+    2) Toeplitz (AR(1)-like)
+       R_ij = rho ** |i - j|
+       Positive definite for |rho| < 1 (strict).
+       Intuition: Features are ordered; correlation decays with distance.
 
     Args:
-        n: Number of samples (patients).
-        cluster: Cluster configuration with correlation structure.
-        rng: Random number generator for reproducibility.
+        n_features: Number of columns p in the cluster (p > 0).
+        rho: Correlation strength parameter (validated per structure).
+        structure: Either "equicorrelated" or "toeplitz".
 
     Returns:
-        Feature matrix of shape (n, cluster.n_cluster_features) with standardized columns.
-        Columns represent correlated biomarkers.
+        Correlation matrix of shape (p, p), dtype float64.
 
     Raises:
-        ValueError: If cluster parameters are invalid.
-
-    Examples:
-    --------
-        >>> from biomedical_data_generator import CorrCluster
-        >>> import numpy as np
-        >>>
-        >>> inflammation = CorrCluster(n_cluster_features=5, rho=0.8, label="Cytokines")
-        >>> rng = np.random.default_rng(42)
-        >>> X = sample_cluster_matrix(n=200, cluster=inflammation, rng=rng)
-        >>> X.shape
-        (200, 5)
-        >>> np.corrcoef(X, rowvar=False).mean()  # should be close to 0.8
-        0.79...
+        ValueError: If n_features <= 0 or if rho violates PD constraints.
     """
-    # Build covariance matrix based on structure
-    if cluster.structure == "equicorrelated":
-        Sigma = _cov_equicorr(cluster.n_cluster_features, cluster.rho)
-    else:  # toeplitz
-        Sigma = _cov_toeplitz(cluster.n_cluster_features, cluster.rho)
-
-    # Cholesky decomposition for efficient sampling
-    L = np.linalg.cholesky(Sigma)
-
-    # Sample from standard normal and transform
-    Z: NDArray[np.float64] = rng.normal(size=(n, cluster.n_cluster_features)).astype(np.float64, copy=False)
-    X: NDArray[np.float64] = cast(NDArray[np.float64], Z @ L.T)
-
-    # Standardize columns to unit variance (helpful for consistent effect sizes)
-    X = (X - X.mean(axis=0)) / (X.std(axis=0) + 1e-9)
-
-    return X
-
-
-# ============================================
-# Public API: Standalone cluster generation
-# ============================================
-# NOTE: These functions are primarily for educational/exploratory purposes.
-# For production use, prefer using CorrCluster within generate_dataset().
-
-
-def generate_correlated_cluster(
-    n_samples: int,
-    n_cluster_features: int,
-    rho: float = 0.7,
-    structure: Literal["equicorrelated", "toeplitz"] = "equicorrelated",
-    rng: np.random.Generator | None = None,
-    label: str | None = None,
-) -> tuple[NDArray[np.float64], dict[str, object]]:
-    """Generate a single correlated biomarker cluster without class labels.
-
-    **Educational Use**:  Generate a single correlated feature cluster (no labels y involved). Explore correlation
-    patterns in isolation before integrating into a full dataset. For production datasets, use CorrCluster
-    with generate_dataset() instead.
-
-    Returns (X_cluster, meta) where meta contains the empirical correlation matrix.
-
-    Args:
-        n_samples: Number of samples (patients/observations).
-        n_cluster_features: Number of biomarkers in the cluster.
-        rho: Target correlation strength.
-            - 0.0 = independent
-            - 0.5 = moderate correlation
-            - 0.8+ = strong correlation (pathway-like)
-        structure: Correlation pattern.
-            - "equicorrelated": constant pairwise correlation
-            - "toeplitz": correlation decays with distance
-        rng: Random number generator (if None, creates a new one).
-        label: Optional descriptive label (e.g., "Inflammation panel").
-
-    Returns:
-        tuple:
-            - X (np.ndarray): Shape (n_samples, n_cluster_features) with standardized columns.
-            - meta (dict): Metadata containing:
-                * n_cluster_features: cluster size
-                * rho: target correlation
-                * structure: correlation pattern
-                * label: descriptive label
-                * corr_matrix: empirical correlation matrix (n_cluster_features × n_cluster_features)
-                * mean_offdiag: mean of off-diagonal correlations
-                * min_offdiag: minimum off-diagonal correlation
-
-    Raises:
-        ValueError: If n_cluster_features < 1 or rho not in [0, 1).
-
-    Examples:
-    --------
-        Generate a strong inflammatory marker cluster:
-
-        >>> X, meta = generate_correlated_cluster(
-        ...     n_samples=200,
-        ...     n_cluster_features=5,
-        ...     rho=0.85,
-        ...     label="Acute phase proteins"
-        ... )
-        >>> X.shape
-        (200, 5)
-        >>> meta['mean_offdiag']  # actual correlation achieved
-        0.84...
-
-        Weak age-related confounders:
-
-        >>> X, meta = generate_correlated_cluster(
-        ...     n_samples=150,
-        ...     n_cluster_features=3,
-        ...     rho=0.4,
-        ...     label="Age effects"
-        ... )
-
-    Notes:
-    -----
-        Medical interpretation:
-        - rho=0.85: Very strong (tightly regulated pathway)
-        - rho=0.60: Strong (coordinated response)
-        - rho=0.40: Moderate (loose biological coupling)
-        - rho=0.20: Weak (barely related markers)
-
-        The empirical correlation may deviate slightly from rho due to
-        finite sample size. Use find_seed_for_correlation() for precise control.
-
-        For production use, prefer using CorrCluster within generate_dataset().
-    """
-    # Validation
-    if n_cluster_features < 1:
-        raise ValueError("n_cluster_features must be >= 1")
+    if n_features <= 0:
+        raise ValueError(f"n_features must be positive, got {n_features}")
 
     if structure == "equicorrelated":
-        if not (0.0 <= rho < 1.0):
+        # PD condition: -1/(p-1) < rho < 1 (strict).
+        # For p=1, the lower bound is irrelevant; any rho<1 will produce [1].
+        lower_bound = -1.0 / (n_features - 1) if n_features > 1 else -np.inf
+        if not (lower_bound < rho < 1.0):
             raise ValueError(
-                f"For equicorrelated structure, rho must be in [0, 1), got {rho}. "
-                f"Hint: 0=independent, 0.5=moderate, 0.8=strong"
+                f"Invalid rho={rho} for equicorrelated with n_features={n_features}; "
+                f"require {lower_bound:.6f} < rho < 1."
             )
-    else:  # toeplitz
-        if not (-0.999 < rho < 0.999):
+        identity = np.eye(n_features, dtype=np.float64)
+        ones = np.ones((n_features, n_features), dtype=np.float64)
+        return (1.0 - rho) * identity + rho * ones
+
+    if structure == "toeplitz":
+        # PD condition: |rho| < 1 (strict).
+        if not (-1.0 < rho < 1.0):
+            raise ValueError(f"Invalid rho={rho} for toeplitz; require |rho| < 1.")
+        indices = np.arange(n_features, dtype=np.int64)
+        distances = np.abs(indices[:, None] - indices[None, :])
+        corr_matrix = np.power(rho, distances, dtype=np.float64)
+        # Fill the diagonal with exact ones for numerical robustness.
+        np.fill_diagonal(corr_matrix, 1.0)
+        return corr_matrix
+
+    raise ValueError(f"Unknown structure={structure!r}")
+
+
+# ============================================================================
+# Robust Cholesky factorization with diagonal jitter fallback
+# ============================================================================
+
+def _cholesky_with_jitter(
+    corr_matrix: NDArray[np.float64],
+    *,
+    max_tries: int = 6,
+    initial_jitter: float = 1e-12,
+    growth: float = 10.0,
+) -> NDArray[np.float64]:
+    """Compute a Cholesky factor with diagonal jitter fallback.
+
+    Why this helper?
+      In finite-precision arithmetic (float64), tiny negative eigenvalues can
+      appear due to rounding, even if the intended matrix is PD. We try a clean
+      Cholesky first; if it fails, we add a tiny "jitter" (ε * I) and retry.
+
+    Args:
+        corr_matrix: Target correlation matrix R (p x p), symmetric with diag≈1.
+        max_tries: Maximum number of jitter escalations.
+        initial_jitter: Starting jitter ε for the first retry.
+        growth: Multiplicative factor to increase jitter each failed attempt.
+
+    Returns:
+        Lower-triangular matrix L such that L @ L.T ≈ corr_matrix.
+
+    Raises:
+        np.linalg.LinAlgError: If factorization fails after all attempts.
+    """
+    try:
+        return np.linalg.cholesky(corr_matrix)
+    except np.linalg.LinAlgError:
+        pass  # Fall back to jittered attempts.
+
+    p = corr_matrix.shape[0]
+    identity = np.eye(p, dtype=np.float64)
+    jitter = initial_jitter
+
+    for _ in range(max_tries):
+        try:
+            return np.linalg.cholesky(corr_matrix + jitter * identity)
+        except np.linalg.LinAlgError:
+            jitter *= growth
+
+    # Let NumPy raise a clean error using the original matrix.
+    np.linalg.cholesky(corr_matrix)  # will raise
+
+
+# ============================================================================
+# helper: mean of off-diagonal correlations
+# ============================================================================
+def _offdiag_mean(corr_matrix: NDArray[np.float64]) -> float:
+    """Mean of off-diagonal entries (robust metric for 'overall' correlation)."""
+    p = corr_matrix.shape[0]
+    if p <= 1:
+        return 1.0
+    return float((corr_matrix.sum() - p) / (p * p - p))
+
+
+# ============================================================================
+# Public sampler
+# ============================================================================
+
+def sample_cluster(
+    n_samples: int,
+    n_features: int,
+    rng: np.random.Generator,
+    *,
+    structure: CorrelationStructure = "equicorrelated",
+    rho: Optional[float] = None,
+    class_labels: Optional[NDArray[np.int64]] = None,
+    class_rho: Optional[Mapping[int, float]] = None,
+    baseline_rho: float = 0.0,
+) -> NDArray[np.float64]:
+    """Sample a correlated feature block (global or class-specific).
+
+    Behavior:
+      - Global mode:
+            If `class_labels` is None, a single correlation matrix R is used for
+            all samples. This requires a scalar `rho`.
+      - Class-specific mode:
+            If `class_labels` is provided (int64 array of shape (n_samples,)),
+            each class k can have its own correlation strength ρ_k. You pass
+            overrides via `class_rho={k: rho_k}`; classes not listed in the
+            mapping use `baseline_rho`. The *structure* is the same for all.
+
+    No standardization or scaling is performed here — this keeps the sampler
+    pure and easy to reason about. If you want class separation (mean shifts),
+    apply them later (e.g., in generator.py). A constant mean shift per class
+    DOES NOT change within-class correlations.
+
+    Args:
+        n_samples: Number of rows to generate.
+        n_features: Number of columns in this cluster.
+        rng: NumPy random Generator (use a shared one for reproducibility).
+        structure: Correlation structure ("equicorrelated" or "toeplitz").
+        rho: Global correlation strength (required in global mode).
+        class_labels: Optional labels (int64) of shape (n_samples,).
+        class_rho: Optional mapping {class_label -> rho} for overrides.
+        baseline_rho: Fallback rho if a class has no override (default 0.0).
+
+    Returns:
+        Array X of shape (n_samples, n_features), dtype float64.
+
+    Raises:
+        ValueError: If arguments are inconsistent (e.g., missing rho in global
+            mode, label length mismatch, invalid ρ per structure).
+    """
+    # -------------------------------
+    # Class-specific mode (if labels)
+    # -------------------------------
+    if class_labels is not None:
+        if class_labels.shape[0] != n_samples:
             raise ValueError(
-                f"For toeplitz structure, |rho| must be < 1, got {rho}. "
-                f"Note: Negative rho creates alternating correlations."
+                f"class_labels has length {class_labels.shape[0]} but n_samples={n_samples}"
             )
 
-    # Initialize RNG if not provided
-    rng = np.random.default_rng() if rng is None else rng
+        overrides = class_rho or {}
+        X = np.empty((n_samples, n_features), dtype=np.float64)
 
-    # Choose structure for the target covariance
-    cov: NDArray[np.float64] = (
-        _cov_equicorr(n_cluster_features, rho)
-        if structure == "equicorrelated"
-        else _cov_toeplitz(n_cluster_features, rho)
-    )
+        # Sample per class so each group can use its own rho, but the same structure.
+        unique_classes = np.unique(class_labels)
+        for cls in unique_classes:
+            class_mask = (class_labels == cls)
+            n_in_class = int(class_mask.sum())
+            if n_in_class == 0:
+                continue
 
-    # Cholesky factor: cov = chol_lower @ chol_lower.T  (lower-triangular)
-    chol_lower: NDArray[np.float64] = np.linalg.cholesky(cov)
+            rho_for_class = float(overrides.get(int(cls), baseline_rho))
+            R_class = build_correlation_matrix(n_features, rho_for_class, structure)
+            L_class = _cholesky_with_jitter(R_class)
 
-    # Standard-normal noise: shape = (n_samples, n_cluster_features)
-    noise_std: NDArray[np.float64] = rng.normal(size=(n_samples, n_cluster_features)).astype(np.float64, copy=False)
+            standard_normal_block = rng.standard_normal(size=(n_in_class, n_features))
+            X[class_mask] = standard_normal_block @ L_class.T
 
-    # Impose the target covariance: X has Cov ≈ cov
-    # (matrix multiply with chol_lower.T)
-    X: NDArray[np.float64] = cast(NDArray[np.float64], noise_std @ chol_lower.T)
+        return X
 
-    # Standardize to unit variance
-    X = (X - X.mean(axis=0)) / (X.std(axis=0) + 1e-9)
+    # -------------------------------
+    # Global mode (no labels provided)
+    # -------------------------------
+    if rho is None:
+        raise ValueError(
+            "Global mode requires `rho` when no `class_labels` are provided."
+        )
 
-    # Compute empirical correlation
-    C: NDArray[np.float64] = np.asarray(np.corrcoef(X, rowvar=False), dtype=np.float64)
+    R_global = build_correlation_matrix(n_features, rho, structure)
+    L_global = _cholesky_with_jitter(R_global)
 
-    # Size-1 edge case: np.corrcoef may return a 0-D scalar -> promote to (1, 1)
-    if C.ndim == 0:
-        C = C.reshape(1, 1)
-
-    # Off-diagonal metrics
-    if n_cluster_features > 1:
-        diag_mask = np.eye(n_cluster_features, dtype=bool)  # boolean diagonal mask (NumPy 2.0 compatible)
-        off_diag = C[~diag_mask]
-        mean_offdiag = float(off_diag.mean()) if off_diag.size else 1.0
-        min_offdiag = float(off_diag.min()) if off_diag.size else 1.0
-    else:
-        mean_offdiag = 1.0
-        min_offdiag = 1.0
-
-    meta: dict[str, object] = {
-        "n_cluster_features": int(n_cluster_features),
-        "rho": float(rho),
-        "structure": structure,
-        "label": label,
-        "corr_matrix": C,  # empirical correlation (n_cluster_features x n_cluster_features)
-        "mean_offdiag": mean_offdiag,
-        "min_offdiag": min_offdiag,
-    }
-    return X, meta
+    standard_normal = rng.standard_normal(size=(n_samples, n_features))
+    return standard_normal @ L_global.T
 
 
 # =====================================================
@@ -290,15 +290,20 @@ def find_seed_for_correlation(
             - "min_offdiag": minimum off-diagonal correlation
         threshold: Minimum acceptable value for metric (if tol is None).
         op: Comparison operator for threshold (">=", "<=").
-        tol: If provided, accept when |mean_offdiag - rho_target| <= tol.
-            This takes precedence over threshold.
-        start_seed: First seed to try.
-        max_tries: Maximum number of seeds to try before giving up.
+        tol: Absolute tolerance around rho_target (activates tolerance mode). This takes precedence over threshold.
+            If provided, accept when |mean_offdiag - rho_target| <= tol.
+        start_seed: First seed to try (sequential search).
+        max_tries: Maximum number of seeds to evaluate before giving up.
 
     Returns:
         tuple:
             seed (int): The first seed that satisfied the condition.
             meta (dict): Metadata as returned by generate_correlated_cluster.
+                - "corr_matrix": empirical correlation matrix (np.ndarray)
+                - "mean_offdiag": float
+                - "min_offdiag": float
+                - "accepted": bool
+                - "tries": int
 
     Raises:
         RuntimeError: If no seed satisfied the rule within max_tries.
@@ -344,37 +349,65 @@ def find_seed_for_correlation(
         raise ValueError("n_cluster_features must be >= 1")
 
     if structure == "equicorrelated":
-        if not (0.0 <= rho_target < 1.0):
-            raise ValueError(f"For equicorrelated, rho_target must be in [0, 1), got {rho_target}")
-    else:
-        if not (-0.999 < rho_target < 0.999):
-            raise ValueError(f"For toeplitz, |rho_target| must be < 1, got {rho_target}")
+        lower = -1.0 / (n_cluster_features - 1) if n_cluster_features > 1 else -np.inf
+        if not (lower < rho_target < 1.0):
+            raise ValueError(
+                f"For equicorrelated, require {lower:.6f} < rho_target < 1, got {rho_target}."
+            )
+    else:  # toeplitz
+        if not (-1.0 < rho_target < 1.0):
+            raise ValueError("For toeplitz, require |rho_target| < 1.")
 
+    # Search loop
     seed = start_seed
-    for _ in range(max_tries):
+    for try_idx in range(max_tries):
         rng = np.random.default_rng(seed)
-        _, meta_data = generate_correlated_cluster(n_samples, n_cluster_features, rho_target, structure, rng=rng)
-        mean_off = cast(float, meta_data["mean_offdiag"])
-        min_off = cast(float, meta_data["min_offdiag"])
 
-        # Acceptance rule:
-        # If tol is provided -> ONLY use tolerance (ignore threshold).
-        # Guard: require p <= n for tol-based acceptance to avoid p>>n averaging artifacts.
-        # If tol is None     -> fall back to (metric op threshold).
-        if tol is not None:
-            # High-dimensional guard
-            if n_cluster_features <= n_samples and abs(mean_off - rho_target) <= tol:
-                return seed, meta_data
+        # Generate with the target parameter; we’re searching for a seed whose
+        # empirical corr is close to the target (finite-sample noise may help/hurt).
+        X = sample_cluster(
+            n_samples=n_samples,
+            n_features=n_cluster_features,
+            rng=rng,
+            structure=structure,
+            rho=rho_target,  # global mode
+        )
+
+        # Empirical correlation and metrics
+        C = np.asarray(np.corrcoef(X, rowvar=False), dtype=np.float64)
+        mean_off = _offdiag_mean(C)
+        if n_cluster_features > 1:
+            min_off = float(np.min(C[~np.eye(C.shape[0], dtype=bool)]))
         else:
-            metric_value = mean_off if metric == "mean_offdiag" else min_off
-            if (op == ">=" and metric_value >= threshold) or (op == "<=" and metric_value <= threshold):
-                return seed, meta_data
+            min_off = 1.0
+
+        # Decide acceptance
+        accepted = False
+        if tol is not None:
+            # Guard: for tol-mode we recommend p <= n to avoid p>>n averaging artifacts
+            if n_cluster_features <= n_samples and abs(mean_off - rho_target) <= tol:
+                accepted = True
+        else:
+            val = mean_off if metric == "mean_offdiag" else min_off
+            accepted = (val >= threshold) if op == ">=" else (val <= threshold)
+
+        meta = {
+            "corr_matrix": C,
+            "mean_offdiag": float(mean_off),
+            "min_offdiag": float(min_off),
+            "accepted": bool(accepted),
+            "tries": int(try_idx + 1),
+        }
+
+        if accepted:
+            return seed, meta
+
+        # keep the last meta so we can return a useful record on failure
+        best_meta = meta
         seed += 1
 
-    # Failed to find suitable seed
+        # No acceptable seed found
     raise RuntimeError(
-        f"Failed to find seed satisfying correlation criterion within {max_tries} tries. "
-        f"Target: rho={rho_target}, tol={tol}, metric={metric}, threshold={threshold}. "
-        f"Consider: (1) increasing max_tries, (2) relaxing tol/threshold, "
-        f"(3) reducing n_cluster_features or rho_target."
+        f"Failed to find seed within {max_tries} tries. "
+        f"Target rho={rho_target}, tol={tol}, metric={metric}, threshold={threshold}."
     )

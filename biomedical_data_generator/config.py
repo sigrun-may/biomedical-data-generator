@@ -104,7 +104,7 @@ class BatchConfig(BaseModel):
 class CorrCluster(BaseModel):
     """Correlated feature cluster simulating coordinated biomarker patterns.
 
-    A cluster represents a group of `size` biomarkers that move together, such as
+    A cluster represents a group of biomarkers that move together, such as
     markers in a metabolic pathway or proteins in a signaling cascade. One marker
     acts as the "anchor" (driver), while the others are "proxies" (followers).
 
@@ -115,9 +115,13 @@ class CorrCluster(BaseModel):
             - 0.5 = moderate correlation
             - 0.8+ = strong correlation (typical for pathway markers)
             - Range: [0, 1) for equicorrelated; (-1, 1) for toeplitz
+            Default is 0.8.
         structure: Pattern of correlation within the cluster.
             - "equicorrelated": all pairs have the same correlation (default)
             - "toeplitz": correlation decreases with distance
+        class_structure: Mapping of class index to correlation structure.
+        class_rho: Mapping of class index to correlation strength.
+        rho_baseline: Baseline correlation for other classes if class_rho is set. Default is 0.0 (independent).
         anchor_role: Biological relevance of the anchor marker.
             - "informative": true biomarker (predictive of disease)
             - "pseudo": confounding variable (correlated but not causal)
@@ -178,8 +182,8 @@ class CorrCluster(BaseModel):
         - **effect_size="small"**: Subtle signal (requires large sample size)
 
         Technical details:
-        - Cluster contributes `size` features to the dataset
-        - Anchor appears first, followed by `(size-1)` proxies
+        - Cluster contributes `n_cluster_features` features to the dataset
+        - Anchor appears first, followed by `(n_cluster_features-1)` proxies
         - Only the anchor has predictive power; proxies are correlated distractors
         - Proxies count as additional features beyond n_informative/n_pseudo/n_noise
 
@@ -191,10 +195,34 @@ class CorrCluster(BaseModel):
 
     model_config = ConfigDict(extra="forbid")
 
-    # Core cluster structure
+    # Core cluster structure and correlation settings
     n_cluster_features: int = Field(..., ge=1, description="Number of biomarkers in cluster")
-    rho: float = Field(..., description="Correlation strength (0=independent, 0.8+=strong)")
-    structure: Literal["equicorrelated", "toeplitz"] = "equicorrelated"
+
+    # global correlation (default mode)
+    structure: Literal["equicorrelated", "toeplitz"] = Field(
+        default="equicorrelated",
+        description="Default correlation structure for all classes"
+    )
+    rho: float = Field(
+        default=0.8,
+        description="Default correlation strength for all classes"
+    )
+
+    # per-class correlation (optional)
+    class_structure: dict[int, Literal["equicorrelated", "toeplitz"]] | None = Field(
+        default=None,
+        description="Per-class correlation structure (overrides 'structure' for specified classes)"
+    )
+    class_rho: dict[int, float] | None = Field(
+        default=None,
+        description="Per-class correlation strength (activates class-specific mode)"
+    )
+    rho_baseline: float = Field(
+        default=0.0,
+        ge=-1.0,
+        lt=1.0,
+        description="Fallback correlation for classes not in class_rho"
+    )
 
     # Biological relevance
     anchor_role: Literal["informative", "pseudo", "noise"] = "informative"
@@ -210,16 +238,100 @@ class CorrCluster(BaseModel):
     def _validate_size(cls, v: int) -> int:
         """Ensure cluster has at least one marker."""
         if v < 1:
-            raise ValueError(f"size must be >= 1, got {v}")
+            raise ValueError(f"n_cluster_features must be >= 1, got {v}")
         return v
 
     @field_validator("rho")
     @classmethod
-    def _validate_rho_range(cls, v: float) -> float:
-        """Validate correlation strength is in valid range."""
-        if not (-1.0 < v < 1.0):
-            raise ValueError(f"rho must be in (-1, 1), got {v}. " f"Hint: 0=independent, 0.5=moderate, 0.8=strong")
+    def _validate_rho_range(cls, v: float, info):
+        p = int(info.data.get("n_cluster_features", 0))
+        structure = info.data.get("structure", "equicorrelated")
+        if structure == "equicorrelated":
+            lower = -1.0 / (p - 1) if p > 1 else float("-inf")
+            if not (lower < v < 1.0):
+                raise ValueError(f"rho={v} invalid for equicorrelated with n_cluster_features={p}; "
+                                 f"require {lower:.6f} < rho < 1.")
+        else:  # toeplitz
+            if not (-1.0 < v < 1.0):
+                raise ValueError("For toeplitz, require |rho| < 1.")
         return v
+
+    @field_validator("class_rho")
+    @classmethod
+    def _validate_class_rho(cls, v, info):
+        if v is None:
+            return v
+        p = int(info.data.get("n_cluster_features", 0))
+        structure = info.data.get("structure", "equicorrelated")
+        lower = -1.0 / (p - 1) if (structure == "equicorrelated" and p > 1) else -1.0
+        for cls_idx, rho_val in v.items():
+            if cls_idx < 0:
+                raise ValueError(f"class_rho keys must be >= 0, got {cls_idx}")
+            if not (lower < float(rho_val) < 1.0):
+                raise ValueError(
+                    f"class_rho[{cls_idx}]={rho_val} invalid for {structure} (p={p}); "
+                    f"require {lower:.6f} < rho < 1."
+                )
+        return v
+
+    @field_validator("class_structure")
+    @classmethod
+    def _validate_class_structure(cls, v: dict[int, str] | None) -> dict[int, str] | None:
+        """Validate per-class structure keys."""
+        if v is None:
+            return v
+
+        for cls_idx in v.keys():
+            if cls_idx < 0:
+                raise ValueError(f"class_structure keys must be >= 0, got {cls_idx}")
+        return v
+
+    @model_validator(mode="after")
+    def _validate_class_specific_consistency(self):
+        """Ensure class_structure is only used with class_rho."""
+        if self.class_structure is not None and self.class_rho is None:
+            raise ValueError(
+                "class_structure requires class_rho to be set. "
+                "Either set class_rho (activates class-specific mode) or remove class_structure."
+            )
+        return self
+
+    def is_class_specific(self) -> bool:
+        """Check if this cluster uses class-specific correlation.
+
+        Returns:
+            True if class_rho is set (activates class-specific mode).
+        """
+        return self.class_rho is not None
+
+    def get_rho_for_class(self, class_idx: int) -> float:
+        """Get correlation strength for a specific class.
+
+        Args:
+            class_idx: Class label (0, 1, 2, ...).
+
+        Returns:
+            Correlation strength for this class.
+        """
+        if not self.is_class_specific():
+            return self.rho
+
+        assert self.class_rho is not None  # type guard
+        return self.class_rho.get(class_idx, self.rho_baseline)
+
+    def get_structure_for_class(self, class_idx: int) -> Literal["equicorrelated", "toeplitz"]:
+        """Get correlation structure for a specific class.
+
+        Args:
+            class_idx: Class label (0, 1, 2, ...).
+
+        Returns:
+            Structure type for this class.
+        """
+        if self.class_structure is None:
+            return self.structure
+
+        return self.class_structure.get(class_idx, self.structure)
 
     @field_validator("anchor_effect_size")
     @classmethod
@@ -330,8 +442,6 @@ class CorrCluster(BaseModel):
 
             if self.anchor_class is not None:
                 lines.append(f"  Predicts: class {self.anchor_class}")
-            else:
-                lines.append("  Predicts: all classes (round-robin)")
 
             # Medical interpretation of effect size
             if effect_value < 0.7:
@@ -349,11 +459,18 @@ class CorrCluster(BaseModel):
         lines.append("")
         lines.append(f"Random seed: {self.random_state if self.random_state else 'from dataset'}")
 
+        if self.class_rho:
+            lines.append(f"Baseline rho for other classes: {self.rho_baseline}")
+            lines.append("Per-class overrides:")
+            for k, r in sorted(self.class_rho.items()):
+                s = self.class_structure.get(k, self.structure) if self.class_structure else self.structure
+                lines.append(f"  class {k}: rho={r} ({s})")
+
         return "\n".join(lines)
 
     def __str__(self) -> str:
         """Concise representation for quick reference."""
-        parts = [f"size={self.n_cluster_features}", f"rho={self.rho}"]
+        parts = [f"n_cluster_features={self.n_cluster_features}", f"rho={self.rho}"]
 
         if self.anchor_role != "informative":
             parts.append(self.anchor_role)
@@ -459,8 +576,8 @@ class DatasetConfig(BaseModel):
         )
         extra_from_clusters = 0
         for c in cls._iter_cluster_dicts(raw_config):
-            size = int(c.get("size", 0))
-            extra_from_clusters += max(0, size - 1)
+            n_cluster_features = int(c.get("n_cluster_features", 0))
+            extra_from_clusters += max(0, n_cluster_features - 1)
         return base + extra_from_clusters
 
     # ---------- validation (strict, no warnings) ----------
@@ -618,7 +735,8 @@ class DatasetConfig(BaseModel):
                 norm_clusters.append(CorrCluster.model_validate(c))
         kwargs["corr_clusters"] = norm_clusters
 
-        # Compute required n_features = free informative + free pseudo + free noise + sum(size-1 per cluster)
+        # Compute required n_features
+        # n_features = free informative + free pseudo + free noise + sum(n_cluster_features-1 per cluster)
         n_inf = int(kwargs.get("n_informative", 0))
         n_pse = int(kwargs.get("n_pseudo", 0))
         n_noise = int(kwargs.get("n_noise", 0))
@@ -806,7 +924,7 @@ class DatasetConfig(BaseModel):
                     )
                 else:
                     lines.append(
-                        f"- #{i}: size={c.n_cluster_features}, role={c.anchor_role}, rho={c.rho}, "
+                        f"- #{i}: n_cluster_features={c.n_cluster_features}, role={c.anchor_role}, rho={c.rho}, "
                         f"structure={c.structure}, label={label}, proxies={proxies}"
                     )
 
