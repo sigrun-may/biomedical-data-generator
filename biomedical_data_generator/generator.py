@@ -17,7 +17,7 @@ from numpy.typing import NDArray
 from pandas import DataFrame
 
 from .config import DatasetConfig, NoiseDistribution
-from .features.correlated import sample_cluster_matrix
+from .features.correlated import sample_cluster
 from .features.informative import shift_classes
 from .features.noise import sample_noise
 from .meta import DatasetMeta
@@ -201,17 +201,6 @@ def _make_names_and_roles(
     return names, informative_idx, pseudo_idx, noise_idx, cluster_indices, anchor_idx
 
 
-# ================
-# Softmax utility
-# ================
-def _softmax(Z: NDArray[np.float64]) -> NDArray[np.float64]:
-    Z = Z - Z.max(axis=1, keepdims=True)
-    np.exp(Z, out=Z)
-    Z_sum = Z.sum(axis=1, keepdims=True)
-    Z /= Z_sum
-    return Z
-
-
 def _resolve_noise_params(dist: str, noise_scale: float, noise_params: Mapping[str, Any] | None) -> dict[str, float]:
     """Resolve noise distribution parameters with defaults.
 
@@ -279,22 +268,22 @@ def generate_dataset(
     return_dataframe: bool = True,
     **overrides,
 ) -> tuple[DataFrame | NDArray[np.float64], NDArray[np.int64], DatasetMeta]:
-    """Generate an n-class (softmax) classification dataset with optional correlated clusters.
+    """Generate an n-class classification dataset with optional correlated clusters.
 
     Features are ordered as: cluster features (anchors first within each cluster),
     then free informative features, then free pseudo features, then noise features.
-    Labels y are sampled from a softmax model over `n_classes`: cluster anchors add a positive
-    contribution to their assigned class (via `anchor_effect_size`), free informative features contribute
-    to classes in a simple round-robin assignment (β=0.8). Pseudo and noise features have β=0.
-    Reproducibility is controlled by `cfg.random_state` and optional per-cluster seeds. If `weights`
-    are specified (length `n_classes`), per-class intercepts are added so that
-    softmax(mean_logits + intercepts) ≈ weights. Feature names follow either a “prefixed” scheme
-    (e.g., `i*`, `corr{cid}_k`, `p*`, `n*`) or a generic `feature_1..p`. The returned `meta` includes
-    role masks, cluster indices, empirical class proportions, and the resolved configuration.
+    Labels y must be explicitly specified via either `cfg.class_counts` (exact per-class sample counts)
+    or `cfg.weights` (target class proportions for stochastic sampling). Class-wise shifts are then
+    applied to informative features and cluster anchors (via `anchor_effect_size`) to create class separation.
+    Reproducibility is controlled by `cfg.random_state` and optional per-cluster seeds.
+    Feature names follow either a "prefixed" scheme (e.g., `i*`, `corr{cid}_k`, `p*`, `n*`)
+    or a generic `feature_1..p`. The returned `meta` includes role masks, cluster indices,
+    empirical class proportions, and the resolved configuration.
 
     Args:
         cfg (DatasetConfig): Configuration including feature counts, cluster layout, correlation
-            parameters, naming policy, randomness controls, `n_classes`, and optional `weights`.
+            parameters, naming policy, randomness controls, `n_classes`, and either `class_counts` or `weights`.
+            At least one of `class_counts` or `weights` must be specified.
         return_dataframe (bool, optional): If True (default), return `X` as a `pandas.DataFrame`
             with column names. If False, return `X` as a NumPy array in the same column order.
         **overrides: Optional config overrides merged into `cfg` (e.g., `n_samples=...`).
@@ -307,12 +296,24 @@ def generate_dataset(
             - y (np.ndarray): Shape (n_samples,). Integer labels in {0, 1, ..., n_classes-1}.
             - meta (DatasetMeta): Metadata including role masks, cluster indices/labels, empirical class
               weights, and the resolved configuration.
+
+    Raises:
+    ------
+        ValueError: If neither `class_counts` nor `weights` is specified.
     """
     if overrides:
         cfg = cfg.model_copy(update=overrides)
 
     if int(cfg.n_classes) < 2:
         raise ValueError("n_classes must be >= 2.")
+
+    # Require explicit label specification
+    if cfg.class_counts is None and cfg.weights is None:
+        raise ValueError(
+            "Either 'class_counts' or 'weights' must be specified. "
+            "Automatic label generation via softmax is no longer supported."
+        )
+
     if cfg.weights is not None:
         if len(cfg.weights) != cfg.n_classes:
             raise ValueError("weights must have length n_classes.")
@@ -338,7 +339,16 @@ def generate_dataset(
         for cid, c in enumerate(cfg.corr_clusters, start=1):
             seed = c.random_state if c.random_state is not None else cfg.random_state
             rng = np.random.default_rng(seed)
-            B = sample_cluster_matrix(cfg.n_samples, c, rng)
+            B = sample_cluster(
+                n_samples=cfg.n_samples,
+                n_features=c.n_cluster_features,
+                rng=rng,
+                structure=c.structure,
+                rho=c.rho,
+                class_labels=None,  # Labels not available yet during feature generation
+                class_rho=c.class_rho,
+                baseline_rho=c.rho_baseline,
+            )
             # weak global coupling (same g for all cluster columns)
             if cfg.corr_between > 0.0:
                 g = rng_global.normal(0.0, 1.0, size=(cfg.n_samples, 1))
@@ -348,7 +358,8 @@ def generate_dataset(
                 anchor_cls = 0 if c.anchor_class is None else int(c.anchor_class)
                 if not (0 <= anchor_cls < cfg.n_classes):
                     raise ValueError(f"anchor_class {anchor_cls} out of range for n_classes={cfg.n_classes}.")
-                anchor_contrib[anchor_col] = (float(c.anchor_effect_size), anchor_cls)
+                beta = c.resolve_anchor_effect_size()  # Convert "small"/"medium"/"large" -> numeric
+                anchor_contrib[anchor_col] = (beta, anchor_cls)
                 anchor_target_cls_map[cid] = anchor_cls
             else:
                 anchor_target_cls_map[cid] = None
@@ -397,42 +408,11 @@ def generate_dataset(
     # Check totals
     assert X.shape[1] == len(names) == cfg.n_features, (X.shape[1], len(names), cfg.n_features)
 
-    # Label generation
+    # Label generation (explicit via class_counts or weights)
     K = int(cfg.n_classes)
+    y = _make_labels(cfg, rng_global)  # shape (n_samples,), dtype=int
 
-    use_controlled = (getattr(cfg, "class_counts", None) is not None) or (getattr(cfg, "weights", None) is not None)
-
-    if use_controlled:
-        # Exact counts or stochastic priors (class_counts > weights > uniform)
-        y = _make_labels(cfg, rng_global)  # shape (n_samples,), dtype=int
-
-    else:
-        # Fallback: build logits from informative features and sample via softmax
-        logits = np.zeros((cfg.n_samples, K), dtype=float)
-
-        # Anchors: add to their assigned class only
-        for col, (beta, cls) in anchor_contrib.items():
-            logits[:, cls] += beta * X[:, col]
-
-        # Free informative: round-robin across classes with beta=0.8
-        rr = 0
-        for idx in inf_idx:
-            # Skip anchor indices already handled above
-            if idx in anchor_contrib:
-                continue
-            logits[:, rr] += 0.8 * X[:, idx]
-            rr = (rr + 1) % K
-
-        # Scale by class_sep
-        logits *= float(cfg.class_sep)
-
-        # Sample labels from softmax(logits)
-        P = _softmax(logits.copy())  # copy because _softmax is in-place
-        cdf = P.cumsum(axis=1)
-        r = rng_global.random(size=(cfg.n_samples, 1))
-        y = (r > cdf[:, :-1]).sum(axis=1).astype(np.int64)
-
-    # empirical class stats (always compute from y)
+    # Empirical class stats (always compute from y)
     counts = np.bincount(y, minlength=K).astype(int)
     y_counts = {int(k): int(counts[k]) for k in range(K)}
     y_weights = tuple((counts / counts.sum()).tolist())
@@ -444,7 +424,7 @@ def generate_dataset(
         i = 0
         for cid, c in enumerate(cfg.corr_clusters, start=1):
             anchor_role_map[cid] = c.anchor_role
-            anchor_effect_size_map[cid] = c.anchor_effect_size if c.anchor_role == "informative" else 0.0
+            anchor_effect_size_map[cid] = c.resolve_anchor_effect_size() if c.anchor_role == "informative" else 0.0
             i += c.n_cluster_features
 
     # Shift feature values for classes
