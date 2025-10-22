@@ -24,7 +24,7 @@
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
     <link rel="next" title="biomedical_data_generator.DatasetConfig" href="biomedical_data_generator.DatasetConfig.html" />
-    <link rel="prev" title="biomedical_data_generator.generate_correlated_cluster" href="biomedical_data_generator.generate_correlated_cluster.html" /> 
+    <link rel="prev" title="biomedical_data_generator.generate_dataset" href="biomedical_data_generator.generate_dataset.html" /> 
 </head>
 
 <body class="wy-body-for-nav"> 
@@ -53,7 +53,6 @@
 </ul>
 <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="biomedical_data_generator.generate_dataset.html">biomedical_data_generator.generate_dataset</a></li>
-<li class="toctree-l1"><a class="reference internal" href="biomedical_data_generator.generate_correlated_cluster.html">biomedical_data_generator.generate_correlated_cluster</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">biomedical_data_generator.find_seed_for_correlation</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#biomedical_data_generator.find_seed_for_correlation"><code class="docutils literal notranslate"><span class="pre">find_seed_for_correlation()</span></code></a></li>
 </ul>
@@ -116,15 +115,25 @@ matches the target within tolerance. Useful where precise correlation is needed.
 - “min_offdiag”: minimum off-diagonal correlation</p></li>
 <li><p><strong>threshold</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>) – Minimum acceptable value for metric (if tol is None).</p></li>
 <li><p><strong>op</strong> (<a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Literal" title="(in Python v3.14)"><em>Literal</em></a><em>[</em><em>'&gt;='</em><em>, </em><em>'&lt;='</em><em>]</em>) – Comparison operator for threshold (“&gt;=”, “&lt;=”).</p></li>
-<li><p><strong>tol</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a><em> | </em><em>None</em>) – If provided, accept when <a href="#id3"><span class="problematic" id="id4">|mean_offdiag - rho_target|</span></a> &lt;= tol.
-This takes precedence over threshold.</p></li>
-<li><p><strong>start_seed</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a>) – First seed to try.</p></li>
-<li><p><strong>max_tries</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a>) – Maximum number of seeds to try before giving up.</p></li>
+<li><p><strong>tol</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a><em> | </em><em>None</em>) – Absolute tolerance around rho_target (activates tolerance mode). This takes precedence over threshold.
+If provided, accept when <a href="#id3"><span class="problematic" id="id4">|mean_offdiag - rho_target|</span></a> &lt;= tol.</p></li>
+<li><p><strong>start_seed</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a>) – First seed to try (sequential search).</p></li>
+<li><p><strong>max_tries</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a>) – Maximum number of seeds to evaluate before giving up.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>seed (int): The first seed that satisfied the condition.
+<dd class="field-even"><p><p>seed (int): The first seed that satisfied the condition.
 meta (dict): Metadata as returned by generate_correlated_cluster.</p>
+<blockquote>
+<div><ul class="simple">
+<li><p>”corr_matrix”: empirical correlation matrix (np.ndarray)</p></li>
+<li><p>”mean_offdiag”: float</p></li>
+<li><p>”min_offdiag”: float</p></li>
+<li><p>”accepted”: bool</p></li>
+<li><p>”tries”: int</p></li>
+</ul>
+</div></blockquote>
+</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.14)">tuple</a></p>
@@ -183,7 +192,7 @@ due to heavy averaging; in such cases, prefer threshold mode or increase n.</p>
            </div>
           </div>
           <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
-        <a href="biomedical_data_generator.generate_correlated_cluster.html" class="btn btn-neutral float-left" title="biomedical_data_generator.generate_correlated_cluster" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="biomedical_data_generator.generate_dataset.html" class="btn btn-neutral float-left" title="biomedical_data_generator.generate_dataset" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
         <a href="biomedical_data_generator.DatasetConfig.html" class="btn btn-neutral float-right" title="biomedical_data_generator.DatasetConfig" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
 

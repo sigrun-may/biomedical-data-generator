@@ -1,6 +1,0 @@
-﻿biomedical\_data\_generator.generate\_correlated\_cluster
-=========================================================
-
-.. currentmodule:: biomedical_data_generator
-
-.. autofunction:: generate_correlated_cluster

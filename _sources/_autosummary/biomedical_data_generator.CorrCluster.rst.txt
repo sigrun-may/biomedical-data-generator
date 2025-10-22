@@ -18,6 +18,9 @@
       ~CorrCluster.copy
       ~CorrCluster.dict
       ~CorrCluster.from_orm
+      ~CorrCluster.get_rho_for_class
+      ~CorrCluster.get_structure_for_class
+      ~CorrCluster.is_class_specific
       ~CorrCluster.json
       ~CorrCluster.model_construct
       ~CorrCluster.model_copy
@@ -54,8 +57,11 @@
       ~CorrCluster.model_fields
       ~CorrCluster.model_fields_set
       ~CorrCluster.n_cluster_features
-      ~CorrCluster.rho
       ~CorrCluster.structure
+      ~CorrCluster.rho
+      ~CorrCluster.class_structure
+      ~CorrCluster.class_rho
+      ~CorrCluster.rho_baseline
       ~CorrCluster.anchor_role
       ~CorrCluster.anchor_effect_size
       ~CorrCluster.anchor_class

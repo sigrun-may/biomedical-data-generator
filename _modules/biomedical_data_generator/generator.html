@@ -50,7 +50,6 @@
 </ul>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../_autosummary/biomedical_data_generator.generate_dataset.html">biomedical_data_generator.generate_dataset</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../_autosummary/biomedical_data_generator.generate_correlated_cluster.html">biomedical_data_generator.generate_correlated_cluster</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../_autosummary/biomedical_data_generator.find_seed_for_correlation.html">biomedical_data_generator.find_seed_for_correlation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../_autosummary/biomedical_data_generator.DatasetConfig.html">biomedical_data_generator.DatasetConfig</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../_autosummary/biomedical_data_generator.CorrCluster.html">biomedical_data_generator.CorrCluster</a></li>
@@ -101,7 +100,7 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="kn">import</span> <span class="n">DataFrame</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">.config</span><span class="w"> </span><span class="kn">import</span> <span class="n">DatasetConfig</span><span class="p">,</span> <span class="n">NoiseDistribution</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">.features.correlated</span><span class="w"> </span><span class="kn">import</span> <span class="n">sample_cluster_matrix</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.features.correlated</span><span class="w"> </span><span class="kn">import</span> <span class="n">sample_cluster</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">.features.informative</span><span class="w"> </span><span class="kn">import</span> <span class="n">shift_classes</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">.features.noise</span><span class="w"> </span><span class="kn">import</span> <span class="n">sample_noise</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">.meta</span><span class="w"> </span><span class="kn">import</span> <span class="n">DatasetMeta</span>
@@ -285,17 +284,6 @@
     <span class="k">return</span> <span class="n">names</span><span class="p">,</span> <span class="n">informative_idx</span><span class="p">,</span> <span class="n">pseudo_idx</span><span class="p">,</span> <span class="n">noise_idx</span><span class="p">,</span> <span class="n">cluster_indices</span><span class="p">,</span> <span class="n">anchor_idx</span>
 
 
-<span class="c1"># ================</span>
-<span class="c1"># Softmax utility</span>
-<span class="c1"># ================</span>
-<span class="k">def</span><span class="w"> </span><span class="nf">_softmax</span><span class="p">(</span><span class="n">Z</span><span class="p">:</span> <span class="n">NDArray</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">NDArray</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">]:</span>
-    <span class="n">Z</span> <span class="o">=</span> <span class="n">Z</span> <span class="o">-</span> <span class="n">Z</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">keepdims</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-    <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">Z</span><span class="p">,</span> <span class="n">out</span><span class="o">=</span><span class="n">Z</span><span class="p">)</span>
-    <span class="n">Z_sum</span> <span class="o">=</span> <span class="n">Z</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">keepdims</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-    <span class="n">Z</span> <span class="o">/=</span> <span class="n">Z_sum</span>
-    <span class="k">return</span> <span class="n">Z</span>
-
-
 <span class="k">def</span><span class="w"> </span><span class="nf">_resolve_noise_params</span><span class="p">(</span><span class="n">dist</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">noise_scale</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">noise_params</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">float</span><span class="p">]:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Resolve noise distribution parameters with defaults.</span>
 
@@ -365,22 +353,22 @@
     <span class="n">return_dataframe</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
     <span class="o">**</span><span class="n">overrides</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">DataFrame</span> <span class="o">|</span> <span class="n">NDArray</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">],</span> <span class="n">NDArray</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">int64</span><span class="p">],</span> <span class="n">DatasetMeta</span><span class="p">]:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Generate an n-class (softmax) classification dataset with optional correlated clusters.</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Generate an n-class classification dataset with optional correlated clusters.</span>
 
 <span class="sd">    Features are ordered as: cluster features (anchors first within each cluster),</span>
 <span class="sd">    then free informative features, then free pseudo features, then noise features.</span>
-<span class="sd">    Labels y are sampled from a softmax model over `n_classes`: cluster anchors add a positive</span>
-<span class="sd">    contribution to their assigned class (via `anchor_effect_size`), free informative features contribute</span>
-<span class="sd">    to classes in a simple round-robin assignment (β=0.8). Pseudo and noise features have β=0.</span>
-<span class="sd">    Reproducibility is controlled by `cfg.random_state` and optional per-cluster seeds. If `weights`</span>
-<span class="sd">    are specified (length `n_classes`), per-class intercepts are added so that</span>
-<span class="sd">    softmax(mean_logits + intercepts) ≈ weights. Feature names follow either a “prefixed” scheme</span>
-<span class="sd">    (e.g., `i*`, `corr{cid}_k`, `p*`, `n*`) or a generic `feature_1..p`. The returned `meta` includes</span>
-<span class="sd">    role masks, cluster indices, empirical class proportions, and the resolved configuration.</span>
+<span class="sd">    Labels y must be explicitly specified via either `cfg.class_counts` (exact per-class sample counts)</span>
+<span class="sd">    or `cfg.weights` (target class proportions for stochastic sampling). Class-wise shifts are then</span>
+<span class="sd">    applied to informative features and cluster anchors (via `anchor_effect_size`) to create class separation.</span>
+<span class="sd">    Reproducibility is controlled by `cfg.random_state` and optional per-cluster seeds.</span>
+<span class="sd">    Feature names follow either a &quot;prefixed&quot; scheme (e.g., `i*`, `corr{cid}_k`, `p*`, `n*`)</span>
+<span class="sd">    or a generic `feature_1..p`. The returned `meta` includes role masks, cluster indices,</span>
+<span class="sd">    empirical class proportions, and the resolved configuration.</span>
 
 <span class="sd">    Args:</span>
 <span class="sd">        cfg (DatasetConfig): Configuration including feature counts, cluster layout, correlation</span>
-<span class="sd">            parameters, naming policy, randomness controls, `n_classes`, and optional `weights`.</span>
+<span class="sd">            parameters, naming policy, randomness controls, `n_classes`, and either `class_counts` or `weights`.</span>
+<span class="sd">            At least one of `class_counts` or `weights` must be specified.</span>
 <span class="sd">        return_dataframe (bool, optional): If True (default), return `X` as a `pandas.DataFrame`</span>
 <span class="sd">            with column names. If False, return `X` as a NumPy array in the same column order.</span>
 <span class="sd">        **overrides: Optional config overrides merged into `cfg` (e.g., `n_samples=...`).</span>
@@ -393,12 +381,24 @@
 <span class="sd">            - y (np.ndarray): Shape (n_samples,). Integer labels in {0, 1, ..., n_classes-1}.</span>
 <span class="sd">            - meta (DatasetMeta): Metadata including role masks, cluster indices/labels, empirical class</span>
 <span class="sd">              weights, and the resolved configuration.</span>
+
+<span class="sd">    Raises:</span>
+<span class="sd">    ------</span>
+<span class="sd">        ValueError: If neither `class_counts` nor `weights` is specified.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">if</span> <span class="n">overrides</span><span class="p">:</span>
         <span class="n">cfg</span> <span class="o">=</span> <span class="n">cfg</span><span class="o">.</span><span class="n">model_copy</span><span class="p">(</span><span class="n">update</span><span class="o">=</span><span class="n">overrides</span><span class="p">)</span>
 
     <span class="k">if</span> <span class="nb">int</span><span class="p">(</span><span class="n">cfg</span><span class="o">.</span><span class="n">n_classes</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">2</span><span class="p">:</span>
         <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;n_classes must be &gt;= 2.&quot;</span><span class="p">)</span>
+
+    <span class="c1"># Require explicit label specification</span>
+    <span class="k">if</span> <span class="n">cfg</span><span class="o">.</span><span class="n">class_counts</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">cfg</span><span class="o">.</span><span class="n">weights</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="s2">&quot;Either &#39;class_counts&#39; or &#39;weights&#39; must be specified. &quot;</span>
+            <span class="s2">&quot;Automatic label generation via softmax is no longer supported.&quot;</span>
+        <span class="p">)</span>
+
     <span class="k">if</span> <span class="n">cfg</span><span class="o">.</span><span class="n">weights</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
         <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">cfg</span><span class="o">.</span><span class="n">weights</span><span class="p">)</span> <span class="o">!=</span> <span class="n">cfg</span><span class="o">.</span><span class="n">n_classes</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;weights must have length n_classes.&quot;</span><span class="p">)</span>
@@ -424,7 +424,16 @@
         <span class="k">for</span> <span class="n">cid</span><span class="p">,</span> <span class="n">c</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">cfg</span><span class="o">.</span><span class="n">corr_clusters</span><span class="p">,</span> <span class="n">start</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
             <span class="n">seed</span> <span class="o">=</span> <span class="n">c</span><span class="o">.</span><span class="n">random_state</span> <span class="k">if</span> <span class="n">c</span><span class="o">.</span><span class="n">random_state</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">cfg</span><span class="o">.</span><span class="n">random_state</span>
             <span class="n">rng</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">default_rng</span><span class="p">(</span><span class="n">seed</span><span class="p">)</span>
-            <span class="n">B</span> <span class="o">=</span> <span class="n">sample_cluster_matrix</span><span class="p">(</span><span class="n">cfg</span><span class="o">.</span><span class="n">n_samples</span><span class="p">,</span> <span class="n">c</span><span class="p">,</span> <span class="n">rng</span><span class="p">)</span>
+            <span class="n">B</span> <span class="o">=</span> <span class="n">sample_cluster</span><span class="p">(</span>
+                <span class="n">n_samples</span><span class="o">=</span><span class="n">cfg</span><span class="o">.</span><span class="n">n_samples</span><span class="p">,</span>
+                <span class="n">n_features</span><span class="o">=</span><span class="n">c</span><span class="o">.</span><span class="n">n_cluster_features</span><span class="p">,</span>
+                <span class="n">rng</span><span class="o">=</span><span class="n">rng</span><span class="p">,</span>
+                <span class="n">structure</span><span class="o">=</span><span class="n">c</span><span class="o">.</span><span class="n">structure</span><span class="p">,</span>
+                <span class="n">rho</span><span class="o">=</span><span class="n">c</span><span class="o">.</span><span class="n">rho</span><span class="p">,</span>
+                <span class="n">class_labels</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>  <span class="c1"># Labels not available yet during feature generation</span>
+                <span class="n">class_rho</span><span class="o">=</span><span class="n">c</span><span class="o">.</span><span class="n">class_rho</span><span class="p">,</span>
+                <span class="n">baseline_rho</span><span class="o">=</span><span class="n">c</span><span class="o">.</span><span class="n">rho_baseline</span><span class="p">,</span>
+            <span class="p">)</span>
             <span class="c1"># weak global coupling (same g for all cluster columns)</span>
             <span class="k">if</span> <span class="n">cfg</span><span class="o">.</span><span class="n">corr_between</span> <span class="o">&gt;</span> <span class="mf">0.0</span><span class="p">:</span>
                 <span class="n">g</span> <span class="o">=</span> <span class="n">rng_global</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="n">cfg</span><span class="o">.</span><span class="n">n_samples</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
@@ -434,7 +443,8 @@
                 <span class="n">anchor_cls</span> <span class="o">=</span> <span class="mi">0</span> <span class="k">if</span> <span class="n">c</span><span class="o">.</span><span class="n">anchor_class</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="nb">int</span><span class="p">(</span><span class="n">c</span><span class="o">.</span><span class="n">anchor_class</span><span class="p">)</span>
                 <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="mi">0</span> <span class="o">&lt;=</span> <span class="n">anchor_cls</span> <span class="o">&lt;</span> <span class="n">cfg</span><span class="o">.</span><span class="n">n_classes</span><span class="p">):</span>
                     <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;anchor_class </span><span class="si">{</span><span class="n">anchor_cls</span><span class="si">}</span><span class="s2"> out of range for n_classes=</span><span class="si">{</span><span class="n">cfg</span><span class="o">.</span><span class="n">n_classes</span><span class="si">}</span><span class="s2">.&quot;</span><span class="p">)</span>
-                <span class="n">anchor_contrib</span><span class="p">[</span><span class="n">anchor_col</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">c</span><span class="o">.</span><span class="n">anchor_effect_size</span><span class="p">),</span> <span class="n">anchor_cls</span><span class="p">)</span>
+                <span class="n">beta</span> <span class="o">=</span> <span class="n">c</span><span class="o">.</span><span class="n">resolve_anchor_effect_size</span><span class="p">()</span>  <span class="c1"># Convert &quot;small&quot;/&quot;medium&quot;/&quot;large&quot; -&gt; numeric</span>
+                <span class="n">anchor_contrib</span><span class="p">[</span><span class="n">anchor_col</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">beta</span><span class="p">,</span> <span class="n">anchor_cls</span><span class="p">)</span>
                 <span class="n">anchor_target_cls_map</span><span class="p">[</span><span class="n">cid</span><span class="p">]</span> <span class="o">=</span> <span class="n">anchor_cls</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="n">anchor_target_cls_map</span><span class="p">[</span><span class="n">cid</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
@@ -483,42 +493,11 @@
     <span class="c1"># Check totals</span>
     <span class="k">assert</span> <span class="n">X</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="n">names</span><span class="p">)</span> <span class="o">==</span> <span class="n">cfg</span><span class="o">.</span><span class="n">n_features</span><span class="p">,</span> <span class="p">(</span><span class="n">X</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="nb">len</span><span class="p">(</span><span class="n">names</span><span class="p">),</span> <span class="n">cfg</span><span class="o">.</span><span class="n">n_features</span><span class="p">)</span>
 
-    <span class="c1"># Label generation</span>
+    <span class="c1"># Label generation (explicit via class_counts or weights)</span>
     <span class="n">K</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">cfg</span><span class="o">.</span><span class="n">n_classes</span><span class="p">)</span>
+    <span class="n">y</span> <span class="o">=</span> <span class="n">_make_labels</span><span class="p">(</span><span class="n">cfg</span><span class="p">,</span> <span class="n">rng_global</span><span class="p">)</span>  <span class="c1"># shape (n_samples,), dtype=int</span>
 
-    <span class="n">use_controlled</span> <span class="o">=</span> <span class="p">(</span><span class="nb">getattr</span><span class="p">(</span><span class="n">cfg</span><span class="p">,</span> <span class="s2">&quot;class_counts&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">or</span> <span class="p">(</span><span class="nb">getattr</span><span class="p">(</span><span class="n">cfg</span><span class="p">,</span> <span class="s2">&quot;weights&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">)</span>
-
-    <span class="k">if</span> <span class="n">use_controlled</span><span class="p">:</span>
-        <span class="c1"># Exact counts or stochastic priors (class_counts &gt; weights &gt; uniform)</span>
-        <span class="n">y</span> <span class="o">=</span> <span class="n">_make_labels</span><span class="p">(</span><span class="n">cfg</span><span class="p">,</span> <span class="n">rng_global</span><span class="p">)</span>  <span class="c1"># shape (n_samples,), dtype=int</span>
-
-    <span class="k">else</span><span class="p">:</span>
-        <span class="c1"># Fallback: build logits from informative features and sample via softmax</span>
-        <span class="n">logits</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">cfg</span><span class="o">.</span><span class="n">n_samples</span><span class="p">,</span> <span class="n">K</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
-
-        <span class="c1"># Anchors: add to their assigned class only</span>
-        <span class="k">for</span> <span class="n">col</span><span class="p">,</span> <span class="p">(</span><span class="n">beta</span><span class="p">,</span> <span class="bp">cls</span><span class="p">)</span> <span class="ow">in</span> <span class="n">anchor_contrib</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
-            <span class="n">logits</span><span class="p">[:,</span> <span class="bp">cls</span><span class="p">]</span> <span class="o">+=</span> <span class="n">beta</span> <span class="o">*</span> <span class="n">X</span><span class="p">[:,</span> <span class="n">col</span><span class="p">]</span>
-
-        <span class="c1"># Free informative: round-robin across classes with beta=0.8</span>
-        <span class="n">rr</span> <span class="o">=</span> <span class="mi">0</span>
-        <span class="k">for</span> <span class="n">idx</span> <span class="ow">in</span> <span class="n">inf_idx</span><span class="p">:</span>
-            <span class="c1"># Skip anchor indices already handled above</span>
-            <span class="k">if</span> <span class="n">idx</span> <span class="ow">in</span> <span class="n">anchor_contrib</span><span class="p">:</span>
-                <span class="k">continue</span>
-            <span class="n">logits</span><span class="p">[:,</span> <span class="n">rr</span><span class="p">]</span> <span class="o">+=</span> <span class="mf">0.8</span> <span class="o">*</span> <span class="n">X</span><span class="p">[:,</span> <span class="n">idx</span><span class="p">]</span>
-            <span class="n">rr</span> <span class="o">=</span> <span class="p">(</span><span class="n">rr</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">%</span> <span class="n">K</span>
-
-        <span class="c1"># Scale by class_sep</span>
-        <span class="n">logits</span> <span class="o">*=</span> <span class="nb">float</span><span class="p">(</span><span class="n">cfg</span><span class="o">.</span><span class="n">class_sep</span><span class="p">)</span>
-
-        <span class="c1"># Sample labels from softmax(logits)</span>
-        <span class="n">P</span> <span class="o">=</span> <span class="n">_softmax</span><span class="p">(</span><span class="n">logits</span><span class="o">.</span><span class="n">copy</span><span class="p">())</span>  <span class="c1"># copy because _softmax is in-place</span>
-        <span class="n">cdf</span> <span class="o">=</span> <span class="n">P</span><span class="o">.</span><span class="n">cumsum</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
-        <span class="n">r</span> <span class="o">=</span> <span class="n">rng_global</span><span class="o">.</span><span class="n">random</span><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="n">cfg</span><span class="o">.</span><span class="n">n_samples</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
-        <span class="n">y</span> <span class="o">=</span> <span class="p">(</span><span class="n">r</span> <span class="o">&gt;</span> <span class="n">cdf</span><span class="p">[:,</span> <span class="p">:</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">int64</span><span class="p">)</span>
-
-    <span class="c1"># empirical class stats (always compute from y)</span>
+    <span class="c1"># Empirical class stats (always compute from y)</span>
     <span class="n">counts</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">bincount</span><span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="n">minlength</span><span class="o">=</span><span class="n">K</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">int</span><span class="p">)</span>
     <span class="n">y_counts</span> <span class="o">=</span> <span class="p">{</span><span class="nb">int</span><span class="p">(</span><span class="n">k</span><span class="p">):</span> <span class="nb">int</span><span class="p">(</span><span class="n">counts</span><span class="p">[</span><span class="n">k</span><span class="p">])</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">K</span><span class="p">)}</span>
     <span class="n">y_weights</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">((</span><span class="n">counts</span> <span class="o">/</span> <span class="n">counts</span><span class="o">.</span><span class="n">sum</span><span class="p">())</span><span class="o">.</span><span class="n">tolist</span><span class="p">())</span>
@@ -530,7 +509,7 @@
         <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span>
         <span class="k">for</span> <span class="n">cid</span><span class="p">,</span> <span class="n">c</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">cfg</span><span class="o">.</span><span class="n">corr_clusters</span><span class="p">,</span> <span class="n">start</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
             <span class="n">anchor_role_map</span><span class="p">[</span><span class="n">cid</span><span class="p">]</span> <span class="o">=</span> <span class="n">c</span><span class="o">.</span><span class="n">anchor_role</span>
-            <span class="n">anchor_effect_size_map</span><span class="p">[</span><span class="n">cid</span><span class="p">]</span> <span class="o">=</span> <span class="n">c</span><span class="o">.</span><span class="n">anchor_effect_size</span> <span class="k">if</span> <span class="n">c</span><span class="o">.</span><span class="n">anchor_role</span> <span class="o">==</span> <span class="s2">&quot;informative&quot;</span> <span class="k">else</span> <span class="mf">0.0</span>
+            <span class="n">anchor_effect_size_map</span><span class="p">[</span><span class="n">cid</span><span class="p">]</span> <span class="o">=</span> <span class="n">c</span><span class="o">.</span><span class="n">resolve_anchor_effect_size</span><span class="p">()</span> <span class="k">if</span> <span class="n">c</span><span class="o">.</span><span class="n">anchor_role</span> <span class="o">==</span> <span class="s2">&quot;informative&quot;</span> <span class="k">else</span> <span class="mf">0.0</span>
             <span class="n">i</span> <span class="o">+=</span> <span class="n">c</span><span class="o">.</span><span class="n">n_cluster_features</span>
 
     <span class="c1"># Shift feature values for classes</span>

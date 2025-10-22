@@ -23,7 +23,7 @@
     <script src="../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
-    <link rel="next" title="biomedical_data_generator.generate_correlated_cluster" href="biomedical_data_generator.generate_correlated_cluster.html" />
+    <link rel="next" title="biomedical_data_generator.find_seed_for_correlation" href="biomedical_data_generator.find_seed_for_correlation.html" />
     <link rel="prev" title="Code Documentation" href="../code-doc.html" /> 
 </head>
 
@@ -56,7 +56,6 @@
 <li class="toctree-l2"><a class="reference internal" href="#biomedical_data_generator.generate_dataset"><code class="docutils literal notranslate"><span class="pre">generate_dataset()</span></code></a></li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="biomedical_data_generator.generate_correlated_cluster.html">biomedical_data_generator.generate_correlated_cluster</a></li>
 <li class="toctree-l1"><a class="reference internal" href="biomedical_data_generator.find_seed_for_correlation.html">biomedical_data_generator.find_seed_for_correlation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="biomedical_data_generator.DatasetConfig.html">biomedical_data_generator.DatasetConfig</a></li>
 <li class="toctree-l1"><a class="reference internal" href="biomedical_data_generator.CorrCluster.html">biomedical_data_generator.CorrCluster</a></li>
@@ -92,22 +91,22 @@
 <dl class="py function">
 <dt class="sig sig-object py" id="biomedical_data_generator.generate_dataset">
 <span class="sig-prename descclassname"><span class="pre">biomedical_data_generator.</span></span><span class="sig-name descname"><span class="pre">generate_dataset</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cfg</span></span></em>, <em class="sig-param"><span class="positional-only-separator o"><abbr title="Positional-only parameter separator (PEP 570)"><span class="pre">/</span></abbr></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">return_dataframe</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">overrides</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/biomedical_data_generator/generator.html#generate_dataset"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#biomedical_data_generator.generate_dataset" title="Link to this definition"></a></dt>
-<dd><p>Generate an n-class (softmax) classification dataset with optional correlated clusters.</p>
+<dd><p>Generate an n-class classification dataset with optional correlated clusters.</p>
 <p>Features are ordered as: cluster features (anchors first within each cluster),
 then free informative features, then free pseudo features, then noise features.
-Labels y are sampled from a softmax model over <cite>n_classes</cite>: cluster anchors add a positive
-contribution to their assigned class (via <cite>anchor_effect_size</cite>), free informative features contribute
-to classes in a simple round-robin assignment (β=0.8). Pseudo and noise features have β=0.
-Reproducibility is controlled by <cite>cfg.random_state</cite> and optional per-cluster seeds. If <cite>weights</cite>
-are specified (length <cite>n_classes</cite>), per-class intercepts are added so that
-softmax(mean_logits + intercepts) ≈ weights. Feature names follow either a “prefixed” scheme
-(e.g., <cite>i*</cite>, <cite>corr{cid}_k</cite>, <cite>p*</cite>, <cite>n*</cite>) or a generic <cite>feature_1..p</cite>. The returned <cite>meta</cite> includes
-role masks, cluster indices, empirical class proportions, and the resolved configuration.</p>
+Labels y must be explicitly specified via either <cite>cfg.class_counts</cite> (exact per-class sample counts)
+or <cite>cfg.weights</cite> (target class proportions for stochastic sampling). Class-wise shifts are then
+applied to informative features and cluster anchors (via <cite>anchor_effect_size</cite>) to create class separation.
+Reproducibility is controlled by <cite>cfg.random_state</cite> and optional per-cluster seeds.
+Feature names follow either a “prefixed” scheme (e.g., <cite>i*</cite>, <cite>corr{cid}_k</cite>, <cite>p*</cite>, <cite>n*</cite>)
+or a generic <cite>feature_1..p</cite>. The returned <cite>meta</cite> includes role masks, cluster indices,
+empirical class proportions, and the resolved configuration.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>cfg</strong> (<a class="reference internal" href="biomedical_data_generator.DatasetConfig.html#biomedical_data_generator.DatasetConfig" title="biomedical_data_generator.DatasetConfig"><code class="xref py py-class docutils literal notranslate"><span class="pre">DatasetConfig</span></code></a>) – Configuration including feature counts, cluster layout, correlation
-parameters, naming policy, randomness controls, <cite>n_classes</cite>, and optional <cite>weights</cite>.</p></li>
+parameters, naming policy, randomness controls, <cite>n_classes</cite>, and either <cite>class_counts</cite> or <cite>weights</cite>.
+At least one of <cite>class_counts</cite> or <cite>weights</cite> must be specified.</p></li>
 <li><p><strong>return_dataframe</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code></a>, <em>optional</em>) – If True (default), return <cite>X</cite> as a <cite>pandas.DataFrame</cite>
 with column names. If False, return <cite>X</cite> as a NumPy array in the same column order.</p></li>
 <li><p><strong>**overrides</strong> – Optional config overrides merged into <cite>cfg</cite> (e.g., <cite>n_samples=…</cite>).</p></li>
@@ -132,6 +131,12 @@ weights, and the resolved configuration.</p></li>
 </dl>
 </div></blockquote>
 </section>
+<section id="raises">
+<h2>Raises:<a class="headerlink" href="#raises" title="Link to this heading"></a></h2>
+<blockquote>
+<div><p>ValueError: If neither <cite>class_counts</cite> nor <cite>weights</cite> is specified.</p>
+</div></blockquote>
+</section>
 </dd></dl>
 
 </section>
@@ -141,7 +146,7 @@ weights, and the resolved configuration.</p></li>
           </div>
           <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
         <a href="../code-doc.html" class="btn btn-neutral float-left" title="Code Documentation" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
-        <a href="biomedical_data_generator.generate_correlated_cluster.html" class="btn btn-neutral float-right" title="biomedical_data_generator.generate_correlated_cluster" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+        <a href="biomedical_data_generator.find_seed_for_correlation.html" class="btn btn-neutral float-right" title="biomedical_data_generator.find_seed_for_correlation" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
 
   <hr/>

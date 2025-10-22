@@ -50,7 +50,6 @@
 </ul>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../_autosummary/biomedical_data_generator.generate_dataset.html">biomedical_data_generator.generate_dataset</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../_autosummary/biomedical_data_generator.generate_correlated_cluster.html">biomedical_data_generator.generate_correlated_cluster</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../_autosummary/biomedical_data_generator.find_seed_for_correlation.html">biomedical_data_generator.find_seed_for_correlation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../_autosummary/biomedical_data_generator.DatasetConfig.html">biomedical_data_generator.DatasetConfig</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../_autosummary/biomedical_data_generator.CorrCluster.html">biomedical_data_generator.CorrCluster</a></li>
@@ -190,7 +189,7 @@
 <span class="k">class</span><span class="w"> </span><span class="nc">CorrCluster</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Correlated feature cluster simulating coordinated biomarker patterns.</span>
 
-<span class="sd">    A cluster represents a group of `size` biomarkers that move together, such as</span>
+<span class="sd">    A cluster represents a group of biomarkers that move together, such as</span>
 <span class="sd">    markers in a metabolic pathway or proteins in a signaling cascade. One marker</span>
 <span class="sd">    acts as the &quot;anchor&quot; (driver), while the others are &quot;proxies&quot; (followers).</span>
 
@@ -201,9 +200,13 @@
 <span class="sd">            - 0.5 = moderate correlation</span>
 <span class="sd">            - 0.8+ = strong correlation (typical for pathway markers)</span>
 <span class="sd">            - Range: [0, 1) for equicorrelated; (-1, 1) for toeplitz</span>
+<span class="sd">            Default is 0.8.</span>
 <span class="sd">        structure: Pattern of correlation within the cluster.</span>
 <span class="sd">            - &quot;equicorrelated&quot;: all pairs have the same correlation (default)</span>
 <span class="sd">            - &quot;toeplitz&quot;: correlation decreases with distance</span>
+<span class="sd">        class_structure: Mapping of class index to correlation structure.</span>
+<span class="sd">        class_rho: Mapping of class index to correlation strength.</span>
+<span class="sd">        rho_baseline: Baseline correlation for other classes if class_rho is set. Default is 0.0 (independent).</span>
 <span class="sd">        anchor_role: Biological relevance of the anchor marker.</span>
 <span class="sd">            - &quot;informative&quot;: true biomarker (predictive of disease)</span>
 <span class="sd">            - &quot;pseudo&quot;: confounding variable (correlated but not causal)</span>
@@ -264,8 +267,8 @@
 <span class="sd">        - **effect_size=&quot;small&quot;**: Subtle signal (requires large sample size)</span>
 
 <span class="sd">        Technical details:</span>
-<span class="sd">        - Cluster contributes `size` features to the dataset</span>
-<span class="sd">        - Anchor appears first, followed by `(size-1)` proxies</span>
+<span class="sd">        - Cluster contributes `n_cluster_features` features to the dataset</span>
+<span class="sd">        - Anchor appears first, followed by `(n_cluster_features-1)` proxies</span>
 <span class="sd">        - Only the anchor has predictive power; proxies are correlated distractors</span>
 <span class="sd">        - Proxies count as additional features beyond n_informative/n_pseudo/n_noise</span>
 
@@ -277,10 +280,34 @@
 
     <span class="n">model_config</span> <span class="o">=</span> <span class="n">ConfigDict</span><span class="p">(</span><span class="n">extra</span><span class="o">=</span><span class="s2">&quot;forbid&quot;</span><span class="p">)</span>
 
-    <span class="c1"># Core cluster structure</span>
+    <span class="c1"># Core cluster structure and correlation settings</span>
     <span class="n">n_cluster_features</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="o">...</span><span class="p">,</span> <span class="n">ge</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">description</span><span class="o">=</span><span class="s2">&quot;Number of biomarkers in cluster&quot;</span><span class="p">)</span>
-    <span class="n">rho</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="o">...</span><span class="p">,</span> <span class="n">description</span><span class="o">=</span><span class="s2">&quot;Correlation strength (0=independent, 0.8+=strong)&quot;</span><span class="p">)</span>
-    <span class="n">structure</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;equicorrelated&quot;</span><span class="p">,</span> <span class="s2">&quot;toeplitz&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;equicorrelated&quot;</span>
+
+    <span class="c1"># global correlation (default mode)</span>
+    <span class="n">structure</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;equicorrelated&quot;</span><span class="p">,</span> <span class="s2">&quot;toeplitz&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span>
+        <span class="n">default</span><span class="o">=</span><span class="s2">&quot;equicorrelated&quot;</span><span class="p">,</span>
+        <span class="n">description</span><span class="o">=</span><span class="s2">&quot;Default correlation structure for all classes&quot;</span>
+    <span class="p">)</span>
+    <span class="n">rho</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span>
+        <span class="n">default</span><span class="o">=</span><span class="mf">0.8</span><span class="p">,</span>
+        <span class="n">description</span><span class="o">=</span><span class="s2">&quot;Default correlation strength for all classes&quot;</span>
+    <span class="p">)</span>
+
+    <span class="c1"># per-class correlation (optional)</span>
+    <span class="n">class_structure</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;equicorrelated&quot;</span><span class="p">,</span> <span class="s2">&quot;toeplitz&quot;</span><span class="p">]]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span>
+        <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">description</span><span class="o">=</span><span class="s2">&quot;Per-class correlation structure (overrides &#39;structure&#39; for specified classes)&quot;</span>
+    <span class="p">)</span>
+    <span class="n">class_rho</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span>
+        <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">description</span><span class="o">=</span><span class="s2">&quot;Per-class correlation strength (activates class-specific mode)&quot;</span>
+    <span class="p">)</span>
+    <span class="n">rho_baseline</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span>
+        <span class="n">default</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span>
+        <span class="n">ge</span><span class="o">=-</span><span class="mf">1.0</span><span class="p">,</span>
+        <span class="n">lt</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span>
+        <span class="n">description</span><span class="o">=</span><span class="s2">&quot;Fallback correlation for classes not in class_rho&quot;</span>
+    <span class="p">)</span>
 
     <span class="c1"># Biological relevance</span>
     <span class="n">anchor_role</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;informative&quot;</span><span class="p">,</span> <span class="s2">&quot;pseudo&quot;</span><span class="p">,</span> <span class="s2">&quot;noise&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;informative&quot;</span>
@@ -296,16 +323,109 @@
     <span class="k">def</span><span class="w"> </span><span class="nf">_validate_size</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">v</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Ensure cluster has at least one marker.&quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="n">v</span> <span class="o">&lt;</span> <span class="mi">1</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;size must be &gt;= 1, got </span><span class="si">{</span><span class="n">v</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;n_cluster_features must be &gt;= 1, got </span><span class="si">{</span><span class="n">v</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">v</span>
 
     <span class="nd">@field_validator</span><span class="p">(</span><span class="s2">&quot;rho&quot;</span><span class="p">)</span>
     <span class="nd">@classmethod</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">_validate_rho_range</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">v</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Validate correlation strength is in valid range.&quot;&quot;&quot;</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="o">-</span><span class="mf">1.0</span> <span class="o">&lt;</span> <span class="n">v</span> <span class="o">&lt;</span> <span class="mf">1.0</span><span class="p">):</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;rho must be in (-1, 1), got </span><span class="si">{</span><span class="n">v</span><span class="si">}</span><span class="s2">. &quot;</span> <span class="sa">f</span><span class="s2">&quot;Hint: 0=independent, 0.5=moderate, 0.8=strong&quot;</span><span class="p">)</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_validate_rho_range</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">v</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">info</span><span class="p">):</span>
+        <span class="n">p</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">info</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;n_cluster_features&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span>
+        <span class="n">structure</span> <span class="o">=</span> <span class="n">info</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;structure&quot;</span><span class="p">,</span> <span class="s2">&quot;equicorrelated&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">structure</span> <span class="o">==</span> <span class="s2">&quot;equicorrelated&quot;</span><span class="p">:</span>
+            <span class="n">lower</span> <span class="o">=</span> <span class="o">-</span><span class="mf">1.0</span> <span class="o">/</span> <span class="p">(</span><span class="n">p</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="k">if</span> <span class="n">p</span> <span class="o">&gt;</span> <span class="mi">1</span> <span class="k">else</span> <span class="nb">float</span><span class="p">(</span><span class="s2">&quot;-inf&quot;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="n">lower</span> <span class="o">&lt;</span> <span class="n">v</span> <span class="o">&lt;</span> <span class="mf">1.0</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;rho=</span><span class="si">{</span><span class="n">v</span><span class="si">}</span><span class="s2"> invalid for equicorrelated with n_cluster_features=</span><span class="si">{</span><span class="n">p</span><span class="si">}</span><span class="s2">; &quot;</span>
+                                 <span class="sa">f</span><span class="s2">&quot;require </span><span class="si">{</span><span class="n">lower</span><span class="si">:</span><span class="s2">.6f</span><span class="si">}</span><span class="s2"> &lt; rho &lt; 1.&quot;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>  <span class="c1"># toeplitz</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="o">-</span><span class="mf">1.0</span> <span class="o">&lt;</span> <span class="n">v</span> <span class="o">&lt;</span> <span class="mf">1.0</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;For toeplitz, require |rho| &lt; 1.&quot;</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">v</span>
+
+    <span class="nd">@field_validator</span><span class="p">(</span><span class="s2">&quot;class_rho&quot;</span><span class="p">)</span>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_validate_class_rho</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">v</span><span class="p">,</span> <span class="n">info</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">v</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">v</span>
+        <span class="n">p</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">info</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;n_cluster_features&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span>
+        <span class="n">structure</span> <span class="o">=</span> <span class="n">info</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;structure&quot;</span><span class="p">,</span> <span class="s2">&quot;equicorrelated&quot;</span><span class="p">)</span>
+        <span class="n">lower</span> <span class="o">=</span> <span class="o">-</span><span class="mf">1.0</span> <span class="o">/</span> <span class="p">(</span><span class="n">p</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="k">if</span> <span class="p">(</span><span class="n">structure</span> <span class="o">==</span> <span class="s2">&quot;equicorrelated&quot;</span> <span class="ow">and</span> <span class="n">p</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">)</span> <span class="k">else</span> <span class="o">-</span><span class="mf">1.0</span>
+        <span class="k">for</span> <span class="n">cls_idx</span><span class="p">,</span> <span class="n">rho_val</span> <span class="ow">in</span> <span class="n">v</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="k">if</span> <span class="n">cls_idx</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;class_rho keys must be &gt;= 0, got </span><span class="si">{</span><span class="n">cls_idx</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="n">lower</span> <span class="o">&lt;</span> <span class="nb">float</span><span class="p">(</span><span class="n">rho_val</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mf">1.0</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;class_rho[</span><span class="si">{</span><span class="n">cls_idx</span><span class="si">}</span><span class="s2">]=</span><span class="si">{</span><span class="n">rho_val</span><span class="si">}</span><span class="s2"> invalid for </span><span class="si">{</span><span class="n">structure</span><span class="si">}</span><span class="s2"> (p=</span><span class="si">{</span><span class="n">p</span><span class="si">}</span><span class="s2">); &quot;</span>
+                    <span class="sa">f</span><span class="s2">&quot;require </span><span class="si">{</span><span class="n">lower</span><span class="si">:</span><span class="s2">.6f</span><span class="si">}</span><span class="s2"> &lt; rho &lt; 1.&quot;</span>
+                <span class="p">)</span>
+        <span class="k">return</span> <span class="n">v</span>
+
+    <span class="nd">@field_validator</span><span class="p">(</span><span class="s2">&quot;class_structure&quot;</span><span class="p">)</span>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_validate_class_structure</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">v</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Validate per-class structure keys.&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">v</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">v</span>
+
+        <span class="k">for</span> <span class="n">cls_idx</span> <span class="ow">in</span> <span class="n">v</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+            <span class="k">if</span> <span class="n">cls_idx</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;class_structure keys must be &gt;= 0, got </span><span class="si">{</span><span class="n">cls_idx</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">v</span>
+
+    <span class="nd">@model_validator</span><span class="p">(</span><span class="n">mode</span><span class="o">=</span><span class="s2">&quot;after&quot;</span><span class="p">)</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_validate_class_specific_consistency</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Ensure class_structure is only used with class_rho.&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">class_structure</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">class_rho</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">&quot;class_structure requires class_rho to be set. &quot;</span>
+                <span class="s2">&quot;Either set class_rho (activates class-specific mode) or remove class_structure.&quot;</span>
+            <span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span>
+
+<div class="viewcode-block" id="CorrCluster.is_class_specific">
+<a class="viewcode-back" href="../../_autosummary/biomedical_data_generator.CorrCluster.html#biomedical_data_generator.CorrCluster.is_class_specific">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">is_class_specific</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Check if this cluster uses class-specific correlation.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            True if class_rho is set (activates class-specific mode).</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">class_rho</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span></div>
+
+
+<div class="viewcode-block" id="CorrCluster.get_rho_for_class">
+<a class="viewcode-back" href="../../_autosummary/biomedical_data_generator.CorrCluster.html#biomedical_data_generator.CorrCluster.get_rho_for_class">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_rho_for_class</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">class_idx</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get correlation strength for a specific class.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            class_idx: Class label (0, 1, 2, ...).</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Correlation strength for this class.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_class_specific</span><span class="p">():</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">rho</span>
+
+        <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">class_rho</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>  <span class="c1"># type guard</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">class_rho</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">class_idx</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">rho_baseline</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="CorrCluster.get_structure_for_class">
+<a class="viewcode-back" href="../../_autosummary/biomedical_data_generator.CorrCluster.html#biomedical_data_generator.CorrCluster.get_structure_for_class">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_structure_for_class</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">class_idx</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;equicorrelated&quot;</span><span class="p">,</span> <span class="s2">&quot;toeplitz&quot;</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get correlation structure for a specific class.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            class_idx: Class label (0, 1, 2, ...).</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Structure type for this class.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">class_structure</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">structure</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">class_structure</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">class_idx</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">structure</span><span class="p">)</span></div>
+
 
     <span class="nd">@field_validator</span><span class="p">(</span><span class="s2">&quot;anchor_effect_size&quot;</span><span class="p">)</span>
     <span class="nd">@classmethod</span>
@@ -421,8 +541,6 @@
 
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">anchor_class</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
                 <span class="n">lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Predicts: class </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">anchor_class</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-            <span class="k">else</span><span class="p">:</span>
-                <span class="n">lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;  Predicts: all classes (round-robin)&quot;</span><span class="p">)</span>
 
             <span class="c1"># Medical interpretation of effect size</span>
             <span class="k">if</span> <span class="n">effect_value</span> <span class="o">&lt;</span> <span class="mf">0.7</span><span class="p">:</span>
@@ -440,12 +558,19 @@
         <span class="n">lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;&quot;</span><span class="p">)</span>
         <span class="n">lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Random seed: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">random_state</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="bp">self</span><span class="o">.</span><span class="n">random_state</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="s1">&#39;from dataset&#39;</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
 
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">class_rho</span><span class="p">:</span>
+            <span class="n">lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Baseline rho for other classes: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">rho_baseline</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="n">lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;Per-class overrides:&quot;</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">r</span> <span class="ow">in</span> <span class="nb">sorted</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">class_rho</span><span class="o">.</span><span class="n">items</span><span class="p">()):</span>
+                <span class="n">s</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">class_structure</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">structure</span><span class="p">)</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">class_structure</span> <span class="k">else</span> <span class="bp">self</span><span class="o">.</span><span class="n">structure</span>
+                <span class="n">lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  class </span><span class="si">{</span><span class="n">k</span><span class="si">}</span><span class="s2">: rho=</span><span class="si">{</span><span class="n">r</span><span class="si">}</span><span class="s2"> (</span><span class="si">{</span><span class="n">s</span><span class="si">}</span><span class="s2">)&quot;</span><span class="p">)</span>
+
         <span class="k">return</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">lines</span><span class="p">)</span></div>
 
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Concise representation for quick reference.&quot;&quot;&quot;</span>
-        <span class="n">parts</span> <span class="o">=</span> <span class="p">[</span><span class="sa">f</span><span class="s2">&quot;size=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">n_cluster_features</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;rho=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">rho</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">]</span>
+        <span class="n">parts</span> <span class="o">=</span> <span class="p">[</span><span class="sa">f</span><span class="s2">&quot;n_cluster_features=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">n_cluster_features</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;rho=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">rho</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">]</span>
 
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">anchor_role</span> <span class="o">!=</span> <span class="s2">&quot;informative&quot;</span><span class="p">:</span>
             <span class="n">parts</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">anchor_role</span><span class="p">)</span>
@@ -554,8 +679,8 @@
         <span class="p">)</span>
         <span class="n">extra_from_clusters</span> <span class="o">=</span> <span class="mi">0</span>
         <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="bp">cls</span><span class="o">.</span><span class="n">_iter_cluster_dicts</span><span class="p">(</span><span class="n">raw_config</span><span class="p">):</span>
-            <span class="n">size</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">c</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;size&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span>
-            <span class="n">extra_from_clusters</span> <span class="o">+=</span> <span class="nb">max</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">size</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
+            <span class="n">n_cluster_features</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">c</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;n_cluster_features&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span>
+            <span class="n">extra_from_clusters</span> <span class="o">+=</span> <span class="nb">max</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">n_cluster_features</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">base</span> <span class="o">+</span> <span class="n">extra_from_clusters</span>
 
     <span class="c1"># ---------- validation (strict, no warnings) ----------</span>
@@ -715,7 +840,8 @@
                 <span class="n">norm_clusters</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">CorrCluster</span><span class="o">.</span><span class="n">model_validate</span><span class="p">(</span><span class="n">c</span><span class="p">))</span>
         <span class="n">kwargs</span><span class="p">[</span><span class="s2">&quot;corr_clusters&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">norm_clusters</span>
 
-        <span class="c1"># Compute required n_features = free informative + free pseudo + free noise + sum(size-1 per cluster)</span>
+        <span class="c1"># Compute required n_features</span>
+        <span class="c1"># n_features = free informative + free pseudo + free noise + sum(n_cluster_features-1 per cluster)</span>
         <span class="n">n_inf</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;n_informative&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span>
         <span class="n">n_pse</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;n_pseudo&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span>
         <span class="n">n_noise</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;n_noise&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span>
@@ -915,7 +1041,7 @@
                     <span class="p">)</span>
                 <span class="k">else</span><span class="p">:</span>
                     <span class="n">lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
-                        <span class="sa">f</span><span class="s2">&quot;- #</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2">: size=</span><span class="si">{</span><span class="n">c</span><span class="o">.</span><span class="n">n_cluster_features</span><span class="si">}</span><span class="s2">, role=</span><span class="si">{</span><span class="n">c</span><span class="o">.</span><span class="n">anchor_role</span><span class="si">}</span><span class="s2">, rho=</span><span class="si">{</span><span class="n">c</span><span class="o">.</span><span class="n">rho</span><span class="si">}</span><span class="s2">, &quot;</span>
+                        <span class="sa">f</span><span class="s2">&quot;- #</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2">: n_cluster_features=</span><span class="si">{</span><span class="n">c</span><span class="o">.</span><span class="n">n_cluster_features</span><span class="si">}</span><span class="s2">, role=</span><span class="si">{</span><span class="n">c</span><span class="o">.</span><span class="n">anchor_role</span><span class="si">}</span><span class="s2">, rho=</span><span class="si">{</span><span class="n">c</span><span class="o">.</span><span class="n">rho</span><span class="si">}</span><span class="s2">, &quot;</span>
                         <span class="sa">f</span><span class="s2">&quot;structure=</span><span class="si">{</span><span class="n">c</span><span class="o">.</span><span class="n">structure</span><span class="si">}</span><span class="s2">, label=</span><span class="si">{</span><span class="n">label</span><span class="si">}</span><span class="s2">, proxies=</span><span class="si">{</span><span class="n">proxies</span><span class="si">}</span><span class="s2">&quot;</span>
                     <span class="p">)</span>
 
