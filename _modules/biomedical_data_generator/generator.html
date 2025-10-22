@@ -106,34 +106,6 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">.meta</span><span class="w"> </span><span class="kn">import</span> <span class="n">DatasetMeta</span>
 
 
-<span class="k">def</span><span class="w"> </span><span class="nf">_normalize_priors</span><span class="p">(</span><span class="n">weights</span><span class="p">:</span> <span class="n">Iterable</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span><span class="p">,</span> <span class="n">n_classes</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Normalize non-negative weights into a probability vector of length n_classes.</span>
-
-<span class="sd">    If weights is None, returns uniform priors.</span>
-
-<span class="sd">    Args:</span>
-<span class="sd">        weights: Iterable of non-negative weights (length n_classes) or None.</span>
-<span class="sd">        n_classes: Number of classes (must be &gt;= 2).</span>
-
-<span class="sd">    Returns:</span>
-<span class="sd">    -------</span>
-<span class="sd">        np.ndarray: Normalized probability vector of shape (n_classes,).</span>
-
-<span class="sd">    Raises:</span>
-<span class="sd">    ------</span>
-<span class="sd">        ValueError: If weights length != n_classes or sum(weights) &lt;= 0.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">if</span> <span class="n">weights</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">n_classes</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span> <span class="o">/</span> <span class="n">n_classes</span>
-    <span class="n">p</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">weights</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
-    <span class="k">if</span> <span class="n">p</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">!=</span> <span class="n">n_classes</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;weights length must equal n_classes (got </span><span class="si">{</span><span class="n">p</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s2"> vs </span><span class="si">{</span><span class="n">n_classes</span><span class="si">}</span><span class="s2">)&quot;</span><span class="p">)</span>
-    <span class="n">s</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">p</span><span class="o">.</span><span class="n">sum</span><span class="p">())</span>
-    <span class="k">if</span> <span class="n">s</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;sum(weights) must be &gt; 0.&quot;</span><span class="p">)</span>
-    <span class="k">return</span> <span class="n">p</span> <span class="o">/</span> <span class="n">s</span>
-
-
 <span class="k">def</span><span class="w"> </span><span class="nf">_labels_from_counts</span><span class="p">(</span><span class="n">counts</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">],</span> <span class="n">n_classes</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">rng</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">Generator</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Build label vector y exactly matching the requested counts and shuffle it.</span>
 
@@ -159,36 +131,10 @@
         <span class="k">if</span> <span class="n">c</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
             <span class="n">y_parts</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">full</span><span class="p">(</span><span class="n">c</span><span class="p">,</span> <span class="n">k</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">int</span><span class="p">))</span>
     <span class="n">y</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">(</span><span class="n">y_parts</span><span class="p">)</span> <span class="k">if</span> <span class="n">y_parts</span> <span class="k">else</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">((</span><span class="mi">0</span><span class="p">,),</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span>
-    <span class="k">if</span> <span class="n">y</span><span class="o">.</span><span class="n">size</span> <span class="o">!=</span> <span class="nb">sum</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">counts</span><span class="p">[</span><span class="n">k</span><span class="p">])</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_classes</span><span class="p">)):</span>
+    <span class="k">if</span> <span class="n">y</span><span class="o">.</span><span class="n">size</span> <span class="o">!=</span> <span class="nb">sum</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">counts</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_classes</span><span class="p">)):</span>
         <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;Counts assembly mismatch.&quot;</span><span class="p">)</span>
     <span class="n">rng</span><span class="o">.</span><span class="n">shuffle</span><span class="p">(</span><span class="n">y</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">y</span>
-
-
-<span class="k">def</span><span class="w"> </span><span class="nf">_make_labels</span><span class="p">(</span><span class="n">cfg</span><span class="p">,</span> <span class="n">rng</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">Generator</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Make label vector y according to cfg.</span>
-
-<span class="sd">    Choose label source with precedence:</span>
-<span class="sd">      1) cfg.class_counts -&gt; exact class sizes (best for small n)</span>
-<span class="sd">      2) cfg.weights      -&gt; stochastic sampling by normalized priors</span>
-<span class="sd">      3) uniform          -&gt; equal priors.</span>
-
-<span class="sd">    Args:</span>
-<span class="sd">        cfg: DatasetConfig with n_samples, n_classes, optional class_counts or weights.</span>
-<span class="sd">        rng: Random number generator for sampling/shuffling.</span>
-
-<span class="sd">    Returns:</span>
-<span class="sd">    -------</span>
-<span class="sd">        np.ndarray: Label vector of shape (n_samples,) with values in {0, ..., n_classes-1}.</span>
-
-<span class="sd">    Raises:</span>
-<span class="sd">    ------</span>
-<span class="sd">        ValueError: If cfg is invalid (e.g., n_classes &lt; 2).</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">if</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">cfg</span><span class="p">,</span> <span class="s2">&quot;class_counts&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="k">return</span> <span class="n">_labels_from_counts</span><span class="p">(</span><span class="n">cfg</span><span class="o">.</span><span class="n">class_counts</span><span class="p">,</span> <span class="n">cfg</span><span class="o">.</span><span class="n">n_classes</span><span class="p">,</span> <span class="n">rng</span><span class="p">)</span>
-    <span class="n">priors</span> <span class="o">=</span> <span class="n">_normalize_priors</span><span class="p">(</span><span class="nb">getattr</span><span class="p">(</span><span class="n">cfg</span><span class="p">,</span> <span class="s2">&quot;weights&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">),</span> <span class="n">cfg</span><span class="o">.</span><span class="n">n_classes</span><span class="p">)</span>
-    <span class="k">return</span> <span class="n">rng</span><span class="o">.</span><span class="n">choice</span><span class="p">(</span><span class="n">cfg</span><span class="o">.</span><span class="n">n_classes</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="n">cfg</span><span class="o">.</span><span class="n">n_samples</span><span class="p">,</span> <span class="n">p</span><span class="o">=</span><span class="n">priors</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">int</span><span class="p">)</span>
 
 
 <span class="c1"># ==================</span>
@@ -357,9 +303,9 @@
 
 <span class="sd">    Features are ordered as: cluster features (anchors first within each cluster),</span>
 <span class="sd">    then free informative features, then free pseudo features, then noise features.</span>
-<span class="sd">    Labels y must be explicitly specified via either `cfg.class_counts` (exact per-class sample counts)</span>
-<span class="sd">    or `cfg.weights` (target class proportions for stochastic sampling). Class-wise shifts are then</span>
-<span class="sd">    applied to informative features and cluster anchors (via `anchor_effect_size`) to create class separation.</span>
+<span class="sd">    Labels y must be explicitly specified via `cfg.class_counts` (exact per-class sample counts).</span>
+<span class="sd">    Class-wise shifts are then applied to informative features and cluster anchors</span>
+<span class="sd">    (via `anchor_effect_size`) to create class separation.</span>
 <span class="sd">    Reproducibility is controlled by `cfg.random_state` and optional per-cluster seeds.</span>
 <span class="sd">    Feature names follow either a &quot;prefixed&quot; scheme (e.g., `i*`, `corr{cid}_k`, `p*`, `n*`)</span>
 <span class="sd">    or a generic `feature_1..p`. The returned `meta` includes role masks, cluster indices,</span>
@@ -367,8 +313,9 @@
 
 <span class="sd">    Args:</span>
 <span class="sd">        cfg (DatasetConfig): Configuration including feature counts, cluster layout, correlation</span>
-<span class="sd">            parameters, naming policy, randomness controls, `n_classes`, and either `class_counts` or `weights`.</span>
-<span class="sd">            At least one of `class_counts` or `weights` must be specified.</span>
+<span class="sd">            parameters, naming policy, randomness controls, `n_classes`, and `class_counts`.</span>
+<span class="sd">            The `class_counts` parameter is required and must be a dict mapping class indices</span>
+<span class="sd">            to exact sample counts (e.g., {0: 50, 1: 50}).</span>
 <span class="sd">        return_dataframe (bool, optional): If True (default), return `X` as a `pandas.DataFrame`</span>
 <span class="sd">            with column names. If False, return `X` as a NumPy array in the same column order.</span>
 <span class="sd">        **overrides: Optional config overrides merged into `cfg` (e.g., `n_samples=...`).</span>
@@ -384,7 +331,7 @@
 
 <span class="sd">    Raises:</span>
 <span class="sd">    ------</span>
-<span class="sd">        ValueError: If neither `class_counts` nor `weights` is specified.</span>
+<span class="sd">        ValueError: If `class_counts` is not specified or if sum(class_counts) != n_samples.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">if</span> <span class="n">overrides</span><span class="p">:</span>
         <span class="n">cfg</span> <span class="o">=</span> <span class="n">cfg</span><span class="o">.</span><span class="n">model_copy</span><span class="p">(</span><span class="n">update</span><span class="o">=</span><span class="n">overrides</span><span class="p">)</span>
@@ -392,21 +339,19 @@
     <span class="k">if</span> <span class="nb">int</span><span class="p">(</span><span class="n">cfg</span><span class="o">.</span><span class="n">n_classes</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">2</span><span class="p">:</span>
         <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;n_classes must be &gt;= 2.&quot;</span><span class="p">)</span>
 
-    <span class="c1"># Require explicit label specification</span>
-    <span class="k">if</span> <span class="n">cfg</span><span class="o">.</span><span class="n">class_counts</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">cfg</span><span class="o">.</span><span class="n">weights</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="c1"># Require explicit class_counts</span>
+    <span class="k">if</span> <span class="n">cfg</span><span class="o">.</span><span class="n">class_counts</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
         <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-            <span class="s2">&quot;Either &#39;class_counts&#39; or &#39;weights&#39; must be specified. &quot;</span>
-            <span class="s2">&quot;Automatic label generation via softmax is no longer supported.&quot;</span>
+            <span class="s2">&quot;class_counts must be specified. &quot;</span>
+            <span class="s2">&quot;Specify exact per-class sample counts as a dict (e.g., {0: 50, 1: 50}).&quot;</span>
         <span class="p">)</span>
 
-    <span class="k">if</span> <span class="n">cfg</span><span class="o">.</span><span class="n">weights</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">cfg</span><span class="o">.</span><span class="n">weights</span><span class="p">)</span> <span class="o">!=</span> <span class="n">cfg</span><span class="o">.</span><span class="n">n_classes</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;weights must have length n_classes.&quot;</span><span class="p">)</span>
-        <span class="k">if</span> <span class="nb">any</span><span class="p">(</span><span class="n">w</span> <span class="o">&lt;</span> <span class="mi">0</span> <span class="k">for</span> <span class="n">w</span> <span class="ow">in</span> <span class="n">cfg</span><span class="o">.</span><span class="n">weights</span><span class="p">):</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;weights must be non-negative.&quot;</span><span class="p">)</span>
-        <span class="n">wsum</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="nb">sum</span><span class="p">(</span><span class="n">cfg</span><span class="o">.</span><span class="n">weights</span><span class="p">))</span>
-        <span class="k">if</span> <span class="n">wsum</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;sum(weights) must be &gt; 0.&quot;</span><span class="p">)</span>
+    <span class="c1"># Validate class_counts</span>
+    <span class="k">if</span> <span class="nb">sum</span><span class="p">(</span><span class="n">cfg</span><span class="o">.</span><span class="n">class_counts</span><span class="o">.</span><span class="n">values</span><span class="p">())</span> <span class="o">!=</span> <span class="n">cfg</span><span class="o">.</span><span class="n">n_samples</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;sum(class_counts) must equal n_samples. &quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;Got sum=</span><span class="si">{</span><span class="nb">sum</span><span class="p">(</span><span class="n">cfg</span><span class="o">.</span><span class="n">class_counts</span><span class="o">.</span><span class="n">values</span><span class="p">())</span><span class="si">}</span><span class="s2">, expected n_samples=</span><span class="si">{</span><span class="n">cfg</span><span class="o">.</span><span class="n">n_samples</span><span class="si">}</span><span class="s2">.&quot;</span>
+        <span class="p">)</span>
 
     <span class="n">rng_global</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">default_rng</span><span class="p">(</span><span class="n">cfg</span><span class="o">.</span><span class="n">random_state</span><span class="p">)</span>
 
@@ -493,9 +438,9 @@
     <span class="c1"># Check totals</span>
     <span class="k">assert</span> <span class="n">X</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="n">names</span><span class="p">)</span> <span class="o">==</span> <span class="n">cfg</span><span class="o">.</span><span class="n">n_features</span><span class="p">,</span> <span class="p">(</span><span class="n">X</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="nb">len</span><span class="p">(</span><span class="n">names</span><span class="p">),</span> <span class="n">cfg</span><span class="o">.</span><span class="n">n_features</span><span class="p">)</span>
 
-    <span class="c1"># Label generation (explicit via class_counts or weights)</span>
+    <span class="c1"># Label generation (explicit via class_counts)</span>
     <span class="n">K</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">cfg</span><span class="o">.</span><span class="n">n_classes</span><span class="p">)</span>
-    <span class="n">y</span> <span class="o">=</span> <span class="n">_make_labels</span><span class="p">(</span><span class="n">cfg</span><span class="p">,</span> <span class="n">rng_global</span><span class="p">)</span>  <span class="c1"># shape (n_samples,), dtype=int</span>
+    <span class="n">y</span> <span class="o">=</span> <span class="n">_labels_from_counts</span><span class="p">(</span><span class="n">cfg</span><span class="o">.</span><span class="n">class_counts</span><span class="p">,</span> <span class="n">cfg</span><span class="o">.</span><span class="n">n_classes</span><span class="p">,</span> <span class="n">rng_global</span><span class="p">)</span>  <span class="c1"># shape (n_samples,), dtype=int</span>
 
     <span class="c1"># Empirical class stats (always compute from y)</span>
     <span class="n">counts</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">bincount</span><span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="n">minlength</span><span class="o">=</span><span class="n">K</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">int</span><span class="p">)</span>
@@ -556,72 +501,8 @@
 
 
 <span class="c1"># ==========================================================</span>
-<span class="c1"># Dataset-level acceptance helpers (multiclass-aware)</span>
+<span class="c1"># Dataset-level acceptance helpers</span>
 <span class="c1"># ==========================================================</span>
-<span class="k">def</span><span class="w"> </span><span class="nf">find_dataset_seed_for_class_weights</span><span class="p">(</span>
-    <span class="n">cfg</span><span class="p">:</span> <span class="n">DatasetConfig</span><span class="p">,</span>
-    <span class="o">/</span><span class="p">,</span>
-    <span class="o">*</span><span class="p">,</span>
-    <span class="n">tol</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.02</span><span class="p">,</span>
-    <span class="n">start_seed</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span>
-    <span class="n">max_tries</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">500</span><span class="p">,</span>
-    <span class="n">return_dataframe</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
-    <span class="o">**</span><span class="n">overrides</span><span class="p">,</span>
-<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="n">DataFrame</span> <span class="o">|</span> <span class="n">NDArray</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">],</span> <span class="n">NDArray</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">int64</span><span class="p">],</span> <span class="n">DatasetMeta</span><span class="p">]:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Find a random_state such that empirical class proportions approximate cfg.weights.</span>
-
-<span class="sd">    Tries seeds starting at `start_seed` and returns the first seed for which the</span>
-<span class="sd">    L1 distance between the empirical class proportions and the target weights is &lt;= tol.</span>
-<span class="sd">    Works for multiclass (n_classes &gt;= 2). If cfg.weights is None, the target is uniform.</span>
-
-<span class="sd">    Args:</span>
-<span class="sd">        cfg: Base configuration to use (n_classes may be &gt; 2).</span>
-<span class="sd">        tol: L1 tolerance against target weights. Defaults to 0.02.</span>
-<span class="sd">        start_seed: First seed to try. Defaults to 0.</span>
-<span class="sd">        max_tries: Maximum number of seeds to try. Defaults to 500.</span>
-<span class="sd">        return_dataframe: Return X as DataFrame (default) or ndarray.</span>
-<span class="sd">        **overrides: Optional keyword overrides merged into cfg for generation.</span>
-
-<span class="sd">    Returns:</span>
-<span class="sd">    -------</span>
-<span class="sd">        tuple:</span>
-<span class="sd">            - seed (int): The seed that satisfied the tolerance.</span>
-<span class="sd">            - X (pandas.DataFrame | np.ndarray): Feature matrix for that seed.</span>
-<span class="sd">            - y (np.ndarray): Labels for that seed.</span>
-<span class="sd">            - meta (DatasetMeta): Metadata for that seed.</span>
-
-<span class="sd">    Raises:</span>
-<span class="sd">    ------</span>
-<span class="sd">        RuntimeError: If no seed satisfies the tolerance within max_tries.</span>
-<span class="sd">        ValueError: If cfg.n_classes &lt; 2 or weights length mismatches n_classes.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">if</span> <span class="n">cfg</span><span class="o">.</span><span class="n">n_classes</span> <span class="o">&lt;</span> <span class="mi">2</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;n_classes must be &gt;= 2.&quot;</span><span class="p">)</span>
-
-    <span class="c1"># Normalize/derive target weights</span>
-    <span class="k">if</span> <span class="n">cfg</span><span class="o">.</span><span class="n">weights</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="n">target</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">full</span><span class="p">(</span><span class="n">cfg</span><span class="o">.</span><span class="n">n_classes</span><span class="p">,</span> <span class="mf">1.0</span> <span class="o">/</span> <span class="n">cfg</span><span class="o">.</span><span class="n">n_classes</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
-    <span class="k">else</span><span class="p">:</span>
-        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">cfg</span><span class="o">.</span><span class="n">weights</span><span class="p">)</span> <span class="o">!=</span> <span class="n">cfg</span><span class="o">.</span><span class="n">n_classes</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;weights must have length n_classes.&quot;</span><span class="p">)</span>
-        <span class="n">target</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">cfg</span><span class="o">.</span><span class="n">weights</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
-        <span class="n">s</span> <span class="o">=</span> <span class="n">target</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
-        <span class="k">if</span> <span class="n">s</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;sum(weights) must be &gt; 0.&quot;</span><span class="p">)</span>
-        <span class="n">target</span> <span class="o">=</span> <span class="n">target</span> <span class="o">/</span> <span class="n">s</span>
-
-    <span class="n">seed</span> <span class="o">=</span> <span class="n">start_seed</span>
-    <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">max_tries</span><span class="p">):</span>
-        <span class="n">X</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">meta</span> <span class="o">=</span> <span class="n">generate_dataset</span><span class="p">(</span><span class="n">cfg</span><span class="p">,</span> <span class="n">return_dataframe</span><span class="o">=</span><span class="n">return_dataframe</span><span class="p">,</span> <span class="o">**</span><span class="p">({</span><span class="s2">&quot;random_state&quot;</span><span class="p">:</span> <span class="n">seed</span><span class="p">}</span> <span class="o">|</span> <span class="n">overrides</span><span class="p">))</span>
-        <span class="c1"># empirical proportions</span>
-        <span class="n">counts</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">bincount</span><span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="n">minlength</span><span class="o">=</span><span class="n">cfg</span><span class="o">.</span><span class="n">n_classes</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">float</span><span class="p">)</span>
-        <span class="n">emp</span> <span class="o">=</span> <span class="n">counts</span> <span class="o">/</span> <span class="n">counts</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
-        <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">emp</span> <span class="o">-</span> <span class="n">target</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span> <span class="o">&lt;=</span> <span class="n">tol</span><span class="p">:</span>
-            <span class="k">return</span> <span class="n">seed</span><span class="p">,</span> <span class="n">X</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">meta</span>
-        <span class="n">seed</span> <span class="o">+=</span> <span class="mi">1</span>
-    <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;No dataset seed satisfied class-weights tolerance within max_tries.&quot;</span><span class="p">)</span>
-
-
 <span class="k">def</span><span class="w"> </span><span class="nf">find_dataset_seed_for_score</span><span class="p">(</span>
     <span class="n">cfg</span><span class="p">:</span> <span class="n">DatasetConfig</span><span class="p">,</span>
     <span class="n">scorer</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">DataFrame</span> <span class="o">|</span> <span class="n">NDArray</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">],</span> <span class="n">NDArray</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">int64</span><span class="p">],</span> <span class="n">DatasetMeta</span><span class="p">],</span> <span class="nb">float</span><span class="p">],</span>

@@ -94,9 +94,9 @@
 <dd><p>Generate an n-class classification dataset with optional correlated clusters.</p>
 <p>Features are ordered as: cluster features (anchors first within each cluster),
 then free informative features, then free pseudo features, then noise features.
-Labels y must be explicitly specified via either <cite>cfg.class_counts</cite> (exact per-class sample counts)
-or <cite>cfg.weights</cite> (target class proportions for stochastic sampling). Class-wise shifts are then
-applied to informative features and cluster anchors (via <cite>anchor_effect_size</cite>) to create class separation.
+Labels y must be explicitly specified via <cite>cfg.class_counts</cite> (exact per-class sample counts).
+Class-wise shifts are then applied to informative features and cluster anchors
+(via <cite>anchor_effect_size</cite>) to create class separation.
 Reproducibility is controlled by <cite>cfg.random_state</cite> and optional per-cluster seeds.
 Feature names follow either a “prefixed” scheme (e.g., <cite>i*</cite>, <cite>corr{cid}_k</cite>, <cite>p*</cite>, <cite>n*</cite>)
 or a generic <cite>feature_1..p</cite>. The returned <cite>meta</cite> includes role masks, cluster indices,
@@ -105,8 +105,9 @@ empirical class proportions, and the resolved configuration.</p>
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>cfg</strong> (<a class="reference internal" href="biomedical_data_generator.DatasetConfig.html#biomedical_data_generator.DatasetConfig" title="biomedical_data_generator.DatasetConfig"><code class="xref py py-class docutils literal notranslate"><span class="pre">DatasetConfig</span></code></a>) – Configuration including feature counts, cluster layout, correlation
-parameters, naming policy, randomness controls, <cite>n_classes</cite>, and either <cite>class_counts</cite> or <cite>weights</cite>.
-At least one of <cite>class_counts</cite> or <cite>weights</cite> must be specified.</p></li>
+parameters, naming policy, randomness controls, <cite>n_classes</cite>, and <cite>class_counts</cite>.
+The <cite>class_counts</cite> parameter is required and must be a dict mapping class indices
+to exact sample counts (e.g., {0: 50, 1: 50}).</p></li>
 <li><p><strong>return_dataframe</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code></a>, <em>optional</em>) – If True (default), return <cite>X</cite> as a <cite>pandas.DataFrame</cite>
 with column names. If False, return <cite>X</cite> as a NumPy array in the same column order.</p></li>
 <li><p><strong>**overrides</strong> – Optional config overrides merged into <cite>cfg</cite> (e.g., <cite>n_samples=…</cite>).</p></li>
@@ -134,7 +135,7 @@ weights, and the resolved configuration.</p></li>
 <section id="raises">
 <h2>Raises:<a class="headerlink" href="#raises" title="Link to this heading"></a></h2>
 <blockquote>
-<div><p>ValueError: If neither <cite>class_counts</cite> nor <cite>weights</cite> is specified.</p>
+<div><p>ValueError: If <cite>class_counts</cite> is not specified or if sum(class_counts) != n_samples.</p>
 </div></blockquote>
 </section>
 </dd></dl>
