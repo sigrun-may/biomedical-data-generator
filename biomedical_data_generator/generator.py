@@ -361,7 +361,7 @@ def generate_dataset(
     # STEP 3: Compute empirical class stats (labels already generated in STEP 1)
     counts = np.bincount(y, minlength=K).astype(int)
     y_counts = {int(k): int(counts[k]) for k in range(K)}
-    y_weights = tuple((counts / counts.sum()).tolist())
+    y_weights = tuple((counts.astype(float) / float(counts.sum())).tolist())
 
     # per-cluster role/beta maps for meta
     anchor_role_map: dict[int, str] = {}
