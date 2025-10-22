@@ -30,6 +30,7 @@ def test_shapes_and_roles_with_cluster_proxies():
             )
         ],
         n_features=2 + 0 + 1 + (4 - 1),
+        weights=[0.5, 0.5],  # Add explicit class weights
         random_state=11,
     )
     X, y, meta = generate_dataset(cfg, return_dataframe=False)

@@ -31,6 +31,7 @@ def test_noise_distributions_basic(dist):
         noise_distribution=dist,
         noise_scale=1.5,
         n_features=2 + 1 + 4,
+        weights=[0.5, 0.5],  # Add explicit class weights
         random_state=42,
     )
     X, y, meta = generate_dataset(cfg, return_dataframe=False)
@@ -59,6 +60,7 @@ def test_noise_params_override_scale():
         noise_scale=2.0,
         noise_params={"scale": 0.3, "loc": 0.0},
         n_features=1 + 0 + 2,
+        weights=[0.5, 0.5],  # Add explicit class weights
         random_state=0,
     )
     X, y, meta = generate_dataset(cfg, return_dataframe=False)
@@ -76,6 +78,7 @@ def test_determinism_random_state():
         noise_distribution=NoiseDistribution.laplace,
         noise_scale=1.0,
         n_features=2 + 1 + 3,
+        weights=[0.5, 0.5],  # Add explicit class weights
         random_state=7,
     )
     X1, y1, meta1 = generate_dataset(cfg, return_dataframe=False)
