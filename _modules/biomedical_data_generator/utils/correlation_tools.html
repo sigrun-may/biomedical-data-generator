@@ -1,0 +1,858 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>biomedical_data_generator.utils.correlation_tools &mdash; Biomedical Data Generator 0.1.5rc1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/copybutton.css?v=76b2166b" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/custom.css?v=7f485136" />
+
+  
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=cd91370b"></script>
+      <script src="../../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../../../_static/clipboard.min.js?v=a7894cd8"></script>
+      <script src="../../../_static/copybutton.js?v=f281be69"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            Biomedical Data Generator
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../code-doc.html">Code Documentation</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://github.com/sigrun-may/biomedical-data-generator/blob/main/LICENSE">License</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://github.com/sigrun-may/biomedical-data-generator">GitHub Repository</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../_autosummary/biomedical_data_generator.generate_dataset.html">biomedical_data_generator.generate_dataset</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../_autosummary/biomedical_data_generator.find_seed_for_correlation.html">biomedical_data_generator.find_seed_for_correlation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../_autosummary/biomedical_data_generator.DatasetConfig.html">biomedical_data_generator.DatasetConfig</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../_autosummary/biomedical_data_generator.CorrCluster.html">biomedical_data_generator.CorrCluster</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../_autosummary/biomedical_data_generator.DatasetMeta.html">biomedical_data_generator.DatasetMeta</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">Biomedical Data Generator</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">biomedical_data_generator.utils.correlation_tools</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for biomedical_data_generator.utils.correlation_tools</h1><div class="highlight"><pre>
+<span></span><span class="c1"># Copyright (c) 2025 Sigrun May,</span>
+<span class="c1"># Ostfalia Hochschule für angewandte Wissenschaften</span>
+<span class="c1">#</span>
+<span class="c1"># This software is distributed under the terms of the MIT license</span>
+<span class="c1"># which is available at https://opensource.org/licenses/MIT</span>
+
+<span class="sd">&quot;&quot;&quot;Correlation analysis and seed search utilities.</span>
+
+<span class="sd">This module provides functions to compute correlation metrics,</span>
+<span class="sd">assess correlation quality, search for random seeds that yield</span>
+<span class="sd">desired correlation properties, and visualize correlation structures.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">annotations</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Literal</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">numpy.typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">NDArray</span>
+
+<span class="c1"># Runtime dependencies</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">biomedical_data_generator.config</span><span class="w"> </span><span class="kn">import</span> <span class="n">CorrCluster</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">biomedical_data_generator.features.correlated</span><span class="w"> </span><span class="kn">import</span> <span class="n">sample_cluster</span>
+
+<span class="c1"># Type alias kept local to avoid circular imports</span>
+<span class="n">CorrelationStructure</span> <span class="o">=</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;equicorrelated&quot;</span><span class="p">,</span> <span class="s2">&quot;toeplitz&quot;</span><span class="p">]</span>
+
+<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="s2">&quot;compute_correlation_metrics&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;assess_correlation_quality&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;find_seed_for_correlation&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;find_seed_for_correlation_from_config&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;find_best_seed_for_correlation&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;plot_correlation_matrix&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;plot_seed_search_history&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;compare_structures_visually&quot;</span><span class="p">,</span>
+<span class="p">]</span>
+
+
+<span class="c1"># ============================================================================</span>
+<span class="c1"># Correlation Metrics</span>
+<span class="c1"># ============================================================================</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">compute_correlation_metrics</span><span class="p">(</span><span class="n">corr_matrix</span><span class="p">:</span> <span class="n">NDArray</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">floating</span><span class="p">[</span><span class="n">Any</span><span class="p">]])</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">float</span> <span class="o">|</span> <span class="nb">int</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Compute off-diagonal correlation statistics.</span>
+
+<span class="sd">    Provides metrics useful for assessing correlation matrix quality, reporting,</span>
+<span class="sd">    and seed selection. This is the unified entry point for all correlation metrics.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        corr_matrix: Correlation matrix of shape (n_features, n_features).</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Dictionary with keys:</span>
+<span class="sd">            - &#39;mean_offdiag&#39;: Mean of off-diagonal correlations</span>
+<span class="sd">            - &#39;std_offdiag&#39;: Standard deviation of off-diagonal correlations</span>
+<span class="sd">            - &#39;min_offdiag&#39;: Minimum off-diagonal correlation</span>
+<span class="sd">            - &#39;max_offdiag&#39;: Maximum off-diagonal correlation</span>
+<span class="sd">            - &#39;range_offdiag&#39;: Max - min</span>
+<span class="sd">            - &#39;n_offdiag&#39;: Number of off-diagonal elements (int)</span>
+
+<span class="sd">    Examples:</span>
+<span class="sd">        &gt;&gt;&gt; import numpy as np</span>
+<span class="sd">        &gt;&gt;&gt; from biomedical_data_generator.utils.correlation_tools import compute_correlation_metrics</span>
+<span class="sd">        &gt;&gt;&gt; from biomedical_data_generator.features.correlated import sample_cluster</span>
+<span class="sd">        &gt;&gt;&gt; rng = np.random.default_rng(42)</span>
+<span class="sd">        &gt;&gt;&gt; X = sample_cluster(200, 5, rng, structure=&quot;equicorrelated&quot;, rho=0.7)</span>
+<span class="sd">        &gt;&gt;&gt; C = np.corrcoef(X, rowvar=False)</span>
+<span class="sd">        &gt;&gt;&gt; metrics = compute_correlation_metrics(C)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">n_features</span> <span class="o">=</span> <span class="n">corr_matrix</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+    <span class="c1"># Handle edge case: single feature</span>
+    <span class="k">if</span> <span class="n">n_features</span> <span class="o">&lt;=</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="k">return</span> <span class="p">{</span>
+            <span class="s2">&quot;mean_offdiag&quot;</span><span class="p">:</span> <span class="mf">1.0</span><span class="p">,</span>
+            <span class="s2">&quot;std_offdiag&quot;</span><span class="p">:</span> <span class="mf">0.0</span><span class="p">,</span>
+            <span class="s2">&quot;min_offdiag&quot;</span><span class="p">:</span> <span class="mf">1.0</span><span class="p">,</span>
+            <span class="s2">&quot;max_offdiag&quot;</span><span class="p">:</span> <span class="mf">1.0</span><span class="p">,</span>
+            <span class="s2">&quot;range_offdiag&quot;</span><span class="p">:</span> <span class="mf">0.0</span><span class="p">,</span>
+            <span class="s2">&quot;n_offdiag&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+        <span class="p">}</span>
+
+    <span class="c1"># Extract off-diagonal values</span>
+    <span class="n">mask</span> <span class="o">=</span> <span class="o">~</span><span class="n">np</span><span class="o">.</span><span class="n">eye</span><span class="p">(</span><span class="n">n_features</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">bool</span><span class="p">)</span>
+    <span class="n">off_diag_values</span> <span class="o">=</span> <span class="n">corr_matrix</span><span class="p">[</span><span class="n">mask</span><span class="p">]</span>
+
+    <span class="k">return</span> <span class="p">{</span>
+        <span class="s2">&quot;mean_offdiag&quot;</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">off_diag_values</span><span class="p">)),</span>
+        <span class="s2">&quot;std_offdiag&quot;</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">std</span><span class="p">(</span><span class="n">off_diag_values</span><span class="p">)),</span>
+        <span class="s2">&quot;min_offdiag&quot;</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">off_diag_values</span><span class="p">)),</span>
+        <span class="s2">&quot;max_offdiag&quot;</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">off_diag_values</span><span class="p">)),</span>
+        <span class="s2">&quot;range_offdiag&quot;</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">off_diag_values</span><span class="p">)</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">off_diag_values</span><span class="p">)),</span>
+        <span class="s2">&quot;n_offdiag&quot;</span><span class="p">:</span> <span class="nb">int</span><span class="p">(</span><span class="n">off_diag_values</span><span class="o">.</span><span class="n">size</span><span class="p">),</span>
+    <span class="p">}</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">assess_correlation_quality</span><span class="p">(</span>
+    <span class="n">X</span><span class="p">:</span> <span class="n">NDArray</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">],</span>
+    <span class="n">rho_target</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+    <span class="o">*</span><span class="p">,</span>
+    <span class="n">tolerance</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.05</span><span class="p">,</span>  <span class="c1"># FIXED: Renamed from tol for consistency</span>
+    <span class="n">structure</span><span class="p">:</span> <span class="n">CorrelationStructure</span> <span class="o">=</span> <span class="s2">&quot;equicorrelated&quot;</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">float</span> <span class="o">|</span> <span class="nb">bool</span> <span class="o">|</span> <span class="nb">str</span><span class="p">]:</span>  <span class="c1"># FIXED: Added &#39;str&#39;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Assess how well empirical correlations match the target.</span>
+
+<span class="sd">    Convenience function that computes correlation matrix and metrics in one call.</span>
+<span class="sd">    Useful for quick quality checks during generation or seed search.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        X: Data matrix of shape (n_samples, n_features).</span>
+<span class="sd">        rho_target: Target correlation strength.</span>
+<span class="sd">        tolerance: Acceptable deviation from target (default 0.05).</span>
+<span class="sd">        structure: Expected structure type (for reference in output).</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Dictionary with:</span>
+<span class="sd">            - All metrics from compute_correlation_metrics()</span>
+<span class="sd">            - &#39;target&#39;: The target rho value</span>
+<span class="sd">            - &#39;deviation_offdiag&#39;: Absolute difference between mean_offdiag and target</span>
+<span class="sd">            - &#39;within_tolerance&#39;: Boolean indicating if deviation &lt;= tolerance</span>
+<span class="sd">            - &#39;structure&#39;: The structure type (str, for reference)</span>
+
+<span class="sd">    Examples:</span>
+<span class="sd">        &gt;&gt;&gt; import numpy as np</span>
+<span class="sd">        &gt;&gt;&gt; from biomedical_data_generator.utils.correlation_tools import assess_correlation_quality</span>
+<span class="sd">        &gt;&gt;&gt; from biomedical_data_generator.features.correlated import sample_cluster</span>
+<span class="sd">        &gt;&gt;&gt; rng = np.random.default_rng(42)</span>
+<span class="sd">        &gt;&gt;&gt; X = sample_cluster(300, 6, rng, structure=&quot;equicorrelated&quot;, rho=0.65)</span>
+<span class="sd">        &gt;&gt;&gt; quality = assess_correlation_quality(X, rho_target=0.65, tolerance=0.03)</span>
+<span class="sd">        &gt;&gt;&gt; print(f&quot;Within tolerance: {quality[&#39;within_tolerance&#39;]}, deviation: {quality[&#39;deviation_offdiag&#39;]:.4f}&quot;)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">C</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">corrcoef</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">rowvar</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="n">m</span> <span class="o">=</span> <span class="n">compute_correlation_metrics</span><span class="p">(</span><span class="n">C</span><span class="p">)</span>
+    <span class="n">deviation</span> <span class="o">=</span> <span class="nb">abs</span><span class="p">(</span><span class="n">m</span><span class="p">[</span><span class="s2">&quot;mean_offdiag&quot;</span><span class="p">]</span> <span class="o">-</span> <span class="n">rho_target</span><span class="p">)</span>
+    <span class="k">return</span> <span class="p">{</span>
+        <span class="o">**</span><span class="n">m</span><span class="p">,</span>
+        <span class="s2">&quot;target&quot;</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="n">rho_target</span><span class="p">),</span>
+        <span class="s2">&quot;deviation_offdiag&quot;</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="n">deviation</span><span class="p">),</span>
+        <span class="s2">&quot;within_tolerance&quot;</span><span class="p">:</span> <span class="nb">bool</span><span class="p">(</span><span class="n">deviation</span> <span class="o">&lt;=</span> <span class="n">tolerance</span><span class="p">),</span>
+        <span class="s2">&quot;structure&quot;</span><span class="p">:</span> <span class="n">structure</span><span class="p">,</span>
+    <span class="p">}</span>
+
+
+<span class="c1"># ============================================================================</span>
+<span class="c1"># Seed search (core)</span>
+<span class="c1"># ============================================================================</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_validate_rho</span><span class="p">(</span><span class="n">structure</span><span class="p">:</span> <span class="n">CorrelationStructure</span><span class="p">,</span> <span class="n">p</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">rho</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Validate that rho satisfies positive-definiteness constraints.</span>
+
+<span class="sd">    This is a pre-check before expensive sampling; build_correlation_matrix()</span>
+<span class="sd">    will also validate, but failing early saves computation time.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        structure: Correlation structure type.</span>
+<span class="sd">        p: Number of features.</span>
+<span class="sd">        rho: Correlation strength to validate.</span>
+
+<span class="sd">    Raises:</span>
+<span class="sd">        ValueError: If rho is outside valid bounds for the given structure/p.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">structure</span> <span class="o">==</span> <span class="s2">&quot;equicorrelated&quot;</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">p</span> <span class="o">&lt;</span> <span class="mi">2</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="o">-</span><span class="mf">1.0</span> <span class="o">&lt;</span> <span class="n">rho</span> <span class="o">&lt;</span> <span class="mf">1.0</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;For p=1 require |rho| &lt; 1.&quot;</span><span class="p">)</span>
+            <span class="k">return</span>
+        <span class="n">lower</span> <span class="o">=</span> <span class="o">-</span><span class="mf">1.0</span> <span class="o">/</span> <span class="p">(</span><span class="n">p</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="n">lower</span> <span class="o">&lt;</span> <span class="n">rho</span> <span class="o">&lt;</span> <span class="mf">1.0</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Equicorrelated requires </span><span class="si">{</span><span class="n">lower</span><span class="si">:</span><span class="s2">.6f</span><span class="si">}</span><span class="s2"> &lt; rho &lt; 1.0 (p=</span><span class="si">{</span><span class="n">p</span><span class="si">}</span><span class="s2">), got </span><span class="si">{</span><span class="n">rho</span><span class="si">}</span><span class="s2">.&quot;</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>  <span class="c1"># toeplitz</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="o">-</span><span class="mf">1.0</span> <span class="o">&lt;</span> <span class="n">rho</span> <span class="o">&lt;</span> <span class="mf">1.0</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Toeplitz requires |rho| &lt; 1.0.&quot;</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="find_seed_for_correlation">
+<a class="viewcode-back" href="../../../_autosummary/biomedical_data_generator.find_seed_for_correlation.html#biomedical_data_generator.find_seed_for_correlation">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">find_seed_for_correlation</span><span class="p">(</span>
+    <span class="n">n_samples</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+    <span class="n">n_cluster_features</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+    <span class="n">rho_target</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+    <span class="n">structure</span><span class="p">:</span> <span class="n">CorrelationStructure</span> <span class="o">=</span> <span class="s2">&quot;equicorrelated&quot;</span><span class="p">,</span>
+    <span class="o">*</span><span class="p">,</span>
+    <span class="n">metric</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;mean_offdiag&quot;</span><span class="p">,</span> <span class="s2">&quot;min_offdiag&quot;</span><span class="p">,</span> <span class="s2">&quot;max_offdiag&quot;</span><span class="p">,</span> <span class="s2">&quot;std_offdiag&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;mean_offdiag&quot;</span><span class="p">,</span>
+    <span class="c1"># Note: range_offdiag and n_offdiag excluded (not useful for optimization)</span>
+    <span class="n">tolerance</span><span class="p">:</span> <span class="nb">float</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="mf">0.02</span><span class="p">,</span>
+    <span class="n">threshold</span><span class="p">:</span> <span class="nb">float</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">op</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;&gt;=&quot;</span><span class="p">,</span> <span class="s2">&quot;&lt;=&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;&gt;=&quot;</span><span class="p">,</span>
+    <span class="n">start_seed</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span>
+    <span class="n">max_tries</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">200</span><span class="p">,</span>
+    <span class="n">return_best_on_fail</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+    <span class="n">return_matrix</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="n">enforce_p_le_n_in_tolerance</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Find a random seed that produces target correlation.</span>
+
+<span class="sd">    Two search modes (tolerance takes precedence):</span>
+
+<span class="sd">    1. **Tolerance mode** (default, recommended for teaching):</span>
+<span class="sd">       Accepts when |mean_offdiag - rho_target| &lt;= tolerance.</span>
+<span class="sd">       Most intuitive for &quot;get close enough&quot; scenarios.</span>
+
+<span class="sd">    2. **Threshold mode** (for optimization):</span>
+<span class="sd">       Accepts when metric satisfies: metric {op} threshold.</span>
+<span class="sd">       Useful for &quot;at least X&quot; or &quot;at most X&quot; requirements.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        n_samples: Number of samples to generate for testing.</span>
+<span class="sd">        n_cluster_features: Number of features in the cluster.</span>
+<span class="sd">        rho_target: Target correlation strength (used for reporting).</span>
+<span class="sd">        structure: Correlation structure (&quot;equicorrelated&quot; or &quot;toeplitz&quot;).</span>
+<span class="sd">        metric: Which statistic to optimize (&quot;mean_offdiag&quot;, &quot;min_offdiag&quot;, etc.).</span>
+<span class="sd">        tolerance: Acceptable deviation from rho_target (tolerance mode).</span>
+<span class="sd">            If None, uses threshold mode instead.</span>
+<span class="sd">        threshold: Acceptance threshold (threshold mode). Overrides tolerance if both given.</span>
+<span class="sd">        op: Comparison operator for threshold mode (&quot;&gt;=&quot; or &quot;&lt;=&quot;).</span>
+<span class="sd">        start_seed: First seed to try.</span>
+<span class="sd">        max_tries: Maximum number of seeds to test.</span>
+<span class="sd">        return_best_on_fail: If True, returns best-found seed when strict</span>
+<span class="sd">            criteria fails. Prevents frustrating crashes during exploration.</span>
+<span class="sd">            Recommended: True for interactive/teaching, False for production.</span>
+<span class="sd">        return_matrix: If True, includes actual correlation matrix in metadata.</span>
+<span class="sd">            Useful for debugging but increases memory usage.</span>
+<span class="sd">        enforce_p_le_n_in_tolerance: If True, auto-rejects when p &gt; n in tolerance mode</span>
+<span class="sd">            (correlation estimates unstable with more features than samples).</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Tuple of (best_seed, metadata) where metadata contains:</span>
+<span class="sd">            - &#39;seed&#39;: Selected seed</span>
+<span class="sd">            - &#39;accepted&#39;: True if criteria met, False if best-on-fail used</span>
+<span class="sd">            - &#39;tries&#39;: Number of attempts</span>
+<span class="sd">            - &#39;mean_offdiag&#39;, &#39;std_offdiag&#39;, &#39;min_offdiag&#39;, &#39;max_offdiag&#39;: Correlation metrics</span>
+<span class="sd">            - &#39;deviation_offdiag&#39;: |mean_offdiag - rho_target|</span>
+<span class="sd">            - &#39;tolerance&#39;: Tolerance value used (None if threshold mode)</span>
+<span class="sd">            - &#39;threshold&#39;: Threshold value used (None if tolerance mode)</span>
+<span class="sd">            - &#39;p_gt_n_tolerance_warning&#39;: True if p &gt; n caused auto-rejection</span>
+
+<span class="sd">    Raises:</span>
+<span class="sd">        ValueError: If both tolerance and threshold are None, or if n_cluster_features &lt; 2.</span>
+<span class="sd">        RuntimeError: If no seed meets criteria within max_tries and return_best_on_fail=False.</span>
+
+<span class="sd">    Examples:</span>
+<span class="sd">        Find seed with mean_offdiag within 0.03 of target:</span>
+
+<span class="sd">        &gt;&gt;&gt; from biomedical_data_generator.utils.correlation_tools import find_seed_for_correlation</span>
+<span class="sd">        &gt;&gt;&gt; seed, meta = find_seed_for_correlation(</span>
+<span class="sd">        ...     n_samples=200,</span>
+<span class="sd">        ...     n_cluster_features=5,</span>
+<span class="sd">        ...     rho_target=0.7,</span>
+<span class="sd">        ...     tolerance=0.03,</span>
+<span class="sd">        ...     max_tries=50</span>
+<span class="sd">        ... )</span>
+<span class="sd">        &gt;&gt;&gt; print(f&quot;Seed {seed}: mean={meta[&#39;mean_offdiag&#39;]:.3f}, deviation={meta[&#39;deviation_offdiag&#39;]:.4f}&quot;)</span>
+
+<span class="sd">        Threshold mode (ensure min_offdiag &gt;= 0.55):</span>
+
+<span class="sd">        &gt;&gt;&gt; seed, meta = find_seed_for_correlation(</span>
+<span class="sd">        ...     n_samples=300,</span>
+<span class="sd">        ...     n_cluster_features=6,</span>
+<span class="sd">        ...     rho_target=0.65,</span>
+<span class="sd">        ...     metric=&quot;min_offdiag&quot;,</span>
+<span class="sd">        ...     threshold=0.55,</span>
+<span class="sd">        ...     op=&quot;&gt;=&quot;,</span>
+<span class="sd">        ...     tolerance=None</span>
+<span class="sd">        ... )</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">tolerance</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">threshold</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Provide either `tolerance` (tolerance mode) or `threshold` (threshold mode).&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">n_cluster_features</span> <span class="o">&lt;</span> <span class="mi">2</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;n_cluster_features must be &gt;= 2 for correlation-based selection.&quot;</span><span class="p">)</span>
+
+    <span class="c1"># Pre-validate to fail fast before expensive sampling</span>
+    <span class="n">_validate_rho</span><span class="p">(</span><span class="n">structure</span><span class="p">,</span> <span class="n">n_cluster_features</span><span class="p">,</span> <span class="n">rho_target</span><span class="p">)</span>
+
+    <span class="n">use_tolerance_mode</span> <span class="o">=</span> <span class="n">tolerance</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+    <span class="n">mode</span> <span class="o">=</span> <span class="s2">&quot;tolerance&quot;</span> <span class="k">if</span> <span class="n">use_tolerance_mode</span> <span class="k">else</span> <span class="s2">&quot;threshold&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_ok</span><span class="p">(</span><span class="n">val</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">thr</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">op_</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">op_</span> <span class="o">==</span> <span class="s2">&quot;&gt;=&quot;</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">val</span> <span class="o">&gt;=</span> <span class="n">thr</span>
+        <span class="k">if</span> <span class="n">op_</span> <span class="o">==</span> <span class="s2">&quot;&lt;=&quot;</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">val</span> <span class="o">&lt;=</span> <span class="n">thr</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Invalid op: </span><span class="si">{</span><span class="n">op_</span><span class="si">!r}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="n">best_seed</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">best_meta</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="c1"># Primary/secondary scores for deterministic tie-breaking</span>
+    <span class="n">best_score</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+
+    <span class="n">seed</span> <span class="o">=</span> <span class="n">start_seed</span>
+    <span class="k">for</span> <span class="n">try_idx</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">max_tries</span> <span class="o">+</span> <span class="mi">1</span><span class="p">):</span>
+        <span class="n">rng</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">default_rng</span><span class="p">(</span><span class="n">seed</span><span class="p">)</span>
+        <span class="n">X</span> <span class="o">=</span> <span class="n">sample_cluster</span><span class="p">(</span><span class="n">n_samples</span><span class="p">,</span> <span class="n">n_cluster_features</span><span class="p">,</span> <span class="n">rng</span><span class="p">,</span> <span class="n">structure</span><span class="o">=</span><span class="n">structure</span><span class="p">,</span> <span class="n">rho</span><span class="o">=</span><span class="n">rho_target</span><span class="p">)</span>
+        <span class="n">C</span><span class="p">:</span> <span class="n">NDArray</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">corrcoef</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">rowvar</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">,</span> <span class="n">copy</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+
+        <span class="n">m</span> <span class="o">=</span> <span class="n">compute_correlation_metrics</span><span class="p">(</span><span class="n">C</span><span class="p">)</span>
+        <span class="n">mean_off</span> <span class="o">=</span> <span class="n">m</span><span class="p">[</span><span class="s2">&quot;mean_offdiag&quot;</span><span class="p">]</span>
+        <span class="n">deviation</span> <span class="o">=</span> <span class="nb">abs</span><span class="p">(</span><span class="n">mean_off</span> <span class="o">-</span> <span class="n">rho_target</span><span class="p">)</span>
+        <span class="n">metric_val</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">m</span><span class="p">[</span><span class="n">metric</span><span class="p">])</span>
+
+        <span class="n">p_gt_n_warn</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="k">if</span> <span class="n">use_tolerance_mode</span><span class="p">:</span>
+            <span class="c1"># Warn if p &gt; n (correlation estimates unreliable)</span>
+            <span class="k">if</span> <span class="n">enforce_p_le_n_in_tolerance</span> <span class="ow">and</span> <span class="p">(</span><span class="n">n_cluster_features</span> <span class="o">&gt;</span> <span class="n">n_samples</span><span class="p">):</span>
+                <span class="n">p_gt_n_warn</span> <span class="o">=</span> <span class="kc">True</span>
+                <span class="n">accepted</span> <span class="o">=</span> <span class="kc">False</span>
+                <span class="n">primary</span><span class="p">,</span> <span class="n">secondary</span> <span class="o">=</span> <span class="n">deviation</span><span class="p">,</span> <span class="mf">0.0</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">accepted</span> <span class="o">=</span> <span class="n">deviation</span> <span class="o">&lt;=</span> <span class="nb">float</span><span class="p">(</span><span class="n">tolerance</span><span class="p">)</span>  <span class="c1"># type: ignore[arg-type]</span>
+                <span class="n">primary</span><span class="p">,</span> <span class="n">secondary</span> <span class="o">=</span> <span class="n">deviation</span><span class="p">,</span> <span class="mf">0.0</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">threshold</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Threshold mode selected but no `threshold` provided.&quot;</span><span class="p">)</span>
+            <span class="n">accepted</span> <span class="o">=</span> <span class="n">_ok</span><span class="p">(</span><span class="n">metric_val</span><span class="p">,</span> <span class="nb">float</span><span class="p">(</span><span class="n">threshold</span><span class="p">),</span> <span class="n">op</span><span class="p">)</span>
+            <span class="c1"># Distance to acceptance (0 if accepted)</span>
+            <span class="n">gap</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="nb">float</span><span class="p">(</span><span class="n">threshold</span><span class="p">)</span> <span class="o">-</span> <span class="n">metric_val</span><span class="p">)</span> <span class="k">if</span> <span class="n">op</span> <span class="o">==</span> <span class="s2">&quot;&gt;=&quot;</span> <span class="k">else</span> <span class="nb">max</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">metric_val</span> <span class="o">-</span> <span class="nb">float</span><span class="p">(</span><span class="n">threshold</span><span class="p">))</span>
+            <span class="n">primary</span><span class="p">,</span> <span class="n">secondary</span> <span class="o">=</span> <span class="n">gap</span><span class="p">,</span> <span class="nb">abs</span><span class="p">(</span><span class="n">metric_val</span> <span class="o">-</span> <span class="nb">float</span><span class="p">(</span><span class="n">threshold</span><span class="p">))</span>
+
+        <span class="n">meta</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;seed&quot;</span><span class="p">:</span> <span class="n">seed</span><span class="p">,</span>
+            <span class="s2">&quot;tries&quot;</span><span class="p">:</span> <span class="n">try_idx</span><span class="p">,</span>
+            <span class="s2">&quot;accepted&quot;</span><span class="p">:</span> <span class="nb">bool</span><span class="p">(</span><span class="n">accepted</span><span class="p">),</span>
+            <span class="s2">&quot;mode&quot;</span><span class="p">:</span> <span class="n">mode</span><span class="p">,</span>
+            <span class="s2">&quot;structure&quot;</span><span class="p">:</span> <span class="n">structure</span><span class="p">,</span>
+            <span class="s2">&quot;n_samples&quot;</span><span class="p">:</span> <span class="n">n_samples</span><span class="p">,</span>
+            <span class="s2">&quot;n_features&quot;</span><span class="p">:</span> <span class="n">n_cluster_features</span><span class="p">,</span>
+            <span class="s2">&quot;target&quot;</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="n">rho_target</span><span class="p">),</span>
+            <span class="s2">&quot;metric&quot;</span><span class="p">:</span> <span class="n">metric</span><span class="p">,</span>
+            <span class="s2">&quot;metric_value&quot;</span><span class="p">:</span> <span class="n">metric_val</span><span class="p">,</span>
+            <span class="s2">&quot;deviation_offdiag&quot;</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="n">deviation</span><span class="p">),</span>
+            <span class="s2">&quot;mean_offdiag&quot;</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="n">mean_off</span><span class="p">),</span>
+            <span class="s2">&quot;min_offdiag&quot;</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="n">m</span><span class="p">[</span><span class="s2">&quot;min_offdiag&quot;</span><span class="p">]),</span>
+            <span class="s2">&quot;max_offdiag&quot;</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="n">m</span><span class="p">[</span><span class="s2">&quot;max_offdiag&quot;</span><span class="p">]),</span>
+            <span class="s2">&quot;std_offdiag&quot;</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="n">m</span><span class="p">[</span><span class="s2">&quot;std_offdiag&quot;</span><span class="p">]),</span>
+            <span class="s2">&quot;range_offdiag&quot;</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="n">m</span><span class="p">[</span><span class="s2">&quot;range_offdiag&quot;</span><span class="p">]),</span>
+            <span class="s2">&quot;n_offdiag&quot;</span><span class="p">:</span> <span class="nb">int</span><span class="p">(</span><span class="n">m</span><span class="p">[</span><span class="s2">&quot;n_offdiag&quot;</span><span class="p">]),</span>
+            <span class="s2">&quot;tolerance&quot;</span><span class="p">:</span> <span class="kc">None</span> <span class="k">if</span> <span class="n">tolerance</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="nb">float</span><span class="p">(</span><span class="n">tolerance</span><span class="p">),</span>
+            <span class="s2">&quot;threshold&quot;</span><span class="p">:</span> <span class="kc">None</span> <span class="k">if</span> <span class="n">threshold</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="nb">float</span><span class="p">(</span><span class="n">threshold</span><span class="p">),</span>
+            <span class="s2">&quot;op&quot;</span><span class="p">:</span> <span class="n">op</span><span class="p">,</span>
+            <span class="s2">&quot;p_gt_n_tolerance_warning&quot;</span><span class="p">:</span> <span class="nb">bool</span><span class="p">(</span><span class="n">p_gt_n_warn</span><span class="p">),</span>
+        <span class="p">}</span>
+        <span class="k">if</span> <span class="n">return_matrix</span><span class="p">:</span>
+            <span class="n">meta</span><span class="p">[</span><span class="s2">&quot;corr_matrix&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">C</span>
+
+        <span class="k">if</span> <span class="n">accepted</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">seed</span><span class="p">,</span> <span class="n">meta</span>
+
+        <span class="n">score</span> <span class="o">=</span> <span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">primary</span><span class="p">),</span> <span class="nb">float</span><span class="p">(</span><span class="n">secondary</span><span class="p">))</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">best_score</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">or</span> <span class="p">(</span><span class="n">score</span> <span class="o">&lt;</span> <span class="n">best_score</span><span class="p">):</span>
+            <span class="n">best_score</span><span class="p">,</span> <span class="n">best_seed</span><span class="p">,</span> <span class="n">best_meta</span> <span class="o">=</span> <span class="n">score</span><span class="p">,</span> <span class="n">seed</span><span class="p">,</span> <span class="n">meta</span>
+
+        <span class="n">seed</span> <span class="o">+=</span> <span class="mi">1</span>
+
+    <span class="k">if</span> <span class="n">return_best_on_fail</span> <span class="ow">and</span> <span class="n">best_seed</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">best_meta</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">best_meta</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">best_meta</span><span class="p">)</span>
+        <span class="n">best_meta</span><span class="p">[</span><span class="s2">&quot;accepted&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="n">best_meta</span><span class="p">[</span><span class="s2">&quot;tries&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">max_tries</span>
+        <span class="k">return</span> <span class="n">best_seed</span><span class="p">,</span> <span class="n">best_meta</span>
+
+    <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span>
+        <span class="sa">f</span><span class="s2">&quot;No seed satisfied the criterion within </span><span class="si">{</span><span class="n">max_tries</span><span class="si">}</span><span class="s2"> tries &quot;</span>
+        <span class="sa">f</span><span class="s2">&quot;(mode=</span><span class="si">{</span><span class="n">mode</span><span class="si">}</span><span class="s2">, metric=</span><span class="si">{</span><span class="n">metric</span><span class="si">}</span><span class="s2">, target=</span><span class="si">{</span><span class="n">rho_target</span><span class="si">}</span><span class="s2">, tolerance=</span><span class="si">{</span><span class="n">tolerance</span><span class="si">}</span><span class="s2">, &quot;</span>
+        <span class="sa">f</span><span class="s2">&quot;threshold=</span><span class="si">{</span><span class="n">threshold</span><span class="si">}</span><span class="s2">, op=</span><span class="si">{</span><span class="n">op</span><span class="si">}</span><span class="s2">).&quot;</span>
+    <span class="p">)</span></div>
+
+
+
+<span class="c1"># ============================================================================</span>
+<span class="c1"># Convenience wrapper (CorrCluster)</span>
+<span class="c1"># ============================================================================</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">find_seed_for_correlation_from_config</span><span class="p">(</span>
+    <span class="n">cluster</span><span class="p">:</span> <span class="n">CorrCluster</span><span class="p">,</span>
+    <span class="o">*</span><span class="p">,</span>
+    <span class="n">n_samples</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+    <span class="n">class_idx</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">metric</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;mean_offdiag&quot;</span><span class="p">,</span> <span class="s2">&quot;min_offdiag&quot;</span><span class="p">,</span> <span class="s2">&quot;max_offdiag&quot;</span><span class="p">,</span> <span class="s2">&quot;std_offdiag&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;mean_offdiag&quot;</span><span class="p">,</span>
+    <span class="n">tolerance</span><span class="p">:</span> <span class="nb">float</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="mf">0.02</span><span class="p">,</span>  <span class="c1"># FIXED: Renamed from tol</span>
+    <span class="n">threshold</span><span class="p">:</span> <span class="nb">float</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">op</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;&gt;=&quot;</span><span class="p">,</span> <span class="s2">&quot;&lt;=&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;&gt;=&quot;</span><span class="p">,</span>
+    <span class="n">start_seed</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span>
+    <span class="n">max_tries</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">200</span><span class="p">,</span>
+    <span class="n">return_best_on_fail</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+    <span class="n">return_matrix</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="n">enforce_p_le_n_in_tolerance</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>  <span class="c1"># FIXED: Renamed</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Find seed for a CorrCluster (handles class-specific rho/structure).</span>
+
+<span class="sd">    Thin wrapper that resolves class-specific rho/structure from a CorrCluster,</span>
+<span class="sd">    then delegates to find_seed_for_correlation(). Saves you from manually</span>
+<span class="sd">    extracting cluster.rho, cluster.get_rho_for_class(), etc.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        cluster: CorrCluster instance to analyze.</span>
+<span class="sd">        n_samples: Number of samples for testing.</span>
+<span class="sd">        class_idx: If provided and cluster uses class_rho, uses class-specific settings.</span>
+<span class="sd">        metric: Which statistic to optimize.</span>
+<span class="sd">        tolerance: Tolerance mode parameter.</span>
+<span class="sd">        threshold: Threshold mode parameter.</span>
+<span class="sd">        op: Comparison operator for threshold mode.</span>
+<span class="sd">        start_seed: First seed to try.</span>
+<span class="sd">        max_tries: Maximum attempts.</span>
+<span class="sd">        return_best_on_fail: Return best seed if strict criteria fails.</span>
+<span class="sd">        return_matrix: Include correlation matrix in metadata.</span>
+<span class="sd">        enforce_p_le_n_in_tolerance: Warn/reject when p &gt; n in tolerance mode.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        (seed, metadata) - same as find_seed_for_correlation, plus:</span>
+<span class="sd">            - &#39;cluster_label&#39;: cluster.label</span>
+<span class="sd">            - &#39;cluster_anchor_role&#39;: cluster.anchor_role</span>
+<span class="sd">            - &#39;cluster_random_state&#39;: cluster.random_state</span>
+<span class="sd">            - &#39;class_idx&#39;: class_idx used (if any)</span>
+
+<span class="sd">    Examples:</span>
+<span class="sd">        &gt;&gt;&gt; from biomedical_data_generator import CorrCluster</span>
+<span class="sd">        &gt;&gt;&gt; from biomedical_data_generator.utils.correlation_tools import find_seed_for_correlation_from_config</span>
+<span class="sd">        &gt;&gt;&gt; cluster = CorrCluster(</span>
+<span class="sd">        ...     n_cluster_features=5,</span>
+<span class="sd">        ...     rho=0.7,</span>
+<span class="sd">        ...     class_rho={1: 0.9},  # Higher correlation in class 1</span>
+<span class="sd">        ...     anchor_role=&quot;informative&quot;</span>
+<span class="sd">        ... )</span>
+<span class="sd">        &gt;&gt;&gt; # Find seed for class 1 (diseased patients with strong correlation)</span>
+<span class="sd">        &gt;&gt;&gt; seed, meta = find_seed_for_correlation_from_cluster(</span>
+<span class="sd">        ...     cluster, n_samples=200, class_idx=1, tolerance=0.03</span>
+<span class="sd">        ... )</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Resolve class-specific settings</span>
+    <span class="k">if</span> <span class="n">class_idx</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">cluster</span><span class="o">.</span><span class="n">is_class_specific</span><span class="p">():</span>
+        <span class="n">rho</span> <span class="o">=</span> <span class="n">cluster</span><span class="o">.</span><span class="n">rho</span>
+        <span class="n">structure</span> <span class="o">=</span> <span class="n">cluster</span><span class="o">.</span><span class="n">structure</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">rho</span> <span class="o">=</span> <span class="n">cluster</span><span class="o">.</span><span class="n">get_rho_for_class</span><span class="p">(</span><span class="n">class_idx</span><span class="p">)</span>
+        <span class="n">structure</span> <span class="o">=</span> <span class="n">cluster</span><span class="o">.</span><span class="n">get_structure_for_class</span><span class="p">(</span><span class="n">class_idx</span><span class="p">)</span>
+
+    <span class="c1"># Delegate to core search</span>
+    <span class="n">seed</span><span class="p">,</span> <span class="n">meta</span> <span class="o">=</span> <span class="n">find_seed_for_correlation</span><span class="p">(</span>
+        <span class="n">n_samples</span><span class="o">=</span><span class="n">n_samples</span><span class="p">,</span>
+        <span class="n">n_cluster_features</span><span class="o">=</span><span class="n">cluster</span><span class="o">.</span><span class="n">n_cluster_features</span><span class="p">,</span>
+        <span class="n">rho_target</span><span class="o">=</span><span class="n">rho</span><span class="p">,</span>
+        <span class="n">structure</span><span class="o">=</span><span class="n">structure</span><span class="p">,</span>
+        <span class="n">metric</span><span class="o">=</span><span class="n">metric</span><span class="p">,</span>
+        <span class="n">tolerance</span><span class="o">=</span><span class="n">tolerance</span><span class="p">,</span>
+        <span class="n">threshold</span><span class="o">=</span><span class="n">threshold</span><span class="p">,</span>
+        <span class="n">op</span><span class="o">=</span><span class="n">op</span><span class="p">,</span>
+        <span class="n">start_seed</span><span class="o">=</span><span class="n">start_seed</span><span class="p">,</span>
+        <span class="n">max_tries</span><span class="o">=</span><span class="n">max_tries</span><span class="p">,</span>
+        <span class="n">return_best_on_fail</span><span class="o">=</span><span class="n">return_best_on_fail</span><span class="p">,</span>
+        <span class="n">return_matrix</span><span class="o">=</span><span class="n">return_matrix</span><span class="p">,</span>
+        <span class="n">enforce_p_le_n_in_tolerance</span><span class="o">=</span><span class="n">enforce_p_le_n_in_tolerance</span><span class="p">,</span>
+    <span class="p">)</span>
+
+    <span class="c1"># Augment metadata with cluster info</span>
+    <span class="n">meta</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">meta</span><span class="p">)</span>
+    <span class="n">meta</span><span class="o">.</span><span class="n">update</span><span class="p">(</span>
+        <span class="p">{</span>
+            <span class="s2">&quot;cluster_label&quot;</span><span class="p">:</span> <span class="n">cluster</span><span class="o">.</span><span class="n">label</span><span class="p">,</span>
+            <span class="s2">&quot;cluster_anchor_role&quot;</span><span class="p">:</span> <span class="n">cluster</span><span class="o">.</span><span class="n">anchor_role</span><span class="p">,</span>
+            <span class="s2">&quot;cluster_random_state&quot;</span><span class="p">:</span> <span class="n">cluster</span><span class="o">.</span><span class="n">random_state</span><span class="p">,</span>
+            <span class="s2">&quot;class_idx&quot;</span><span class="p">:</span> <span class="n">class_idx</span><span class="p">,</span>
+        <span class="p">}</span>
+    <span class="p">)</span>
+    <span class="k">return</span> <span class="n">seed</span><span class="p">,</span> <span class="n">meta</span>
+
+
+<span class="c1"># ============================================================================</span>
+<span class="c1"># Best-of-N (simple scanner; uses mean_offdiag)</span>
+<span class="c1"># ============================================================================</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">find_best_seed_for_correlation</span><span class="p">(</span>
+    <span class="n">n_trials</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+    <span class="n">n_samples</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+    <span class="n">n_features</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+    <span class="n">rho</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+    <span class="n">structure</span><span class="p">:</span> <span class="n">CorrelationStructure</span> <span class="o">=</span> <span class="s2">&quot;equicorrelated&quot;</span><span class="p">,</span>
+    <span class="o">*</span><span class="p">,</span>
+    <span class="n">start_seed</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">float</span><span class="p">]]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Try n_trials seeds and return the one minimizing |mean_offdiag - rho|.</span>
+
+<span class="sd">    Simple exhaustive search - no early stopping. Useful for small-scale</span>
+<span class="sd">    optimization when you want guaranteed best-of-N rather than first-acceptable.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        n_trials: Number of seeds to test.</span>
+<span class="sd">        n_samples: Number of samples per test.</span>
+<span class="sd">        n_features: Number of features per test.</span>
+<span class="sd">        rho: Target correlation.</span>
+<span class="sd">        structure: Correlation structure.</span>
+<span class="sd">        start_seed: First seed in range.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        (best_seed, metrics) where metrics includes:</span>
+<span class="sd">            - All values from compute_correlation_metrics()</span>
+<span class="sd">            - &#39;delta_offdiag&#39;: Absolute deviation from target</span>
+
+<span class="sd">    Examples:</span>
+<span class="sd">        &gt;&gt;&gt; from biomedical_data_generator.utils.correlation_tools import find_best_seed_for_correlation</span>
+<span class="sd">        &gt;&gt;&gt; seed, metrics = find_best_seed_for_correlation(</span>
+<span class="sd">        ...     n_trials=100, n_samples=200, n_features=5, rho=0.7</span>
+<span class="sd">        ... )</span>
+<span class="sd">        &gt;&gt;&gt; print(f&quot;Best seed {seed} with deviation {metrics[&#39;delta_offdiag&#39;]:.4f}&quot;)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">best_seed</span> <span class="o">=</span> <span class="n">start_seed</span>
+    <span class="n">best_delta</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="s2">&quot;inf&quot;</span><span class="p">)</span>
+    <span class="n">best_metrics</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">float</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+
+    <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">start_seed</span><span class="p">,</span> <span class="n">start_seed</span> <span class="o">+</span> <span class="n">n_trials</span><span class="p">):</span>
+        <span class="n">rng</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">default_rng</span><span class="p">(</span><span class="n">s</span><span class="p">)</span>
+        <span class="n">X</span> <span class="o">=</span> <span class="n">sample_cluster</span><span class="p">(</span><span class="n">n_samples</span><span class="p">,</span> <span class="n">n_features</span><span class="p">,</span> <span class="n">rng</span><span class="p">,</span> <span class="n">structure</span><span class="o">=</span><span class="n">structure</span><span class="p">,</span> <span class="n">rho</span><span class="o">=</span><span class="n">rho</span><span class="p">)</span>
+        <span class="n">C</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">corrcoef</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">rowvar</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+        <span class="n">m</span> <span class="o">=</span> <span class="n">compute_correlation_metrics</span><span class="p">(</span><span class="n">C</span><span class="p">)</span>
+        <span class="n">delta</span> <span class="o">=</span> <span class="nb">abs</span><span class="p">(</span><span class="n">m</span><span class="p">[</span><span class="s2">&quot;mean_offdiag&quot;</span><span class="p">]</span> <span class="o">-</span> <span class="n">rho</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">delta</span> <span class="o">&lt;</span> <span class="n">best_delta</span><span class="p">:</span>
+            <span class="n">best_seed</span><span class="p">,</span> <span class="n">best_delta</span><span class="p">,</span> <span class="n">best_metrics</span> <span class="o">=</span> <span class="n">s</span><span class="p">,</span> <span class="n">delta</span><span class="p">,</span> <span class="n">m</span>
+
+    <span class="k">assert</span> <span class="n">best_metrics</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+    <span class="k">return</span> <span class="n">best_seed</span><span class="p">,</span> <span class="p">{</span><span class="o">**</span><span class="n">best_metrics</span><span class="p">,</span> <span class="s2">&quot;delta_offdiag&quot;</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="n">best_delta</span><span class="p">)}</span>
+
+
+<span class="c1"># ============================================================================</span>
+<span class="c1"># Visualization (optional deps; offdiag naming throughout)</span>
+<span class="c1"># ============================================================================</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">plot_correlation_matrix</span><span class="p">(</span>
+    <span class="n">corr_matrix</span><span class="p">:</span> <span class="n">NDArray</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">],</span>
+    <span class="o">*</span><span class="p">,</span>
+    <span class="n">title</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">cmap</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;RdBu_r&quot;</span><span class="p">,</span>
+    <span class="n">vmin</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="o">-</span><span class="mf">1.0</span><span class="p">,</span>
+    <span class="n">vmax</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1.0</span><span class="p">,</span>
+    <span class="n">annot</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+    <span class="n">fmt</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;.2f&quot;</span><span class="p">,</span>
+    <span class="n">figsize</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="mi">8</span><span class="p">,</span> <span class="mi">6</span><span class="p">),</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Plot correlation matrix heatmap with annotations.</span>
+
+<span class="sd">    Requires matplotlib and seaborn (optional dependencies). If not installed,</span>
+<span class="sd">    raises ImportError with helpful message.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        corr_matrix: Correlation matrix to visualize.</span>
+<span class="sd">        title: Plot title (default: &quot;Correlation Matrix&quot;).</span>
+<span class="sd">        cmap: Colormap name (default: &quot;RdBu_r&quot;).</span>
+<span class="sd">        vmin: Minimum value for colormap scaling (default: -1.0).</span>
+<span class="sd">        vmax: Maximum value for colormap scaling (default: 1.0).</span>
+<span class="sd">        annot: Whether to annotate cells with values (default: True).</span>
+<span class="sd">        fmt: String formatting for annotations (default: &quot;.2f&quot;).</span>
+<span class="sd">        figsize: Figure size in inches (default: (8, 6)).</span>
+
+<span class="sd">    Raises:</span>
+<span class="sd">        ImportError: If matplotlib or seaborn is not installed.</span>
+
+<span class="sd">    Examples:</span>
+<span class="sd">        &gt;&gt;&gt; import numpy as np</span>
+<span class="sd">        &gt;&gt;&gt; from biomedical_data_generator.utils.correlation_tools import plot_correlation_matrix</span>
+<span class="sd">        &gt;&gt;&gt; from biomedical_data_generator.features.correlated import build_correlation_matrix</span>
+<span class="sd">        &gt;&gt;&gt; R = build_correlation_matrix(6, 0.7, &quot;equicorrelated&quot;)</span>
+<span class="sd">        &gt;&gt;&gt; plot_correlation_matrix(R, title=&quot;Equicorrelated (ρ=0.7)&quot;)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.pyplot</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">plt</span>
+        <span class="kn">import</span><span class="w"> </span><span class="nn">seaborn</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">sns</span>
+    <span class="k">except</span> <span class="ne">ImportError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ImportError</span><span class="p">(</span>
+            <span class="s2">&quot;Visualization requires matplotlib and seaborn. &quot;</span>
+            <span class="s2">&quot;Install with: pip install biomedical-data-generator[visualization]&quot;</span>
+        <span class="p">)</span> <span class="kn">from</span><span class="w"> </span><span class="nn">e</span>
+
+    <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="n">figsize</span><span class="p">)</span>
+    <span class="n">sns</span><span class="o">.</span><span class="n">heatmap</span><span class="p">(</span>
+        <span class="n">corr_matrix</span><span class="p">,</span>
+        <span class="n">annot</span><span class="o">=</span><span class="n">annot</span><span class="p">,</span>
+        <span class="n">fmt</span><span class="o">=</span><span class="n">fmt</span><span class="p">,</span>
+        <span class="n">cmap</span><span class="o">=</span><span class="n">cmap</span><span class="p">,</span>
+        <span class="n">vmin</span><span class="o">=</span><span class="n">vmin</span><span class="p">,</span>
+        <span class="n">vmax</span><span class="o">=</span><span class="n">vmax</span><span class="p">,</span>
+        <span class="n">square</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="n">cbar_kws</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;label&quot;</span><span class="p">:</span> <span class="s2">&quot;Correlation&quot;</span><span class="p">},</span>
+    <span class="p">)</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="n">title</span> <span class="ow">or</span> <span class="s2">&quot;Correlation Matrix&quot;</span><span class="p">)</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">tight_layout</span><span class="p">()</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">plot_seed_search_history</span><span class="p">(</span>
+    <span class="n">seed_range</span><span class="p">:</span> <span class="nb">range</span> <span class="o">|</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">],</span>
+    <span class="n">n_samples</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+    <span class="n">n_cluster_features</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+    <span class="n">rho_target</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+    <span class="n">structure</span><span class="p">:</span> <span class="n">CorrelationStructure</span> <span class="o">=</span> <span class="s2">&quot;equicorrelated&quot;</span><span class="p">,</span>
+    <span class="o">*</span><span class="p">,</span>
+    <span class="n">metric</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;mean_offdiag&quot;</span><span class="p">,</span> <span class="s2">&quot;min_offdiag&quot;</span><span class="p">,</span> <span class="s2">&quot;max_offdiag&quot;</span><span class="p">,</span> <span class="s2">&quot;std_offdiag&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;mean_offdiag&quot;</span><span class="p">,</span>
+    <span class="n">tolerance</span><span class="p">:</span> <span class="nb">float</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">figsize</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mi">6</span><span class="p">),</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">],</span> <span class="nb">list</span><span class="p">[</span><span class="nb">float</span><span class="p">]]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Visualize how correlation metrics vary across different seeds.</span>
+
+<span class="sd">    Useful for understanding seed sensitivity and finding &quot;stable&quot; regions.</span>
+<span class="sd">    Plots the specified metric for each seed in the range.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        seed_range: Range or list of seeds to test.</span>
+<span class="sd">        n_samples: Number of samples to generate for each test.</span>
+<span class="sd">        n_cluster_features: Number of features in the cluster.</span>
+<span class="sd">        rho_target: Target correlation strength.</span>
+<span class="sd">        structure: Correlation structure (&quot;equicorrelated&quot; or &quot;toeplitz&quot;).</span>
+<span class="sd">        metric: Which metric to plot (&quot;mean_offdiag&quot;, &quot;min_offdiag&quot;, etc.).</span>
+<span class="sd">        tolerance: Optional tolerance band to highlight on plot.</span>
+<span class="sd">        figsize: Figure size in inches (default: (10, 6)).</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Tuple of (seeds, metric_values) for further analysis.</span>
+
+<span class="sd">    Raises:</span>
+<span class="sd">        ImportError: If matplotlib is not installed.</span>
+
+<span class="sd">    Examples:</span>
+<span class="sd">        &gt;&gt;&gt; from biomedical_data_generator.utils.correlation_tools import plot_seed_search_history</span>
+<span class="sd">        &gt;&gt;&gt; seeds, means = plot_seed_search_history(</span>
+<span class="sd">        ...     seed_range=range(0, 50),</span>
+<span class="sd">        ...     n_samples=200,</span>
+<span class="sd">        ...     n_cluster_features=5,</span>
+<span class="sd">        ...     rho_target=0.7,</span>
+<span class="sd">        ...     metric=&quot;mean_offdiag&quot;,</span>
+<span class="sd">        ...     tolerance=0.05</span>
+<span class="sd">        ... )</span>
+<span class="sd">        &gt;&gt;&gt; print(f&quot;Found {sum(abs(m - 0.7) &lt;= 0.05 for m in means)} seeds within tolerance&quot;)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.pyplot</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">plt</span>
+    <span class="k">except</span> <span class="ne">ImportError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ImportError</span><span class="p">(</span>
+            <span class="s2">&quot;Visualization requires matplotlib. &quot;</span> <span class="s2">&quot;Install with: pip install biomedical-data-generator[visualization]&quot;</span>
+        <span class="p">)</span> <span class="kn">from</span><span class="w"> </span><span class="nn">e</span>
+
+    <span class="n">seeds</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">seed_range</span><span class="p">)</span>
+    <span class="n">vals</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">seeds</span><span class="p">:</span>
+        <span class="n">rng</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">default_rng</span><span class="p">(</span><span class="n">s</span><span class="p">)</span>
+        <span class="n">X</span> <span class="o">=</span> <span class="n">sample_cluster</span><span class="p">(</span><span class="n">n_samples</span><span class="p">,</span> <span class="n">n_cluster_features</span><span class="p">,</span> <span class="n">rng</span><span class="p">,</span> <span class="n">structure</span><span class="o">=</span><span class="n">structure</span><span class="p">,</span> <span class="n">rho</span><span class="o">=</span><span class="n">rho_target</span><span class="p">)</span>
+        <span class="n">C</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">corrcoef</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">rowvar</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+        <span class="n">m</span> <span class="o">=</span> <span class="n">compute_correlation_metrics</span><span class="p">(</span><span class="n">C</span><span class="p">)</span>
+        <span class="n">vals</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">m</span><span class="p">[</span><span class="n">metric</span><span class="p">]))</span>
+
+    <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="n">figsize</span><span class="p">)</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">seeds</span><span class="p">,</span> <span class="n">vals</span><span class="p">,</span> <span class="n">marker</span><span class="o">=</span><span class="s2">&quot;o&quot;</span><span class="p">,</span> <span class="n">linestyle</span><span class="o">=</span><span class="s2">&quot;-&quot;</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.7</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">metric</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">axhline</span><span class="p">(</span><span class="n">y</span><span class="o">=</span><span class="n">rho_target</span><span class="p">,</span> <span class="n">linestyle</span><span class="o">=</span><span class="s2">&quot;--&quot;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;Target (ρ=</span><span class="si">{</span><span class="n">rho_target</span><span class="si">}</span><span class="s2">)&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">tolerance</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">metric</span> <span class="o">==</span> <span class="s2">&quot;mean_offdiag&quot;</span><span class="p">:</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">axhline</span><span class="p">(</span><span class="n">y</span><span class="o">=</span><span class="n">rho_target</span> <span class="o">+</span> <span class="n">tolerance</span><span class="p">,</span> <span class="n">linestyle</span><span class="o">=</span><span class="s2">&quot;:&quot;</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.6</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;Tolerance band&quot;</span><span class="p">)</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">axhline</span><span class="p">(</span><span class="n">y</span><span class="o">=</span><span class="n">rho_target</span> <span class="o">-</span> <span class="n">tolerance</span><span class="p">,</span> <span class="n">linestyle</span><span class="o">=</span><span class="s2">&quot;:&quot;</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.6</span><span class="p">)</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">fill_between</span><span class="p">(</span><span class="n">seeds</span><span class="p">,</span> <span class="n">rho_target</span> <span class="o">-</span> <span class="n">tolerance</span><span class="p">,</span> <span class="n">rho_target</span> <span class="o">+</span> <span class="n">tolerance</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.1</span><span class="p">)</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s2">&quot;Seed&quot;</span><span class="p">)</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="n">metric</span><span class="p">)</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Seed Sensitivity Analysis: </span><span class="si">{</span><span class="n">metric</span><span class="si">}</span><span class="se">\n</span><span class="s2">(n=</span><span class="si">{</span><span class="n">n_samples</span><span class="si">}</span><span class="s2">, p=</span><span class="si">{</span><span class="n">n_cluster_features</span><span class="si">}</span><span class="s2">, structure=</span><span class="si">{</span><span class="n">structure</span><span class="si">}</span><span class="s2">)&quot;</span><span class="p">)</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">legend</span><span class="p">()</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">grid</span><span class="p">(</span><span class="kc">True</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.3</span><span class="p">)</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">tight_layout</span><span class="p">()</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+    <span class="k">return</span> <span class="n">seeds</span><span class="p">,</span> <span class="n">vals</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">compare_structures_visually</span><span class="p">(</span>
+    <span class="n">n_samples</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+    <span class="n">n_cluster_features</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+    <span class="n">rho</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+    <span class="n">seed</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">42</span><span class="p">,</span>
+    <span class="n">figsize</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="mi">14</span><span class="p">,</span> <span class="mi">6</span><span class="p">),</span>
+    <span class="n">annot</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Compare equicorrelated vs. toeplitz structures side-by-side.</span>
+
+<span class="sd">    Generates data with both structures and plots their empirical correlation matrices.</span>
+<span class="sd">    Useful for teaching the difference between correlation structures.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        n_samples: Number of samples to generate.</span>
+<span class="sd">        n_cluster_features: Number of features in each cluster.</span>
+<span class="sd">        rho: Correlation strength (same for both structures).</span>
+<span class="sd">        seed: Random seed for reproducibility.</span>
+<span class="sd">        figsize: Figure size in inches (default: (14, 6)).</span>
+<span class="sd">        annot: Whether to annotate heatmap cells (default: True).</span>
+
+<span class="sd">    Raises:</span>
+<span class="sd">        ImportError: If matplotlib or seaborn is not installed.</span>
+
+<span class="sd">    Examples:</span>
+<span class="sd">        &gt;&gt;&gt; from biomedical_data_generator.utils.correlation_tools import compare_structures_visually</span>
+<span class="sd">        &gt;&gt;&gt; compare_structures_visually(n_samples=300, n_cluster_features=6, rho=0.6)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.pyplot</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">plt</span>
+        <span class="kn">import</span><span class="w"> </span><span class="nn">seaborn</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">sns</span>
+    <span class="k">except</span> <span class="ne">ImportError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ImportError</span><span class="p">(</span>
+            <span class="s2">&quot;Visualization requires matplotlib and seaborn. &quot;</span>
+            <span class="s2">&quot;Install with: pip install biomedical-data-generator[visualization]&quot;</span>
+        <span class="p">)</span> <span class="kn">from</span><span class="w"> </span><span class="nn">e</span>
+
+    <span class="n">rng</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">default_rng</span><span class="p">(</span><span class="n">seed</span><span class="p">)</span>
+    <span class="n">X_eq</span> <span class="o">=</span> <span class="n">sample_cluster</span><span class="p">(</span><span class="n">n_samples</span><span class="p">,</span> <span class="n">n_cluster_features</span><span class="p">,</span> <span class="n">rng</span><span class="p">,</span> <span class="n">structure</span><span class="o">=</span><span class="s2">&quot;equicorrelated&quot;</span><span class="p">,</span> <span class="n">rho</span><span class="o">=</span><span class="n">rho</span><span class="p">)</span>
+    <span class="n">rng</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">default_rng</span><span class="p">(</span><span class="n">seed</span><span class="p">)</span>
+    <span class="n">X_tp</span> <span class="o">=</span> <span class="n">sample_cluster</span><span class="p">(</span><span class="n">n_samples</span><span class="p">,</span> <span class="n">n_cluster_features</span><span class="p">,</span> <span class="n">rng</span><span class="p">,</span> <span class="n">structure</span><span class="o">=</span><span class="s2">&quot;toeplitz&quot;</span><span class="p">,</span> <span class="n">rho</span><span class="o">=</span><span class="n">rho</span><span class="p">)</span>
+
+    <span class="n">C_eq</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">corrcoef</span><span class="p">(</span><span class="n">X_eq</span><span class="p">,</span> <span class="n">rowvar</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="n">C_tp</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">corrcoef</span><span class="p">(</span><span class="n">X_tp</span><span class="p">,</span> <span class="n">rowvar</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+
+    <span class="n">m_eq</span> <span class="o">=</span> <span class="n">compute_correlation_metrics</span><span class="p">(</span><span class="n">C_eq</span><span class="p">)</span>
+    <span class="n">m_tp</span> <span class="o">=</span> <span class="n">compute_correlation_metrics</span><span class="p">(</span><span class="n">C_tp</span><span class="p">)</span>
+
+    <span class="n">fig</span><span class="p">,</span> <span class="p">(</span><span class="n">ax1</span><span class="p">,</span> <span class="n">ax2</span><span class="p">)</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="n">figsize</span><span class="p">)</span>
+    <span class="n">sns</span><span class="o">.</span><span class="n">heatmap</span><span class="p">(</span>
+        <span class="n">C_eq</span><span class="p">,</span>
+        <span class="n">annot</span><span class="o">=</span><span class="n">annot</span><span class="p">,</span>
+        <span class="n">fmt</span><span class="o">=</span><span class="s2">&quot;.2f&quot;</span><span class="p">,</span>
+        <span class="n">cmap</span><span class="o">=</span><span class="s2">&quot;RdBu_r&quot;</span><span class="p">,</span>
+        <span class="n">vmin</span><span class="o">=-</span><span class="mi">1</span><span class="p">,</span>
+        <span class="n">vmax</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+        <span class="n">square</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="n">ax</span><span class="o">=</span><span class="n">ax1</span><span class="p">,</span>
+        <span class="n">cbar_kws</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;label&quot;</span><span class="p">:</span> <span class="s2">&quot;Correlation&quot;</span><span class="p">},</span>
+    <span class="p">)</span>
+    <span class="n">ax1</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span>
+        <span class="sa">f</span><span class="s2">&quot;Equicorrelated (ρ=</span><span class="si">{</span><span class="n">rho</span><span class="si">}</span><span class="s2">)</span><span class="se">\n</span><span class="s2">Mean_offdiag: &quot;</span>
+        <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">m_eq</span><span class="p">[</span><span class="s1">&#39;mean_offdiag&#39;</span><span class="p">]</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2">, Range_offdiag: </span><span class="si">{</span><span class="n">m_eq</span><span class="p">[</span><span class="s1">&#39;range_offdiag&#39;</span><span class="p">]</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2">&quot;</span>
+    <span class="p">)</span>
+    <span class="n">sns</span><span class="o">.</span><span class="n">heatmap</span><span class="p">(</span>
+        <span class="n">C_tp</span><span class="p">,</span>
+        <span class="n">annot</span><span class="o">=</span><span class="n">annot</span><span class="p">,</span>
+        <span class="n">fmt</span><span class="o">=</span><span class="s2">&quot;.2f&quot;</span><span class="p">,</span>
+        <span class="n">cmap</span><span class="o">=</span><span class="s2">&quot;RdBu_r&quot;</span><span class="p">,</span>
+        <span class="n">vmin</span><span class="o">=-</span><span class="mi">1</span><span class="p">,</span>
+        <span class="n">vmax</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+        <span class="n">square</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="n">ax</span><span class="o">=</span><span class="n">ax2</span><span class="p">,</span>
+        <span class="n">cbar_kws</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;label&quot;</span><span class="p">:</span> <span class="s2">&quot;Correlation&quot;</span><span class="p">},</span>
+    <span class="p">)</span>
+    <span class="n">ax2</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span>
+        <span class="sa">f</span><span class="s2">&quot;Toeplitz (ρ=</span><span class="si">{</span><span class="n">rho</span><span class="si">}</span><span class="s2">)</span><span class="se">\n</span><span class="s2">Mean_offdiag: </span><span class="si">{</span><span class="n">m_tp</span><span class="p">[</span><span class="s1">&#39;mean_offdiag&#39;</span><span class="p">]</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2">, Range_offdiag: </span><span class="si">{</span><span class="n">m_tp</span><span class="p">[</span><span class="s1">&#39;range_offdiag&#39;</span><span class="p">]</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2">&quot;</span>
+    <span class="p">)</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">tight_layout</span><span class="p">()</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, Sigrun May.</p>
+  </div>
+
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
