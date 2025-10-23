@@ -1,12 +1,18 @@
-.idea
 /data
 /archive/examples/plots
 /archive/examples/data
-*.egg-info
-*.egg
-.ipynb_checkpoints
 
+# --- IDE / Editor ---
+.idea
+.idea/
+.vscode/
 
+# Development artifacts
+*.swp
+*.swo
+*~
+
+# --- Python Basics ---
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
@@ -138,3 +144,8 @@ dmypy.json
 .pyre/
 /archive/examples/vedliot/
 poetry.lock
+
+# Internal analysis documents
+*ANALYSIS*.md
+*UPDATES_NEEDED*.md
+MVP_*.md
