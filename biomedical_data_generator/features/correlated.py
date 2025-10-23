@@ -24,11 +24,11 @@
 
 from __future__ import annotations
 
-from typing import Literal, Mapping, Optional
+from collections.abc import Mapping
+from typing import Literal
 
 import numpy as np
 from numpy.typing import NDArray
-
 
 CorrelationStructure = Literal["equicorrelated", "toeplitz"]
 
@@ -42,6 +42,7 @@ __all__ = [
 # ============================================================================
 # Correlation matrix construction (single source of truth)
 # ============================================================================
+
 
 def build_correlation_matrix(
     n_features: int,
@@ -107,6 +108,7 @@ def build_correlation_matrix(
 # Robust Cholesky factorization with diagonal jitter fallback
 # ============================================================================
 
+
 def _cholesky_with_jitter(
     corr_matrix: NDArray[np.float64],
     *,
@@ -156,15 +158,16 @@ def _cholesky_with_jitter(
 # Public sampler
 # ============================================================================
 
+
 def sample_cluster(
     n_samples: int,
     n_features: int,
     rng: np.random.Generator,
     *,
     structure: CorrelationStructure = "equicorrelated",
-    rho: Optional[float] = None,
-    class_labels: Optional[NDArray[np.int64]] = None,
-    class_rho: Optional[Mapping[int, float]] = None,
+    rho: float | None = None,
+    class_labels: NDArray[np.int64] | None = None,
+    class_rho: Mapping[int, float] | None = None,
     baseline_rho: float = 0.0,
 ) -> NDArray[np.float64]:
     """Sample a correlated feature block (global or class-specific).
@@ -206,9 +209,7 @@ def sample_cluster(
     # -------------------------------
     if class_labels is not None:
         if class_labels.shape[0] != n_samples:
-            raise ValueError(
-                f"class_labels has length {class_labels.shape[0]} but n_samples={n_samples}"
-            )
+            raise ValueError(f"class_labels has length {class_labels.shape[0]} but n_samples={n_samples}")
 
         overrides = class_rho or {}
         X = np.empty((n_samples, n_features), dtype=np.float64)
@@ -216,7 +217,7 @@ def sample_cluster(
         # Sample per class so each group can use its own rho, but the same structure.
         unique_classes = np.unique(class_labels)
         for cls in unique_classes:
-            class_mask = (class_labels == cls)
+            class_mask = class_labels == cls
             n_in_class = int(class_mask.sum())
             if n_in_class == 0:
                 continue
@@ -234,13 +235,10 @@ def sample_cluster(
     # Global mode (no labels provided)
     # -------------------------------
     if rho is None:
-        raise ValueError(
-            "Global mode requires `rho` when no `class_labels` are provided."
-        )
+        raise ValueError("Global mode requires `rho` when no `class_labels` are provided.")
 
     R_global = build_correlation_matrix(n_features, rho, structure)
     L_global = _cholesky_with_jitter(R_global)
 
     standard_normal = rng.standard_normal(size=(n_samples, n_features))
     return standard_normal @ L_global.T
-

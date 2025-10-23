@@ -154,8 +154,7 @@ def test_class_specific_correlation_in_clusters():
     # Class 1 should have higher correlation due to class_rho={1: 0.9}
     # Allow some tolerance due to finite sample size
     assert mean_corr1 > mean_corr0 + 0.3, (
-        f"Class 1 should have higher correlation. "
-        f"Got: class0={mean_corr0:.2f}, class1={mean_corr1:.2f}"
+        f"Class 1 should have higher correlation. " f"Got: class0={mean_corr0:.2f}, class1={mean_corr1:.2f}"
     )
 
     # Class 1 should be close to 0.9

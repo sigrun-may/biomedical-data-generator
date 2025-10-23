@@ -9,13 +9,13 @@
 import numpy as np
 import pytest
 
-from biomedical_data_generator.utils import correlation_tools
 from biomedical_data_generator.features import correlated as corr
-
+from biomedical_data_generator.utils import correlation_tools
 
 # -------------------------
 # build_correlation_matrix
 # -------------------------
+
 
 def test_build_corr_equicorrelated_exact_values():
     p, rho = 5, 0.6
@@ -37,7 +37,7 @@ def test_build_corr_toeplitz_exact_values():
     # Check a few Toeplitz powers
     for d in (1, 2, 3):
         vals = np.diag(R, k=d)
-        assert np.allclose(vals, rho ** d, atol=1e-12)
+        assert np.allclose(vals, rho**d, atol=1e-12)
 
 
 def test_build_corr_invalid_rho_equicorr_raises():
@@ -65,6 +65,7 @@ def test_build_corr_unknown_structure_raises():
 # offdiag_metrics
 # --------------
 
+
 def test_offdiag_mean_behavior():
     # p==1 => defined as 1.0
     assert correlation_tools.compute_correlation_metrics(np.array([[1.0]]))["mean_offdiag"] == 1.0
@@ -72,9 +73,11 @@ def test_offdiag_mean_behavior():
     R = corr.build_correlation_matrix(5, 0.3, "equicorrelated")
     assert np.isclose(correlation_tools.compute_correlation_metrics(R)["mean_offdiag"], 0.3)
 
+
 # --------------
 # compute_correlation_metrics
 # --------------
+
 
 def test_compute_correlation_metrics_single_feature():
     """Single feature edge case returns expected values."""
@@ -90,9 +93,11 @@ def test_compute_correlation_metrics_equicorrelated():
     metrics = correlation_tools.compute_correlation_metrics(R)
     assert np.isclose(metrics["mean_offdiag"], 0.3)
 
+
 # ----------------
 # _cholesky_with_jitter
 # ----------------
+
 
 def test_cholesky_with_jitter_handles_near_singular():
     p = 6
@@ -109,6 +114,7 @@ def test_cholesky_with_jitter_handles_near_singular():
 # -------------
 # sample_cluster
 # -------------
+
 
 def test_sample_cluster_global_equicorrelated_matches_mean():
     n, p, rho = 500, 6, 0.6
@@ -287,6 +293,7 @@ def test_find_seed_for_correlation_p_gt_n_warning():
 # find_seed_for_correlation_from_cluster
 # -------------------------
 
+
 def test_find_seed_for_correlation_from_cluster_basic():
     """Cluster wrapper correctly resolves rho and structure."""
     from biomedical_data_generator import CorrCluster
@@ -343,6 +350,7 @@ def test_find_seed_for_correlation_from_cluster_class_specific():
 # find_best_seed_for_correlation
 # -------------------------
 
+
 def test_find_best_seed_for_correlation_returns_best():
     """Best-of-N scanner returns seed with smallest deviation."""
     seed, metrics = correlation_tools.find_best_seed_for_correlation(
@@ -366,14 +374,13 @@ def test_find_best_seed_for_correlation_returns_best():
 # assess_correlation_quality
 # -------------------------
 
+
 def test_assess_correlation_quality():
     """Quality assessment computes all metrics and checks tolerance."""
     rng = np.random.default_rng(42)
     X = corr.sample_cluster(300, 6, rng, structure="equicorrelated", rho=0.65)
 
-    quality = correlation_tools.assess_correlation_quality(
-        X, rho_target=0.65, tolerance=0.03
-    )
+    quality = correlation_tools.assess_correlation_quality(X, rho_target=0.65, tolerance=0.03)
 
     assert "mean_offdiag" in quality
     assert "deviation_offdiag" in quality

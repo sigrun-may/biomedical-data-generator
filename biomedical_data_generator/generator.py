@@ -8,7 +8,7 @@
 
 from __future__ import annotations
 
-from collections.abc import Callable, Iterable, Mapping
+from collections.abc import Callable, Mapping
 from typing import Any, Literal
 
 import numpy as np
@@ -257,8 +257,7 @@ def generate_dataset(
     # Require explicit class_counts
     if cfg.class_counts is None:
         raise ValueError(
-            "class_counts must be specified. "
-            "Specify exact per-class sample counts as a dict (e.g., {0: 50, 1: 50})."
+            "class_counts must be specified. " "Specify exact per-class sample counts as a dict (e.g., {0: 50, 1: 50})."
         )
 
     # Validate class_counts

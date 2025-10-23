@@ -200,28 +200,19 @@ class CorrCluster(BaseModel):
 
     # global correlation (default mode)
     structure: Literal["equicorrelated", "toeplitz"] = Field(
-        default="equicorrelated",
-        description="Default correlation structure for all classes"
+        default="equicorrelated", description="Default correlation structure for all classes"
     )
-    rho: float = Field(
-        default=0.8,
-        description="Default correlation strength for all classes"
-    )
+    rho: float = Field(default=0.8, description="Default correlation strength for all classes")
 
     # per-class correlation (optional)
     class_structure: dict[int, Literal["equicorrelated", "toeplitz"]] | None = Field(
-        default=None,
-        description="Per-class correlation structure (overrides 'structure' for specified classes)"
+        default=None, description="Per-class correlation structure (overrides 'structure' for specified classes)"
     )
     class_rho: dict[int, float] | None = Field(
-        default=None,
-        description="Per-class correlation strength (activates class-specific mode)"
+        default=None, description="Per-class correlation strength (activates class-specific mode)"
     )
     rho_baseline: float = Field(
-        default=0.0,
-        ge=-1.0,
-        lt=1.0,
-        description="Fallback correlation for classes not in class_rho"
+        default=0.0, ge=-1.0, lt=1.0, description="Fallback correlation for classes not in class_rho"
     )
 
     # Biological relevance
@@ -249,8 +240,10 @@ class CorrCluster(BaseModel):
         if structure == "equicorrelated":
             lower = -1.0 / (p - 1) if p > 1 else float("-inf")
             if not (lower < v < 1.0):
-                raise ValueError(f"rho={v} invalid for equicorrelated with n_cluster_features={p}; "
-                                 f"require {lower:.6f} < rho < 1.")
+                raise ValueError(
+                    f"rho={v} invalid for equicorrelated with n_cluster_features={p}; "
+                    f"require {lower:.6f} < rho < 1."
+                )
         else:  # toeplitz
             if not (-1.0 < v < 1.0):
                 raise ValueError("For toeplitz, require |rho| < 1.")

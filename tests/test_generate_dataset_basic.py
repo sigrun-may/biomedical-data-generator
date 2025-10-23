@@ -75,7 +75,7 @@ def test_invalid_n_classes_raises():
         n_noise=0,
         n_features=2,
         n_classes=1,
-        class_counts={0: 50}  # Even with class_counts, n_classes=1 should fail
+        class_counts={0: 50},  # Even with class_counts, n_classes=1 should fail
     )
     with pytest.raises(ValueError):
         generate_dataset(cfg, return_dataframe=False)

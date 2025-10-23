@@ -71,13 +71,13 @@ class TestBuildCorrelationMatrix:
         # Distance 1: should be rho
         assert np.allclose(R[0, 1], rho)
         # Distance 2: should be rho^2
-        assert np.allclose(R[0, 2], rho ** 2)
+        assert np.allclose(R[0, 2], rho**2)
         # Distance 3: should be rho^3
-        assert np.allclose(R[0, 3], rho ** 3)
+        assert np.allclose(R[0, 3], rho**3)
         # Distance 4: should be rho^4
-        assert np.allclose(R[0, 4], rho ** 4)
+        assert np.allclose(R[0, 4], rho**4)
         # Distance 5: should be rho^5
-        assert np.allclose(R[0, 5], rho ** 5)
+        assert np.allclose(R[0, 5], rho**5)
 
     def test_toeplitz_negative_rho_alternating_signs(self):
         """Toeplitz with negative rho produces alternating signs."""
@@ -90,11 +90,11 @@ class TestBuildCorrelationMatrix:
 
         # Distance 2: positive (negative squared)
         assert R[0, 2] > 0
-        assert np.allclose(R[0, 2], rho ** 2)
+        assert np.allclose(R[0, 2], rho**2)
 
         # Distance 3: negative (negative cubed)
         assert R[0, 3] < 0
-        assert np.allclose(R[0, 3], rho ** 3)
+        assert np.allclose(R[0, 3], rho**3)
 
     # ==================
     # Symmetry tests
@@ -249,9 +249,7 @@ class TestBuildCorrelationMatrix:
 
             # Check eigenvalues are all positive
             eigenvalues = np.linalg.eigvalsh(R)
-            assert np.all(eigenvalues > 0), (
-                f"Matrix not positive definite for rho={rho}: eigenvalues={eigenvalues}"
-            )
+            assert np.all(eigenvalues > 0), f"Matrix not positive definite for rho={rho}: eigenvalues={eigenvalues}"
 
     def test_determinant_positive_both_structures(self):
         """Determinant is positive for valid correlation matrices."""
@@ -285,8 +283,8 @@ class TestBuildCorrelationMatrix:
 
         # Distance 2 should be same everywhere
         dist2_values = [R[i, i + 2] for i in range(6)]
-        assert np.allclose(dist2_values, 0.7 ** 2)
+        assert np.allclose(dist2_values, 0.7**2)
 
         # Distance 3 should be same everywhere
         dist3_values = [R[i, i + 3] for i in range(5)]
-        assert np.allclose(dist3_values, 0.7 ** 3)
+        assert np.allclose(dist3_values, 0.7**3)
