@@ -136,7 +136,7 @@ def _cholesky_with_jitter(
         np.linalg.LinAlgError: If factorization fails after all attempts.
     """
     try:
-        return np.linalg.cholesky(corr_matrix)
+        return np.asarray(np.linalg.cholesky(corr_matrix), dtype=np.float64)
     except np.linalg.LinAlgError:
         pass  # Fall back to jittered attempts.
 
@@ -146,12 +146,14 @@ def _cholesky_with_jitter(
 
     for _ in range(max_tries):
         try:
-            return np.linalg.cholesky(corr_matrix + jitter * identity)
+            return np.asarray(np.linalg.cholesky(corr_matrix + jitter * identity), dtype=np.float64)
         except np.linalg.LinAlgError:
             jitter *= growth
 
     # Let NumPy raise a clean error using the original matrix.
-    np.linalg.cholesky(corr_matrix)  # will raise
+    np.linalg.cholesky(corr_matrix)
+    # Give a clear, typed error path for mypy and callers.
+    raise np.linalg.LinAlgError(f"Cholesky failed after {max_tries} tries (last jitter={jitter:g}).")
 
 
 # ============================================================================
@@ -226,8 +228,8 @@ def sample_cluster(
             R_class = build_correlation_matrix(n_features, rho_for_class, structure)
             L_class = _cholesky_with_jitter(R_class)
 
-            standard_normal_block = rng.standard_normal(size=(n_in_class, n_features))
-            X[class_mask] = standard_normal_block @ L_class.T
+            standard_normal_block = rng.standard_normal(size=(n_in_class, n_features), dtype=np.float64)
+            X[class_mask] = (standard_normal_block @ L_class.T).astype(np.float64, copy=False)
 
         return X
 
@@ -240,5 +242,5 @@ def sample_cluster(
     R_global = build_correlation_matrix(n_features, rho, structure)
     L_global = _cholesky_with_jitter(R_global)
 
-    standard_normal = rng.standard_normal(size=(n_samples, n_features))
-    return standard_normal @ L_global.T
+    standard_normal = rng.standard_normal(size=(n_samples, n_features), dtype=np.float64)
+    return (standard_normal @ L_global.T).astype(np.float64, copy=False)

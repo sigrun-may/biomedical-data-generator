@@ -58,7 +58,7 @@ def test_build_corr_invalid_rho_toeplitz_raises():
 
 def test_build_corr_unknown_structure_raises():
     with pytest.raises(ValueError):
-        corr.build_correlation_matrix(3, 0.5, "not-a-structure")  # type: ignore[arg-type]
+        corr.build_correlation_matrix(3, 0.5, "not-a-structure")
 
 
 # --------------
@@ -164,7 +164,7 @@ def test_sample_cluster_errors():
     rng = np.random.default_rng(0)
     # Missing rho in global mode
     with pytest.raises(ValueError):
-        corr.sample_cluster(10, 3, rng)  # type: ignore[call-arg]
+        corr.sample_cluster(10, 3, rng)
     # Label length mismatch
     with pytest.raises(ValueError):
         corr.sample_cluster(

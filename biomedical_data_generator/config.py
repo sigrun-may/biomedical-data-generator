@@ -10,7 +10,7 @@ from __future__ import annotations
 
 from collections.abc import Iterable, Mapping, MutableMapping
 from enum import Enum
-from typing import Any, Literal, TypeAlias
+from typing import Any, Literal, TypeAlias, cast
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
@@ -337,7 +337,7 @@ class CorrCluster(BaseModel):
         if isinstance(v, str):
             if v not in ("small", "medium", "large"):
                 raise ValueError(f"anchor_effect_size must be 'small', 'medium', or 'large', got '{v}'")
-            return v
+            return cast(Literal["small", "medium", "large"], v)
 
         # Custom float
         try:

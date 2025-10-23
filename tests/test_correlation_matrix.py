@@ -228,7 +228,7 @@ class TestBuildCorrelationMatrix:
     def test_unknown_structure_raises(self):
         """Unknown structure type raises ValueError."""
         with pytest.raises(ValueError, match="Unknown structure"):
-            build_correlation_matrix(n_features=3, rho=0.5, structure="invalid")  # type: ignore
+            build_correlation_matrix(n_features=3, rho=0.5, structure="invalid")
 
     # ==================
     # Mathematical property tests
