@@ -24,7 +24,7 @@
 
 from __future__ import annotations
 
-from typing import Dict, Literal, Mapping, Optional
+from typing import Literal, Mapping, Optional
 
 import numpy as np
 from numpy.typing import NDArray
@@ -36,6 +36,7 @@ __all__ = [
     "CorrelationStructure",
     "build_correlation_matrix",
     "sample_cluster",
+    "offdiag_metrics",
 ]
 
 
@@ -153,14 +154,56 @@ def _cholesky_with_jitter(
 
 
 # ============================================================================
-# helper: mean of off-diagonal correlations
+# helper: metrics of off-diagonal correlations
 # ============================================================================
-def _offdiag_mean(corr_matrix: NDArray[np.float64]) -> float:
-    """Mean of off-diagonal entries (robust metric for 'overall' correlation)."""
+def offdiag_metrics(corr_matrix: NDArray[np.float64]) -> dict[str, float]:
+    """Compute statistics of off-diagonal correlations.
+
+    Provides comprehensive metrics for assessing correlation matrix quality.
+    Useful for visualization, reporting, and seed selection.
+
+    Args:
+        corr_matrix: Correlation matrix of shape (n_features, n_features).
+
+    Returns:
+        Dictionary with keys:
+            - 'mean_offdiag': Mean of off-diagonal correlations
+            - 'min_offdiag': Minimum off-diagonal correlation
+            - 'max_offdiag': Maximum off-diagonal correlation
+            - 'std_offdiag': Standard deviation of off-diagonal correlations
+
+    Examples:
+        >>> from biomedical_data_generator.features.correlated import sample_cluster, offdiag_metrics
+        >>> import numpy as np
+        >>> rng = np.random.default_rng(42)
+        >>> X = sample_cluster(200, 5, rng, structure="equicorrelated", rho=0.7)
+        >>> C = np.corrcoef(X, rowvar=False)
+        >>> metrics = offdiag_metrics(C)
+        >>> print(f"Mean: {metrics['mean_offdiag']:.3f}, Range: [{metrics['min_offdiag']:.3f}, {metrics['max_offdiag']:.3f}]")
+
+    See Also:
+        sample_cluster : Generate correlated feature clusters
+        find_seed_for_correlation : Search for seeds with target correlation
+    """
     p = corr_matrix.shape[0]
     if p <= 1:
-        return 1.0
-    return float((corr_matrix.sum() - p) / (p * p - p))
+        return {
+            "mean_offdiag": 1.0,
+            "min_offdiag": 1.0,
+            "max_offdiag": 1.0,
+            "std_offdiag": 0.0,
+        }
+
+    mask = ~np.eye(p, dtype=bool)
+    vals = corr_matrix[mask]
+
+    return {
+        "mean_offdiag": float(vals.mean()),
+        "min_offdiag": float(vals.min()),
+        "max_offdiag": float(vals.max()),
+        "std_offdiag": float(vals.std()),
+    }
+
 
 
 # ============================================================================
@@ -255,159 +298,3 @@ def sample_cluster(
     standard_normal = rng.standard_normal(size=(n_samples, n_features))
     return standard_normal @ L_global.T
 
-
-# =====================================================
-# Public: search a seed until correlation is sufficient
-# =====================================================
-def find_seed_for_correlation(
-    n_samples: int,
-    n_cluster_features: int,
-    rho_target: float,
-    structure: Literal["equicorrelated", "toeplitz"] = "equicorrelated",
-    metric: Literal["mean_offdiag", "min_offdiag"] = "mean_offdiag",
-    threshold: float = 0.65,
-    op: Literal[">=", "<="] = ">=",
-    tol: float | None = 0.02,
-    start_seed: int = 0,
-    max_tries: int = 500,
-) -> tuple[int, dict[str, object]]:
-    """Search for a random seed that achieves target correlation quality.
-
-        Tries multiple seeds until finding one where the empirical correlation
-        matches the target within tolerance. Useful where precise correlation is needed.
-
-        Try seeds starting from `start_seed` until one of the following is satisfied:
-      - |mean_offdiag - rho_target| <= tol (if tol is not None), else
-      - (metric op threshold) with metric in {"mean_offdiag", "min_offdiag"} and op in {">=", "<="}.
-
-    Args:
-        n_samples: Number of samples (rows).
-        n_cluster_features: Number of features (columns) within cluster.
-        rho_target: Desired correlation strength.
-        structure: "equicorrelated" or "toeplitz".
-        metric: Quality metric to optimize.
-            - "mean_offdiag": average off-diagonal correlation
-            - "min_offdiag": minimum off-diagonal correlation
-        threshold: Minimum acceptable value for metric (if tol is None).
-        op: Comparison operator for threshold (">=", "<=").
-        tol: Absolute tolerance around rho_target (activates tolerance mode). This takes precedence over threshold.
-            If provided, accept when |mean_offdiag - rho_target| <= tol.
-        start_seed: First seed to try (sequential search).
-        max_tries: Maximum number of seeds to evaluate before giving up.
-
-    Returns:
-        tuple:
-            seed (int): The first seed that satisfied the condition.
-            meta (dict): Metadata as returned by generate_correlated_cluster.
-                - "corr_matrix": empirical correlation matrix (np.ndarray)
-                - "mean_offdiag": float
-                - "min_offdiag": float
-                - "accepted": bool
-                - "tries": int
-
-    Raises:
-        RuntimeError: If no seed satisfied the rule within max_tries.
-        ValueError: If n_cluster_features < 1 or rho_target not in [0, 1).
-
-    Examples:
-    --------
-        Find seed for very strong inflammation markers:
-
-        >>> seed, meta = find_seed_for_correlation(
-        ...     n_samples=200,
-        ...     n_cluster_features=6,
-        ...     rho_target=0.85,
-        ...     tol=0.03
-        ... )
-        >>> meta['mean_offdiag']
-        0.847...
-
-        Ensure minimum correlation for teaching:
-
-        >>> seed, meta = find_seed_for_correlation(
-        ...     n_samples=150,
-        ...     n_cluster_features=4,
-        ...     rho_target=0.70,
-        ...     metric="min_offdiag",
-        ...     threshold=0.65,
-        ...     tol=None
-        ... )
-
-    Notes:
-    -----
-        Medical interpretation:
-        - Use this when demonstrating correlation patterns in teaching
-        - Higher n_cluster_features and rho_target may require more tries
-        - For large clusters (n_cluster_features > 10), consider increasing max_tries
-
-        For tol-based acceptance we require n_cluster_features <= n_samples.
-        When p >> n, the mean off-diagonal can appear artificially close to rho_target
-        due to heavy averaging; in such cases, prefer threshold mode or increase n.
-    """
-    # Validation
-    if n_cluster_features < 1:
-        raise ValueError("n_cluster_features must be >= 1")
-
-    if structure == "equicorrelated":
-        lower = -1.0 / (n_cluster_features - 1) if n_cluster_features > 1 else -np.inf
-        if not (lower < rho_target < 1.0):
-            raise ValueError(
-                f"For equicorrelated, require {lower:.6f} < rho_target < 1, got {rho_target}."
-            )
-    else:  # toeplitz
-        if not (-1.0 < rho_target < 1.0):
-            raise ValueError("For toeplitz, require |rho_target| < 1.")
-
-    # Search loop
-    seed = start_seed
-    for try_idx in range(max_tries):
-        rng = np.random.default_rng(seed)
-
-        # Generate with the target parameter; we’re searching for a seed whose
-        # empirical corr is close to the target (finite-sample noise may help/hurt).
-        X = sample_cluster(
-            n_samples=n_samples,
-            n_features=n_cluster_features,
-            rng=rng,
-            structure=structure,
-            rho=rho_target,  # global mode
-        )
-
-        # Empirical correlation and metrics
-        C = np.asarray(np.corrcoef(X, rowvar=False), dtype=np.float64)
-        mean_off = _offdiag_mean(C)
-        if n_cluster_features > 1:
-            min_off = float(np.min(C[~np.eye(C.shape[0], dtype=bool)]))
-        else:
-            min_off = 1.0
-
-        # Decide acceptance
-        accepted = False
-        if tol is not None:
-            # Guard: for tol-mode we recommend p <= n to avoid p>>n averaging artifacts
-            if n_cluster_features <= n_samples and abs(mean_off - rho_target) <= tol:
-                accepted = True
-        else:
-            val = mean_off if metric == "mean_offdiag" else min_off
-            accepted = (val >= threshold) if op == ">=" else (val <= threshold)
-
-        meta = {
-            "corr_matrix": C,
-            "mean_offdiag": float(mean_off),
-            "min_offdiag": float(min_off),
-            "accepted": bool(accepted),
-            "tries": int(try_idx + 1),
-        }
-
-        if accepted:
-            return seed, meta
-
-        # keep the last meta so we can return a useful record on failure
-        best_meta = meta
-        seed += 1
-
-        # No acceptable seed found
-    raise RuntimeError(
-        f"Failed to find seed within {max_tries} tries. "
-        f"Target rho={rho_target}, tol={tol}, metric={metric}, threshold={threshold}."
-    )

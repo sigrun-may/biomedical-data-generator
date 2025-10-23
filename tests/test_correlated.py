@@ -9,14 +9,9 @@
 import numpy as np
 import pytest
 
+import biomedical_data_generator.utils.correlation_seed_search
 from biomedical_data_generator.features import correlated as corr
 
-
-def offdiag_mean(M: np.ndarray) -> float:
-    p = M.shape[0]
-    if p <= 1:
-        return 1.0
-    return float((M.sum() - p) / (p * p - p))
 
 
 # -------------------------
@@ -68,15 +63,15 @@ def test_build_corr_unknown_structure_raises():
 
 
 # --------------
-# _offdiag_mean
+# offdiag_metrics
 # --------------
 
 def test_offdiag_mean_behavior():
     # p==1 => defined as 1.0
-    assert corr._offdiag_mean(np.array([[1.0]])) == 1.0
+    assert corr.offdiag_metrics(np.array([[1.0]]))["mean_offdiag"] == 1.0
     # equicorrelated matrix => mean equals rho
     R = corr.build_correlation_matrix(5, 0.3, "equicorrelated")
-    assert np.isclose(corr._offdiag_mean(R), 0.3)
+    assert np.isclose(corr.offdiag_metrics(R)["mean_offdiag"], 0.3)
 
 
 # ----------------
@@ -104,7 +99,7 @@ def test_sample_cluster_global_equicorrelated_matches_mean():
     rng = np.random.default_rng(0)
     X = corr.sample_cluster(n, p, rng, structure="equicorrelated", rho=rho)
     C_emp = np.corrcoef(X, rowvar=False).astype(np.float64)
-    mean_off = offdiag_mean(C_emp)
+    mean_off = corr.offdiag_metrics(C_emp)["mean_offdiag"]
     assert np.isfinite(mean_off)
     # Sampling noise: allow small tolerance
     assert abs(mean_off - rho) <= 0.06
@@ -139,8 +134,8 @@ def test_sample_cluster_class_specific_means():
     X1 = X[labels == 1]
     C0 = np.corrcoef(X0, rowvar=False).astype(np.float64)
     C1 = np.corrcoef(X1, rowvar=False).astype(np.float64)
-    assert abs(offdiag_mean(C0) - 0.7) <= 0.06
-    assert abs(offdiag_mean(C1) - 0.2) <= 0.06
+    assert abs(corr.offdiag_metrics(C0)["mean_offdiag"] - 0.7) <= 0.06
+    assert abs(corr.offdiag_metrics(C1)["mean_offdiag"] - 0.2) <= 0.06
 
 
 def test_sample_cluster_errors():
@@ -172,7 +167,7 @@ def test_sample_cluster_errors():
     strict=False,
 )
 def test_find_seed_for_correlation_tol_mode():
-    seed, meta = corr.find_seed_for_correlation(
+    seed, meta = biomedical_data_generator.utils.correlation_seed_search.find_seed_for_correlation(
         n_samples=200,
         n_cluster_features=4,
         rho_target=0.5,
@@ -190,7 +185,7 @@ def test_find_seed_for_correlation_tol_mode():
 def test_find_seed_for_correlation_impossible_threshold_raises():
     # Make acceptance impossible with few tries => should raise RuntimeError (once bug above is fixed)
     with pytest.raises(RuntimeError):
-        corr.find_seed_for_correlation(
+        biomedical_data_generator.utils.correlation_seed_search.find_seed_for_correlation(
             n_samples=80,
             n_cluster_features=5,
             rho_target=0.2,
