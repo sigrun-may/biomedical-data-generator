@@ -36,7 +36,6 @@ __all__ = [
     "CorrelationStructure",
     "build_correlation_matrix",
     "sample_cluster",
-    "offdiag_metrics",
 ]
 
 
@@ -151,59 +150,6 @@ def _cholesky_with_jitter(
 
     # Let NumPy raise a clean error using the original matrix.
     np.linalg.cholesky(corr_matrix)  # will raise
-
-
-# ============================================================================
-# helper: metrics of off-diagonal correlations
-# ============================================================================
-def offdiag_metrics(corr_matrix: NDArray[np.float64]) -> dict[str, float]:
-    """Compute statistics of off-diagonal correlations.
-
-    Provides comprehensive metrics for assessing correlation matrix quality.
-    Useful for visualization, reporting, and seed selection.
-
-    Args:
-        corr_matrix: Correlation matrix of shape (n_features, n_features).
-
-    Returns:
-        Dictionary with keys:
-            - 'mean_offdiag': Mean of off-diagonal correlations
-            - 'min_offdiag': Minimum off-diagonal correlation
-            - 'max_offdiag': Maximum off-diagonal correlation
-            - 'std_offdiag': Standard deviation of off-diagonal correlations
-
-    Examples:
-        >>> from biomedical_data_generator.features.correlated import sample_cluster, offdiag_metrics
-        >>> import numpy as np
-        >>> rng = np.random.default_rng(42)
-        >>> X = sample_cluster(200, 5, rng, structure="equicorrelated", rho=0.7)
-        >>> C = np.corrcoef(X, rowvar=False)
-        >>> metrics = offdiag_metrics(C)
-        >>> print(f"Mean: {metrics['mean_offdiag']:.3f}, Range: [{metrics['min_offdiag']:.3f}, {metrics['max_offdiag']:.3f}]")
-
-    See Also:
-        sample_cluster : Generate correlated feature clusters
-        find_seed_for_correlation : Search for seeds with target correlation
-    """
-    p = corr_matrix.shape[0]
-    if p <= 1:
-        return {
-            "mean_offdiag": 1.0,
-            "min_offdiag": 1.0,
-            "max_offdiag": 1.0,
-            "std_offdiag": 0.0,
-        }
-
-    mask = ~np.eye(p, dtype=bool)
-    vals = corr_matrix[mask]
-
-    return {
-        "mean_offdiag": float(vals.mean()),
-        "min_offdiag": float(vals.min()),
-        "max_offdiag": float(vals.max()),
-        "std_offdiag": float(vals.std()),
-    }
-
 
 
 # ============================================================================

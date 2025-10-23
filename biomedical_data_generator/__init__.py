@@ -10,7 +10,7 @@
 
 from .config import CorrCluster, DatasetConfig, NoiseDistribution
 from .features.correlated import sample_cluster
-from .utils.correlation_seed_search import find_seed_for_correlation
+from .utils.correlation_tools import find_seed_for_correlation
 from .generator import (
     DatasetMeta,
     generate_dataset,

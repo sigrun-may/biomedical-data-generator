@@ -47,13 +47,14 @@ pydantic = "*"
 
 matplotlib = { version = "*", optional = true }
 seaborn    = { version = "*", optional = true }
-jupyter    = { version = "*",  optional = true }
-notebook   = { version = "*", optional = true }
 
-# ---- Dev groups ----
 [tool.poetry.extras]
 visualization = ["matplotlib", "seaborn"]
-notebooks     = ["matplotlib", "seaborn", "jupyter", "notebook"]
+
+[tool.poetry.group.jupyter.dependencies]
+jupyter = "*"
+seaborn = "*"
+matplotlib = "*"
 
 [tool.poetry.group.lint.dependencies]
 ruff = "^0.13.0"
