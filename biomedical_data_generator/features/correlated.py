@@ -5,15 +5,8 @@
 # which is available at https://opensource.org/licenses/MIT
 
 """Functions to generate correlated feature clusters simulating biomarker patterns."""
-
-# This module provides a building block to generate
-# *correlated* feature clusters.
-# It intentionally focuses on the essentials:
-#   - Build a *target correlation* matrix R (equicorrelated or Toeplitz).
-#   - Factorize R using a robust Cholesky (with diagonal jitter fallback).
-#   - Sample X = Z @ L.T with Z ~ N(0, I), so that corr(X) ≈ R (in expectation).
 #
-# IMPORTANT (for teaching):
+# IMPORTANT:
 # - We do NOT standardize or rescale here. If you need standardization, do it
 #   later in generator.py (after assembling all blocks), so responsibilities stay clear.
 # - For n very small (e.g., n=30), the *empirical* sample correlations are noisy.
@@ -42,8 +35,6 @@ __all__ = [
 # ============================================================================
 # Correlation matrix construction (single source of truth)
 # ============================================================================
-
-
 def build_correlation_matrix(
     n_features: int,
     rho: float,
@@ -107,8 +98,6 @@ def build_correlation_matrix(
 # ============================================================================
 # Robust Cholesky factorization with diagonal jitter fallback
 # ============================================================================
-
-
 def _cholesky_with_jitter(
     corr_matrix: NDArray[np.float64],
     *,
@@ -159,8 +148,6 @@ def _cholesky_with_jitter(
 # ============================================================================
 # Public sampler
 # ============================================================================
-
-
 def sample_cluster(
     n_samples: int,
     n_features: int,
