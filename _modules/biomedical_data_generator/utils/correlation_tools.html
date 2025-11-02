@@ -99,6 +99,7 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Literal</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">numpy.typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">NDArray</span>
 
 <span class="c1"># Runtime dependencies</span>
@@ -111,6 +112,9 @@
 <span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span>
     <span class="s2">&quot;compute_correlation_metrics&quot;</span><span class="p">,</span>
     <span class="s2">&quot;assess_correlation_quality&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;pc1_share_from_corr&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;pc1_share&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;variance_partition_pc1&quot;</span><span class="p">,</span>
     <span class="s2">&quot;find_seed_for_correlation&quot;</span><span class="p">,</span>
     <span class="s2">&quot;find_seed_for_correlation_from_config&quot;</span><span class="p">,</span>
     <span class="s2">&quot;find_best_seed_for_correlation&quot;</span><span class="p">,</span>
@@ -123,8 +127,6 @@
 <span class="c1"># ============================================================================</span>
 <span class="c1"># Correlation Metrics</span>
 <span class="c1"># ============================================================================</span>
-
-
 <span class="k">def</span><span class="w"> </span><span class="nf">compute_correlation_metrics</span><span class="p">(</span><span class="n">corr_matrix</span><span class="p">:</span> <span class="n">NDArray</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">floating</span><span class="p">[</span><span class="n">Any</span><span class="p">]])</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">float</span> <span class="o">|</span> <span class="nb">int</span><span class="p">]:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Compute off-diagonal correlation statistics.</span>
 
@@ -227,10 +229,108 @@
 
 
 <span class="c1"># ============================================================================</span>
+<span class="c1"># PC1 share (shared variance)</span>
+<span class="c1"># ============================================================================</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">pc1_share_from_corr</span><span class="p">(</span><span class="n">C</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Compute the PC1 explained-variance ratio from a correlation matrix.</span>
+
+<span class="sd">    For a correlation matrix C (p x p), the explained-variance ratio of PC1 is:</span>
+<span class="sd">        lambda_max / trace(C)  ==  lambda_max / p</span>
+<span class="sd">    because trace(C) == p for correlation matrices.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        C: Square (p x p) correlation matrix.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        PC1 explained-variance ratio in [0, 1].</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">C</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">C</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">C</span><span class="o">.</span><span class="n">ndim</span> <span class="o">!=</span> <span class="mi">2</span> <span class="ow">or</span> <span class="n">C</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">!=</span> <span class="n">C</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;C must be a square 2D array.&quot;</span><span class="p">)</span>
+    <span class="n">p</span> <span class="o">=</span> <span class="n">C</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="k">if</span> <span class="n">p</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">return</span> <span class="mf">0.0</span>
+    <span class="c1"># eigvalsh is stable for symmetric matrices</span>
+    <span class="n">lam_max</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">eigvalsh</span><span class="p">(</span><span class="n">C</span><span class="p">)</span><span class="o">.</span><span class="n">max</span><span class="p">())</span>
+    <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="n">lam_max</span> <span class="o">/</span> <span class="n">p</span><span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">pc1_share</span><span class="p">(</span>
+    <span class="n">X</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span> <span class="o">|</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+    <span class="o">*</span><span class="p">,</span>
+    <span class="n">method</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;pearson&quot;</span><span class="p">,</span> <span class="s2">&quot;kendall&quot;</span><span class="p">,</span> <span class="s2">&quot;spearman&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;pearson&quot;</span><span class="p">,</span>
+    <span class="n">rowvar</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Compute PC1 explained-variance ratio from raw data X by forming the correlation matrix.</span>
+
+<span class="sd">    - If X is a DataFrame and rowvar=False (default), columns are features.</span>
+<span class="sd">    - If X is an ndarray, features are columns when rowvar=False (default), rows otherwise.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        X: Data matrix or DataFrame.</span>
+<span class="sd">        method: Correlation method (&#39;pearson&#39; or &#39;spearman&#39;).</span>
+<span class="sd">        rowvar: If True, rows are features (ndarray only).</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        PC1 explained-variance ratio in [0, 1].</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">method</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">{</span><span class="s2">&quot;pearson&quot;</span><span class="p">,</span> <span class="s2">&quot;spearman&quot;</span><span class="p">,</span> <span class="s2">&quot;kendall&quot;</span><span class="p">}:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;method must be &#39;pearson&#39;, &#39;kendall&#39; or &#39;spearman&#39;&quot;</span><span class="p">)</span>
+        <span class="n">C</span> <span class="o">=</span> <span class="n">X</span><span class="o">.</span><span class="n">corr</span><span class="p">(</span><span class="n">method</span><span class="o">=</span><span class="n">method</span><span class="p">)</span><span class="o">.</span><span class="n">to_numpy</span><span class="p">(</span><span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">X</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">X</span><span class="o">.</span><span class="n">ndim</span> <span class="o">!=</span> <span class="mi">2</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;X must be 2D.&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">method</span> <span class="o">==</span> <span class="s2">&quot;pearson&quot;</span><span class="p">:</span>
+            <span class="n">C</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">corrcoef</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">rowvar</span><span class="o">=</span><span class="n">rowvar</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">method</span> <span class="o">==</span> <span class="s2">&quot;spearman&quot;</span><span class="p">:</span>
+            <span class="c1"># Rank-transform via pandas for robustness</span>
+            <span class="k">if</span> <span class="n">rowvar</span><span class="p">:</span>
+                <span class="n">ranks</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">X</span><span class="o">.</span><span class="n">T</span><span class="p">)</span><span class="o">.</span><span class="n">rank</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">to_numpy</span><span class="p">()</span><span class="o">.</span><span class="n">T</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">ranks</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">X</span><span class="p">)</span><span class="o">.</span><span class="n">rank</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">to_numpy</span><span class="p">()</span>
+            <span class="n">C</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">corrcoef</span><span class="p">(</span><span class="n">ranks</span><span class="p">,</span> <span class="n">rowvar</span><span class="o">=</span><span class="n">rowvar</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;method must be &#39;pearson&#39; or &#39;spearman&#39;&quot;</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">pc1_share_from_corr</span><span class="p">(</span><span class="n">C</span><span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">variance_partition_pc1</span><span class="p">(</span>
+    <span class="n">X</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span> <span class="o">|</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+    <span class="o">*</span><span class="p">,</span>
+    <span class="n">method</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;pearson&quot;</span><span class="p">,</span> <span class="s2">&quot;kendall&quot;</span><span class="p">,</span> <span class="s2">&quot;spearman&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;pearson&quot;</span><span class="p">,</span>
+    <span class="n">rowvar</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Return a compact variance-partition summary based on PC1 share.</span>
+
+<span class="sd">    This is a handy, interpretable &#39;shared variance&#39; proxy for a feature block.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        {</span>
+<span class="sd">          &quot;n_features&quot;: int,</span>
+<span class="sd">          &quot;pc1_evr&quot;: float,         # explained-variance ratio of PC1</span>
+<span class="sd">          &quot;pc1_var_ratio&quot;: float,   # same value, kept for readability/compat</span>
+<span class="sd">        }</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">):</span>
+        <span class="n">n_features</span> <span class="o">=</span> <span class="n">X</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="k">if</span> <span class="ow">not</span> <span class="n">rowvar</span> <span class="k">else</span> <span class="n">X</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">X</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">X</span><span class="p">)</span>
+        <span class="n">n_features</span> <span class="o">=</span> <span class="n">X</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="k">if</span> <span class="ow">not</span> <span class="n">rowvar</span> <span class="k">else</span> <span class="n">X</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+    <span class="n">evr</span> <span class="o">=</span> <span class="n">pc1_share</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">method</span><span class="o">=</span><span class="n">method</span><span class="p">,</span> <span class="n">rowvar</span><span class="o">=</span><span class="n">rowvar</span><span class="p">)</span>
+    <span class="k">return</span> <span class="p">{</span>
+        <span class="s2">&quot;n_features&quot;</span><span class="p">:</span> <span class="nb">int</span><span class="p">(</span><span class="n">n_features</span><span class="p">),</span>
+        <span class="s2">&quot;pc1_evr&quot;</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="n">evr</span><span class="p">),</span>
+        <span class="s2">&quot;pc1_var_ratio&quot;</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="n">evr</span><span class="p">),</span>  <span class="c1"># alias for clearer naming in notebooks</span>
+    <span class="p">}</span>
+
+
+<span class="c1"># ============================================================================</span>
 <span class="c1"># Seed search (core)</span>
 <span class="c1"># ============================================================================</span>
-
-
 <span class="k">def</span><span class="w"> </span><span class="nf">_validate_rho</span><span class="p">(</span><span class="n">structure</span><span class="p">:</span> <span class="n">CorrelationStructure</span><span class="p">,</span> <span class="n">p</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">rho</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Validate that rho satisfies positive-definiteness constraints.</span>
 
@@ -453,8 +553,6 @@
 <span class="c1"># ============================================================================</span>
 <span class="c1"># Convenience wrapper (CorrCluster)</span>
 <span class="c1"># ============================================================================</span>
-
-
 <span class="k">def</span><span class="w"> </span><span class="nf">find_seed_for_correlation_from_config</span><span class="p">(</span>
     <span class="n">cluster</span><span class="p">:</span> <span class="n">CorrCluster</span><span class="p">,</span>
     <span class="o">*</span><span class="p">,</span>
@@ -552,8 +650,6 @@
 <span class="c1"># ============================================================================</span>
 <span class="c1"># Best-of-N (simple scanner; uses mean_offdiag)</span>
 <span class="c1"># ============================================================================</span>
-
-
 <span class="k">def</span><span class="w"> </span><span class="nf">find_best_seed_for_correlation</span><span class="p">(</span>
     <span class="n">n_trials</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
     <span class="n">n_samples</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
@@ -608,8 +704,6 @@
 <span class="c1"># ============================================================================</span>
 <span class="c1"># Visualization (optional deps; offdiag naming throughout)</span>
 <span class="c1"># ============================================================================</span>
-
-
 <span class="k">def</span><span class="w"> </span><span class="nf">plot_correlation_matrix</span><span class="p">(</span>
     <span class="n">corr_matrix</span><span class="p">:</span> <span class="n">NDArray</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">],</span>
     <span class="o">*</span><span class="p">,</span>
@@ -624,7 +718,7 @@
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Plot correlation matrix heatmap with annotations.</span>
 
 <span class="sd">    Requires matplotlib and seaborn (optional dependencies). If not installed,</span>
-<span class="sd">    raises ImportError with helpful message.</span>
+<span class="sd">    raises ImportError.</span>
 
 <span class="sd">    Args:</span>
 <span class="sd">        corr_matrix: Correlation matrix to visualize.</span>
