@@ -16,6 +16,7 @@ from __future__ import annotations
 from typing import Any, Literal
 
 import numpy as np
+import pandas as pd
 from numpy.typing import NDArray
 
 # Runtime dependencies
@@ -28,6 +29,9 @@ CorrelationStructure = Literal["equicorrelated", "toeplitz"]
 __all__ = [
     "compute_correlation_metrics",
     "assess_correlation_quality",
+    "pc1_share_from_corr",
+    "pc1_share",
+    "variance_partition_pc1",
     "find_seed_for_correlation",
     "find_seed_for_correlation_from_config",
     "find_best_seed_for_correlation",
@@ -40,8 +44,6 @@ __all__ = [
 # ============================================================================
 # Correlation Metrics
 # ============================================================================
-
-
 def compute_correlation_metrics(corr_matrix: NDArray[np.floating[Any]]) -> dict[str, float | int]:
     """Compute off-diagonal correlation statistics.
 
@@ -144,10 +146,108 @@ def assess_correlation_quality(
 
 
 # ============================================================================
+# PC1 share (shared variance)
+# ============================================================================
+def pc1_share_from_corr(C: np.ndarray) -> float:
+    """Compute the PC1 explained-variance ratio from a correlation matrix.
+
+    For a correlation matrix C (p x p), the explained-variance ratio of PC1 is:
+        lambda_max / trace(C)  ==  lambda_max / p
+    because trace(C) == p for correlation matrices.
+
+    Args:
+        C: Square (p x p) correlation matrix.
+
+    Returns:
+        PC1 explained-variance ratio in [0, 1].
+    """
+    C = np.asarray(C, dtype=float)
+    if C.ndim != 2 or C.shape[0] != C.shape[1]:
+        raise ValueError("C must be a square 2D array.")
+    p = C.shape[0]
+    if p == 0:
+        return 0.0
+    # eigvalsh is stable for symmetric matrices
+    lam_max = float(np.linalg.eigvalsh(C).max())
+    return float(lam_max / p)
+
+
+def pc1_share(
+    X: pd.DataFrame | np.ndarray,
+    *,
+    method: Literal["pearson", "kendall", "spearman"] = "pearson",
+    rowvar: bool = False,
+) -> float:
+    """Compute PC1 explained-variance ratio from raw data X by forming the correlation matrix.
+
+    - If X is a DataFrame and rowvar=False (default), columns are features.
+    - If X is an ndarray, features are columns when rowvar=False (default), rows otherwise.
+
+    Args:
+        X: Data matrix or DataFrame.
+        method: Correlation method ('pearson' or 'spearman').
+        rowvar: If True, rows are features (ndarray only).
+
+    Returns:
+        PC1 explained-variance ratio in [0, 1].
+    """
+    if isinstance(X, pd.DataFrame):
+        if method not in {"pearson", "spearman", "kendall"}:
+            raise ValueError("method must be 'pearson', 'kendall' or 'spearman'")
+        C = X.corr(method=method).to_numpy(dtype=float)
+    else:
+        X = np.asarray(X, dtype=float)
+        if X.ndim != 2:
+            raise ValueError("X must be 2D.")
+        if method == "pearson":
+            C = np.corrcoef(X, rowvar=rowvar)
+        elif method == "spearman":
+            # Rank-transform via pandas for robustness
+            if rowvar:
+                ranks = pd.DataFrame(X.T).rank(axis=0).to_numpy().T
+            else:
+                ranks = pd.DataFrame(X).rank(axis=0).to_numpy()
+            C = np.corrcoef(ranks, rowvar=rowvar)
+        else:
+            raise ValueError("method must be 'pearson' or 'spearman'")
+
+    return pc1_share_from_corr(C)
+
+
+def variance_partition_pc1(
+    X: pd.DataFrame | np.ndarray,
+    *,
+    method: Literal["pearson", "kendall", "spearman"] = "pearson",
+    rowvar: bool = False,
+) -> dict:
+    """Return a compact variance-partition summary based on PC1 share.
+
+    This is a handy, interpretable 'shared variance' proxy for a feature block.
+
+    Returns:
+        {
+          "n_features": int,
+          "pc1_evr": float,         # explained-variance ratio of PC1
+          "pc1_var_ratio": float,   # same value, kept for readability/compat
+        }
+    """
+    if isinstance(X, pd.DataFrame):
+        n_features = X.shape[1] if not rowvar else X.shape[0]
+    else:
+        X = np.asarray(X)
+        n_features = X.shape[1] if not rowvar else X.shape[0]
+
+    evr = pc1_share(X, method=method, rowvar=rowvar)
+    return {
+        "n_features": int(n_features),
+        "pc1_evr": float(evr),
+        "pc1_var_ratio": float(evr),  # alias for clearer naming in notebooks
+    }
+
+
+# ============================================================================
 # Seed search (core)
 # ============================================================================
-
-
 def _validate_rho(structure: CorrelationStructure, p: int, rho: float) -> None:
     """Validate that rho satisfies positive-definiteness constraints.
 
@@ -367,8 +467,6 @@ def find_seed_for_correlation(
 # ============================================================================
 # Convenience wrapper (CorrCluster)
 # ============================================================================
-
-
 def find_seed_for_correlation_from_config(
     cluster: CorrCluster,
     *,
@@ -466,8 +564,6 @@ def find_seed_for_correlation_from_config(
 # ============================================================================
 # Best-of-N (simple scanner; uses mean_offdiag)
 # ============================================================================
-
-
 def find_best_seed_for_correlation(
     n_trials: int,
     n_samples: int,
@@ -522,8 +618,6 @@ def find_best_seed_for_correlation(
 # ============================================================================
 # Visualization (optional deps; offdiag naming throughout)
 # ============================================================================
-
-
 def plot_correlation_matrix(
     corr_matrix: NDArray[np.float64],
     *,
@@ -538,7 +632,7 @@ def plot_correlation_matrix(
     """Plot correlation matrix heatmap with annotations.
 
     Requires matplotlib and seaborn (optional dependencies). If not installed,
-    raises ImportError with helpful message.
+    raises ImportError.
 
     Args:
         corr_matrix: Correlation matrix to visualize.
