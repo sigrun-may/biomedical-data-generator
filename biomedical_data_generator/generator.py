@@ -62,11 +62,18 @@ def _make_names_and_roles(
 ) -> tuple[list[str], list[int], list[int], list[int], dict[int, list[int]], dict[int, int | None]]:
     """Build feature names and role indices.
 
-    Important semantics:
-      - `n_pseudo` counts ONLY free pseudo-features (`p*`), NOT cluster proxies.
-      - Cluster proxies (`corr{cid}_k`) are additional pseudo-features coming from clusters.
-      - Therefore the expected total number of features is:
-            n_features_expected = n_informative + n_pseudo + n_noise + proxies_from_clusters
+    Naming policy:
+      - Cluster features always start with the cluster prefix, e.g. 'corr{cid}_*'.
+      - If a cluster has an informative anchor, its first column is named 'corr{cid}_anchor'.
+        The remaining cluster members are named 'corr{cid}_{k}' with k = 2..n.
+      - If a cluster has no informative anchor, all members are named 'corr{cid}_{k}' with k = 1..n
+        and are counted as pseudo features.
+      - Free informative features (outside clusters) are named 'i1, i2, ...' independently
+        of how many anchors exist (anchors do NOT consume the 'i*' numbering).
+      - Free pseudo features are 'p1, p2, ...'; noise features are 'n1, n2, ...'.
+
+    The function returns:
+      names, informative_idx, pseudo_idx, noise_idx, cluster_indices, anchor_idx
     """
     names: list[str] = []
     informative_idx: list[int] = []
@@ -78,36 +85,48 @@ def _make_names_and_roles(
     current = 0
     proxies_from_clusters = 0
 
+    # Helper counters that control ONLY the printed numbering (not the role counts)
+    free_inf_count = 0
+    free_pseudo_count = 0
+    free_noise_count = 0
+
     # 1) clusters first for contiguous columns
     if cfg.corr_clusters:
         for cid, c in enumerate(cfg.corr_clusters, start=1):
             cols = list(range(current, current + c.n_cluster_features))
             cluster_indices[cid] = cols
+
             if c.anchor_role == "informative":
-                # first col is anchor -> named as informative
+                # first col is anchor -> name includes cluster id
                 anchor_col = cols[0]
                 anchor_idx[cid] = anchor_col
-                names.append(
-                    f"{cfg.prefix_informative}{len(informative_idx)+1}"
-                    if cfg.feature_naming == "prefixed"
-                    else f"feature_{len(names)+1}"
-                )
+                if cfg.feature_naming == "prefixed":
+                    names.append(f"{cfg.prefix_corr}{cid}_anchor")
+                else:
+                    names.append(f"feature_{len(names)+1}")
                 informative_idx.append(anchor_col)
+
                 # proxies (remaining columns in this cluster)
                 for k, col in enumerate(cols[1:], start=2):
-                    names.append(
-                        f"{cfg.prefix_corr}{cid}_{k}" if cfg.feature_naming == "prefixed" else f"feature_{len(names)+1}"
-                    )
+                    if cfg.feature_naming == "prefixed":
+                        names.append(f"{cfg.prefix_corr}{cid}_{k}")
+                    else:
+                        names.append(f"feature_{len(names)+1}")
                     pseudo_idx.append(col)
+
                 proxies_from_clusters += max(c.n_cluster_features - 1, 0)
+
             else:
+                # no informative anchor: all cluster members are pseudo features
                 anchor_idx[cid] = None
                 for k, col in enumerate(cols, start=1):
-                    names.append(
-                        f"{cfg.prefix_corr}{cid}_{k}" if cfg.feature_naming == "prefixed" else f"feature_{len(names)+1}"
-                    )
+                    if cfg.feature_naming == "prefixed":
+                        names.append(f"{cfg.prefix_corr}{cid}_{k}")
+                    else:
+                        names.append(f"feature_{len(names)+1}")
                     pseudo_idx.append(col)
                 proxies_from_clusters += c.n_cluster_features
+
             current += c.n_cluster_features
 
     # 2) free informative outside clusters
@@ -115,22 +134,31 @@ def _make_names_and_roles(
     if cfg.n_informative < n_anchors:
         raise ValueError(f"n_informative ({cfg.n_informative}) < number of informative anchors ({n_anchors}).")
     n_inf_free = cfg.n_informative - n_anchors
+
     for _ in range(n_inf_free):
-        names.append(
-            f"{cfg.prefix_informative}{len(informative_idx)+1}"
-            if cfg.feature_naming == "prefixed"
-            else f"feature_{len(names)+1}"
-        )
+        free_inf_count += 1
+        if cfg.feature_naming == "prefixed":
+            names.append(f"{cfg.prefix_informative}{free_inf_count}")
+        else:
+            names.append(f"feature_{len(names)+1}")
         informative_idx.append(len(names) - 1)
 
     # 3) free pseudo (exactly cfg.n_pseudo, independent of proxies)
-    for j in range(cfg.n_pseudo):
-        names.append(f"{cfg.prefix_pseudo}{j+1}" if cfg.feature_naming == "prefixed" else f"feature_{len(names)+1}")
+    for _ in range(cfg.n_pseudo):
+        free_pseudo_count += 1
+        if cfg.feature_naming == "prefixed":
+            names.append(f"{cfg.prefix_pseudo}{free_pseudo_count}")
+        else:
+            names.append(f"feature_{len(names)+1}")
         pseudo_idx.append(len(names) - 1)
 
     # 4) noise
-    for j in range(cfg.n_noise):
-        names.append(f"{cfg.prefix_noise}{j+1}" if cfg.feature_naming == "prefixed" else f"feature_{len(names)+1}")
+    for _ in range(cfg.n_noise):
+        free_noise_count += 1
+        if cfg.feature_naming == "prefixed":
+            names.append(f"{cfg.prefix_noise}{free_noise_count}")
+        else:
+            names.append(f"feature_{len(names)+1}")
         noise_idx.append(len(names) - 1)
 
     # Totals validation with proxies added on top
