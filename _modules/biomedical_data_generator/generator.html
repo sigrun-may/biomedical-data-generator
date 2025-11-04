@@ -389,34 +389,50 @@
     <span class="c1"># names &amp; roles (+ totals validation inside)</span>
     <span class="n">names</span><span class="p">,</span> <span class="n">inf_idx</span><span class="p">,</span> <span class="n">pse_idx</span><span class="p">,</span> <span class="n">noi_idx</span><span class="p">,</span> <span class="n">cluster_idx</span><span class="p">,</span> <span class="n">anch_idx</span> <span class="o">=</span> <span class="n">_make_names_and_roles</span><span class="p">(</span><span class="n">cfg</span><span class="p">)</span>
 
-    <span class="c1"># STEP 2: Build features (now with access to labels for class_rho)</span>
-    <span class="c1"># 2a) build matrices per cluster (respect per-cluster seed if provided)</span>
+    <span class="c1"># --- Step 2a: build matrices per cluster (respect per-cluster seed if provided) ---</span>
     <span class="n">cluster_matrices</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">NDArray</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">]]</span> <span class="o">=</span> <span class="p">[]</span>
     <span class="c1"># Map: anchor feature column -&gt; (beta, class_id)</span>
     <span class="n">anchor_contrib</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">int</span><span class="p">]]</span> <span class="o">=</span> <span class="p">{}</span>
     <span class="n">anchor_target_cls_map</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
     <span class="n">cluster_label_map</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+
     <span class="n">col_start</span> <span class="o">=</span> <span class="mi">0</span>
     <span class="k">if</span> <span class="n">cfg</span><span class="o">.</span><span class="n">corr_clusters</span><span class="p">:</span>
         <span class="k">for</span> <span class="n">cid</span><span class="p">,</span> <span class="n">c</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">cfg</span><span class="o">.</span><span class="n">corr_clusters</span><span class="p">,</span> <span class="n">start</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
+            <span class="c1"># Choose a deterministic RNG for this cluster</span>
             <span class="n">seed</span> <span class="o">=</span> <span class="n">c</span><span class="o">.</span><span class="n">random_state</span> <span class="k">if</span> <span class="n">c</span><span class="o">.</span><span class="n">random_state</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">cfg</span><span class="o">.</span><span class="n">random_state</span>
             <span class="n">rng</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">default_rng</span><span class="p">(</span><span class="n">seed</span><span class="p">)</span>
-            <span class="n">B</span> <span class="o">=</span> <span class="n">sample_cluster</span><span class="p">(</span>
-                <span class="n">n_samples</span><span class="o">=</span><span class="n">cfg</span><span class="o">.</span><span class="n">n_samples</span><span class="p">,</span>
-                <span class="n">n_features</span><span class="o">=</span><span class="n">c</span><span class="o">.</span><span class="n">n_cluster_features</span><span class="p">,</span>
-                <span class="n">rng</span><span class="o">=</span><span class="n">rng</span><span class="p">,</span>
-                <span class="n">structure</span><span class="o">=</span><span class="n">c</span><span class="o">.</span><span class="n">structure</span><span class="p">,</span>
-                <span class="n">rho</span><span class="o">=</span><span class="n">c</span><span class="o">.</span><span class="n">rho</span><span class="p">,</span>
-                <span class="n">class_labels</span><span class="o">=</span><span class="n">y</span><span class="p">,</span>  <span class="c1"># NOW labels are available for class_rho!</span>
-                <span class="n">class_rho</span><span class="o">=</span><span class="n">c</span><span class="o">.</span><span class="n">class_rho</span><span class="p">,</span>
-                <span class="n">baseline_rho</span><span class="o">=</span><span class="n">c</span><span class="o">.</span><span class="n">rho_baseline</span><span class="p">,</span>
-            <span class="p">)</span>
+
+            <span class="c1"># IMPORTANT:</span>
+            <span class="c1"># - Only pass class_labels if class_rho is explicitly configured.</span>
+            <span class="c1"># - Otherwise, use the simple &quot;constant rho&quot; path.</span>
+            <span class="k">if</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">c</span><span class="p">,</span> <span class="s2">&quot;class_rho&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">B</span> <span class="o">=</span> <span class="n">sample_cluster</span><span class="p">(</span>
+                    <span class="n">n_samples</span><span class="o">=</span><span class="n">cfg</span><span class="o">.</span><span class="n">n_samples</span><span class="p">,</span>
+                    <span class="n">n_features</span><span class="o">=</span><span class="n">c</span><span class="o">.</span><span class="n">n_cluster_features</span><span class="p">,</span>
+                    <span class="n">rng</span><span class="o">=</span><span class="n">rng</span><span class="p">,</span>
+                    <span class="n">structure</span><span class="o">=</span><span class="n">c</span><span class="o">.</span><span class="n">structure</span><span class="p">,</span>
+                    <span class="n">baseline_rho</span><span class="o">=</span><span class="n">c</span><span class="o">.</span><span class="n">rho_baseline</span><span class="p">,</span>
+                    <span class="n">class_labels</span><span class="o">=</span><span class="n">y</span><span class="p">,</span>  <span class="c1"># &lt;-- only in the class_rho branch</span>
+                    <span class="n">class_rho</span><span class="o">=</span><span class="n">c</span><span class="o">.</span><span class="n">class_rho</span><span class="p">,</span>
+                <span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">B</span> <span class="o">=</span> <span class="n">sample_cluster</span><span class="p">(</span>
+                    <span class="n">n_samples</span><span class="o">=</span><span class="n">cfg</span><span class="o">.</span><span class="n">n_samples</span><span class="p">,</span>
+                    <span class="n">n_features</span><span class="o">=</span><span class="n">c</span><span class="o">.</span><span class="n">n_cluster_features</span><span class="p">,</span>
+                    <span class="n">rng</span><span class="o">=</span><span class="n">rng</span><span class="p">,</span>
+                    <span class="n">structure</span><span class="o">=</span><span class="n">c</span><span class="o">.</span><span class="n">structure</span><span class="p">,</span>
+                    <span class="n">rho</span><span class="o">=</span><span class="nb">float</span><span class="p">(</span><span class="n">c</span><span class="o">.</span><span class="n">rho</span><span class="p">)</span> <span class="k">if</span> <span class="n">c</span><span class="o">.</span><span class="n">rho</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="mf">0.0</span><span class="p">,</span>
+                <span class="p">)</span>
+
             <span class="c1"># weak global coupling (same g for all cluster columns)</span>
-            <span class="k">if</span> <span class="n">cfg</span><span class="o">.</span><span class="n">corr_between</span> <span class="o">&gt;</span> <span class="mf">0.0</span><span class="p">:</span>
-                <span class="n">g</span> <span class="o">=</span> <span class="n">rng_global</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="n">cfg</span><span class="o">.</span><span class="n">n_samples</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
+            <span class="k">if</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">cfg</span><span class="p">,</span> <span class="s2">&quot;corr_between&quot;</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">)</span> <span class="ow">and</span> <span class="n">cfg</span><span class="o">.</span><span class="n">corr_between</span> <span class="o">&gt;</span> <span class="mf">0.0</span><span class="p">:</span>
+                <span class="n">g</span> <span class="o">=</span> <span class="n">rng</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="n">cfg</span><span class="o">.</span><span class="n">n_samples</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
                 <span class="n">B</span> <span class="o">=</span> <span class="n">B</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">cfg</span><span class="o">.</span><span class="n">corr_between</span><span class="p">)</span> <span class="o">*</span> <span class="n">g</span>
+
+            <span class="c1"># Record anchor metadata for a later mean-shift (anchor-only)</span>
             <span class="k">if</span> <span class="n">c</span><span class="o">.</span><span class="n">anchor_role</span> <span class="o">==</span> <span class="s2">&quot;informative&quot;</span><span class="p">:</span>
-                <span class="n">anchor_col</span> <span class="o">=</span> <span class="n">col_start</span>  <span class="c1"># first column of this cluster in global X</span>
+                <span class="n">anchor_col</span> <span class="o">=</span> <span class="n">col_start</span>  <span class="c1"># assumes anchor-first convention inside the block</span>
                 <span class="n">anchor_cls</span> <span class="o">=</span> <span class="mi">0</span> <span class="k">if</span> <span class="n">c</span><span class="o">.</span><span class="n">anchor_class</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="nb">int</span><span class="p">(</span><span class="n">c</span><span class="o">.</span><span class="n">anchor_class</span><span class="p">)</span>
                 <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="mi">0</span> <span class="o">&lt;=</span> <span class="n">anchor_cls</span> <span class="o">&lt;</span> <span class="n">cfg</span><span class="o">.</span><span class="n">n_classes</span><span class="p">):</span>
                     <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;anchor_class </span><span class="si">{</span><span class="n">anchor_cls</span><span class="si">}</span><span class="s2"> out of range for n_classes=</span><span class="si">{</span><span class="n">cfg</span><span class="o">.</span><span class="n">n_classes</span><span class="si">}</span><span class="s2">.&quot;</span><span class="p">)</span>
@@ -425,9 +441,17 @@
                 <span class="n">anchor_target_cls_map</span><span class="p">[</span><span class="n">cid</span><span class="p">]</span> <span class="o">=</span> <span class="n">anchor_cls</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="n">anchor_target_cls_map</span><span class="p">[</span><span class="n">cid</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
-            <span class="n">cluster_label_map</span><span class="p">[</span><span class="n">cid</span><span class="p">]</span> <span class="o">=</span> <span class="n">c</span><span class="o">.</span><span class="n">label</span>
+
+            <span class="n">cluster_label_map</span><span class="p">[</span><span class="n">cid</span><span class="p">]</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">c</span><span class="p">,</span> <span class="s2">&quot;label&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
             <span class="n">cluster_matrices</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">B</span><span class="p">)</span>
             <span class="n">col_start</span> <span class="o">+=</span> <span class="n">c</span><span class="o">.</span><span class="n">n_cluster_features</span>
+
+            <span class="c1"># --- Optional development guard (keep commented out in release) ---</span>
+            <span class="c1"># import numpy as _np</span>
+            <span class="c1"># C = _np.corrcoef(B, rowvar=False); off = C[~_np.eye(C.shape[0], bool)]</span>
+            <span class="c1"># assert _np.isfinite(off).all()</span>
+            <span class="c1"># if getattr(c, &quot;class_rho&quot;, None) is None and float(c.rho or 0.0) &gt; 0.0:</span>
+            <span class="c1">#     assert off.mean() &gt; 0.2, f&quot;Mean off-diagonal too low for cid={cid}: {off.mean():.3f}&quot;</span>
 
     <span class="n">X_clusters</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">(</span><span class="n">cluster_matrices</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span> <span class="k">if</span> <span class="n">cluster_matrices</span> <span class="k">else</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">((</span><span class="n">cfg</span><span class="o">.</span><span class="n">n_samples</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span>
 
