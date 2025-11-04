@@ -8,14 +8,15 @@
 
 from __future__ import annotations
 
-from typing import Any, Mapping, Sequence, Tuple, Literal, Dict
+from collections.abc import Mapping, Sequence
+from typing import Any, Literal
+
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-from numpy.typing import NDArray
-
-from matplotlib.figure import Figure, SubFigure
 from matplotlib.axes import Axes
-import matplotlib.pyplot as plt
+from matplotlib.figure import Figure, SubFigure
+from numpy.typing import NDArray
 
 from .correlation_tools import (
     compute_correlation_matrix,
@@ -50,7 +51,8 @@ def plot_correlation_matrix(
         C: Square correlation matrix of shape (p, p).
         title: Optional plot title.
         ax: Optional Matplotlib Axes to draw on (created if None).
-        vmin, vmax: Color scale limits.
+        vmin: Color scale limits.
+        vmax: Color scale limits.
         annot: If True, draw numeric values for small matrices (p <= 25).
         fmt: Number format for annotations.
         labels: Optional tick labels (length p). If not given, 'feature' axes labels are used.
@@ -133,7 +135,8 @@ def plot_correlation_matrix_for_cluster(
         natural_sort_rest: If True, non-anchor features are sorted naturally.
         title: Optional plot title.
         ax: Optional Matplotlib Axes to draw on (created if None).
-        vmin, vmax: Color scale limits.
+        vmin: Color scale limits.
+        vmax: Color scale limits.
         annot: If True, draw numeric values for small matrices (p <= 25).
         fmt: Number format for annotations.
         show: If True and a new figure is created here, call plt.show().
@@ -142,9 +145,7 @@ def plot_correlation_matrix_for_cluster(
         C: The computed correlation matrix as a 2D NumPy array.
     """
     # 1) Slice cluster columns (anchor first if available)
-    df_block = get_cluster_frame(
-        df, meta, cluster_id, anchor_first=anchor_first, natural_sort_rest=natural_sort_rest
-    )
+    df_block = get_cluster_frame(df, meta, cluster_id, anchor_first=anchor_first, natural_sort_rest=natural_sort_rest)
 
     # 2) Compute correlation (pearson/kendall/spearman)
     C, labels = compute_correlation_matrix(df_block, method=correlation_method)
@@ -181,7 +182,7 @@ def plot_correlation_matrices_per_cluster(
     annot: bool = False,
     fmt: str = ".2f",
     show: bool = True,
-) -> Dict[Any, tuple[Figure | SubFigure, Axes]]:
+) -> dict[Any, tuple[Figure | SubFigure, Axes]]:
     """Draw one correlation matrix per cluster (cluster_id -> list of column indices).
 
     Args:
@@ -189,7 +190,8 @@ def plot_correlation_matrices_per_cluster(
         clusters: Mapping cluster_id -> list of column indices in `df`.
         labels_map: Optional mapping cluster_id -> cluster label for titles.
         correlation_method: Correlation method to use.
-        vmin, vmax: Color scale limits.
+        vmin: Color scale limits.
+        vmax: Color scale limits.
         annot: If True, draw numeric values for small matrices (p <= 25).
         fmt: Number format for annotations.
         show: If True and a new figure is created here, call plt.show().
@@ -197,17 +199,18 @@ def plot_correlation_matrices_per_cluster(
     Returns:
         out: Mapping cluster_id -> (fig, ax) tuple for each plotted correlation matrix.
 
-    Notes
+    Notes:
     -----
     - Computation is delegated to `compute_correlation_matrix` (SoC).
     - If you have a `meta` object instead of an index mapping, pass `meta.corr_cluster_indices`.
     """
-    out: Dict[Any, tuple[Figure | SubFigure, Axes]] = {}
+    out: dict[Any, tuple[Figure | SubFigure, Axes]] = {}
     for cid, col_idx in clusters.items():
         df_block = df.iloc[:, col_idx]
         C, labels = compute_correlation_matrix(df_block, method=correlation_method)
-        title = (labels_map.get(cid, f"Cluster {cid}") if labels_map else f"Cluster {cid}") \
-                + f" — {correlation_method.capitalize()}"
+        title = (
+            labels_map.get(cid, f"Cluster {cid}") if labels_map else f"Cluster {cid}"
+        ) + f" — {correlation_method.capitalize()}"
 
         fig_ax = plot_correlation_matrix(
             C,

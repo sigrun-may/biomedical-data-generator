@@ -13,8 +13,9 @@ desired correlation properties, and slice DataFrames by cluster.
 
 from __future__ import annotations
 
-from typing import Any, Literal, Optional, Sequence
 import re
+from collections.abc import Sequence
+from typing import Any, Literal
 
 import numpy as np
 import pandas as pd
@@ -52,6 +53,24 @@ __all__ = [
 # Correlation Metrics
 # ============================================================================
 def compute_correlation_metrics(corr_matrix: NDArray[np.floating[Any]]) -> dict[str, float | int]:
+    """Compute summary metrics from a correlation matrix.
+
+    Args:
+        corr_matrix: Square correlation matrix of shape (p, p).
+
+    Returns:
+        Dictionary with keys:
+            - mean_offdiag
+            - std_offdiag
+            - min_offdiag
+            - max_offdiag
+            - range_offdiag
+            - n_offdiag
+    """
+    corr_matrix = np.asarray(corr_matrix, dtype=float)
+    if corr_matrix.ndim != 2 or corr_matrix.shape[0] != corr_matrix.shape[1]:
+        raise ValueError("corr_matrix must be a square 2D array.")
+
     n_features = corr_matrix.shape[0]
     if n_features <= 1:
         return {
@@ -81,6 +100,27 @@ def assess_correlation_quality(
     tolerance: float = 0.05,
     structure: CorrelationStructure = "equicorrelated",
 ) -> dict[str, float | bool | str]:
+    """Assess how well the empirical correlation of X matches the target.
+
+    Args:
+        X: Feature matrix of shape (n_samples, n_features).
+        rho_target: Target correlation value.
+        tolerance: Acceptable deviation from target.
+        structure: Correlation structure ("equicorrelated" or "toeplitz").
+
+    Returns:
+        Dictionary with keys:
+            - mean_offdiag
+            - std_offdiag
+            - min_offdiag
+            - max_offdiag
+            - range_offdiag
+            - n_offdiag
+            - target
+            - deviation_offdiag
+            - within_tolerance
+            - structure
+    """
     C = np.corrcoef(X, rowvar=False)
     m = compute_correlation_metrics(C)
     dev = abs(m["mean_offdiag"] - rho_target)
@@ -97,6 +137,14 @@ def assess_correlation_quality(
 # PC1 share (shared variance)
 # ============================================================================
 def pc1_share_from_corr(C: np.ndarray) -> float:
+    """Compute the share of variance explained by the first principal component from a correlation matrix C.
+
+    Args:
+        C: Square correlation matrix of shape (p, p).
+
+    Returns:
+        Share of variance explained by the first principal component (float in [0, 1]).
+    """
     C = np.asarray(C, dtype=float)
     if C.ndim != 2 or C.shape[0] != C.shape[1]:
         raise ValueError("C must be a square 2D array.")
@@ -113,6 +161,16 @@ def pc1_share(
     method: Literal["pearson", "kendall", "spearman"] = "pearson",
     rowvar: bool = False,
 ) -> float:
+    """Compute the share of variance explained by the first principal component from data X.
+
+    Args:
+        X: Data matrix (DataFrame or 2D array).
+        method: Correlation method ("pearson", "kendall", or "spearman").
+        rowvar: If True, rows represent variables (features), otherwise columns do.
+
+    Returns:
+        Share of variance explained by the first principal component (float in [0, 1]).
+    """
     if isinstance(X, pd.DataFrame):
         if method not in {"pearson", "spearman", "kendall"}:
             raise ValueError("method must be 'pearson', 'kendall' or 'spearman'")
@@ -137,6 +195,19 @@ def variance_partition_pc1(
     method: Literal["pearson", "kendall", "spearman"] = "pearson",
     rowvar: bool = False,
 ) -> dict:
+    """Compute variance partitioning summary based on PC1 share.
+
+    Args:
+        X: Data matrix (DataFrame or 2D array).
+        method: Correlation method ("pearson", "kendall", or "spearman").
+        rowvar: If True, rows represent variables (features), otherwise columns do.
+
+    Returns:
+        Dictionary with keys:
+            - n_features
+            - pc1_evr
+            - pc1_var_ratio
+    """
     if isinstance(X, pd.DataFrame):
         n_features = X.shape[1] if not rowvar else X.shape[0]
     else:
@@ -179,6 +250,26 @@ def find_seed_for_correlation(
     return_matrix: bool = False,
     enforce_p_le_n_in_tolerance: bool = True,
 ) -> tuple[int, dict[str, Any]]:
+    """Find a random seed that yields a cluster with desired correlation properties.
+
+    Args:
+        n_samples: Number of samples to generate.
+        n_cluster_features: Number of features in the cluster.
+        rho_target: Target correlation value.
+        structure: Correlation structure ("equicorrelated" or "toeplitz").
+        metric: Correlation metric to evaluate ("mean_offdiag", "min_offdiag", "max_offdiag", "std_offdiag").
+        tolerance: Acceptable deviation from target (for "tolerance" mode).
+        threshold: Metric threshold (for "threshold" mode).
+        op: Operator for threshold comparison (">=" or "<=").
+        start_seed: Seed to start searching from.
+        max_tries: Maximum number of seeds to try.
+        return_best_on_fail: If True, return best found seed if none satisfy criterion.
+        return_matrix: If True, include correlation matrix in metadata.
+        enforce_p_le_n_in_tolerance: If True, enforce n_features <= n_samples in tolerance mode.
+
+    Returns:
+        Tuple of (seed, metadata dictionary).
+    """
     if tolerance is None and threshold is None:
         raise ValueError("Provide either `tolerance` or `threshold`.")
     if n_cluster_features < 2:
@@ -288,6 +379,25 @@ def find_seed_for_correlation_from_config(
     return_matrix: bool = False,
     enforce_p_le_n_in_tolerance: bool = True,
 ) -> tuple[int, dict[str, Any]]:
+    """Find a random seed for a CorrCluster that yields desired correlation properties.
+
+    Args:
+        cluster: CorrCluster configuration.
+        n_samples: Number of samples to generate.
+        class_idx: Optional class index for class-specific clusters.
+        metric: Correlation metric to evaluate ("mean_offdiag", "min_offdiag", "max_offdiag", "std_offdiag").
+        tolerance: Acceptable deviation from target (for "tolerance" mode).
+        threshold: Metric threshold (for "threshold" mode).
+        op: Operator for threshold comparison (">=" or "<=").
+        start_seed: Seed to start searching from.
+        max_tries: Maximum number of seeds to try.
+        return_best_on_fail: If True, return best found seed if none satisfy criterion.
+        return_matrix: If True, include correlation matrix in metadata.
+        enforce_p_le_n_in_tolerance: If True, enforce n_features <= n_samples in tolerance mode.
+
+    Returns:
+        Tuple of (seed, metadata dictionary).
+    """
     if class_idx is None or not cluster.is_class_specific():
         rho = cluster.rho
         structure = cluster.structure
@@ -335,6 +445,20 @@ def find_best_seed_for_correlation(
     *,
     start_seed: int = 0,
 ) -> tuple[int, dict[str, float]]:
+    """Find the seed that yields the closest empirical correlation to the target over n_trials.
+
+    Args:
+        n_trials: Number of random seeds to try.
+        n_samples: Number of samples to generate.
+        n_features: Number of features in the cluster.
+        rho: Target correlation value.
+        structure: Correlation structure ("equicorrelated" or "toeplitz").
+        start_seed: Seed to start searching from.
+
+    Returns:
+        Tuple of (best_seed, metrics dictionary).
+    """
+    _validate_rho(structure, n_features, rho)
     best_seed = start_seed
     best_delta = float("inf")
     best_metrics: dict[str, float] | None = None
@@ -355,7 +479,16 @@ def find_best_seed_for_correlation(
 # ============================================================================
 # Cluster slicing helpers (no plotting)
 # ============================================================================
-def parse_cluster_id(name: str, prefix_corr: str = "corr") -> Optional[int]:
+def parse_cluster_id(name: str, prefix_corr: str = "corr") -> int | None:
+    """Parse cluster ID from column name like 'corr3_anchor' or 'corr2_5'.
+
+    Args:
+        name: Column name string.
+        prefix_corr: Prefix indicating correlated features.
+
+    Returns:
+        Cluster ID as integer, or None if not matching.
+    """
     m = re.match(rf"^{re.escape(prefix_corr)}(\d+)_(?:anchor|\d+)$", name)
     return int(m.group(1)) if m else None
 
@@ -364,17 +497,30 @@ def _natural_member_sort(names: Sequence[str]) -> list[str]:
     def key(name: str) -> tuple[int, str]:
         m = re.search(r"_(\d+)$", str(name))
         return (int(m.group(1)) if m else 10**9, str(name))
+
     return sorted(names, key=key)
 
 
 def get_cluster_column_names(
     df: pd.DataFrame,
-    meta: Any,           # must provide: meta.corr_cluster_indices, meta.anchor_idx
+    meta: Any,  # must provide: meta.corr_cluster_indices, meta.anchor_idx
     cluster_id: int,
     *,
     anchor_first: bool = True,
     natural_sort_rest: bool = True,
 ) -> list[str]:
+    """Get column names for a given cluster ID from DataFrame and metadata.
+
+    Args:
+        df: DataFrame with all features.
+        meta: Metadata object with cluster information.
+        cluster_id: ID of the cluster to extract.
+        anchor_first: If True, anchor feature is placed first (if available).
+        natural_sort_rest: If True, non-anchor features are sorted naturally.
+
+    Returns:
+        List of column names in the specified order.
+    """
     cluster_map: dict[int, list[int]] = meta.corr_cluster_indices
     cols_idx: list[int] = list(cluster_map[cluster_id])
     names = [str(df.columns[i]) for i in cols_idx]
@@ -382,7 +528,7 @@ def get_cluster_column_names(
     if not anchor_first:
         return _natural_member_sort(names) if natural_sort_rest else names
 
-    anchor_idx_map: dict[int, Optional[int]] = meta.anchor_idx
+    anchor_idx_map: dict[int, int | None] = meta.anchor_idx
     anchor_index = anchor_idx_map.get(cluster_id, None)
     if anchor_index is not None:
         anchor_name = str(df.columns[anchor_index])
@@ -401,7 +547,21 @@ def get_cluster_frame(
     anchor_first: bool = True,
     natural_sort_rest: bool = True,
 ) -> pd.DataFrame:
-    cols = get_cluster_column_names(df, meta, cluster_id, anchor_first=anchor_first, natural_sort_rest=natural_sort_rest)
+    """Get DataFrame slice for a given cluster ID.
+
+    Args:
+        df: DataFrame with all features.
+        meta: Metadata object with cluster information.
+        cluster_id: ID of the cluster to extract.
+        anchor_first: If True, anchor feature is placed first (if available).
+        natural_sort_rest: If True, non-anchor features are sorted naturally.
+
+    Returns:
+        DataFrame slice with columns for the specified cluster.
+    """
+    cols = get_cluster_column_names(
+        df, meta, cluster_id, anchor_first=anchor_first, natural_sort_rest=natural_sort_rest
+    )
     return df.loc[:, cols]
 
 
@@ -413,6 +573,15 @@ def compute_correlation_matrix(
     *,
     method: Literal["pearson", "kendall", "spearman"] = "spearman",
 ) -> tuple[NDArray[np.float64], list[str]]:
+    """Compute the correlation matrix from a DataFrame-like object.
+
+    Args:
+        df_like: DataFrame-like object with features as columns.
+        method: Correlation method ("pearson", "kendall", or "spearman").
+
+    Returns:
+        Tuple of (correlation matrix as 2D NumPy array, list of column labels).
+    """
     C_df = df_like.corr(method=method)
     C: NDArray[np.float64] = np.asarray(C_df.to_numpy(dtype=float), dtype=np.float64)
     labels = [str(c) for c in df_like.columns]
@@ -428,5 +597,20 @@ def compute_correlation_matrix_for_cluster(
     anchor_first: bool = True,
     natural_sort_rest: bool = True,
 ) -> tuple[NDArray[np.float64], list[str]]:
+    """Compute the correlation matrix for a specific cluster in the DataFrame.
+
+    Args:
+        df: DataFrame with all features.
+        meta: Metadata object with cluster information.
+        cluster_id: ID of the cluster to extract.
+        method: Correlation method ("pearson", "kendall", or "spearman").
+        anchor_first: If True, anchor feature is placed
+            first (if available).
+        natural_sort_rest: If True, non-anchor features are sorted naturally.
+
+    Returns:
+        Tuple of (correlation matrix as 2D NumPy array, list of column labels
+            for the specified cluster).
+    """
     df_c = get_cluster_frame(df, meta, cluster_id, anchor_first=anchor_first, natural_sort_rest=natural_sort_rest)
     return compute_correlation_matrix(df_c, method=method)
