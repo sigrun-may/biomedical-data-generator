@@ -304,34 +304,50 @@ def generate_dataset(
     # names & roles (+ totals validation inside)
     names, inf_idx, pse_idx, noi_idx, cluster_idx, anch_idx = _make_names_and_roles(cfg)
 
-    # STEP 2: Build features (now with access to labels for class_rho)
-    # 2a) build matrices per cluster (respect per-cluster seed if provided)
+    # --- Step 2a: build matrices per cluster (respect per-cluster seed if provided) ---
     cluster_matrices: list[NDArray[np.float64]] = []
     # Map: anchor feature column -> (beta, class_id)
     anchor_contrib: dict[int, tuple[float, int]] = {}
     anchor_target_cls_map: dict[int, int | None] = {}
     cluster_label_map: dict[int, str | None] = {}
+
     col_start = 0
     if cfg.corr_clusters:
         for cid, c in enumerate(cfg.corr_clusters, start=1):
+            # Choose a deterministic RNG for this cluster
             seed = c.random_state if c.random_state is not None else cfg.random_state
             rng = np.random.default_rng(seed)
-            B = sample_cluster(
-                n_samples=cfg.n_samples,
-                n_features=c.n_cluster_features,
-                rng=rng,
-                structure=c.structure,
-                rho=c.rho,
-                class_labels=y,  # NOW labels are available for class_rho!
-                class_rho=c.class_rho,
-                baseline_rho=c.rho_baseline,
-            )
+
+            # IMPORTANT:
+            # - Only pass class_labels if class_rho is explicitly configured.
+            # - Otherwise, use the simple "constant rho" path.
+            if getattr(c, "class_rho", None) is not None:
+                B = sample_cluster(
+                    n_samples=cfg.n_samples,
+                    n_features=c.n_cluster_features,
+                    rng=rng,
+                    structure=c.structure,
+                    baseline_rho=c.rho_baseline,
+                    class_labels=y,  # <-- only in the class_rho branch
+                    class_rho=c.class_rho,
+                )
+            else:
+                B = sample_cluster(
+                    n_samples=cfg.n_samples,
+                    n_features=c.n_cluster_features,
+                    rng=rng,
+                    structure=c.structure,
+                    rho=float(c.rho) if c.rho is not None else 0.0,
+                )
+
             # weak global coupling (same g for all cluster columns)
-            if cfg.corr_between > 0.0:
-                g = rng_global.normal(0.0, 1.0, size=(cfg.n_samples, 1))
+            if getattr(cfg, "corr_between", 0.0) and cfg.corr_between > 0.0:
+                g = rng.normal(0.0, 1.0, size=(cfg.n_samples, 1))
                 B = B + np.sqrt(cfg.corr_between) * g
+
+            # Record anchor metadata for a later mean-shift (anchor-only)
             if c.anchor_role == "informative":
-                anchor_col = col_start  # first column of this cluster in global X
+                anchor_col = col_start  # assumes anchor-first convention inside the block
                 anchor_cls = 0 if c.anchor_class is None else int(c.anchor_class)
                 if not (0 <= anchor_cls < cfg.n_classes):
                     raise ValueError(f"anchor_class {anchor_cls} out of range for n_classes={cfg.n_classes}.")
@@ -340,9 +356,17 @@ def generate_dataset(
                 anchor_target_cls_map[cid] = anchor_cls
             else:
                 anchor_target_cls_map[cid] = None
-            cluster_label_map[cid] = c.label
+
+            cluster_label_map[cid] = getattr(c, "label", None)
             cluster_matrices.append(B)
             col_start += c.n_cluster_features
+
+            # --- Optional development guard (keep commented out in release) ---
+            # import numpy as _np
+            # C = _np.corrcoef(B, rowvar=False); off = C[~_np.eye(C.shape[0], bool)]
+            # assert _np.isfinite(off).all()
+            # if getattr(c, "class_rho", None) is None and float(c.rho or 0.0) > 0.0:
+            #     assert off.mean() > 0.2, f"Mean off-diagonal too low for cid={cid}: {off.mean():.3f}"
 
     X_clusters = np.concatenate(cluster_matrices, axis=1) if cluster_matrices else np.empty((cfg.n_samples, 0))
 
