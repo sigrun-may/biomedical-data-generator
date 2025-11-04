@@ -96,8 +96,9 @@
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">annotations</span>
 
-<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Literal</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Sequence</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">re</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">collections.abc</span><span class="w"> </span><span class="kn">import</span> <span class="n">Sequence</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Literal</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
@@ -135,6 +136,24 @@
 <span class="c1"># Correlation Metrics</span>
 <span class="c1"># ============================================================================</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">compute_correlation_metrics</span><span class="p">(</span><span class="n">corr_matrix</span><span class="p">:</span> <span class="n">NDArray</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">floating</span><span class="p">[</span><span class="n">Any</span><span class="p">]])</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">float</span> <span class="o">|</span> <span class="nb">int</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Compute summary metrics from a correlation matrix.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        corr_matrix: Square correlation matrix of shape (p, p).</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Dictionary with keys:</span>
+<span class="sd">            - mean_offdiag</span>
+<span class="sd">            - std_offdiag</span>
+<span class="sd">            - min_offdiag</span>
+<span class="sd">            - max_offdiag</span>
+<span class="sd">            - range_offdiag</span>
+<span class="sd">            - n_offdiag</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">corr_matrix</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">corr_matrix</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">corr_matrix</span><span class="o">.</span><span class="n">ndim</span> <span class="o">!=</span> <span class="mi">2</span> <span class="ow">or</span> <span class="n">corr_matrix</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">!=</span> <span class="n">corr_matrix</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;corr_matrix must be a square 2D array.&quot;</span><span class="p">)</span>
+
     <span class="n">n_features</span> <span class="o">=</span> <span class="n">corr_matrix</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
     <span class="k">if</span> <span class="n">n_features</span> <span class="o">&lt;=</span> <span class="mi">1</span><span class="p">:</span>
         <span class="k">return</span> <span class="p">{</span>
@@ -164,6 +183,27 @@
     <span class="n">tolerance</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.05</span><span class="p">,</span>
     <span class="n">structure</span><span class="p">:</span> <span class="n">CorrelationStructure</span> <span class="o">=</span> <span class="s2">&quot;equicorrelated&quot;</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">float</span> <span class="o">|</span> <span class="nb">bool</span> <span class="o">|</span> <span class="nb">str</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Assess how well the empirical correlation of X matches the target.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        X: Feature matrix of shape (n_samples, n_features).</span>
+<span class="sd">        rho_target: Target correlation value.</span>
+<span class="sd">        tolerance: Acceptable deviation from target.</span>
+<span class="sd">        structure: Correlation structure (&quot;equicorrelated&quot; or &quot;toeplitz&quot;).</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Dictionary with keys:</span>
+<span class="sd">            - mean_offdiag</span>
+<span class="sd">            - std_offdiag</span>
+<span class="sd">            - min_offdiag</span>
+<span class="sd">            - max_offdiag</span>
+<span class="sd">            - range_offdiag</span>
+<span class="sd">            - n_offdiag</span>
+<span class="sd">            - target</span>
+<span class="sd">            - deviation_offdiag</span>
+<span class="sd">            - within_tolerance</span>
+<span class="sd">            - structure</span>
+<span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">C</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">corrcoef</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">rowvar</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
     <span class="n">m</span> <span class="o">=</span> <span class="n">compute_correlation_metrics</span><span class="p">(</span><span class="n">C</span><span class="p">)</span>
     <span class="n">dev</span> <span class="o">=</span> <span class="nb">abs</span><span class="p">(</span><span class="n">m</span><span class="p">[</span><span class="s2">&quot;mean_offdiag&quot;</span><span class="p">]</span> <span class="o">-</span> <span class="n">rho_target</span><span class="p">)</span>
@@ -180,6 +220,14 @@
 <span class="c1"># PC1 share (shared variance)</span>
 <span class="c1"># ============================================================================</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">pc1_share_from_corr</span><span class="p">(</span><span class="n">C</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Compute the share of variance explained by the first principal component from a correlation matrix C.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        C: Square correlation matrix of shape (p, p).</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Share of variance explained by the first principal component (float in [0, 1]).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">C</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">C</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">C</span><span class="o">.</span><span class="n">ndim</span> <span class="o">!=</span> <span class="mi">2</span> <span class="ow">or</span> <span class="n">C</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">!=</span> <span class="n">C</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]:</span>
         <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;C must be a square 2D array.&quot;</span><span class="p">)</span>
@@ -196,6 +244,16 @@
     <span class="n">method</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;pearson&quot;</span><span class="p">,</span> <span class="s2">&quot;kendall&quot;</span><span class="p">,</span> <span class="s2">&quot;spearman&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;pearson&quot;</span><span class="p">,</span>
     <span class="n">rowvar</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Compute the share of variance explained by the first principal component from data X.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        X: Data matrix (DataFrame or 2D array).</span>
+<span class="sd">        method: Correlation method (&quot;pearson&quot;, &quot;kendall&quot;, or &quot;spearman&quot;).</span>
+<span class="sd">        rowvar: If True, rows represent variables (features), otherwise columns do.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Share of variance explained by the first principal component (float in [0, 1]).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">):</span>
         <span class="k">if</span> <span class="n">method</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">{</span><span class="s2">&quot;pearson&quot;</span><span class="p">,</span> <span class="s2">&quot;spearman&quot;</span><span class="p">,</span> <span class="s2">&quot;kendall&quot;</span><span class="p">}:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;method must be &#39;pearson&#39;, &#39;kendall&#39; or &#39;spearman&#39;&quot;</span><span class="p">)</span>
@@ -220,6 +278,19 @@
     <span class="n">method</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;pearson&quot;</span><span class="p">,</span> <span class="s2">&quot;kendall&quot;</span><span class="p">,</span> <span class="s2">&quot;spearman&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;pearson&quot;</span><span class="p">,</span>
     <span class="n">rowvar</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Compute variance partitioning summary based on PC1 share.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        X: Data matrix (DataFrame or 2D array).</span>
+<span class="sd">        method: Correlation method (&quot;pearson&quot;, &quot;kendall&quot;, or &quot;spearman&quot;).</span>
+<span class="sd">        rowvar: If True, rows represent variables (features), otherwise columns do.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Dictionary with keys:</span>
+<span class="sd">            - n_features</span>
+<span class="sd">            - pc1_evr</span>
+<span class="sd">            - pc1_var_ratio</span>
+<span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">):</span>
         <span class="n">n_features</span> <span class="o">=</span> <span class="n">X</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="k">if</span> <span class="ow">not</span> <span class="n">rowvar</span> <span class="k">else</span> <span class="n">X</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
     <span class="k">else</span><span class="p">:</span>
@@ -264,6 +335,26 @@
     <span class="n">return_matrix</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
     <span class="n">enforce_p_le_n_in_tolerance</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Find a random seed that yields a cluster with desired correlation properties.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        n_samples: Number of samples to generate.</span>
+<span class="sd">        n_cluster_features: Number of features in the cluster.</span>
+<span class="sd">        rho_target: Target correlation value.</span>
+<span class="sd">        structure: Correlation structure (&quot;equicorrelated&quot; or &quot;toeplitz&quot;).</span>
+<span class="sd">        metric: Correlation metric to evaluate (&quot;mean_offdiag&quot;, &quot;min_offdiag&quot;, &quot;max_offdiag&quot;, &quot;std_offdiag&quot;).</span>
+<span class="sd">        tolerance: Acceptable deviation from target (for &quot;tolerance&quot; mode).</span>
+<span class="sd">        threshold: Metric threshold (for &quot;threshold&quot; mode).</span>
+<span class="sd">        op: Operator for threshold comparison (&quot;&gt;=&quot; or &quot;&lt;=&quot;).</span>
+<span class="sd">        start_seed: Seed to start searching from.</span>
+<span class="sd">        max_tries: Maximum number of seeds to try.</span>
+<span class="sd">        return_best_on_fail: If True, return best found seed if none satisfy criterion.</span>
+<span class="sd">        return_matrix: If True, include correlation matrix in metadata.</span>
+<span class="sd">        enforce_p_le_n_in_tolerance: If True, enforce n_features &lt;= n_samples in tolerance mode.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Tuple of (seed, metadata dictionary).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">if</span> <span class="n">tolerance</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">threshold</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
         <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Provide either `tolerance` or `threshold`.&quot;</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">n_cluster_features</span> <span class="o">&lt;</span> <span class="mi">2</span><span class="p">:</span>
@@ -374,6 +465,25 @@
     <span class="n">return_matrix</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
     <span class="n">enforce_p_le_n_in_tolerance</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Find a random seed for a CorrCluster that yields desired correlation properties.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        cluster: CorrCluster configuration.</span>
+<span class="sd">        n_samples: Number of samples to generate.</span>
+<span class="sd">        class_idx: Optional class index for class-specific clusters.</span>
+<span class="sd">        metric: Correlation metric to evaluate (&quot;mean_offdiag&quot;, &quot;min_offdiag&quot;, &quot;max_offdiag&quot;, &quot;std_offdiag&quot;).</span>
+<span class="sd">        tolerance: Acceptable deviation from target (for &quot;tolerance&quot; mode).</span>
+<span class="sd">        threshold: Metric threshold (for &quot;threshold&quot; mode).</span>
+<span class="sd">        op: Operator for threshold comparison (&quot;&gt;=&quot; or &quot;&lt;=&quot;).</span>
+<span class="sd">        start_seed: Seed to start searching from.</span>
+<span class="sd">        max_tries: Maximum number of seeds to try.</span>
+<span class="sd">        return_best_on_fail: If True, return best found seed if none satisfy criterion.</span>
+<span class="sd">        return_matrix: If True, include correlation matrix in metadata.</span>
+<span class="sd">        enforce_p_le_n_in_tolerance: If True, enforce n_features &lt;= n_samples in tolerance mode.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Tuple of (seed, metadata dictionary).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">if</span> <span class="n">class_idx</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">cluster</span><span class="o">.</span><span class="n">is_class_specific</span><span class="p">():</span>
         <span class="n">rho</span> <span class="o">=</span> <span class="n">cluster</span><span class="o">.</span><span class="n">rho</span>
         <span class="n">structure</span> <span class="o">=</span> <span class="n">cluster</span><span class="o">.</span><span class="n">structure</span>
@@ -421,6 +531,20 @@
     <span class="o">*</span><span class="p">,</span>
     <span class="n">start_seed</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">float</span><span class="p">]]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Find the seed that yields the closest empirical correlation to the target over n_trials.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        n_trials: Number of random seeds to try.</span>
+<span class="sd">        n_samples: Number of samples to generate.</span>
+<span class="sd">        n_features: Number of features in the cluster.</span>
+<span class="sd">        rho: Target correlation value.</span>
+<span class="sd">        structure: Correlation structure (&quot;equicorrelated&quot; or &quot;toeplitz&quot;).</span>
+<span class="sd">        start_seed: Seed to start searching from.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Tuple of (best_seed, metrics dictionary).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">_validate_rho</span><span class="p">(</span><span class="n">structure</span><span class="p">,</span> <span class="n">n_features</span><span class="p">,</span> <span class="n">rho</span><span class="p">)</span>
     <span class="n">best_seed</span> <span class="o">=</span> <span class="n">start_seed</span>
     <span class="n">best_delta</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="s2">&quot;inf&quot;</span><span class="p">)</span>
     <span class="n">best_metrics</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">float</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
@@ -441,7 +565,16 @@
 <span class="c1"># ============================================================================</span>
 <span class="c1"># Cluster slicing helpers (no plotting)</span>
 <span class="c1"># ============================================================================</span>
-<span class="k">def</span><span class="w"> </span><span class="nf">parse_cluster_id</span><span class="p">(</span><span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">prefix_corr</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;corr&quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]:</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">parse_cluster_id</span><span class="p">(</span><span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">prefix_corr</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;corr&quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Parse cluster ID from column name like &#39;corr3_anchor&#39; or &#39;corr2_5&#39;.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        name: Column name string.</span>
+<span class="sd">        prefix_corr: Prefix indicating correlated features.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Cluster ID as integer, or None if not matching.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">m</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="sa">rf</span><span class="s2">&quot;^</span><span class="si">{</span><span class="n">re</span><span class="o">.</span><span class="n">escape</span><span class="p">(</span><span class="n">prefix_corr</span><span class="p">)</span><span class="si">}</span><span class="s2">(\d+)_(?:anchor|\d+)$&quot;</span><span class="p">,</span> <span class="n">name</span><span class="p">)</span>
     <span class="k">return</span> <span class="nb">int</span><span class="p">(</span><span class="n">m</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="mi">1</span><span class="p">))</span> <span class="k">if</span> <span class="n">m</span> <span class="k">else</span> <span class="kc">None</span>
 
@@ -450,17 +583,30 @@
     <span class="k">def</span><span class="w"> </span><span class="nf">key</span><span class="p">(</span><span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">str</span><span class="p">]:</span>
         <span class="n">m</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;_(\d+)$&quot;</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">name</span><span class="p">))</span>
         <span class="k">return</span> <span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">m</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="mi">1</span><span class="p">))</span> <span class="k">if</span> <span class="n">m</span> <span class="k">else</span> <span class="mi">10</span><span class="o">**</span><span class="mi">9</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">name</span><span class="p">))</span>
+
     <span class="k">return</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">names</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="n">key</span><span class="p">)</span>
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">get_cluster_column_names</span><span class="p">(</span>
     <span class="n">df</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span>
-    <span class="n">meta</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>           <span class="c1"># must provide: meta.corr_cluster_indices, meta.anchor_idx</span>
+    <span class="n">meta</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>  <span class="c1"># must provide: meta.corr_cluster_indices, meta.anchor_idx</span>
     <span class="n">cluster_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
     <span class="o">*</span><span class="p">,</span>
     <span class="n">anchor_first</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
     <span class="n">natural_sort_rest</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Get column names for a given cluster ID from DataFrame and metadata.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        df: DataFrame with all features.</span>
+<span class="sd">        meta: Metadata object with cluster information.</span>
+<span class="sd">        cluster_id: ID of the cluster to extract.</span>
+<span class="sd">        anchor_first: If True, anchor feature is placed first (if available).</span>
+<span class="sd">        natural_sort_rest: If True, non-anchor features are sorted naturally.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        List of column names in the specified order.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">cluster_map</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">]]</span> <span class="o">=</span> <span class="n">meta</span><span class="o">.</span><span class="n">corr_cluster_indices</span>
     <span class="n">cols_idx</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">cluster_map</span><span class="p">[</span><span class="n">cluster_id</span><span class="p">])</span>
     <span class="n">names</span> <span class="o">=</span> <span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">columns</span><span class="p">[</span><span class="n">i</span><span class="p">])</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">cols_idx</span><span class="p">]</span>
@@ -468,7 +614,7 @@
     <span class="k">if</span> <span class="ow">not</span> <span class="n">anchor_first</span><span class="p">:</span>
         <span class="k">return</span> <span class="n">_natural_member_sort</span><span class="p">(</span><span class="n">names</span><span class="p">)</span> <span class="k">if</span> <span class="n">natural_sort_rest</span> <span class="k">else</span> <span class="n">names</span>
 
-    <span class="n">anchor_idx_map</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]]</span> <span class="o">=</span> <span class="n">meta</span><span class="o">.</span><span class="n">anchor_idx</span>
+    <span class="n">anchor_idx_map</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span><span class="p">]</span> <span class="o">=</span> <span class="n">meta</span><span class="o">.</span><span class="n">anchor_idx</span>
     <span class="n">anchor_index</span> <span class="o">=</span> <span class="n">anchor_idx_map</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">cluster_id</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">anchor_index</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
         <span class="n">anchor_name</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">columns</span><span class="p">[</span><span class="n">anchor_index</span><span class="p">])</span>
@@ -487,7 +633,21 @@
     <span class="n">anchor_first</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
     <span class="n">natural_sort_rest</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
-    <span class="n">cols</span> <span class="o">=</span> <span class="n">get_cluster_column_names</span><span class="p">(</span><span class="n">df</span><span class="p">,</span> <span class="n">meta</span><span class="p">,</span> <span class="n">cluster_id</span><span class="p">,</span> <span class="n">anchor_first</span><span class="o">=</span><span class="n">anchor_first</span><span class="p">,</span> <span class="n">natural_sort_rest</span><span class="o">=</span><span class="n">natural_sort_rest</span><span class="p">)</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Get DataFrame slice for a given cluster ID.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        df: DataFrame with all features.</span>
+<span class="sd">        meta: Metadata object with cluster information.</span>
+<span class="sd">        cluster_id: ID of the cluster to extract.</span>
+<span class="sd">        anchor_first: If True, anchor feature is placed first (if available).</span>
+<span class="sd">        natural_sort_rest: If True, non-anchor features are sorted naturally.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        DataFrame slice with columns for the specified cluster.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">cols</span> <span class="o">=</span> <span class="n">get_cluster_column_names</span><span class="p">(</span>
+        <span class="n">df</span><span class="p">,</span> <span class="n">meta</span><span class="p">,</span> <span class="n">cluster_id</span><span class="p">,</span> <span class="n">anchor_first</span><span class="o">=</span><span class="n">anchor_first</span><span class="p">,</span> <span class="n">natural_sort_rest</span><span class="o">=</span><span class="n">natural_sort_rest</span>
+    <span class="p">)</span>
     <span class="k">return</span> <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[:,</span> <span class="n">cols</span><span class="p">]</span>
 
 
@@ -499,6 +659,15 @@
     <span class="o">*</span><span class="p">,</span>
     <span class="n">method</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;pearson&quot;</span><span class="p">,</span> <span class="s2">&quot;kendall&quot;</span><span class="p">,</span> <span class="s2">&quot;spearman&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;spearman&quot;</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">NDArray</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">],</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Compute the correlation matrix from a DataFrame-like object.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        df_like: DataFrame-like object with features as columns.</span>
+<span class="sd">        method: Correlation method (&quot;pearson&quot;, &quot;kendall&quot;, or &quot;spearman&quot;).</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Tuple of (correlation matrix as 2D NumPy array, list of column labels).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">C_df</span> <span class="o">=</span> <span class="n">df_like</span><span class="o">.</span><span class="n">corr</span><span class="p">(</span><span class="n">method</span><span class="o">=</span><span class="n">method</span><span class="p">)</span>
     <span class="n">C</span><span class="p">:</span> <span class="n">NDArray</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">C_df</span><span class="o">.</span><span class="n">to_numpy</span><span class="p">(</span><span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span>
     <span class="n">labels</span> <span class="o">=</span> <span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">c</span><span class="p">)</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">df_like</span><span class="o">.</span><span class="n">columns</span><span class="p">]</span>
@@ -514,6 +683,21 @@
     <span class="n">anchor_first</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
     <span class="n">natural_sort_rest</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">NDArray</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">],</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Compute the correlation matrix for a specific cluster in the DataFrame.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        df: DataFrame with all features.</span>
+<span class="sd">        meta: Metadata object with cluster information.</span>
+<span class="sd">        cluster_id: ID of the cluster to extract.</span>
+<span class="sd">        method: Correlation method (&quot;pearson&quot;, &quot;kendall&quot;, or &quot;spearman&quot;).</span>
+<span class="sd">        anchor_first: If True, anchor feature is placed</span>
+<span class="sd">            first (if available).</span>
+<span class="sd">        natural_sort_rest: If True, non-anchor features are sorted naturally.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Tuple of (correlation matrix as 2D NumPy array, list of column labels</span>
+<span class="sd">            for the specified cluster).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">df_c</span> <span class="o">=</span> <span class="n">get_cluster_frame</span><span class="p">(</span><span class="n">df</span><span class="p">,</span> <span class="n">meta</span><span class="p">,</span> <span class="n">cluster_id</span><span class="p">,</span> <span class="n">anchor_first</span><span class="o">=</span><span class="n">anchor_first</span><span class="p">,</span> <span class="n">natural_sort_rest</span><span class="o">=</span><span class="n">natural_sort_rest</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">compute_correlation_matrix</span><span class="p">(</span><span class="n">df_c</span><span class="p">,</span> <span class="n">method</span><span class="o">=</span><span class="n">method</span><span class="p">)</span>
 </pre></div>
