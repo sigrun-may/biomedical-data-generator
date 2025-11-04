@@ -113,6 +113,7 @@ def plot_correlation_matrix_for_cluster(
     anchor_first: bool = True,
     natural_sort_rest: bool = True,
     title: str | None = None,
+    ax: Axes | None = None,
     vmin: float = -1.0,
     vmax: float = 1.0,
     annot: bool = False,
@@ -122,6 +123,23 @@ def plot_correlation_matrix_for_cluster(
     """Slice a cluster via `meta`, compute its correlation, and plot it.
 
     Returns the numeric correlation matrix in the plotted column order.
+
+    Args:
+        df: DataFrame with all features.
+        meta: Meta object with cluster information.
+        cluster_id: ID of the cluster to plot.
+        correlation_method: Correlation method to use.
+        anchor_first: If True, anchor features are placed first in the cluster frame.
+        natural_sort_rest: If True, non-anchor features are sorted naturally.
+        title: Optional plot title.
+        ax: Optional Matplotlib Axes to draw on (created if None).
+        vmin, vmax: Color scale limits.
+        annot: If True, draw numeric values for small matrices (p <= 25).
+        fmt: Number format for annotations.
+        show: If True and a new figure is created here, call plt.show().
+
+    Returns:
+        C: The computed correlation matrix as a 2D NumPy array.
     """
     # 1) Slice cluster columns (anchor first if available)
     df_block = get_cluster_frame(
@@ -138,6 +156,7 @@ def plot_correlation_matrix_for_cluster(
     plot_correlation_matrix(
         C,
         title=title,
+        ax=ax,
         vmin=vmin,
         vmax=vmax,
         annot=annot,
@@ -165,14 +184,23 @@ def plot_correlation_matrices_per_cluster(
 ) -> Dict[Any, tuple[Figure | SubFigure, Axes]]:
     """Draw one correlation matrix per cluster (cluster_id -> list of column indices).
 
+    Args:
+        df: DataFrame with all features.
+        clusters: Mapping cluster_id -> list of column indices in `df`.
+        labels_map: Optional mapping cluster_id -> cluster label for titles.
+        correlation_method: Correlation method to use.
+        vmin, vmax: Color scale limits.
+        annot: If True, draw numeric values for small matrices (p <= 25).
+        fmt: Number format for annotations.
+        show: If True and a new figure is created here, call plt.show().
+
+    Returns:
+        out: Mapping cluster_id -> (fig, ax) tuple for each plotted correlation matrix.
+
     Notes
     -----
     - Computation is delegated to `compute_correlation_matrix` (SoC).
     - If you have a `meta` object instead of an index mapping, pass `meta.corr_cluster_indices`.
-
-    Returns
-    -------
-    Dict[cluster_id, (fig, ax)]
     """
     out: Dict[Any, tuple[Figure | SubFigure, Axes]] = {}
     for cid, col_idx in clusters.items():
