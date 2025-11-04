@@ -184,7 +184,7 @@ def test_find_seed_for_correlation_tol_mode():
     seed, meta = correlation_tools.find_seed_for_correlation(
         n_samples=200,
         n_cluster_features=4,
-        rho_target=0.5,
+        rho=0.5,
         structure="equicorrelated",
         tolerance=0.03,
         start_seed=0,
@@ -202,7 +202,7 @@ def test_find_seed_for_correlation_impossible_threshold_raises():
         correlation_tools.find_seed_for_correlation(
             n_samples=80,
             n_cluster_features=5,
-            rho_target=0.2,
+            rho=0.2,
             structure="toeplitz",
             metric="min_offdiag",
             threshold=0.99,  # unrealistic
@@ -220,7 +220,7 @@ def test_find_seed_for_correlation_best_on_fail_fallback():
     seed, meta = correlation_tools.find_seed_for_correlation(
         n_samples=80,
         n_cluster_features=5,
-        rho_target=0.2,
+        rho=0.2,
         structure="toeplitz",
         metric="min_offdiag",
         threshold=0.99,  # unrealistic
@@ -241,7 +241,7 @@ def test_find_seed_for_correlation_threshold_mode():
     seed, meta = correlation_tools.find_seed_for_correlation(
         n_samples=300,
         n_cluster_features=6,
-        rho_target=0.65,
+        rho=0.65,
         structure="equicorrelated",
         metric="min_offdiag",
         threshold=0.50,  # Achievable threshold
@@ -260,7 +260,7 @@ def test_find_seed_for_correlation_return_matrix():
     seed, meta = correlation_tools.find_seed_for_correlation(
         n_samples=100,
         n_cluster_features=4,
-        rho_target=0.6,
+        rho=0.6,
         structure="equicorrelated",
         tolerance=0.05,
         start_seed=0,
@@ -277,7 +277,7 @@ def test_find_seed_for_correlation_p_gt_n_warning():
     seed, meta = correlation_tools.find_seed_for_correlation(
         n_samples=50,
         n_cluster_features=100,  # p > n
-        rho_target=0.5,
+        rho=0.5,
         structure="equicorrelated",
         tolerance=0.03,
         start_seed=0,
@@ -354,9 +354,9 @@ def test_find_seed_for_correlation_from_cluster_class_specific():
 def test_find_best_seed_for_correlation_returns_best():
     """Best-of-N scanner returns seed with smallest deviation."""
     seed, metrics = correlation_tools.find_best_seed_for_correlation(
-        n_trials=20,
+        max_tries=20,
         n_samples=200,
-        n_features=5,
+        n_cluster_features=5,
         rho=0.65,
         structure="equicorrelated",
         start_seed=0,
