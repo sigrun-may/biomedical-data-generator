@@ -322,7 +322,7 @@
 <span class="k">def</span><span class="w"> </span><span class="nf">find_seed_for_correlation</span><span class="p">(</span>
     <span class="n">n_samples</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
     <span class="n">n_cluster_features</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
-    <span class="n">rho_target</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+    <span class="n">rho</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
     <span class="n">structure</span><span class="p">:</span> <span class="n">CorrelationStructure</span> <span class="o">=</span> <span class="s2">&quot;equicorrelated&quot;</span><span class="p">,</span>
     <span class="o">*</span><span class="p">,</span>
     <span class="n">metric</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;mean_offdiag&quot;</span><span class="p">,</span> <span class="s2">&quot;min_offdiag&quot;</span><span class="p">,</span> <span class="s2">&quot;max_offdiag&quot;</span><span class="p">,</span> <span class="s2">&quot;std_offdiag&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;mean_offdiag&quot;</span><span class="p">,</span>
@@ -340,7 +340,7 @@
 <span class="sd">    Args:</span>
 <span class="sd">        n_samples: Number of samples to generate.</span>
 <span class="sd">        n_cluster_features: Number of features in the cluster.</span>
-<span class="sd">        rho_target: Target correlation value.</span>
+<span class="sd">        rho: Target correlation value.</span>
 <span class="sd">        structure: Correlation structure (&quot;equicorrelated&quot; or &quot;toeplitz&quot;).</span>
 <span class="sd">        metric: Correlation metric to evaluate (&quot;mean_offdiag&quot;, &quot;min_offdiag&quot;, &quot;max_offdiag&quot;, &quot;std_offdiag&quot;).</span>
 <span class="sd">        tolerance: Acceptable deviation from target (for &quot;tolerance&quot; mode).</span>
@@ -359,7 +359,7 @@
         <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Provide either `tolerance` or `threshold`.&quot;</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">n_cluster_features</span> <span class="o">&lt;</span> <span class="mi">2</span><span class="p">:</span>
         <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;n_cluster_features must be &gt;= 2 for correlation-based selection.&quot;</span><span class="p">)</span>
-    <span class="n">_validate_rho</span><span class="p">(</span><span class="n">structure</span><span class="p">,</span> <span class="n">n_cluster_features</span><span class="p">,</span> <span class="n">rho_target</span><span class="p">)</span>
+    <span class="n">_validate_rho</span><span class="p">(</span><span class="n">structure</span><span class="p">,</span> <span class="n">n_cluster_features</span><span class="p">,</span> <span class="n">rho</span><span class="p">)</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_ok</span><span class="p">(</span><span class="n">val</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">thr</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">op_</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
         <span class="k">return</span> <span class="p">(</span><span class="n">val</span> <span class="o">&gt;=</span> <span class="n">thr</span><span class="p">)</span> <span class="k">if</span> <span class="n">op_</span> <span class="o">==</span> <span class="s2">&quot;&gt;=&quot;</span> <span class="k">else</span> <span class="p">(</span><span class="n">val</span> <span class="o">&lt;=</span> <span class="n">thr</span><span class="p">)</span>
@@ -374,12 +374,12 @@
     <span class="n">seed</span> <span class="o">=</span> <span class="n">start_seed</span>
     <span class="k">for</span> <span class="n">try_idx</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">max_tries</span> <span class="o">+</span> <span class="mi">1</span><span class="p">):</span>
         <span class="n">rng</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">default_rng</span><span class="p">(</span><span class="n">seed</span><span class="p">)</span>
-        <span class="n">X</span> <span class="o">=</span> <span class="n">sample_cluster</span><span class="p">(</span><span class="n">n_samples</span><span class="p">,</span> <span class="n">n_cluster_features</span><span class="p">,</span> <span class="n">rng</span><span class="p">,</span> <span class="n">structure</span><span class="o">=</span><span class="n">structure</span><span class="p">,</span> <span class="n">rho</span><span class="o">=</span><span class="n">rho_target</span><span class="p">)</span>
+        <span class="n">X</span> <span class="o">=</span> <span class="n">sample_cluster</span><span class="p">(</span><span class="n">n_samples</span><span class="p">,</span> <span class="n">n_cluster_features</span><span class="p">,</span> <span class="n">rng</span><span class="p">,</span> <span class="n">structure</span><span class="o">=</span><span class="n">structure</span><span class="p">,</span> <span class="n">rho</span><span class="o">=</span><span class="n">rho</span><span class="p">)</span>
         <span class="n">C</span><span class="p">:</span> <span class="n">NDArray</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">corrcoef</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">rowvar</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">,</span> <span class="n">copy</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
 
         <span class="n">m</span> <span class="o">=</span> <span class="n">compute_correlation_metrics</span><span class="p">(</span><span class="n">C</span><span class="p">)</span>
         <span class="n">mean_off</span> <span class="o">=</span> <span class="n">m</span><span class="p">[</span><span class="s2">&quot;mean_offdiag&quot;</span><span class="p">]</span>
-        <span class="n">deviation</span> <span class="o">=</span> <span class="nb">abs</span><span class="p">(</span><span class="n">mean_off</span> <span class="o">-</span> <span class="n">rho_target</span><span class="p">)</span>
+        <span class="n">deviation</span> <span class="o">=</span> <span class="nb">abs</span><span class="p">(</span><span class="n">mean_off</span> <span class="o">-</span> <span class="n">rho</span><span class="p">)</span>
         <span class="n">metric_val</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">m</span><span class="p">[</span><span class="n">metric</span><span class="p">])</span>
 
         <span class="n">p_gt_n_warn</span> <span class="o">=</span> <span class="kc">False</span>
@@ -406,7 +406,7 @@
             <span class="s2">&quot;structure&quot;</span><span class="p">:</span> <span class="n">structure</span><span class="p">,</span>
             <span class="s2">&quot;n_samples&quot;</span><span class="p">:</span> <span class="n">n_samples</span><span class="p">,</span>
             <span class="s2">&quot;n_features&quot;</span><span class="p">:</span> <span class="n">n_cluster_features</span><span class="p">,</span>
-            <span class="s2">&quot;target&quot;</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="n">rho_target</span><span class="p">),</span>
+            <span class="s2">&quot;target&quot;</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="n">rho</span><span class="p">),</span>
             <span class="s2">&quot;metric&quot;</span><span class="p">:</span> <span class="n">metric</span><span class="p">,</span>
             <span class="s2">&quot;metric_value&quot;</span><span class="p">:</span> <span class="n">metric_val</span><span class="p">,</span>
             <span class="s2">&quot;deviation_offdiag&quot;</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="n">deviation</span><span class="p">),</span>
@@ -441,7 +441,7 @@
 
     <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span>
         <span class="sa">f</span><span class="s2">&quot;No seed satisfied the criterion within </span><span class="si">{</span><span class="n">max_tries</span><span class="si">}</span><span class="s2"> tries &quot;</span>
-        <span class="sa">f</span><span class="s2">&quot;(mode=</span><span class="si">{</span><span class="n">mode</span><span class="si">}</span><span class="s2">, metric=</span><span class="si">{</span><span class="n">metric</span><span class="si">}</span><span class="s2">, target=</span><span class="si">{</span><span class="n">rho_target</span><span class="si">}</span><span class="s2">, tolerance=</span><span class="si">{</span><span class="n">tolerance</span><span class="si">}</span><span class="s2">, &quot;</span>
+        <span class="sa">f</span><span class="s2">&quot;(mode=</span><span class="si">{</span><span class="n">mode</span><span class="si">}</span><span class="s2">, metric=</span><span class="si">{</span><span class="n">metric</span><span class="si">}</span><span class="s2">, target=</span><span class="si">{</span><span class="n">rho</span><span class="si">}</span><span class="s2">, tolerance=</span><span class="si">{</span><span class="n">tolerance</span><span class="si">}</span><span class="s2">, &quot;</span>
         <span class="sa">f</span><span class="s2">&quot;threshold=</span><span class="si">{</span><span class="n">threshold</span><span class="si">}</span><span class="s2">, op=</span><span class="si">{</span><span class="n">op</span><span class="si">}</span><span class="s2">).&quot;</span>
     <span class="p">)</span></div>
 
@@ -494,7 +494,7 @@
     <span class="n">seed</span><span class="p">,</span> <span class="n">meta</span> <span class="o">=</span> <span class="n">find_seed_for_correlation</span><span class="p">(</span>
         <span class="n">n_samples</span><span class="o">=</span><span class="n">n_samples</span><span class="p">,</span>
         <span class="n">n_cluster_features</span><span class="o">=</span><span class="n">cluster</span><span class="o">.</span><span class="n">n_cluster_features</span><span class="p">,</span>
-        <span class="n">rho_target</span><span class="o">=</span><span class="n">rho</span><span class="p">,</span>
+        <span class="n">rho</span><span class="o">=</span><span class="n">rho</span><span class="p">,</span>
         <span class="n">structure</span><span class="o">=</span><span class="n">structure</span><span class="p">,</span>
         <span class="n">metric</span><span class="o">=</span><span class="n">metric</span><span class="p">,</span>
         <span class="n">tolerance</span><span class="o">=</span><span class="n">tolerance</span><span class="p">,</span>
@@ -523,9 +523,9 @@
 <span class="c1"># Best-of-N</span>
 <span class="c1"># ============================================================================</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">find_best_seed_for_correlation</span><span class="p">(</span>
-    <span class="n">n_trials</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+    <span class="n">max_tries</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
     <span class="n">n_samples</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
-    <span class="n">n_features</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+    <span class="n">n_cluster_features</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
     <span class="n">rho</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
     <span class="n">structure</span><span class="p">:</span> <span class="n">CorrelationStructure</span> <span class="o">=</span> <span class="s2">&quot;equicorrelated&quot;</span><span class="p">,</span>
     <span class="o">*</span><span class="p">,</span>
@@ -534,9 +534,9 @@
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Find the seed that yields the closest empirical correlation to the target over n_trials.</span>
 
 <span class="sd">    Args:</span>
-<span class="sd">        n_trials: Number of random seeds to try.</span>
+<span class="sd">        max_tries: Number of random seeds to try.</span>
 <span class="sd">        n_samples: Number of samples to generate.</span>
-<span class="sd">        n_features: Number of features in the cluster.</span>
+<span class="sd">        n_cluster_features: Number of features in the cluster.</span>
 <span class="sd">        rho: Target correlation value.</span>
 <span class="sd">        structure: Correlation structure (&quot;equicorrelated&quot; or &quot;toeplitz&quot;).</span>
 <span class="sd">        start_seed: Seed to start searching from.</span>
@@ -544,14 +544,14 @@
 <span class="sd">    Returns:</span>
 <span class="sd">        Tuple of (best_seed, metrics dictionary).</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">_validate_rho</span><span class="p">(</span><span class="n">structure</span><span class="p">,</span> <span class="n">n_features</span><span class="p">,</span> <span class="n">rho</span><span class="p">)</span>
+    <span class="n">_validate_rho</span><span class="p">(</span><span class="n">structure</span><span class="p">,</span> <span class="n">n_cluster_features</span><span class="p">,</span> <span class="n">rho</span><span class="p">)</span>
     <span class="n">best_seed</span> <span class="o">=</span> <span class="n">start_seed</span>
     <span class="n">best_delta</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="s2">&quot;inf&quot;</span><span class="p">)</span>
     <span class="n">best_metrics</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">float</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
 
-    <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">start_seed</span><span class="p">,</span> <span class="n">start_seed</span> <span class="o">+</span> <span class="n">n_trials</span><span class="p">):</span>
+    <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">start_seed</span><span class="p">,</span> <span class="n">start_seed</span> <span class="o">+</span> <span class="n">max_tries</span><span class="p">):</span>
         <span class="n">rng</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">default_rng</span><span class="p">(</span><span class="n">s</span><span class="p">)</span>
-        <span class="n">X</span> <span class="o">=</span> <span class="n">sample_cluster</span><span class="p">(</span><span class="n">n_samples</span><span class="p">,</span> <span class="n">n_features</span><span class="p">,</span> <span class="n">rng</span><span class="p">,</span> <span class="n">structure</span><span class="o">=</span><span class="n">structure</span><span class="p">,</span> <span class="n">rho</span><span class="o">=</span><span class="n">rho</span><span class="p">)</span>
+        <span class="n">X</span> <span class="o">=</span> <span class="n">sample_cluster</span><span class="p">(</span><span class="n">n_samples</span><span class="p">,</span> <span class="n">n_cluster_features</span><span class="p">,</span> <span class="n">rng</span><span class="p">,</span> <span class="n">structure</span><span class="o">=</span><span class="n">structure</span><span class="p">,</span> <span class="n">rho</span><span class="o">=</span><span class="n">rho</span><span class="p">)</span>
         <span class="n">C</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">corrcoef</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">rowvar</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
         <span class="n">m</span> <span class="o">=</span> <span class="n">compute_correlation_metrics</span><span class="p">(</span><span class="n">C</span><span class="p">)</span>
         <span class="n">delta</span> <span class="o">=</span> <span class="nb">abs</span><span class="p">(</span><span class="n">m</span><span class="p">[</span><span class="s2">&quot;mean_offdiag&quot;</span><span class="p">]</span> <span class="o">-</span> <span class="n">rho</span><span class="p">)</span>
