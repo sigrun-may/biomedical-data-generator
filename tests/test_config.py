@@ -52,7 +52,10 @@ def test_breakdown_matches_required_n_features():
         n_informative=3,
         n_pseudo=1,
         n_noise=2,
-        corr_clusters=[CorrClusterConfig(n_cluster_features=4, rho=0.6), CorrClusterConfig(n_cluster_features=3, rho=0.5)],
+        corr_clusters=[
+            CorrClusterConfig(n_cluster_features=4, rho=0.6),
+            CorrClusterConfig(n_cluster_features=3, rho=0.5),
+        ],
     )
     b = cfg.breakdown()
     # proxies = (4-1) + (3-1) = 5
