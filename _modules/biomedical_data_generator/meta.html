@@ -52,7 +52,6 @@
 <li class="toctree-l1"><a class="reference internal" href="../../_autosummary/biomedical_data_generator.generate_dataset.html">biomedical_data_generator.generate_dataset</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../_autosummary/biomedical_data_generator.find_seed_for_correlation.html">biomedical_data_generator.find_seed_for_correlation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../_autosummary/biomedical_data_generator.DatasetConfig.html">biomedical_data_generator.DatasetConfig</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../_autosummary/biomedical_data_generator.CorrCluster.html">biomedical_data_generator.CorrCluster</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../_autosummary/biomedical_data_generator.DatasetMeta.html">biomedical_data_generator.DatasetMeta</a></li>
 </ul>
 
@@ -88,6 +87,7 @@
 <span class="c1"># which is available at https://opensource.org/licenses/MIT</span>
 
 <span class="sd">&quot;&quot;&quot;Metadata about the generated dataset.&quot;&quot;&quot;</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">annotations</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">dataclasses</span><span class="w"> </span><span class="kn">import</span> <span class="n">asdict</span><span class="p">,</span> <span class="n">dataclass</span><span class="p">,</span> <span class="n">field</span>
 
@@ -98,13 +98,26 @@
 
 <span class="nd">@dataclass</span>
 <span class="k">class</span><span class="w"> </span><span class="nc">BatchMeta</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Metadata about batch effects.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Metadata about applied batch effects.</span>
 
-    <span class="n">batch_ids</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span>  <span class="c1"># (n_samples,)</span>
-    <span class="n">batch_offsets</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span>  <span class="c1"># (n_batches,)</span>
-    <span class="n">batches_majority_class</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">|</span> <span class="kc">None</span>  <span class="c1"># (n_batches,) or None</span>
-    <span class="n">scope</span><span class="p">:</span> <span class="nb">str</span>
-    <span class="n">sd</span><span class="p">:</span> <span class="nb">float</span>
+<span class="sd">    Attributes:</span>
+<span class="sd">        batch_assignments: Array of shape (n_samples,) with per-sample batch ids.</span>
+<span class="sd">        batch_intercepts: Array of shape (n_batches,) with per-batch intercepts added</span>
+<span class="sd">            to all features (same shift for all features in a batch).</span>
+<span class="sd">        effect_type: Type of batch effect applied (&quot;intercept&quot;, ...).</span>
+<span class="sd">        effect_strength: Strength of the batch effect (float).</span>
+<span class="sd">        confounding_strength: Strength of confounding with the target (float).</span>
+<span class="sd">        proportions: Proportions of samples per batch (if specified).</span>
+<span class="sd">        affected_feature_indices: List of feature indices affected by the batch effect</span>
+<span class="sd">            (if not all features are affected).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">batch_assignments</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span>  <span class="c1"># (n_samples,)</span>
+    <span class="n">batch_intercepts</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span>  <span class="c1"># (n_batches,)</span>
+    <span class="n">effect_type</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">effect_strength</span><span class="p">:</span> <span class="nb">float</span>
+    <span class="n">confounding_strength</span><span class="p">:</span> <span class="nb">float</span>
+    <span class="n">proportions</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">affected_feature_indices</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
 
 
 <span class="c1"># =========================</span>
@@ -154,6 +167,89 @@
         <span class="k">return</span> <span class="n">asdict</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span></div>
 </div>
 
+
+
+<span class="c1"># # =========================</span>
+<span class="c1"># # Feature block structure</span>
+<span class="c1"># # =========================</span>
+<span class="c1"># @dataclass</span>
+<span class="c1"># class FeatureBlock:</span>
+<span class="c1">#     &quot;&quot;&quot;Container for a feature block with metadata.</span>
+<span class="c1">#</span>
+<span class="c1">#     A feature block represents a logically grouped set of features with</span>
+<span class="c1">#     shared properties (role, correlation structure, etc.). Blocks are the building units of the dataset.</span>
+<span class="c1">#     They are generated independently and later assembled into the final dataset.</span>
+<span class="c1">#     The generator assembles the final dataset by concatenating blocks.</span>
+<span class="c1">#</span>
+<span class="c1">#     Attributes:</span>
+<span class="c1">#         block_type: Type of block (&quot;cluster&quot;, &quot;informative&quot;, &quot;pseudo&quot;, &quot;noise&quot;).</span>
+<span class="c1">#         data: Feature matrix (n_samples, n_features_in_block).</span>
+<span class="c1">#         names: Feature names for this block.</span>
+<span class="c1">#         indices: Global column indices in final dataset.</span>
+<span class="c1">#         role: Feature role (&quot;informative&quot;, &quot;pseudo&quot;, &quot;noise&quot;, &#39;cluster&#39;).</span>
+<span class="c1">#         cluster_id: Optional cluster identifier for correlated blocks.</span>
+<span class="c1">#         anchor_idx: Optional anchor column index (global index in dataset).</span>
+<span class="c1">#         anchor_contrib: Optional (beta, target_class) for informative anchors.</span>
+<span class="c1">#     &quot;&quot;&quot;</span>
+<span class="c1">#</span>
+<span class="c1">#     block_type: str  # &quot;cluster&quot;, &quot;informative&quot;, &quot;pseudo&quot;, &quot;noise&quot;</span>
+<span class="c1">#     data: np.ndarray  # (n_samples, n_features)</span>
+<span class="c1">#     names: list[str]</span>
+<span class="c1">#     indices: list[int]  # global column indices</span>
+<span class="c1">#     role: str  # &quot;informative&quot;, &quot;pseudo&quot;, &quot;noise&quot;</span>
+<span class="c1">#     cluster_id: int | None = None</span>
+<span class="c1">#     anchor_col: int | None = None</span>
+<span class="c1">#</span>
+<span class="c1">#     @property</span>
+<span class="c1">#     def n_features(self) -&gt; int:</span>
+<span class="c1">#         &quot;&quot;&quot;Number of features in this block.&quot;&quot;&quot;</span>
+<span class="c1">#         return len(self.names)</span>
+<span class="c1">#</span>
+<span class="c1">#</span>
+<span class="c1"># @dataclass</span>
+<span class="c1"># class FeatureBlock:</span>
+<span class="c1">#     &quot;&quot;&quot;Container for a feature block with metadata.</span>
+<span class="c1">#</span>
+<span class="c1">#     A feature block represents a logically grouped set of features with</span>
+<span class="c1">#     shared properties (role, correlation structure, etc.). Blocks are</span>
+<span class="c1">#     generated independently and later assembled into the final dataset.</span>
+<span class="c1">#</span>
+<span class="c1">#     Attributes:</span>
+<span class="c1">#         data: Feature matrix (n_samples, n_features_in_block).</span>
+<span class="c1">#         role: Feature role (&#39;informative&#39;, &#39;pseudo&#39;, &#39;noise&#39;, &#39;cluster&#39;).</span>
+<span class="c1">#         indices: Global column indices in final dataset.</span>
+<span class="c1">#         names: Feature names prefix for this block.</span>
+<span class="c1">#         cluster_id: Optional cluster identifier for correlated blocks.</span>
+<span class="c1">#         anchor_idx: Optional anchor column index (global index in dataset).</span>
+<span class="c1">#         anchor_contrib: Optional (beta, target_class) for informative anchors.</span>
+<span class="c1">#</span>
+<span class="c1">#     Examples:</span>
+<span class="c1">#         &gt;&gt;&gt; # Informative block with 3 features</span>
+<span class="c1">#         &gt;&gt;&gt; block = FeatureBlock(</span>
+<span class="c1">#         ...     data=np.random.randn(100, 3),</span>
+<span class="c1">#         ...     role=&#39;informative&#39;,</span>
+<span class="c1">#         ...     indices=[0, 1, 2],</span>
+<span class="c1">#         ...     names=[&#39;i1&#39;, &#39;i2&#39;, &#39;i3&#39;]</span>
+<span class="c1">#         ... )</span>
+<span class="c1">#     &quot;&quot;&quot;</span>
+<span class="c1">#</span>
+<span class="c1">#     data: NDArray[np.float64]</span>
+<span class="c1">#     role: Literal[&quot;informative&quot;, &quot;pseudo&quot;, &quot;noise&quot;, &quot;cluster&quot;]</span>
+<span class="c1">#     indices: list[int]</span>
+<span class="c1">#     names: list[str]</span>
+<span class="c1">#     cluster_id: int | None = None</span>
+<span class="c1">#     anchor_idx: int | None = None</span>
+<span class="c1">#     anchor_contrib: tuple[float, int] | None = None</span>
+<span class="c1">#</span>
+<span class="c1">#     @property</span>
+<span class="c1">#     def n_features(self) -&gt; int:</span>
+<span class="c1">#         &quot;&quot;&quot;Number of features in this block.&quot;&quot;&quot;</span>
+<span class="c1">#         return self.data.shape[1]</span>
+<span class="c1">#</span>
+<span class="c1">#     @property</span>
+<span class="c1">#     def n_samples(self) -&gt; int:</span>
+<span class="c1">#         &quot;&quot;&quot;Number of samples in this block.&quot;&quot;&quot;</span>
+<span class="c1">#         return self.data.shape[0]</span>
 </pre></div>
 
            </div>
