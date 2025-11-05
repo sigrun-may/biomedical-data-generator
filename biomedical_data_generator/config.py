@@ -12,6 +12,7 @@ from collections.abc import Iterable, Mapping, MutableMapping
 from enum import Enum
 from typing import Any, Literal, TypeAlias, cast
 
+import numpy as np
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 RawConfig: TypeAlias = Mapping[str, Any]
@@ -88,20 +89,52 @@ class BatchConfig(BaseModel):
 
     Args:
         n_batches (int): Number of batches (0 or 1 means no batch effect).
-        sigma (float): Standard deviation of the batch intercepts.
-        confounding (float): Degree of confounding with class labels, in [-1,
-            1]. 0 means no confounding, 1 means perfect confounding.
-        cols (list[int] | None): 0-based column indices to which batch effects are
-            applied. If None, batch effects are applied to all features.
+        effect_strength (float): Standard deviation of the batch intercepts.
+        effect_type (Literal["additive", "multiplicative"]): Type of batch effect.
+        confounding_with_class (float): Degree of confounding with class labels, in [0,1].
+            0.5 means no confounding, 1 means perfect confounding.
+        affected_features (list[int] | Literal["all"]): 0-based column indices to which batch effects are
+            applied. "all" means all features are affected.
+        proportions (list[float] | None): Optional proportions for batch sizes. Must sum to 1.
+        random_state (int | None): Random seed for reproducibility.
+
+    Examples:
+        >>> # Simple random batches
+        >>> BatchConfig(n_batches=3, effect_strength=0.5)
+
+        >>> # Confounded batches (recruitment bias)
+        >>> BatchConfig(
+        ...     n_batches=2,
+        ...     effect_strength=0.8,
+        ...     confounding_with_class=0.9
+        ... )
+
+        >>> # Unbalanced batches
+        >>> BatchConfig(
+        ...     n_batches=3,
+        ...     proportions=[0.5, 0.3, 0.2],
+        ...     effect_strength=0.5
+        ... )
     """
+    n_batches: int = Field(default=0, ge=0) # 0 or 1 => no batch effect
+    effect_strength: float = Field(default=0.5, gt=0) # std of batch intercepts
+    effect_type: Literal["additive", "multiplicative"] = "additive"
+    confounding_with_class: float = Field(default=0.0, ge=0.0, le=1.0) # in [0,1]
+    affected_features: list[int] | Literal["all"] = "all" # 0-based column indices; "all" => all
+    proportions: list[float] | None = None # optional proportions for batches
+    random_state: int | None = None
 
-    n_batches: int = 0  # 0 oder 1 => kein Batch-Effekt
-    sigma: float = 0.5  # Std der Intercepts
-    confounding: float = 0.0  # in [-1, 1]
-    cols: list[int] | None = None  # 0-based column indices; None => all
+    @field_validator('proportions')
+    @classmethod
+    def validate_proportions(cls, v):
+        """Ensure proportions sum to ~1."""
+        if v is not None:
+            if not np.isclose(sum(v), 1.0, atol=1e-6):
+                raise ValueError(f"proportions must sum to 1, got {sum(v)}")
+        return v
 
 
-class CorrCluster(BaseModel):
+class CorrClusterConfig(BaseModel):
     """Correlated feature cluster simulating coordinated biomarker patterns.
 
     A cluster represents a group of biomarkers that move together, such as
@@ -143,7 +176,7 @@ class CorrCluster(BaseModel):
     --------
         Strong inflammatory pathway in diseased patients:
 
-        >>> inflammation = CorrCluster(
+        >>> inflammation = CorrClusterConfig(
         ...     n_cluster_features=5,
         ...     rho=0.8,
         ...     anchor_role="informative",
@@ -154,7 +187,7 @@ class CorrCluster(BaseModel):
 
         Confounding variables (e.g., age-related markers):
 
-        >>> age_confounders = CorrCluster(
+        >>> age_confounders = CorrClusterConfig(
         ...     n_cluster_features=3,
         ...     rho=0.6,
         ...     anchor_role="pseudo",
@@ -163,7 +196,7 @@ class CorrCluster(BaseModel):
 
         Weak disease signal with custom effect size:
 
-        >>> weak_signal = CorrCluster(
+        >>> weak_signal = CorrClusterConfig(
         ...     n_cluster_features=4,
         ...     rho=0.5,
         ...     anchor_role="informative",
@@ -368,15 +401,15 @@ class CorrCluster(BaseModel):
 
         Examples:
         --------
-            >>> c = CorrCluster(n_cluster_features=3, rho=0.7, anchor_effect_size="large")
+            >>> c = CorrClusterConfig(n_cluster_features=3, rho=0.7, anchor_effect_size="large")
             >>> c.resolve_anchor_effect_size()
             1.5
 
-            >>> c = CorrCluster(n_cluster_features=3, rho=0.7, anchor_effect_size=0.8)
+            >>> c = CorrClusterConfig(n_cluster_features=3, rho=0.7, anchor_effect_size=0.8)
             >>> c.resolve_anchor_effect_size()
             0.8
 
-            >>> c = CorrCluster(n_cluster_features=3, rho=0.7)  # default
+            >>> c = CorrClusterConfig(n_cluster_features=3, rho=0.7)  # default
             >>> c.resolve_anchor_effect_size()
             1.0
         """
@@ -514,7 +547,7 @@ class DatasetConfig(BaseModel):
     prefix_corr: str = "corr"
 
     # structure
-    corr_clusters: list[CorrCluster] = Field(default_factory=list)
+    corr_clusters: list[CorrClusterConfig] = Field(default_factory=list)
     corr_between: float = 0.0  # correlation between different clusters/roles (0 = independent)
     anchor_mode: AnchorMode = "equalized"
     effect_size: Literal["small", "medium", "large"] = "medium"  # controls default anchor_effect_size
@@ -545,7 +578,7 @@ class DatasetConfig(BaseModel):
             return []
         out: list[Mapping[str, Any]] = []
         for cc in clusters:
-            if isinstance(cc, CorrCluster):
+            if isinstance(cc, CorrClusterConfig):
                 out.append(cc.model_dump())
             elif isinstance(cc, Mapping):
                 out.append(cc)
@@ -722,10 +755,10 @@ class DatasetConfig(BaseModel):
         raw = kwargs.get("corr_clusters") or []
         norm_clusters = []
         for c in raw:
-            if isinstance(c, CorrCluster):
+            if isinstance(c, CorrClusterConfig):
                 norm_clusters.append(c)
             else:
-                norm_clusters.append(CorrCluster.model_validate(c))
+                norm_clusters.append(CorrClusterConfig.model_validate(c))
         kwargs["corr_clusters"] = norm_clusters
 
         # Compute required n_features
@@ -794,7 +827,7 @@ class DatasetConfig(BaseModel):
         return sum(1 for c in (self.corr_clusters or []) if c.anchor_role == "informative")
 
     @staticmethod
-    def _proxies_from_clusters(clusters: Iterable[CorrCluster] | None) -> int:
+    def _proxies_from_clusters(clusters: Iterable[CorrClusterConfig] | None) -> int:
         """Compute the number of additional features contributed by clusters beyond their anchor.
 
         Number of *additional* features contributed by clusters beyond their anchor. For a cluster of size k,
