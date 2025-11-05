@@ -101,7 +101,7 @@ ______________________________________________________________________
 ## Correlated clusters and roles
 
 ```python
-from biomedical_data_generator import DatasetConfig, CorrCluster, generate_dataset
+from biomedical_data_generator import DatasetConfig, CorrClusterConfig, generate_dataset
 
 cfg = DatasetConfig(
     n_samples=200,
@@ -112,14 +112,14 @@ cfg = DatasetConfig(
     class_counts={0: 50, 1: 80, 2: 70},  # Required: exact class counts
     class_sep=1.2,
     corr_clusters=[
-        CorrCluster(
+        CorrClusterConfig(
             n_cluster_features=3,
             rho=0.7,
             structure="equicorrelated",
             anchor_role="informative",
             anchor_effect_size=1.0
         ),
-        CorrCluster(
+        CorrClusterConfig(
             n_cluster_features=2,
             rho=0.6,
             structure="toeplitz",
@@ -162,7 +162,7 @@ ______________________________________________________________________
 Use `class_rho` to create **different correlation patterns per class**. This is useful for simulating biomarkers that only correlate in diseased patients:
 
 ```python
-from biomedical_data_generator import DatasetConfig, CorrCluster, generate_dataset
+from biomedical_data_generator import DatasetConfig, CorrClusterConfig, generate_dataset
 
 cfg = DatasetConfig(
     n_samples=200,
@@ -173,11 +173,11 @@ cfg = DatasetConfig(
     class_counts={0: 100, 1: 100},  # 0=healthy, 1=diseased
     class_sep=1.5,
     corr_clusters=[
-        CorrCluster(
+        CorrClusterConfig(
             n_cluster_features=4,
-            rho=0.2,                    # baseline correlation (for class 0)
-            class_rho={1: 0.9},         # strong correlation in class 1 (diseased)
-            rho_baseline=0.2,           # explicitly set baseline
+            rho=0.2,  # baseline correlation (for class 0)
+            class_rho={1: 0.9},  # strong correlation in class 1 (diseased)
+            rho_baseline=0.2,  # explicitly set baseline
             structure="equicorrelated",
             anchor_role="informative",
             anchor_effect_size=1.2
@@ -408,7 +408,7 @@ ______________________________________________________________________
 
 ```python
 from biomedical_data_generator import (
-    DatasetConfig, CorrCluster, NoiseDistribution,
+    DatasetConfig, CorrClusterConfig, NoiseDistribution,
     generate_dataset, sample_cluster,
     find_seed_for_correlation, DatasetMeta,
 )
