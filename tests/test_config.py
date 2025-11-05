@@ -10,7 +10,7 @@ import pytest
 
 
 def test_n_features_too_small_raises():
-    from biomedical_data_generator import CorrCluster, DatasetConfig
+    from biomedical_data_generator import CorrClusterConfig, DatasetConfig
 
     with pytest.raises(ValueError):
         DatasetConfig(
@@ -18,20 +18,20 @@ def test_n_features_too_small_raises():
             n_informative=2,
             n_pseudo=0,
             n_noise=0,
-            corr_clusters=[CorrCluster(n_cluster_features=5, rho=0.7)],
+            corr_clusters=[CorrClusterConfig(n_cluster_features=5, rho=0.7)],
             n_features=3,  # too small: needs 2 + (5-1) = 6
         )
 
 
 def test_relaxed_autofixes_n_features():
-    from biomedical_data_generator import CorrCluster, DatasetConfig
+    from biomedical_data_generator import CorrClusterConfig, DatasetConfig
 
     cfg = DatasetConfig.relaxed(
         n_samples=10,
         n_informative=2,
         n_pseudo=0,
         n_noise=0,
-        corr_clusters=[CorrCluster(n_cluster_features=5, rho=0.7)],
+        corr_clusters=[CorrClusterConfig(n_cluster_features=5, rho=0.7)],
         n_features=3,  # will be raised to 6
     )
     assert cfg.n_features == 6
@@ -45,14 +45,14 @@ def test_init_has_no_warnings(recwarn):
 
 
 def test_breakdown_matches_required_n_features():
-    from biomedical_data_generator import CorrCluster, DatasetConfig
+    from biomedical_data_generator import CorrClusterConfig, DatasetConfig
 
     cfg = DatasetConfig.relaxed(
         n_samples=1,
         n_informative=3,
         n_pseudo=1,
         n_noise=2,
-        corr_clusters=[CorrCluster(n_cluster_features=4, rho=0.6), CorrCluster(n_cluster_features=3, rho=0.5)],
+        corr_clusters=[CorrClusterConfig(n_cluster_features=4, rho=0.6), CorrClusterConfig(n_cluster_features=3, rho=0.5)],
     )
     b = cfg.breakdown()
     # proxies = (4-1) + (3-1) = 5
@@ -62,14 +62,14 @@ def test_breakdown_matches_required_n_features():
 
 
 def test_corr_clusters_accept_dicts_and_models():
-    from biomedical_data_generator import CorrCluster, DatasetConfig
+    from biomedical_data_generator import CorrClusterConfig, DatasetConfig
 
     cfg = DatasetConfig.relaxed(
         n_samples=1,
         n_informative=1,
         corr_clusters=[
             {"n_cluster_features": 3, "rho": 0.7, "anchor_role": "informative"},
-            CorrCluster(n_cluster_features=2, rho=0.5),
+            CorrClusterConfig(n_cluster_features=2, rho=0.5),
         ],
     )
     assert cfg.n_features == 1 + (3 - 1) + (2 - 1) == 4

@@ -9,7 +9,7 @@
 import numpy as np
 import pytest
 
-from biomedical_data_generator import CorrCluster, DatasetConfig
+from biomedical_data_generator import CorrClusterConfig, DatasetConfig
 from biomedical_data_generator.generator import generate_dataset
 
 
@@ -21,7 +21,7 @@ def test_shapes_and_roles_with_cluster_proxies():
         n_pseudo=0,
         n_noise=1,
         corr_clusters=[
-            CorrCluster(
+            CorrClusterConfig(
                 n_cluster_features=4,
                 rho=0.7,
                 structure="equicorrelated",
@@ -50,7 +50,7 @@ def test_class_counts_exact_match():
         n_pseudo=0,
         n_noise=0,
         corr_clusters=[
-            CorrCluster(
+            CorrClusterConfig(
                 n_cluster_features=3, rho=0.6, structure="toeplitz", anchor_role="informative", anchor_effect_size=1.0
             )
         ],

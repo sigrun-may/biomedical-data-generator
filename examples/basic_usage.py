@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import pandas as pd
 
-from biomedical_data_generator import CorrCluster, DatasetConfig, generate_dataset
+from biomedical_data_generator import CorrClusterConfig, DatasetConfig, generate_dataset
 
 
 def main() -> None:
@@ -25,7 +25,7 @@ def main() -> None:
         effect_size="medium",
         corr_between=0.1,
         corr_clusters=[
-            CorrCluster(
+            CorrClusterConfig(
                 n_cluster_features=3,
                 rho=0.7,
                 structure="equicorrelated",

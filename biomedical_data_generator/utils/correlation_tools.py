@@ -22,7 +22,7 @@ import pandas as pd
 from numpy.typing import NDArray
 
 # Runtime dependencies
-from biomedical_data_generator.config import CorrCluster
+from biomedical_data_generator.config import CorrClusterConfig
 from biomedical_data_generator.features.correlated import sample_cluster
 
 # Type alias kept local to avoid circular imports
@@ -365,7 +365,7 @@ def find_seed_for_correlation(
 # Convenience wrapper (CorrCluster)
 # ============================================================================
 def find_seed_for_correlation_from_config(
-    cluster: CorrCluster,
+    cluster: CorrClusterConfig,
     *,
     n_samples: int,
     class_idx: int | None = None,

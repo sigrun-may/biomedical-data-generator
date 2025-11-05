@@ -9,7 +9,7 @@
 import numpy as np
 import pytest
 
-from biomedical_data_generator import CorrCluster, DatasetConfig, generate_dataset
+from biomedical_data_generator import CorrClusterConfig, DatasetConfig, generate_dataset
 
 
 def test_feature_names_match_dataframe_columns():
@@ -50,7 +50,7 @@ def test_anchor_improves_classification_accuracy():
         n_pseudo=1,
         n_noise=3,
         corr_clusters=[
-            CorrCluster(
+            CorrClusterConfig(
                 n_cluster_features=3,
                 rho=0.7,
                 structure="equicorrelated",
@@ -73,7 +73,7 @@ def test_anchor_improves_classification_accuracy():
         n_pseudo=1,
         n_noise=3,
         corr_clusters=[
-            CorrCluster(
+            CorrClusterConfig(
                 n_cluster_features=3,
                 rho=0.7,
                 structure="equicorrelated",
@@ -119,7 +119,7 @@ def test_class_specific_correlation_in_clusters():
         n_pseudo=0,
         n_noise=0,
         corr_clusters=[
-            CorrCluster(
+            CorrClusterConfig(
                 n_cluster_features=4,
                 structure="equicorrelated",
                 anchor_role="pseudo",

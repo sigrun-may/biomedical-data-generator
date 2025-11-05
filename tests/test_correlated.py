@@ -296,9 +296,9 @@ def test_find_seed_for_correlation_p_gt_n_warning():
 
 def test_find_seed_for_correlation_from_cluster_basic():
     """Cluster wrapper correctly resolves rho and structure."""
-    from biomedical_data_generator import CorrCluster
+    from biomedical_data_generator import CorrClusterConfig
 
-    cluster = CorrCluster(
+    cluster = CorrClusterConfig(
         n_cluster_features=5,
         rho=0.7,
         structure="equicorrelated",
@@ -322,9 +322,9 @@ def test_find_seed_for_correlation_from_cluster_basic():
 
 def test_find_seed_for_correlation_from_cluster_class_specific():
     """Cluster wrapper handles class-specific rho."""
-    from biomedical_data_generator import CorrCluster
+    from biomedical_data_generator import CorrClusterConfig
 
-    cluster = CorrCluster(
+    cluster = CorrClusterConfig(
         n_cluster_features=4,
         rho=0.2,  # baseline
         class_rho={1: 0.9},  # high correlation in class 1
