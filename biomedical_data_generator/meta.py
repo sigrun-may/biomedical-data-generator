@@ -29,6 +29,7 @@ class BatchMeta:
         affected_feature_indices: List of feature indices affected by the batch effect
             (if not all features are affected).
     """
+
     batch_assignments: np.ndarray  # (n_samples,)
     batch_intercepts: np.ndarray  # (n_batches,)
     effect_type: str

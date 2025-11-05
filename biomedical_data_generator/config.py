@@ -116,15 +116,16 @@ class BatchConfig(BaseModel):
         ...     effect_strength=0.5
         ... )
     """
-    n_batches: int = Field(default=0, ge=0) # 0 or 1 => no batch effect
-    effect_strength: float = Field(default=0.5, gt=0) # std of batch intercepts
+
+    n_batches: int = Field(default=0, ge=0)  # 0 or 1 => no batch effect
+    effect_strength: float = Field(default=0.5, gt=0)  # std of batch intercepts
     effect_type: Literal["additive", "multiplicative"] = "additive"
-    confounding_with_class: float = Field(default=0.0, ge=0.0, le=1.0) # in [0,1]
-    affected_features: list[int] | Literal["all"] = "all" # 0-based column indices; "all" => all
-    proportions: list[float] | None = None # optional proportions for batches
+    confounding_with_class: float = Field(default=0.0, ge=0.0, le=1.0)  # in [0,1]
+    affected_features: list[int] | Literal["all"] = "all"  # 0-based column indices; "all" => all
+    proportions: list[float] | None = None  # optional proportions for batches
     random_state: int | None = None
 
-    @field_validator('proportions')
+    @field_validator("proportions")
     @classmethod
     def validate_proportions(cls, v):
         """Ensure proportions sum to ~1."""
