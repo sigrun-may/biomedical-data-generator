@@ -117,7 +117,8 @@ def _confounded_batch_assignment(
     Strategy:
     - For each class, preferentially assign to certain batches
     - Higher confounding_strength = stronger preference
-    - Ensures realistic overlap (not perfect separation)
+    - Uses redistribution: probability mass is moved from other batches to preferred batch
+    - At strength=1.0: perfect confounding (all samples in preferred batch)
     """
     n_samples = len(class_labels)
     n_classes = int(np.max(class_labels)) + 1
@@ -130,24 +131,34 @@ def _confounded_batch_assignment(
         proportions_arr = proportions_arr / proportions_arr.sum()
         base_probs = np.tile(proportions_arr, (n_classes, 1))
 
-    # Add confounding: boost certain class-batch combinations
+    # Apply confounding via redistribution
     confounded_probs = base_probs.copy()
 
-    if n_batches >= n_classes:
-        # Assign each class a preferred batch
-        for cls in range(n_classes):
-            preferred_batch = cls % n_batches
-            boost = confounding_strength * (1.0 - base_probs[cls, preferred_batch])
-            confounded_probs[cls, preferred_batch] += boost
-    else:
-        # More classes than batches: assign multiple classes per batch
-        for cls in range(n_classes):
-            preferred_batch = cls % n_batches
-            boost = confounding_strength * (1.0 - base_probs[cls, preferred_batch])
-            confounded_probs[cls, preferred_batch] += boost
+    for cls in range(n_classes):
+        preferred_batch = cls % n_batches
+        base_pref = base_probs[cls, preferred_batch]
 
-    # Normalize to probabilities
-    confounded_probs = confounded_probs / confounded_probs.sum(axis=1, keepdims=True)
+        # How much probability mass to add to preferred batch
+        boost = confounding_strength * (1.0 - base_pref)
+
+        # How much to subtract from each other batch (redistribute)
+        reduction_per_batch = boost / (n_batches - 1)
+
+        # Apply changes
+        confounded_probs[cls, preferred_batch] += boost
+
+        # Subtract from all other batches
+        for batch_id in range(n_batches):
+            if batch_id != preferred_batch:
+                confounded_probs[cls, batch_id] -= reduction_per_batch
+
+        # Clip to ensure non-negative (handle floating point precision)
+        confounded_probs[cls] = np.clip(confounded_probs[cls], 0.0, 1.0)
+
+        # Renormalize to exactly 1.0 (handle any clipping effects)
+        confounded_probs[cls] = confounded_probs[cls] / confounded_probs[cls].sum()
+
+    # Probabilities now sum to 1.0 and are all non-negative
 
     # Assign batches per class
     batch_assignments = np.zeros(n_samples, dtype=int)
