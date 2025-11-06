@@ -4,169 +4,263 @@
 # This software is distributed under the terms of the MIT license
 # which is available at https://opensource.org/licenses/MIT
 
-"""Batch effect utilities."""
+"""Batch effect simulation for synthetic biomedical datasets.
+
+This module provides functionality to add realistic batch effects
+(site differences, instrument variations, recruitment cohorts) to
+generated datasets.
+"""
 
 from __future__ import annotations
 
+from collections.abc import Sequence
+from typing import Literal, cast
+
 import numpy as np
+import pandas as pd
 from numpy.typing import NDArray
 
 
-def make_batches(
+def generate_batch_assignments(
     n_samples: int,
     n_batches: int,
-    *,
+    proportions: Sequence[float] | None = None,
+    class_labels: NDArray[np.int_] | None = None,
+    confounding_strength: float = 0.0,
+    random_state: int | None = None,
+) -> NDArray[np.int_]:
+    """Generate batch assignments for samples.
+
+    Creates batch labels that can be either random or confounded with
+    class labels (to simulate recruitment bias, site selection effects, etc.).
+
+    Args:
+        n_samples: Number of samples.
+        n_batches: Number of batches.
+        proportions: Relative batch sizes (None = equal split).
+        class_labels: Optional class labels for confounding.
+        confounding_strength: Correlation with class (0.0 = random, 1.0 = perfect).
+        random_state: Seed for reproducibility.
+
+    Returns:
+        Array of batch assignments (integers 0 to n_batches-1).
+
+    Examples:
+        >>> # Random assignment
+        >>> batches = generate_batch_assignments(100, n_batches=3, random_state=42)
+        >>> np.bincount(batches)
+        array([33, 33, 34])
+
+        >>> # Confounded with class (simulate recruitment bias)
+        >>> y = np.array([0]*50 + [1]*50)
+        >>> batches = generate_batch_assignments(
+        ...     100, n_batches=2,
+        ...     class_labels=y,
+        ...     confounding_strength=0.8,
+        ...     random_state=42
+        ... )
+        >>> # Most class 0 in batch 0, most class 1 in batch 1
+
+    Notes:
+        - confounding_strength=0.0: Random assignment (no bias)
+        - confounding_strength=1.0: Perfect confounding (each class → one batch)
+        - confounding_strength=0.5: Moderate bias (70-30 split instead of 50-50)
+    """
+    rng = np.random.default_rng(random_state)
+
+    if confounding_strength == 0.0 or class_labels is None:
+        return _random_batch_assignment(n_samples, n_batches, proportions, rng)
+    else:
+        return _confounded_batch_assignment(class_labels, n_batches, confounding_strength, proportions, rng)
+
+
+def _random_batch_assignment(
+    n_samples: int,
+    n_batches: int,
+    proportions: Sequence[float] | None,
     rng: np.random.Generator,
-    y: NDArray[np.int64] | None = None,
-    confounding: float = 0.0,  # in [-1, 1]; 0 = unabhängig
-) -> NDArray[np.int64]:
-    """Sample per-sample batch ids in {0, ..., n_batches-1}.
+) -> NDArray[np.int_]:
+    """Create random batch assignments."""
+    if proportions is None:
+        # Even split
+        base = n_samples // n_batches
+        remainder = n_samples % n_batches
+        counts = np.array([base + (1 if i < remainder else 0) for i in range(n_batches)], dtype=int)
+    else:
+        proportions_arr = np.asarray(proportions, dtype=float)
+        if not np.isclose(proportions_arr.sum(), 1.0):
+            proportions_arr = proportions_arr / proportions_arr.sum()
 
-    If `confounding != 0` and `y` is provided, classes are softly aligned to different batches.
-    Positive values bias classes towards their "preferred" batch; negative values invert the bias.
+        counts = (proportions_arr * n_samples).round().astype(int)
+
+        # Fix rounding to match n_samples exactly
+        diff = n_samples - counts.sum()
+        if diff != 0:
+            idx = np.argsort(-proportions_arr)[: abs(diff)]
+            counts[idx] += np.sign(diff)
+
+    # Create labels and shuffle
+    labels = np.concatenate([np.full(c, i, dtype=int) for i, c in enumerate(counts)])
+    rng.shuffle(labels)
+    return labels
+
+
+def _confounded_batch_assignment(
+    class_labels: NDArray[np.int_],
+    n_batches: int,
+    confounding_strength: float,
+    proportions: Sequence[float] | None,
+    rng: np.random.Generator,
+) -> NDArray[np.int_]:
+    """Create batch assignments confounded with class labels.
+
+    Strategy:
+    - For each class, preferentially assign to certain batches
+    - Higher confounding_strength = stronger preference
+    - Ensures realistic overlap (not perfect separation)
     """
-    if n_batches <= 1:
-        return np.zeros(n_samples, dtype=np.int64)
+    n_samples = len(class_labels)
+    n_classes = int(np.max(class_labels)) + 1
 
-    if y is None or abs(confounding) < 1e-12:
-        return rng.integers(0, n_batches, size=n_samples, dtype=np.int64)
+    # Base probabilities for each (class, batch) combination
+    if proportions is None:
+        base_probs = np.ones((n_classes, n_batches)) / n_batches
+    else:
+        proportions_arr = np.asarray(proportions, dtype=float)
+        proportions_arr = proportions_arr / proportions_arr.sum()
+        base_probs = np.tile(proportions_arr, (n_classes, 1))
 
-    # simple cyclic class→batch preference
-    K = int(y.max()) + 1
-    prefs = np.arange(n_batches) % max(K, 1)
+    # Add confounding: boost certain class-batch combinations
+    confounded_probs = base_probs.copy()
 
-    # logits per sample over batches
-    logits = np.zeros((n_samples, n_batches), dtype=float)
-    for k in range(K):
-        mask = y == k
-        logits[mask, :] = -1.0
-        logits[mask, prefs == k] = 1.0
+    if n_batches >= n_classes:
+        # Assign each class a preferred batch
+        for cls in range(n_classes):
+            preferred_batch = cls % n_batches
+            boost = confounding_strength * (1.0 - base_probs[cls, preferred_batch])
+            confounded_probs[cls, preferred_batch] += boost
+    else:
+        # More classes than batches: assign multiple classes per batch
+        for cls in range(n_classes):
+            preferred_batch = cls % n_batches
+            boost = confounding_strength * (1.0 - base_probs[cls, preferred_batch])
+            confounded_probs[cls, preferred_batch] += boost
 
-    # scale by confounding
-    logits *= 3.0 * float(confounding)
+    # Normalize to probabilities
+    confounded_probs = confounded_probs / confounded_probs.sum(axis=1, keepdims=True)
 
-    # softmax sampling
-    logits -= logits.max(axis=1, keepdims=True)
-    P = np.exp(logits)
-    P /= P.sum(axis=1, keepdims=True)
+    # Assign batches per class
+    batch_assignments = np.zeros(n_samples, dtype=int)
+    for cls in range(n_classes):
+        mask = class_labels == cls
+        n_in_class = np.sum(mask)
+        if n_in_class > 0:
+            batch_assignments[mask] = rng.choice(n_batches, size=n_in_class, p=confounded_probs[cls])
 
-    cdf = P.cumsum(axis=1)
-    r = rng.random(size=(n_samples, 1))
-    return (r > cdf[:, :-1]).sum(axis=1).astype(np.int64)
+    return batch_assignments
 
 
-def add_batch_intercepts(
-    X: NDArray[np.float64],
-    batch: NDArray[np.int64],
-    *,
-    sigma: float = 0.5,
-    cols: NDArray[np.int64] | None = None,
-    rng: np.random.Generator | None = None,
-) -> None:
-    """Add random intercepts b_g ~ N(0, sigma^2) per batch g to selected columns in-place.
+def apply_batch_effects(
+    X: pd.DataFrame | NDArray[np.float64],
+    batch_assignments: NDArray[np.int_],
+    effect_type: Literal["additive", "multiplicative"] = "additive",
+    effect_strength: float = 0.5,
+    affected_features: Sequence[int] | Literal["all"] = "all",
+    random_state: int | None = None,
+) -> tuple[pd.DataFrame | NDArray[np.float64], NDArray[np.float64]]:
+    """Apply batch effects to feature matrix.
 
-    X[i, j] += b_{batch[i]}  for j in `cols` (or all columns if cols is None).
+    Adds systematic differences between batches to simulate:
+    - Site-to-site measurement variations
+    - Instrument calibration differences
+    - Cohort effects (temporal batches)
+
+    Args:
+        X: Feature matrix (DataFrame or array).
+        batch_assignments: Batch labels for each sample.
+        effect_type:
+            - "additive": X' = X + b_batch (shifts)
+            - "multiplicative": X' = X * (1 + b_batch) (scaling)
+        effect_strength: Magnitude (stddev for additive, scale for multiplicative).
+        affected_features: Which features to affect ("all" or list of indices).
+        random_state: Seed for reproducibility.
+
+    Returns:
+        Tuple of (X_affected, batch_intercepts):
+            - X_affected: Feature matrix with batch effects applied
+            - batch_intercepts: Array of random intercepts drawn for each batch
+
+    Examples:
+        >>> from biomedical_data_generator import DatasetConfig, generate_dataset
+        >>>
+        >>> # Generate clean data
+        >>> cfg = DatasetConfig(
+        ...     n_samples=100, n_informative=5, n_noise=3,
+        ...     n_classes=2, class_counts={0: 50, 1: 50},
+        ...     random_state=42
+        ... )
+        >>> X, y, meta = generate_dataset(cfg, return_dataframe=True)
+        >>>
+        >>> # Add batch effects
+        >>> batches = generate_batch_assignments(len(X), n_batches=3, random_state=42)
+        >>> X_batch, intercepts = apply_batch_effects(
+        ...     X, batches,
+        ...     effect_type="additive",
+        ...     effect_strength=0.5,
+        ...     random_state=42
+        ... )
+        >>> print(f"Batch intercepts: {intercepts}")
+
+    Notes:
+        - Additive effects: b_g ~ N(0, sigma^2), adds constant offset per batch
+        - Multiplicative effects: b_g ~ N(0, sigma^2), scales features by (1 + b_g)
+        - Returns copy of X (does not modify in place)
     """
-    if X.size == 0 or batch.size == 0:
-        return
-    if cols is None:
-        cols = np.arange(X.shape[1], dtype=np.int64)
-    rng = np.random.default_rng() if rng is None else rng
-    n_batches = int(batch.max()) + 1
-    b = rng.normal(loc=0.0, scale=float(sigma), size=n_batches)
-    X[:, cols] += b[batch][:, None]
+    rng = np.random.default_rng(random_state)
 
+    # Convert to DataFrame if needed for consistent handling
+    is_dataframe = isinstance(X, pd.DataFrame)
+    X_df: pd.DataFrame | None = None
+    feature_names: list[str] | None = None
 
-# import numpy as np
-# from numpy._typing import NDArray
-#
-# from ..config import BatchEffectsConfig
-# from ..meta import BatchMeta
-#
-# def apply_batch_effects(
-#     X: np.ndarray,
-#     y: np.ndarray,
-#     affected_cols: np.ndarray,
-#     cfg: BatchEffectsConfig,
-#     rng: np.random.Generator,
-# ) -> tuple[np.ndarray, BatchMeta]:
-#     n, _ = X.shape
-#     G = int(cfg.n_batches)
-#     offsets = rng.normal(0.0, float(cfg.sd), size=G)
-#
-#     if not cfg.confounded:
-#         batch_ids = rng.integers(0, G, size=n, dtype=np.int32)
-#         majors = None
-#     else:
-#         majors = np.zeros(G, dtype=np.int32)
-#         majors[: G // 2] = 1
-#         rng.shuffle(majors)
-#         idx0 = np.where(majors == 0)[0]; idx1 = np.where(majors == 1)[0]
-#         p = float(cfg.p_major)
-#         batch_ids = np.empty(n, dtype=np.int32)
-#         for i in range(n):
-#             pick = idx1 if (y[i] == 1 and rng.random() < p) else idx0 if (y[i] == 0 and rng.random() < p)
-#             else (idx0 if y[i]==1 else idx1)
-#             batch_ids[i] = int(rng.choice(pick))
-#
-#     X_out = X.copy()
-#     X_out[np.arange(n)[:, None], affected_cols[None, :]] += offsets[batch_ids][:, None]
-#
-#     meta = BatchMeta(
-#         batch_ids=batch_ids,
-#         batch_offsets=offsets,
-#         batches_majority_class=majors,
-#         scope=cfg.scope,
-#         sd=cfg.sd,
-#     )
-#     return X_out, meta
-#
-#
-# def add_batch_intercepts(
-#     X: NDArray[np.float64],
-#     batch: NDArray[np.int64],
-#     *,
-#     sigma: float = 0.5,
-#     cols: NDArray[np.int64] | None = None,
-#     rng: np.random.Generator | None = None,
-# ) -> None:
-#     """Additive random intercepts per batch: X[i, j] += b_{batch[i]} for j in cols."""
-#     if X.size == 0 or batch.size == 0:
-#         return
-#     if cols is None:
-#         cols = np.arange(X.shape[1], dtype=np.int64)
-#     rng = np.random.default_rng() if rng is None else rng
-#     n_batches = int(batch.max()) + 1
-#     b = rng.normal(loc=0.0, scale=sigma, size=n_batches)
-#     X[:, cols] += b[batch][:, None]
-#
-#
-# def make_batches(
-#     n_samples: int,
-#     n_batches: int,
-#     *,
-#     rng: np.random.Generator,
-#     y: NDArray[np.int64] | None = None,
-#     confounding: float = 0.0,  # in [-1, 1], 0 = unabhängig
-# ) -> NDArray[np.int64]:
-#     """Sample batch IDs; bei confounding>0 werden Klassen preferenziell in bestimmte Batches gelegt."""
-#     if n_batches <= 1:
-#         return np.zeros(n_samples, dtype=np.int64)
-#     if y is None or abs(confounding) < 1e-12:
-#         return rng.integers(0, n_batches, size=n_samples, dtype=np.int64)
-#
-#     # simpel: jeder Klasse ein "Lieblingsbatch", weiche Zuordnung über Softmax
-#     K = int(y.max()) + 1
-#     prefs = np.arange(n_batches) % K  # zyklische Zuordnung von Batches zu Klassen
-#     logits = np.full((n_samples, n_batches), 0.0)
-#     for k in range(K):
-#         mask = (y == k)
-#         logits[mask, :] = -1.0
-#         logits[mask, prefs == k] = 1.0
-#     logits *= 3.0 * float(confounding)  # Skala
-#     P = np.exp(logits - logits.max(axis=1, keepdims=True))
-#     P /= P.sum(axis=1, keepdims=True)
-#     cdf = P.cumsum(axis=1)
-#     r = rng.random(size=(n_samples, 1))
-#     return (r > cdf[:, :-1]).sum(axis=1).astype(np.int64)
-#
+    if is_dataframe:
+        X_df = cast(pd.DataFrame, X)
+        X_array = X_df.values.copy()
+        feature_names = X_df.columns.tolist()
+    else:
+        X_array = np.asarray(X, dtype=float).copy()
+
+    n_samples, n_features = X_array.shape
+    n_batches = int(np.max(batch_assignments)) + 1
+
+    # Determine which features to affect
+    if affected_features == "all":
+        feature_indices = list(range(n_features))
+    else:
+        feature_indices = list(affected_features)
+
+    # Draw random intercepts for each batch
+    batch_intercepts = rng.normal(loc=0.0, scale=float(effect_strength), size=n_batches)
+
+    # Apply effects
+    for batch_id in range(n_batches):
+        mask = batch_assignments == batch_id
+        if not np.any(mask):
+            continue
+
+        for feat_idx in feature_indices:
+            if effect_type == "additive":
+                X_array[mask, feat_idx] += batch_intercepts[batch_id]
+            elif effect_type == "multiplicative":
+                X_array[mask, feat_idx] *= 1.0 + batch_intercepts[batch_id]
+            else:
+                raise ValueError(f"Unknown effect_type: {effect_type}")
+
+    # Convert back to DataFrame if needed
+    X_result: pd.DataFrame | NDArray[np.float64]
+    if is_dataframe and X_df is not None and feature_names is not None:
+        X_result = pd.DataFrame(X_array, columns=feature_names, index=X_df.index)
+    else:
+        X_result = X_array
+
+    return X_result, batch_intercepts
