@@ -14,6 +14,7 @@ from typing import Any, Literal
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+import seaborn as sns
 from matplotlib.axes import Axes
 from matplotlib.figure import Figure, SubFigure
 from numpy.typing import NDArray
@@ -34,7 +35,7 @@ __all__ = [
 # Core: plot a correlation matrix (Matplotlib-only)
 # --------------------------------------------------------------------------- #
 def plot_correlation_matrix(
-    C: NDArray[np.float64],
+    correlation_matrix: NDArray[np.float64],
     *,
     title: str | None = None,
     ax: Axes | None = None,
@@ -48,7 +49,7 @@ def plot_correlation_matrix(
     """Draw a correlation matrix as a heatmap.
 
     Args:
-        C: Square correlation matrix of shape (p, p).
+        correlation_matrix: Square correlation matrix of shape (p, p).
         title: Optional plot title.
         ax: Optional Matplotlib Axes to draw on (created if None).
         vmin: Color scale limits.
@@ -61,8 +62,8 @@ def plot_correlation_matrix(
     Returns:
         (fig, ax): The Figure and Axes used.
     """
-    C = np.asarray(C, dtype=float)
-    if C.ndim != 2 or C.shape[0] != C.shape[1]:
+    correlation_matrix = np.asarray(correlation_matrix, dtype=float)
+    if correlation_matrix.ndim != 2 or correlation_matrix.shape[0] != correlation_matrix.shape[1]:
         raise ValueError("C must be a square 2D array.")
 
     created = False
@@ -72,7 +73,7 @@ def plot_correlation_matrix(
     else:
         fig = ax.figure  # type: ignore[assignment]
 
-    im = ax.imshow(C, vmin=vmin, vmax=vmax, aspect="equal")
+    im = ax.imshow(correlation_matrix, vmin=vmin, vmax=vmax, aspect="equal", cmap="Blues_r")
     if title:
         ax.set_title(title)
 
@@ -89,11 +90,11 @@ def plot_correlation_matrix(
     cbar.set_label("Correlation")
 
     if annot:
-        p = C.shape[0]
+        p = correlation_matrix.shape[0]
         if p <= 25:
             for i in range(p):
                 for j in range(p):
-                    ax.text(j, i, format(C[i, j], fmt), ha="center", va="center", fontsize=7)
+                    ax.text(j, i, format(correlation_matrix[i, j], fmt), ha="center", va="center", fontsize=7)
 
     if created:
         fig.tight_layout()
@@ -224,3 +225,118 @@ def plot_correlation_matrices_per_cluster(
         )
         out[cid] = fig_ax
     return out
+
+
+def plot_all_correlation_clusters(
+    df: pd.DataFrame,
+    meta: Any,
+    *,
+    correlation_method: Literal["pearson", "kendall", "spearman"] = "spearman",
+    title: str | None = None,
+    figsize: tuple[int, int] = (10, 10),
+    vmin: float = -1.0,
+    vmax: float = 1.0,
+    annot: bool | None = None,
+    fmt: str = ".2f",
+    draw_cluster_boundaries: bool = True,
+    show: bool = True,
+) -> tuple[Figure | SubFigure, Axes]:
+    """Plot correlation matrix for all corr-cluster features with intra-cluster ordering.
+
+    Features are sorted by (cluster_id, feature_index) so that within each cluster,
+    the anchor appears first, followed by features 2, 3, 4, etc.
+
+    Args:
+        df: DataFrame with all features.
+        meta: Meta object with cluster information.
+        correlation_method: Correlation method to use.
+        title: Optional plot title.
+        figsize: Figure size.
+        vmin: Color scale minimum.
+        vmax: Color scale maximum.
+        annot: If True, show numeric values. If None, auto-decide based on size.
+        fmt: Number format for annotations.
+        draw_cluster_boundaries: If True, draw black lines between clusters.
+        show: If True, call plt.show().
+
+    Returns:
+        Tuple of (figure, axes).
+    """
+    # 1) Select only columns containing "corr"
+    corr_cols = [c for c in df.columns if "corr" in c]
+    if not corr_cols:
+        raise ValueError("No columns containing 'corr' found")
+
+    df_sub = df.loc[:, corr_cols]
+
+    # 2) Sort features: first by cluster_id, then by feature_index (anchor=1 first)
+    def parse_feature_name(feature_name: str) -> tuple[int, int]:
+        """Extract (cluster_id, feature_idx) from 'corrX_Y' or 'corrX_anchor'."""
+        parts = feature_name.split("_")
+        if len(parts) == 2 and parts[0].startswith("corr"):
+            cluster_str = parts[0][4:]  # e.g., "1" from "corr1"
+            if cluster_str.isdigit():
+                cluster_id = int(cluster_str)
+                # Treat "anchor" as index 1 (comes first)
+                if parts[1] == "anchor":
+                    return (cluster_id, 1)
+                if parts[1].isdigit():
+                    feature_idx = int(parts[1])
+                    return (cluster_id, feature_idx)
+        return (999, 999)  # Fallback for invalid names
+
+    ordered_cols = sorted(corr_cols, key=parse_feature_name)
+    df_ordered = df_sub[ordered_cols]
+
+    # 3) Compute correlation
+    corr = df_ordered.corr(method=correlation_method)
+
+    # 4) Auto-decide annotation
+    if annot is None:
+        annot = corr.shape[0] <= 25
+
+    # 5) Plot heatmap
+    fig, ax = plt.subplots(figsize=figsize)
+    sns.heatmap(
+        corr,
+        ax=ax,
+        cmap="Blues_r",
+        vmin=vmin,
+        vmax=vmax,
+        square=True,
+        xticklabels=True,
+        yticklabels=True,
+        annot=annot,
+        fmt=fmt if annot else "",
+        cbar_kws={"label": "Correlation"},
+    )
+
+    if title is None:
+        title = f"All Correlation Clusters ({correlation_method.capitalize()})"
+    ax.set_title(title)
+    plt.xticks(rotation=90)
+    plt.yticks(rotation=0)
+
+    # 6) Draw cluster boundaries
+    if draw_cluster_boundaries:
+
+        def get_cluster_id(feature_name: str) -> int | None:
+            """Extract cluster ID from 'corrX_Y' → X."""
+            parts = feature_name.split("_")
+            if len(parts) == 2 and parts[0].startswith("corr"):
+                cluster_str = parts[0][4:]
+                if cluster_str.isdigit():
+                    return int(cluster_str)
+            return None
+
+        cluster_ids = [get_cluster_id(f) for f in ordered_cols]
+        boundaries = [i for i in range(1, len(cluster_ids)) if cluster_ids[i] != cluster_ids[i - 1]]
+        for b in boundaries:
+            ax.hlines(b, *ax.get_xlim(), colors="black", linewidth=1.5)
+            ax.vlines(b, *ax.get_ylim(), colors="black", linewidth=1.5)
+
+    plt.tight_layout()
+    if show:
+        plt.show()
+
+    return fig, ax
