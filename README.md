@@ -137,6 +137,7 @@ X, y, meta = generate_dataset(cfg, return_dataframe=True)
 
   - `informative`: contributes to a target class (via `anchor_effect_size`).
   - `noise`: uninformative and uncorrelated with the label
+
 - `structure` ∈ {`equicorrelated`, `toeplitz`} defines within‑cluster correlations.
 
 - Global `effect_size` = {`small`, `medium`, `large`} sets sensible defaults for `anchor_effect_size`.
@@ -223,10 +224,6 @@ The biomedical-data-generator produces data sets consisting of up to three main 
 The number of artificial classes is not limited. Each class is generated individually and then combined with the others.
 In order to simulate artificial biomarkers in total, all individual classes have the same number of features in total.
 
-This is an example of simulated binary biological data including artificial biomarkers:
-
-![Different blocks of the artificial data.](docs/source/imgs/artificial_data.png)
-
 - **Informative features** (`i*`): truly predictive; include **cluster anchors** if `anchor_role="informative"`.
 - **Noise features** (`n*`): random, uncorrelated with the label; useful to test robustness.
 - **Correlated clusters** (`corr{cid}_k`): within a cluster, one **anchor** + `(n_cluster_features-1)` **proxies**; correlation structure `equicorrelated` or `toeplitz`.
@@ -279,6 +276,30 @@ that occur in small sample sizes with a very large number of features.
 
 ______________________________________________________________________
 
+## Batch effects
+
+Simulate technical variation (batch effects) that affects subsets of samples:
+
+````python
+from biomedical_data_generator import DatasetConfig, BatchEffectsConfig, generate_dataset
+
+cfg = DatasetConfig(
+    n_samples=200,
+    n_informative=5,
+    n_classes=2,
+    class_counts={0: 100, 1: 100},
+    batch_effects=BatchEffectsConfig(
+        n_batches=3,
+        effect_type="additive",  # or "multiplicative"
+        effect_strength=0.5,
+        affected_features="all"  # or list of indices
+    ),
+    random_state=42,
+)
+
+X, y, meta = generate_dataset(cfg, return_dataframe=True)
+# meta.batch_assignments contains per-sample batch IDs_____________________________________________________________________
+
 ## Naming and convenience
 
 - `feature_naming`: `"prefixed"` (default) or `"simple"`
@@ -323,7 +344,7 @@ bdg --config config.yaml --out dataset.csv
 
 # Print only metadata (JSON) to stdout
 bdg --config config.yaml
-```
+````
 
 **Minimal YAML example**
 

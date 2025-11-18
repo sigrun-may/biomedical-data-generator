@@ -80,66 +80,107 @@ class NoiseDistribution(str, Enum):
     laplace = "laplace"  # heavy tails; nice to show outliers
 
 
-class BatchConfig(BaseModel):
+class BatchEffectsConfig(BaseModel):
     """Configuration for simulating batch effects.
 
-    Simulate batch effects by adding random intercepts to specified columns. The intercepts are drawn from a normal
-    distribution with mean 0 and standard deviation `effect_strength`. Optionally, the batch assignment can
-    be confounded with the class labels.
+    Simulate batch effects by adding random intercepts or scaling factors
+    to specified features. This can be used to mimic:
+      - site-to-site differences (multi-center studies),
+      - instrument calibration shifts,
+      - cohort / recruitment waves (temporal batches).
+
+    Randomness and reproducibility
+    ------------------------------
+    Batch effects are integrated into the dataset-level RNG in a predictable way:
+
+    - In :func:`generate_dataset`, a single
+      ``rng_global = np.random.default_rng(cfg.random_state)`` is created.
+
+    - If ``BatchEffectsConfig.random_state`` is ``None`` (recommended),
+      **all batch-related draws reuse this global generator**:
+        * batch assignment (random or confounded),
+        * batch effects (additive or multiplicative).
+      In this default mode, ``DatasetConfig.random_state`` is the **single knob**
+      that reproduces the entire dataset, *including* batch effects.
+
+    - If ``BatchEffectsConfig.random_state`` is an integer, a dedicated RNG
+      ``np.random.default_rng(batch.random_state)`` is created and passed to the
+      batch-effect routines. Use this only if you explicitly want to keep batch
+      effects fixed while changing other aspects of the dataset.
+
+    Conceptual separation
+    ---------------------
+    - ``confounding_with_class`` controls **sampling bias**:
+      which samples (classes) are recruited into which batch.
+
+    - ``effect_strength`` and ``effect_type`` control **technical variation**:
+      how strongly the measurement shifts between batches.
 
     Args:
-        n_batches (int): Number of batches (0 or 1 means no batch effect).
-        effect_strength (float): Standard deviation of the batch intercepts.
-        effect_type (Literal["additive", "multiplicative"]): Type of batch effect.
-            - "additive": Additive intercepts (default).
-            - "multiplicative": Multiplicative scaling factors.
+        n_batches (int):
+            Number of batches. Values 0 or 1 effectively disable batch effects.
+        effect_strength (float):
+            Scale of batch effects.
+            - For ``effect_type="additive"``: standard deviation of batch intercepts.
+            - For ``effect_type="multiplicative"``: standard deviation of the
+              multiplicative factor (applied as ``X' = X * (1 + b_batch)``).
+        effect_type (Literal["additive", "multiplicative"]):
+            Type of batch effect.
+            - ``"additive"``: Additive intercepts (shifts in feature means).
+            - ``"multiplicative"``: Multiplicative scaling (changes in variance/scale).
         confounding_with_class: Degree of confounding between batch and class (0.0-1.0).
             Controls how strongly batch assignment correlates with class labels,
             simulating **recruitment bias** in multi-center studies.
 
             The parameter determines the probability that samples from the same
             class are assigned to the same batch:
-
-            - 0.0 = Independent: Batch assignment ignores class labels
-              → Each batch has approximately equal class proportions
-
-            - 0.5 = Moderate correlation: Samples from the same class are
-              moderately likely to end up in the same batch
-              → Batches show noticeable class imbalance
-
-            - 1.0 = Perfect correlation: Samples from the same class are
-              always assigned to the same batch
-              → Each batch contains only one class (if n_batches ≥ n_classes)
-
-            This controls **sampling bias** (who gets recruited where), while
-            `effect_strength` controls **technical variation** (measurement differences).
-        affected_features (list[int] | Literal["all", "informative"]): Features to affect.
-            "all" affects all features, "informative" affects only informative features,
-            or provide list of 0-based column indices.
-        proportions (list[float] | None): Optional proportions for batch sizes. Must sum to 1.
-        random_state (int | None): Random seed for reproducibility.
+            Semantics (for two classes / two batches, equal base proportions):
+                - 0.0 → independent: each batch has ~50/50 class mix.
+                - 0.5 → moderate correlation
+                - 0.8 → strong recruitment bias (most samples of a class go to one batch).
+                - 1.0 → perfect confounding: each class maps to one preferred batch
+                  (if ``n_batches >= n_classes``).
+        affected_features (list[int] | Literal["all", "informative"]):
+            Which features should be affected:
+            - ``"all"``: apply batch effects to all features.
+            - ``"informative"``: apply only to informative features
+              (indices passed from the generator).
+            - list of ints: explicit 0-based column indices.
+        proportions (list[float] | None):
+            Optional target proportions for batch sizes. Values are normalized
+            to sum to 1. If ``None``, batches are (approximately) equal in size.
+        random_state (int | None):
+            Optional seed **specific to batch effects**.
+            - ``None`` (recommended): reuse the dataset-level RNG created from
+              ``DatasetConfig.random_state``.
+            - ``int``: use a dedicated RNG ``np.random.default_rng(random_state)``
+              for batch assignment and effects. This allows advanced users to
+              keep batch effects reproducible even if the dataset-level seed
+              changes.
 
     Examples:
-        >>> # Simple random batches
-        >>> BatchConfig(n_batches=3, effect_strength=0.5)
+    --------
+    >>> # Simple random batches, all controlled by DatasetConfig.random_state
+    >>> BatchEffectsConfig(n_batches=3, effect_strength=0.5)
 
-        >>> # Confounded batches (recruitment bias)
-        >>> BatchConfig(
-        ...     n_batches=2,
-        ...     effect_strength=0.8,
-        ...     confounding_with_class=0.9
-        ... )
+    >>> # Confounded batches (recruitment bias)
+    >>> BatchEffectsConfig(
+    ...     n_batches=2,
+    ...     effect_strength=0.8,
+    ...     confounding_with_class=0.9,
+    ... )
 
-        >>> # Unbalanced batches
-        >>> BatchConfig(
-        ...     n_batches=3,
-        ...     proportions=[0.5, 0.3, 0.2],
-        ...     effect_strength=0.5
-        ... )
+    >>> # Unbalanced batches with an explicit batch seed
+    >>> BatchEffectsConfig(
+    ...     n_batches=3,
+    ...     proportions=[0.5, 0.3, 0.2],
+    ...     effect_strength=0.5,
+    ...     random_state=123,
+    ... )
     """
 
     n_batches: int = Field(default=0, ge=0)  # 0 or 1 => no batch effect
-    effect_strength: float = Field(default=0.5, gt=0)  # std of batch intercepts
+    effect_strength: float = Field(default=0.5, gt=0)  # std of batch effects
     effect_type: Literal["additive", "multiplicative"] = "additive"
     confounding_with_class: float = Field(default=0.0, ge=0.0, le=1.0)  # in [0,1]
     affected_features: list[int] | Literal["all", "informative"] = "all"  # 0-based column indices; "all" => all
@@ -154,6 +195,83 @@ class BatchConfig(BaseModel):
             if not np.isclose(sum(v), 1.0, atol=1e-6):
                 raise ValueError(f"proportions must sum to 1, got {sum(v)}")
         return v
+
+
+# class BatchEffectsConfig(BaseModel):
+#     """Configuration for simulating batch effects.
+#
+#     Simulate batch effects by adding random intercepts to specified columns. The intercepts are drawn from a normal
+#     distribution with mean 0 and standard deviation `effect_strength`. Optionally, the batch assignment can
+#     be confounded with the class labels.
+#
+#     Args:
+#         n_batches (int): Number of batches (0 or 1 means no batch effect).
+#         effect_strength (float): Standard deviation of the batch intercepts.
+#         effect_type (Literal["additive", "multiplicative"]): Type of batch effect.
+#             - "additive": Additive intercepts (default).
+#             - "multiplicative": Multiplicative scaling factors.
+#         confounding_with_class: Degree of confounding between batch and class (0.0-1.0).
+#             Controls how strongly batch assignment correlates with class labels,
+#             simulating **recruitment bias** in multi-center studies.
+#
+#             The parameter determines the probability that samples from the same
+#             class are assigned to the same batch:
+#
+#             - 0.0 = Independent: Batch assignment ignores class labels
+#               → Each batch has approximately equal class proportions
+#
+#             - 0.5 = Moderate correlation: Samples from the same class are
+#               moderately likely to end up in the same batch
+#               → Batches show noticeable class imbalance
+#
+#             - 1.0 = Perfect correlation: Samples from the same class are
+#               always assigned to the same batch
+#               → Each batch contains only one class (if n_batches ≥ n_classes)
+#
+#             This controls **sampling bias** (who gets recruited where), while
+#             `effect_strength` controls **technical variation** (measurement differences).
+#         affected_features (list[int] | Literal["all", "informative"]): Features to affect.
+#             "all" affects all features, "informative" affects only informative features,
+#             or provide list of 0-based column indices.
+#         proportions (list[float] | None): Optional proportions for batch sizes. Must sum to 1.
+#         random_state (int | None): Random seed for reproducibility.
+#
+#     Examples:
+#         >>> # Simple random batches
+#         >>> BatchEffectsConfig(n_batches=3, effect_strength=0.5)
+#
+#         >>> # Confounded batches (recruitment bias)
+#         >>> BatchEffectsConfig(
+#         ...     n_batches=2,
+#         ...     effect_strength=0.8,
+#         ...     confounding_with_class=0.9
+#         ... )
+#
+#         >>> # Unbalanced batches
+#         >>> BatchEffectsConfig(
+#         ...     n_batches=3,
+#         ...     proportions=[0.5, 0.3, 0.2],
+#         ...     effect_strength=0.5
+#         ... )
+#     """
+#
+#     n_batches: int = Field(default=0, ge=0)  # 0 or 1 => no batch effect
+#     effect_strength: float = Field(default=0.5, gt=0)  # std of batch intercepts
+#     effect_type: Literal["additive", "multiplicative"] = "additive"
+#     confounding_with_class: float = Field(default=0.0, ge=0.0, le=1.0)  # in [0,1]
+#     affected_features: list[int] | Literal["all", "informative"] = "all"  # 0-based column indices; "all" => all
+#     proportions: list[float] | None = None  # optional proportions for batches
+#     random_state: int | None = None
+#
+#     @field_validator("proportions")
+#     @classmethod
+#     def validate_proportions(cls, v):
+#         """Ensure proportions sum to ~1."""
+#         if v is not None:
+#             if not np.isclose(sum(v), 1.0, atol=1e-6):
+#                 raise ValueError(f"proportions must sum to 1, got {sum(v)}")
+#         return v
+#
 
 
 class CorrClusterConfig(BaseModel):
@@ -590,14 +708,12 @@ class DatasetConfig(BaseModel):
         * Free informative features:  i1, i2, ...
         * Free noise features:        n1, n2, ...
         * Correlated clusters:        corr{cid}_anchor, corr{cid}_2, ..., corr{cid}_k
-          (Non-anchors are “proxies” in the metadata.)
     - If `feature_naming="simple"`, a generic `feature_{i}` scheme is used.
 
     Relationship to DatasetMeta (output, ground truth)
     --------------------------------------------------
     The generation step produces a `DatasetMeta` object describing resolved structure:
       - `informative_idx`: indices of all informative features (anchors + free informative)
-      - `proxy_idx`:      indices of all cluster non-anchors (derived from clusters)
       - `noise_idx`:      indices of all independent noise features (free noise)
       - `corr_cluster_indices`: mapping cluster_id → list of column indices
       - `anchor_idx`: mapping cluster_id → anchor column (or None for degenerate forms)
@@ -618,14 +734,6 @@ class DatasetConfig(BaseModel):
        Breakdown:
          - informative_anchors = 1  → free_informative = 4 − 1 = 3
          - noise_anchors = 1        → free_noise       = 3 − 1 = 2
-
-    Notes:
-    -----
-    • The “proxies add on top” rule is consistent with the cluster docstring:
-      “Anchor first, followed by (k−1) proxies; proxies count as additional features.”  # see CorrClusterConfig Notes
-    • The required-features calculation is derived solely from `n_informative`, `n_noise`, and
-      Σ (n_cluster_features − 1) across all clusters.
-    • There is intentionally no input field `n_proxy`. Proxies are implied by cluster sizes.
 
     See Also:
     --------
@@ -661,7 +769,7 @@ class DatasetConfig(BaseModel):
     corr_between: float = 0.0  # correlation between different clusters/roles (0 = independent)
     anchor_mode: AnchorMode = "equalized"
     effect_size: Literal["small", "medium", "large"] = "medium"  # controls default anchor_effect_size
-    batch: BatchConfig | None = None
+    batch: BatchEffectsConfig | None = None
     random_state: int | None = None
 
     # ---------- helpers (typed) ----------
