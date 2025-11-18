@@ -1,4 +1,4 @@
-# Data generator for synthetic data including artificial classes, intraclass correlations, pseudo-classes and random data - [Sphinx Doc](https://sigrun-may.github.io/biomedical-data-generator/)
+# Data generator for synthetic data including artificial classes, intraclass correlations and random data - [Sphinx Doc](https://sigrun-may.github.io/biomedical-data-generator/)
 
 Generate synthetic classification datasets with correlated feature clusters, controllable class balance, effect sizes, and realistic distractors.
 
@@ -6,7 +6,7 @@ Generate synthetic classification datasets with correlated feature clusters, con
 
 - **Correlated clusters** (equicorrelated or Toeplitz) with one **anchor** feature per cluster
 - **Class-specific correlations** via `class_rho` (e.g., biomarkers only correlate in diseased patients)
-- **Roles**: informative / pseudo / noise
+- **Roles**: informative / noise
 - **Effect size** control via `effect_size` (small/medium/large) and per-cluster `anchor_effect_size`
 - **Exact class counts** generation via required `class_counts` parameter
 - **Feature naming**: tidy prefixes (`i*`, `corr{cid}_k`, `p*`, `n*`) or simple `feature_1..p`
@@ -30,7 +30,6 @@ ______________________________________________________________________
   - [Different parts of the data set](#different-parts-of-the-data-set)
   - [Data distribution and effect sizes](#data-distribution-and-effect-sizes)
   - [Correlations](#correlations)
-- [Pseudo-classes](#pseudo-classes)
 - [Random Features](#random-features)
 - [Naming and convenience](#naming-and-convenience)
 - [Return values](#return-values)
@@ -42,7 +41,7 @@ ______________________________________________________________________
 ## Purpose
 
 In order to develop new methods or to compare existing methods for feature selection, reference data with known dependencies and importance of the individual features are needed. This data generator can be used to simulate biological data for example artificial high throughput data including artificial biomarkers. Since commonly not all true biomarkers and internal dependencies of high-dimensional biological datasets are known with
-certainty, artificial data **enables to know the expected outcome in advance**. In synthetic data, the feature importances and the distribution of each class are known. Irrelevant features can be purely random or belong to a pseudo-class. Such data can be used, for example, to make random effects observable.
+certainty, artificial data **enables to know the expected outcome in advance**. In synthetic data, the feature importances and the distribution of each class are known. Irrelevant features can be purely random or come from a batch effect. Such data can be used, for example, to make random effects observable.
 
 - **clear ground truth** (which features truly matter, which are proxies, which are distractors),
 - **controllable separability** via `class_sep` and effect sizes,
@@ -72,7 +71,6 @@ from biomedical_data_generator import DatasetConfig, generate_dataset
 cfg = DatasetConfig(
     n_samples=30,
     n_informative=5,
-    n_pseudo=0,
     n_noise=0,
     n_classes=2,
     class_counts={0: 15, 1: 15},  # Required: exact class counts
@@ -91,7 +89,7 @@ print(meta.feature_names[:5])  # ['i1', 'i2', 'i3', 'i4', 'i5']
 
 ```
 # total feature columns =
-# n_informative + n_pseudo + n_noise + (proxies contributed by clusters)
+# n_informative + n_noise + (proxies contributed by clusters)
 ```
 
 If you set `n_features` manually, it must equal that exact sum.
@@ -106,7 +104,6 @@ from biomedical_data_generator import DatasetConfig, CorrClusterConfig, generate
 cfg = DatasetConfig(
     n_samples=200,
     n_informative=4,
-    n_pseudo=1,
     n_noise=3,
     n_classes=3,
     class_counts={0: 50, 1: 80, 2: 70},  # Required: exact class counts
@@ -123,7 +120,7 @@ cfg = DatasetConfig(
             n_cluster_features=2,
             rho=0.6,
             structure="toeplitz",
-            anchor_role="pseudo"
+            anchor_role="informative"
         ),
     ],
     random_state=0,
@@ -139,9 +136,7 @@ X, y, meta = generate_dataset(cfg, return_dataframe=True)
 - `anchor_role` controls the anchor's contribution to the label:
 
   - `informative`: contributes to a target class (via `anchor_effect_size`).
-  - `pseudo`: correlated but **effect size = 0** (distractor).
-  - `noise`: uninformative and uncorrelated with the label; proxies act as pseudo.
-
+  - `noise`: uninformative and uncorrelated with the label
 - `structure` ∈ {`equicorrelated`, `toeplitz`} defines within‑cluster correlations.
 
 - Global `effect_size` = {`small`, `medium`, `large`} sets sensible defaults for `anchor_effect_size`.
@@ -152,7 +147,6 @@ X, y, meta = generate_dataset(cfg, return_dataframe=True)
 
 1. Cluster features (anchors first **within** each cluster)
 1. Free informative features (`i*`)
-1. Free pseudo features (`p*`)
 1. Noise features (`n*`)
 
 ______________________________________________________________________
@@ -167,7 +161,6 @@ from biomedical_data_generator import DatasetConfig, CorrClusterConfig, generate
 cfg = DatasetConfig(
     n_samples=200,
     n_informative=3,
-    n_pseudo=0,
     n_noise=2,
     n_classes=2,
     class_counts={0: 100, 1: 100},  # 0=healthy, 1=diseased
@@ -208,7 +201,7 @@ ______________________________________________________________________
 - `class_counts`: **exact** per‑class sizes (required parameter, e.g., `{0: 50, 1: 50}`)
 - `class_sep`: scales logits → higher means easier separation
 
-Labels are generated deterministically from `class_counts`. Cluster anchors contribute to their target class; free informative features contribute in a round‑robin fashion. Pseudo & noise features have no effect on class separation.
+Labels are generated deterministically from `class_counts`. Cluster anchors contribute to their target class; free informative features contribute in a round‑robin fashion. Noise features have no effect on class separation.
 
 ______________________________________________________________________
 
@@ -225,7 +218,6 @@ ______________________________________________________________________
 The biomedical-data-generator produces data sets consisting of up to three main parts:
 
 1. **Relevant/ informative features** belonging to an artificial class (for example artificial biomarkers)
-1. [optional] **Pseudo-classes** (for example a patient's height or gender, which have no association with a particular disease)
 1. [optional] **Random data** representing the features (for example biomarker candidates) that are not associated with any class. This can be used to simulate random effects that occur in small sample sizes with a very large number of features. Or noise that occurs in real data.
 
 The number of artificial classes is not limited. Each class is generated individually and then combined with the others.
@@ -236,7 +228,6 @@ This is an example of simulated binary biological data including artificial biom
 ![Different blocks of the artificial data.](docs/source/imgs/artificial_data.png)
 
 - **Informative features** (`i*`): truly predictive; include **cluster anchors** if `anchor_role="informative"`.
-- **Pseudo features** (`p*`): belong to a pseudo-class, thus non‑causal but misleading.
 - **Noise features** (`n*`): random, uncorrelated with the label; useful to test robustness.
 - **Correlated clusters** (`corr{cid}_k`): within a cluster, one **anchor** + `(n_cluster_features-1)` **proxies**; correlation structure `equicorrelated` or `toeplitz`.
 
@@ -280,22 +271,9 @@ a class is divided into a given number of groups with high internal correlation
 
 ______________________________________________________________________
 
-## Pseudo-classes
-
-One option for an element of the generated data set is a pseudo-class. For example, this could be a
-patient's height or gender, which are not related to a specific disease.
-
-The generated pseudo-class contains the same number of classes with identical distributions as the artificial biomarkers.
-But after the generation of the individual classes, all samples (rows) are randomly shuffled.
-Finally, combining the shuffled data with the original, unshuffled class labels, the pseudo-class no longer
-has a valid association with any class label. Consequently, no element of the pseudo-class should be
-recognized as relevant by a feature selection algorithm.
-
-______________________________________________________________________
-
 ## Random Features
 
-The artificial biomarkers and, if applicable, the optional pseudo-classes can be combined with any number
+The artificial biomarkers can be combined with any number
 of random features. Varying the number of random features can be used, for example, to analyze random effects
 that occur in small sample sizes with a very large number of features.
 
@@ -308,7 +286,6 @@ ______________________________________________________________________
 - Prefixes (when `prefixed`):
 
   - Informative: `i` → `i1, i2, …`
-  - Pseudo: `p` → `p1, p2, …`
   - Noise: `n` → `n1, n2, …`
   - Correlated cluster proxies: `corr{cid}_{k}`
 
@@ -327,7 +304,7 @@ ______________________________________________________________________
 - **meta**: `DatasetMeta` with (selected):
 
   - `feature_names`
-  - `informative_idx`, `pseudo_idx`, `noise_idx`
+  - `informative_idx`, `noise_idx`
   - `corr_cluster_indices: dict[int, list[int]]`
   - `anchor_idx: dict[int, int | None]`
   - `anchor_role: dict[int, str]`
@@ -359,7 +336,6 @@ class_counts:
   2: 70
 class_sep: 1.2
 n_informative: 4
-n_pseudo: 1
 n_noise: 3
 feature_naming: prefixed
 corr_clusters:
@@ -371,7 +347,7 @@ corr_clusters:
   - n_cluster_features: 2
     rho: 0.6
     structure: toeplitz
-    anchor_role: pseudo
+    anchor_role: informative
 random_state: 0
 ```
 
@@ -385,7 +361,6 @@ class_counts:
   1: 100
 class_sep: 1.5
 n_informative: 3
-n_pseudo: 0
 n_noise: 2
 corr_clusters:
   - n_cluster_features: 4
