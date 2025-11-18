@@ -33,7 +33,13 @@ class TestGenerateBatchAssignments:
 
     def test_random_assignment_equal_proportions(self):
         """Random assignment should distribute samples evenly across batches."""
-        batches = generate_batch_assignments(n_samples=100, n_batches=4, proportions=None, random_state=42)
+        rng = np.random.default_rng(42)
+        batches = generate_batch_assignments(
+            n_samples=100,
+            n_batches=4,
+            proportions=None,
+            rng=rng,
+        )
 
         counts = np.bincount(batches)
         assert len(counts) == 4
@@ -43,7 +49,13 @@ class TestGenerateBatchAssignments:
 
     def test_random_assignment_custom_proportions(self):
         """Random assignment with custom proportions."""
-        batches = generate_batch_assignments(n_samples=200, n_batches=3, proportions=[0.5, 0.3, 0.2], random_state=42)
+        rng = np.random.default_rng(42)
+        batches = generate_batch_assignments(
+            n_samples=200,
+            n_batches=3,
+            proportions=[0.5, 0.3, 0.2],
+            rng=rng,
+        )
 
         counts = np.bincount(batches)
         assert len(counts) == 3
@@ -55,8 +67,12 @@ class TestGenerateBatchAssignments:
 
     def test_proportions_not_summing_to_one(self):
         """Proportions should be normalized automatically."""
+        rng = np.random.default_rng(42)
         batches = generate_batch_assignments(
-            n_samples=100, n_batches=2, proportions=[3, 1], random_state=42  # Will be normalized to [0.75, 0.25]
+            n_samples=100,
+            n_batches=2,
+            proportions=[3, 1],  # Will be normalized to [0.75, 0.25]
+            rng=rng,
         )
 
         counts = np.bincount(batches)
@@ -66,10 +82,15 @@ class TestGenerateBatchAssignments:
         assert 20 <= counts[1] <= 30
 
     def test_confounded_assignment_no_confounding(self):
-        """With confounding_strength=0, should behave like random."""
+        """With confounding_with_class=0, should behave like random."""
         y = np.array([0] * 50 + [1] * 50)
+        rng = np.random.default_rng(42)
         batches = generate_batch_assignments(
-            n_samples=100, n_batches=2, class_labels=y, confounding_strength=0.0, random_state=42
+            n_samples=100,
+            n_batches=2,
+            class_labels=y,
+            confounding_with_class=0.0,
+            rng=rng,
         )
 
         # Check both classes are present in both batches
@@ -81,11 +102,16 @@ class TestGenerateBatchAssignments:
     def test_confounded_assignment_moderate_confounding(self):
         """With moderate confounding, classes should prefer certain batches."""
         y = np.array([0] * 100 + [1] * 100)
+        rng = np.random.default_rng(42)
         batches = generate_batch_assignments(
-            n_samples=200, n_batches=2, class_labels=y, confounding_strength=0.8, random_state=42
+            n_samples=200,
+            n_batches=2,
+            class_labels=y,
+            confounding_with_class=0.8,
+            rng=rng,
         )
 
-        # Count class 0 in batch 0
+        # Count class 0 in batch 0 and class 1 in batch 1
         class0_in_batch0 = np.sum((y == 0) & (batches == 0))
         class1_in_batch1 = np.sum((y == 1) & (batches == 1))
 
@@ -96,49 +122,72 @@ class TestGenerateBatchAssignments:
         assert class1_in_batch1 > 80, f"Expected >80, got {class1_in_batch1}"
 
     def test_confounded_assignment_perfect_confounding(self):
-        """With confounding_strength=1.0, should have perfect separation."""
+        """With confounding_with_class=1.0, should have near-perfect separation."""
         y = np.array([0] * 50 + [1] * 50 + [2] * 50)
+        rng = np.random.default_rng(42)
         batches = generate_batch_assignments(
-            n_samples=150, n_batches=3, class_labels=y, confounding_strength=1.0, random_state=42
+            n_samples=150,
+            n_batches=3,
+            class_labels=y,
+            confounding_with_class=1.0,
+            rng=rng,
         )
 
-        # Each class should be perfectly in its preferred batch
-        # At strength=1.0 with redistribution: P(preferred) = 1.0
+        # Each class should be concentrated in its preferred batch
         for cls in range(3):
             cls_batches = batches[y == cls]
             most_common = np.bincount(cls_batches).argmax()
             count_in_preferred = np.sum(cls_batches == most_common)
-            # With perfect confounding, expect all 50 samples
+            # With strong confounding, expect almost all 50 samples
             # Allow for stochastic variation: at least 48/50 (96%)
             assert count_in_preferred >= 48, f"Class {cls}: expected >=48 in preferred batch, got {count_in_preferred}"
 
     def test_more_classes_than_batches(self):
         """Should handle cases where n_classes > n_batches."""
         y = np.array([0] * 20 + [1] * 20 + [2] * 20 + [3] * 20)
+        rng = np.random.default_rng(42)
         batches = generate_batch_assignments(
-            n_samples=80, n_batches=2, class_labels=y, confounding_strength=0.5, random_state=42
+            n_samples=80,
+            n_batches=2,
+            class_labels=y,
+            confounding_with_class=0.5,
+            rng=rng,
         )
 
         assert len(batches) == 80
         assert set(batches) == {0, 1}
 
     def test_reproducibility(self):
-        """Same random_state should produce identical results."""
+        """Same rng seed should produce identical results."""
         y = np.array([0] * 50 + [1] * 50)
 
+        rng1 = np.random.default_rng(123)
         batches1 = generate_batch_assignments(
-            100, n_batches=3, class_labels=y, confounding_strength=0.6, random_state=123
+            100,
+            n_batches=3,
+            class_labels=y,
+            confounding_with_class=0.6,
+            rng=rng1,
         )
+
+        rng2 = np.random.default_rng(123)
         batches2 = generate_batch_assignments(
-            100, n_batches=3, class_labels=y, confounding_strength=0.6, random_state=123
+            100,
+            n_batches=3,
+            class_labels=y,
+            confounding_with_class=0.6,
+            rng=rng2,
         )
 
         assert_array_equal(batches1, batches2)
 
     def test_different_seeds_produce_different_results(self):
         """Different seeds should produce different assignments."""
-        batches1 = generate_batch_assignments(100, n_batches=3, random_state=1)
-        batches2 = generate_batch_assignments(100, n_batches=3, random_state=2)
+        rng1 = np.random.default_rng(1)
+        rng2 = np.random.default_rng(2)
+
+        batches1 = generate_batch_assignments(100, n_batches=3, rng=rng1)
+        batches2 = generate_batch_assignments(100, n_batches=3, rng=rng2)
 
         assert not np.array_equal(batches1, batches2)
 
@@ -153,12 +202,22 @@ class TestApplyBatchEffects:
 
     def test_additive_effects_dataframe(self):
         """Additive effects should shift features by batch-specific constants."""
-        X = pd.DataFrame(np.random.randn(100, 5), columns=[f"feature_{i}" for i in range(5)])
-        batches = generate_batch_assignments(100, n_batches=2, random_state=42)
+        X = pd.DataFrame(
+            np.random.randn(100, 5),
+            columns=[f"feature_{i}" for i in range(5)],
+        )
+
+        rng_assign = np.random.default_rng(42)
+        batches = generate_batch_assignments(100, n_batches=2, rng=rng_assign)
 
         X_orig = X.copy()
-        X_batch, intercepts = apply_batch_effects(
-            X, batches, effect_type="additive", effect_strength=1.0, random_state=42
+        rng_effects = np.random.default_rng(43)
+        X_batch, batch_effects = apply_batch_effects(
+            X,
+            batches,
+            rng=rng_effects,
+            effect_type="additive",
+            effect_strength=1.0,
         )
 
         # Should return DataFrame
@@ -169,9 +228,9 @@ class TestApplyBatchEffects:
         # Original should be unchanged
         assert_allclose(X.values, X_orig.values)
 
-        # Intercepts should be drawn
-        assert len(intercepts) == 2
-        assert intercepts.shape == (2,)
+        # Effects should be drawn
+        assert len(batch_effects) == 2
+        assert batch_effects.shape == (2,)
 
         # Verify effect was applied
         assert not np.allclose(X_batch.values, X.values)
@@ -179,11 +238,18 @@ class TestApplyBatchEffects:
     def test_multiplicative_effects_array(self):
         """Multiplicative effects should scale features."""
         X = np.random.randn(80, 6)
-        batches = generate_batch_assignments(80, n_batches=4, random_state=42)
+
+        rng_assign = np.random.default_rng(42)
+        batches = generate_batch_assignments(80, n_batches=4, rng=rng_assign)
 
         X_orig = X.copy()
-        X_batch, intercepts = apply_batch_effects(
-            X, batches, effect_type="multiplicative", effect_strength=0.5, random_state=42
+        rng_effects = np.random.default_rng(43)
+        X_batch, batch_effects = apply_batch_effects(
+            X,
+            batches,
+            rng=rng_effects,
+            effect_type="multiplicative",
+            effect_strength=0.5,
         )
 
         # Should return array
@@ -193,17 +259,26 @@ class TestApplyBatchEffects:
         # Original unchanged
         assert_allclose(X, X_orig)
 
-        # Intercepts drawn
-        assert len(intercepts) == 4
+        # Effects drawn
+        assert len(batch_effects) == 4
 
     def test_affected_features_subset(self):
         """Should only affect specified features."""
         X = np.random.randn(60, 10)
-        batches = generate_batch_assignments(60, n_batches=2, random_state=42)
+
+        rng_assign = np.random.default_rng(42)
+        batches = generate_batch_assignments(60, n_batches=2, rng=rng_assign)
 
         affected = [0, 2, 4]  # Only affect features 0, 2, 4
+
+        rng_effects = np.random.default_rng(43)
         X_batch, _ = apply_batch_effects(
-            X, batches, effect_type="additive", effect_strength=1.0, affected_features=affected, random_state=42
+            X,
+            batches,
+            rng=rng_effects,
+            effect_type="additive",
+            effect_strength=1.0,
+            affected_features=affected,
         )
 
         # Unaffected features should be identical
@@ -217,18 +292,30 @@ class TestApplyBatchEffects:
     def test_effect_strength_scales_correctly(self):
         """Larger effect_strength should produce larger differences."""
         X = np.random.randn(100, 5)
-        batches = generate_batch_assignments(100, n_batches=2, random_state=42)
 
-        X_weak, intercepts_weak = apply_batch_effects(
-            X, batches, effect_type="additive", effect_strength=0.1, random_state=42
+        rng_assign = np.random.default_rng(42)
+        batches = generate_batch_assignments(100, n_batches=2, rng=rng_assign)
+
+        rng_effects_weak = np.random.default_rng(43)
+        X_weak, effects_weak = apply_batch_effects(
+            X,
+            batches,
+            rng=rng_effects_weak,
+            effect_type="additive",
+            effect_strength=0.1,
         )
 
-        X_strong, intercepts_strong = apply_batch_effects(
-            X, batches, effect_type="additive", effect_strength=1.0, random_state=42
+        rng_effects_strong = np.random.default_rng(44)
+        X_strong, effects_strong = apply_batch_effects(
+            X,
+            batches,
+            rng=rng_effects_strong,
+            effect_type="additive",
+            effect_strength=1.0,
         )
 
-        # Stronger effects should have larger intercepts (on average)
-        assert np.std(intercepts_weak) < np.std(intercepts_strong)
+        # Stronger effects should have larger std of effects (on average)
+        assert np.std(effects_weak) < np.std(effects_strong)
 
         # Stronger effects should produce larger differences from original
         diff_weak = np.abs(X_weak - X).mean()
@@ -238,39 +325,67 @@ class TestApplyBatchEffects:
     def test_zero_effect_strength(self):
         """With effect_strength=0, data should be unchanged."""
         X = np.random.randn(50, 5)
-        batches = generate_batch_assignments(50, n_batches=2, random_state=42)
 
-        X_batch, intercepts = apply_batch_effects(
-            X, batches, effect_type="additive", effect_strength=0.0, random_state=42
+        rng_assign = np.random.default_rng(42)
+        batches = generate_batch_assignments(50, n_batches=2, rng=rng_assign)
+
+        rng_effects = np.random.default_rng(43)
+        X_batch, batch_effects = apply_batch_effects(
+            X,
+            batches,
+            rng=rng_effects,
+            effect_type="additive",
+            effect_strength=0.0,
         )
 
-        # Intercepts should be ~0
-        assert_allclose(intercepts, 0.0, atol=1e-10)
+        # Effects should be ~0
+        assert_allclose(batch_effects, 0.0, atol=1e-10)
         # Data should be unchanged
         assert_allclose(X_batch, X)
 
     def test_reproducibility_with_seed(self):
-        """Same random_state should produce identical effects."""
+        """Same rng seed should produce identical effects."""
         X = np.random.randn(100, 5)
-        batches = generate_batch_assignments(100, n_batches=3, random_state=1)
 
-        X_batch1, intercepts1 = apply_batch_effects(
-            X, batches, effect_type="multiplicative", effect_strength=0.5, random_state=42
+        rng_assign = np.random.default_rng(1)
+        batches = generate_batch_assignments(100, n_batches=3, rng=rng_assign)
+
+        rng_effects1 = np.random.default_rng(42)
+        X_batch1, effects1 = apply_batch_effects(
+            X,
+            batches,
+            rng=rng_effects1,
+            effect_type="multiplicative",
+            effect_strength=0.5,
         )
 
-        X_batch2, intercepts2 = apply_batch_effects(
-            X, batches, effect_type="multiplicative", effect_strength=0.5, random_state=42
+        rng_effects2 = np.random.default_rng(42)
+        X_batch2, effects2 = apply_batch_effects(
+            X,
+            batches,
+            rng=rng_effects2,
+            effect_type="multiplicative",
+            effect_strength=0.5,
         )
 
         assert_allclose(X_batch1, X_batch2)
-        assert_allclose(intercepts1, intercepts2)
+        assert_allclose(effects1, effects2)
 
     def test_batch_means_differ(self):
         """Features should have different means per batch after effects."""
         X = np.random.randn(200, 5)
-        batches = generate_batch_assignments(200, n_batches=4, random_state=42)
 
-        X_batch, _ = apply_batch_effects(X, batches, effect_type="additive", effect_strength=1.0, random_state=42)
+        rng_assign = np.random.default_rng(42)
+        batches = generate_batch_assignments(200, n_batches=4, rng=rng_assign)
+
+        rng_effects = np.random.default_rng(43)
+        X_batch, _ = apply_batch_effects(
+            X,
+            batches,
+            rng=rng_effects,
+            effect_type="additive",
+            effect_strength=1.0,
+        )
 
         # Compute mean of feature 0 per batch
         batch_means = []
@@ -284,18 +399,38 @@ class TestApplyBatchEffects:
     def test_invalid_effect_type_raises(self):
         """Unknown effect_type should raise ValueError."""
         X = np.random.randn(50, 5)
-        batches = generate_batch_assignments(50, n_batches=2, random_state=42)
 
+        rng_assign = np.random.default_rng(42)
+        batches = generate_batch_assignments(50, n_batches=2, rng=rng_assign)
+
+        rng_effects = np.random.default_rng(43)
         with pytest.raises(ValueError, match="Unknown effect_type"):
-            apply_batch_effects(X, batches, effect_type="invalid_type", effect_strength=0.5, random_state=42)
+            apply_batch_effects(
+                X,
+                batches,
+                rng=rng_effects,
+                effect_type="invalid_type",
+                effect_strength=0.5,
+            )
 
     def test_dataframe_preserves_index(self):
         """DataFrame index should be preserved after effects."""
         custom_index = [f"sample_{i}" for i in range(50)]
-        X = pd.DataFrame(np.random.randn(50, 3), columns=["A", "B", "C"], index=custom_index)
-        batches = generate_batch_assignments(50, n_batches=2, random_state=42)
+        X = pd.DataFrame(
+            np.random.randn(50, 3),
+            columns=["A", "B", "C"],
+            index=custom_index,
+        )
 
-        X_batch, _ = apply_batch_effects(X, batches, random_state=42)
+        rng_assign = np.random.default_rng(42)
+        batches = generate_batch_assignments(50, n_batches=2, rng=rng_assign)
+
+        rng_effects = np.random.default_rng(43)
+        X_batch, _ = apply_batch_effects(
+            X,
+            batches,
+            rng=rng_effects,
+        )
 
         assert list(X_batch.index) == custom_index
 
@@ -305,12 +440,18 @@ class TestApplyBatchEffects:
         # Manually create assignments where batch 2 is empty
         batches = np.array([0] * 25 + [1] * 25)
 
-        X_batch, intercepts = apply_batch_effects(
-            X, batches, effect_type="additive", effect_strength=0.5, random_state=42
+        rng_effects = np.random.default_rng(42)
+        X_batch, batch_effects = apply_batch_effects(
+            X,
+            batches,
+            rng=rng_effects,
+            effect_type="additive",
+            effect_strength=0.5,
         )
 
-        # Should still draw intercepts for all batches
-        assert len(intercepts) == 2
+        # Should still draw effects for all batches (here: 2)
+        assert X_batch.shape == (50, 5)
+        assert len(batch_effects) == 2
 
 
 # ============================================================================
@@ -324,30 +465,39 @@ class TestBatchEffectsIntegration:
     def test_full_pipeline_with_confounding(self):
         """Test complete workflow: generate confounded batches, apply effects."""
         # Generate data
-        X = pd.DataFrame(np.random.randn(200, 10), columns=[f"feature_{i}" for i in range(10)])
+        X = pd.DataFrame(
+            np.random.randn(200, 10),
+            columns=[f"feature_{i}" for i in range(10)],
+        )
         y = np.array([0] * 100 + [1] * 100)
 
         # Create confounded batches
+        rng_assign = np.random.default_rng(42)
         batches = generate_batch_assignments(
-            200, n_batches=4, class_labels=y, confounding_strength=0.7, random_state=42
+            200,
+            n_batches=4,
+            class_labels=y,
+            confounding_with_class=0.7,
+            rng=rng_assign,
         )
 
         # Apply effects
-        X_batch, intercepts = apply_batch_effects(
+        rng_effects = np.random.default_rng(43)
+        X_batch, batch_effects = apply_batch_effects(
             X,
             batches,
+            rng=rng_effects,
             effect_type="additive",
             effect_strength=0.8,
             affected_features=[0, 1, 2],  # Only first 3 features
-            random_state=42,
         )
 
         # Verify structure
         assert isinstance(X_batch, pd.DataFrame)
         assert X_batch.shape == (200, 10)
-        assert len(intercepts) == 4
+        assert len(batch_effects) == 4
 
-        # Features 0-2 should differ, 3-9 should be unchanged
+        # Features 0–2 should differ, 3–9 should be unchanged
         for i in range(3):
             assert not np.allclose(X.iloc[:, i], X_batch.iloc[:, i])
         for i in range(3, 10):
@@ -356,11 +506,20 @@ class TestBatchEffectsIntegration:
     def test_batch_effects_increase_variance(self):
         """Batch effects should increase overall feature variance."""
         X = np.random.randn(150, 8)
-        batches = generate_batch_assignments(150, n_batches=3, random_state=42)
+
+        rng_assign = np.random.default_rng(42)
+        batches = generate_batch_assignments(150, n_batches=3, rng=rng_assign)
 
         var_before = X.var(axis=0)
 
-        X_batch, _ = apply_batch_effects(X, batches, effect_type="additive", effect_strength=1.0, random_state=42)
+        rng_effects = np.random.default_rng(43)
+        X_batch, _ = apply_batch_effects(
+            X,
+            batches,
+            rng=rng_effects,
+            effect_type="additive",
+            effect_strength=1.0,
+        )
 
         var_after = X_batch.var(axis=0)
 

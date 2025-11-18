@@ -84,17 +84,38 @@ class BatchConfig(BaseModel):
     """Configuration for simulating batch effects.
 
     Simulate batch effects by adding random intercepts to specified columns. The intercepts are drawn from a normal
-    distribution with mean 0 and standard deviation `sigma`. Optionally, the batch assignment can
+    distribution with mean 0 and standard deviation `effect_strength`. Optionally, the batch assignment can
     be confounded with the class labels.
 
     Args:
         n_batches (int): Number of batches (0 or 1 means no batch effect).
         effect_strength (float): Standard deviation of the batch intercepts.
         effect_type (Literal["additive", "multiplicative"]): Type of batch effect.
-        confounding_with_class (float): Degree of confounding with class labels, in [0,1].
-            0.5 means no confounding, 1 means perfect confounding.
-        affected_features (list[int] | Literal["all"]): 0-based column indices to which batch effects are
-            applied. "all" means all features are affected.
+            - "additive": Additive intercepts (default).
+            - "multiplicative": Multiplicative scaling factors.
+        confounding_with_class: Degree of confounding between batch and class (0.0-1.0).
+            Controls how strongly batch assignment correlates with class labels,
+            simulating **recruitment bias** in multi-center studies.
+
+            The parameter determines the probability that samples from the same
+            class are assigned to the same batch:
+
+            - 0.0 = Independent: Batch assignment ignores class labels
+              → Each batch has approximately equal class proportions
+
+            - 0.5 = Moderate correlation: Samples from the same class are
+              moderately likely to end up in the same batch
+              → Batches show noticeable class imbalance
+
+            - 1.0 = Perfect correlation: Samples from the same class are
+              always assigned to the same batch
+              → Each batch contains only one class (if n_batches ≥ n_classes)
+
+            This controls **sampling bias** (who gets recruited where), while
+            `effect_strength` controls **technical variation** (measurement differences).
+        affected_features (list[int] | Literal["all", "informative"]): Features to affect.
+            "all" affects all features, "informative" affects only informative features,
+            or provide list of 0-based column indices.
         proportions (list[float] | None): Optional proportions for batch sizes. Must sum to 1.
         random_state (int | None): Random seed for reproducibility.
 
@@ -121,7 +142,7 @@ class BatchConfig(BaseModel):
     effect_strength: float = Field(default=0.5, gt=0)  # std of batch intercepts
     effect_type: Literal["additive", "multiplicative"] = "additive"
     confounding_with_class: float = Field(default=0.0, ge=0.0, le=1.0)  # in [0,1]
-    affected_features: list[int] | Literal["all"] = "all"  # 0-based column indices; "all" => all
+    affected_features: list[int] | Literal["all", "informative"] = "all"  # 0-based column indices; "all" => all
     proportions: list[float] | None = None  # optional proportions for batches
     random_state: int | None = None
 
@@ -158,7 +179,6 @@ class CorrClusterConfig(BaseModel):
         rho_baseline: Baseline correlation for other classes if class_rho is set. Default is 0.0 (independent).
         anchor_role: Biological relevance of the anchor marker.
             - "informative": true biomarker (predictive of disease)
-            - "pseudo": confounding variable (correlated but not causal)
             - "noise": random measurement (no biological signal)
         anchor_effect_size: Strength of the anchor's disease association.
             Can be specified as:
@@ -186,15 +206,6 @@ class CorrClusterConfig(BaseModel):
         ...     label="Inflammation pathway"
         ... )
 
-        Confounding variables (e.g., age-related markers):
-
-        >>> age_confounders = CorrClusterConfig(
-        ...     n_cluster_features=3,
-        ...     rho=0.6,
-        ...     anchor_role="pseudo",
-        ...     label="Age-related markers"
-        ... )
-
         Weak disease signal with custom effect size:
 
         >>> weak_signal = CorrClusterConfig(
@@ -219,7 +230,7 @@ class CorrClusterConfig(BaseModel):
         - Cluster contributes `n_cluster_features` features to the dataset
         - Anchor appears first, followed by `(n_cluster_features-1)` proxies
         - Only the anchor has predictive power; proxies are correlated distractors
-        - Proxies count as additional features beyond n_informative/n_pseudo/n_noise
+        - Proxies count as additional features beyond n_informative/n_noise
 
     See Also:
     --------
@@ -250,7 +261,7 @@ class CorrClusterConfig(BaseModel):
     )
 
     # Biological relevance
-    anchor_role: Literal["informative", "pseudo", "noise"] = "informative"
+    anchor_role: Literal["informative", "noise"] = "informative"
     anchor_effect_size: Literal["small", "medium", "large"] | float | None = None
     anchor_class: int | None = None
 
@@ -477,9 +488,6 @@ class CorrClusterConfig(BaseModel):
                 lines.append("  → Moderate signal (typical biomarker)")
             else:
                 lines.append("  → Strong signal (easy to detect)")
-
-        elif self.anchor_role == "pseudo":
-            lines.append("  → Confounding variable (not causal)")
         else:
             lines.append("  → Random noise (no signal)")
 
@@ -514,13 +522,115 @@ class CorrClusterConfig(BaseModel):
 class DatasetConfig(BaseModel):
     """Configuration for synthetic dataset generation.
 
-    The strict `mode="before"` normalizer fills/validates `n_features` without Pydantic warnings.
+    Overview
+    --------
+    This model defines the *input-level* controls for building a synthetic dataset.
+    It combines:
+      - Base role counts: `n_informative` and `n_noise`
+      - Correlated clusters: `corr_clusters` (each with 1 anchor + (k−1) non-anchors)
+      - Class distribution, separation strength, naming, and optional batch effects
 
-    Note:
-    - The 'before' validator normalizes *raw* inputs:
-      * fills n_features if omitted,
-      * enforces n_features >= minimal requirement (strict).
-    - Use `DatasetConfig.relaxed(...)` if you want silent auto-fix instead of a validation error.
+        Terminology
+    -----------
+    - **Anchor**: the designated first feature of a cluster; can be informative or noise.
+    - **Proxy**: any correlated, non-anchor member of a cluster.
+    - **Free informative/noise**: features outside clusters, after accounting for anchors.
+
+    Anchors vs. Proxies — Counting Semantics
+    ----------------------------------------
+    • Each correlated cluster contributes exactly 1 **anchor** (the first feature in the cluster)
+      and (k−1) **non-anchor** members (k = n_cluster_features).
+
+    • The anchor has a role `anchor_role` ∈ {"informative", "noise"}:
+        - If `anchor_role == "informative"`, the anchor **counts toward `n_informative`**.
+        - If `anchor_role == "noise"`, the anchor **counts toward `n_noise`**.
+
+    • **Proxies** are the non-anchor members of a cluster. They are *derived* from
+      `corr_clusters` and are **not configured directly** (there is no input field like `n_proxy`).
+      They are **added on top** of `n_informative + n_noise` with the formula:
+          proxies_from_clusters = Σ_over_clusters (n_cluster_features − 1)
+
+    Expected feature count (strict)
+    -------------------------------
+    The minimal required total number of features is:
+        n_features_expected = n_informative + n_noise + proxies_from_clusters
+    with:
+        proxies_from_clusters = sum(max(0, c.n_cluster_features - 1) for c in corr_clusters)
+
+    The strict `@model_validator(mode="before")` computes this minimum and:
+      - fills `n_features` if omitted,
+      - enforces `n_features >= n_features_expected`,
+      - raises a clear error message if too small.
+    (See `_required_n_features` and the “before” normalizer for details.)
+
+    Derived “free” counts (interpretation aid)
+    ------------------------------------------
+    For reasoning and naming it is often helpful to split base counts into:
+      - `n_informative_anchors` = number of clusters with `anchor_role="informative"`
+      - `n_informative_free`   = `n_informative - n_informative_anchors`
+      - `n_noise_anchors`      = number of clusters with `anchor_role="noise"`
+      - `n_noise_free`         = `n_noise - n_noise_anchors`
+    These “free” features are outside clusters; the cluster anchors are part of the base counts.
+
+    Validation & Normalization
+    --------------------------
+    - **Before-construction validator** (`mode="before"`):
+        * Computes `n_features_expected` from raw input
+        * Fills or checks `n_features` accordingly (strict lower bound)
+        * Performs basic shape/type checks on class-related fields
+    - **After-construction validator** (`mode="after"`):
+        * Sanity checks for noise distribution and parameters
+        * (Recommended) Invariants:
+            - `n_informative >= #informative_anchors`
+            - `n_noise >= #noise_anchors`
+
+    Naming policy
+    -------------
+    - If `feature_naming="prefixed"`:
+        * Free informative features:  i1, i2, ...
+        * Free noise features:        n1, n2, ...
+        * Correlated clusters:        corr{cid}_anchor, corr{cid}_2, ..., corr{cid}_k
+          (Non-anchors are “proxies” in the metadata.)
+    - If `feature_naming="simple"`, a generic `feature_{i}` scheme is used.
+
+    Relationship to DatasetMeta (output, ground truth)
+    --------------------------------------------------
+    The generation step produces a `DatasetMeta` object describing resolved structure:
+      - `informative_idx`: indices of all informative features (anchors + free informative)
+      - `proxy_idx`:      indices of all cluster non-anchors (derived from clusters)
+      - `noise_idx`:      indices of all independent noise features (free noise)
+      - `corr_cluster_indices`: mapping cluster_id → list of column indices
+      - `anchor_idx`: mapping cluster_id → anchor column (or None for degenerate forms)
+    This meta is the single source of truth for downstream visualization/evaluation.
+
+    Examples (counting)
+    -------------------
+    1) One cluster k=4 with an informative anchor, plus n_informative=3, n_noise=2
+       proxies_from_clusters = (4−1) = 3
+       n_features_expected   = 3 + 2 + 3 = 8
+       Breakdown:
+         - informative_anchors = 1  → free_informative = 3 − 1 = 2
+         - noise_anchors = 0        → free_noise       = 2 − 0 = 2
+
+    2) Two clusters: k=5 (informative anchor), k=3 ("noise" anchor), base n_informative=4, n_noise=3
+       proxies_from_clusters = (5−1) + (3−1) = 6
+       n_features_expected   = 4 + 3 + 6 = 13
+       Breakdown:
+         - informative_anchors = 1  → free_informative = 4 − 1 = 3
+         - noise_anchors = 1        → free_noise       = 3 − 1 = 2
+
+    Notes:
+    -----
+    • The “proxies add on top” rule is consistent with the cluster docstring:
+      “Anchor first, followed by (k−1) proxies; proxies count as additional features.”  # see CorrClusterConfig Notes
+    • The required-features calculation is derived solely from `n_informative`, `n_noise`, and
+      Σ (n_cluster_features − 1) across all clusters.
+    • There is intentionally no input field `n_proxy`. Proxies are implied by cluster sizes.
+
+    See Also:
+    --------
+    CorrClusterConfig  : Correlated cluster settings (size, rho, anchor role/effect/class)
+    DatasetMeta        : Output ground-truth meta (indices for anchors, proxies, cluster layout)
     """
 
     model_config = ConfigDict(extra="forbid", use_enum_values=True)
@@ -528,7 +638,6 @@ class DatasetConfig(BaseModel):
     n_samples: int = 100
     n_features: int | None = None
     n_informative: int = 2
-    n_pseudo: int = 0
     n_noise: int = 0
     noise_distribution: NoiseDistribution = NoiseDistribution.normal
     noise_scale: float = 1.0
@@ -543,7 +652,7 @@ class DatasetConfig(BaseModel):
     # naming
     feature_naming: Literal["prefixed", "simple"] = "prefixed"
     prefix_informative: str = "i"
-    prefix_pseudo: str = "p"
+    prefix_proxy: str = "p"
     prefix_noise: str = "n"
     prefix_corr: str = "corr"
 
@@ -596,11 +705,7 @@ class DatasetConfig(BaseModel):
         Each cluster of size 'k' contributes (k - 1) *additional* features,
         because its anchor is already counted in the base role counts.
         """
-        base = (
-            int(raw_config.get("n_informative", 0))
-            + int(raw_config.get("n_pseudo", 0))
-            + int(raw_config.get("n_noise", 0))
-        )
+        base = int(raw_config.get("n_informative", 0)) + int(raw_config.get("n_noise", 0))
         extra_from_clusters = 0
         for c in cls._iter_cluster_dicts(raw_config):
             n_cluster_features = int(c.get("n_cluster_features", 0))
@@ -614,12 +719,19 @@ class DatasetConfig(BaseModel):
             raise ValueError("n_noise must be >= 0")
         if self.noise_scale <= 0:
             raise ValueError("noise_scale must be > 0")
-        # Optional: validate uniform bounds if both provided
+        # validate uniform bounds if both provided
         if self.noise_distribution == NoiseDistribution.uniform and self.noise_params:
             low = self.noise_params.get("low", None)
             high = self.noise_params.get("high", None)
             if low is not None and high is not None and not (float(low) < float(high)):
                 raise ValueError("For uniform noise, require low < high.")
+
+        inf_anchors = self.count_informative_anchors()
+        noise_anchors = self.count_noise_anchors()
+        if self.n_informative < inf_anchors:
+            raise ValueError(f"n_informative ({self.n_informative}) < number of informative anchors ({inf_anchors}).")
+        if self.n_noise < noise_anchors:
+            raise ValueError(f"n_noise ({self.n_noise}) < number of noise anchors ({noise_anchors}).")
         return self
 
     @model_validator(mode="before")
@@ -763,12 +875,11 @@ class DatasetConfig(BaseModel):
         kwargs["corr_clusters"] = norm_clusters
 
         # Compute required n_features
-        # n_features = free informative + free pseudo + free noise + sum(n_cluster_features-1 per cluster)
+        # n_features = free informative + free noise + sum(n_cluster_features-1 per cluster)
         n_inf = int(kwargs.get("n_informative", 0))
-        n_pse = int(kwargs.get("n_pseudo", 0))
         n_noise = int(kwargs.get("n_noise", 0))
         proxies = sum(cc.n_cluster_features - 1 for cc in norm_clusters)
-        required = n_inf + n_pse + n_noise + proxies
+        required = n_inf + n_noise + proxies
 
         n_feat = kwargs.get("n_features")
         if n_feat is None or int(n_feat) < required:
@@ -818,7 +929,6 @@ class DatasetConfig(BaseModel):
         Note: This is a subset of n_informative, not a separate count.
 
         Returns:
-        -------
             The number of clusters with anchor_role == "informative".
 
         Note:
@@ -826,6 +936,14 @@ class DatasetConfig(BaseModel):
             use `self._proxies_from_clusters(self.corr_clusters)`.
         """
         return sum(1 for c in (self.corr_clusters or []) if c.anchor_role == "informative")
+
+    def count_noise_anchors(self) -> int:
+        """Count clusters whose anchor is 'noise' (non-informative anchor).
+
+        Returns:
+            The number of clusters with anchor_role == "noise".
+        """
+        return sum(1 for c in (self.corr_clusters or []) if c.anchor_role == "noise")
 
     @staticmethod
     def _proxies_from_clusters(clusters: Iterable[CorrClusterConfig] | None) -> int:
@@ -848,44 +966,47 @@ class DatasetConfig(BaseModel):
             return 0
         return sum(max(0, int(c.n_cluster_features) - 1) for c in clusters)
 
+    @property
+    def n_informative_free(self) -> int:
+        """Informative features outside clusters (excludes informative anchors)."""
+        return max(self.n_informative - self.count_informative_anchors(), 0)
+
+    @property
+    def n_noise_free(self) -> int:
+        """Independent noise features (excludes noise anchors)."""
+        return max(self.n_noise - self.count_noise_anchors(), 0)
+
     def breakdown(self) -> dict[str, int]:
-        """Return a structured breakdown of feature counts, incl. cluster proxies.
+        """Structured feature counts incl. cluster proxies and anchor split.
 
         Returns:
-        -------
             A dict with keys:
             - n_informative_total
             - n_informative_anchors
             - n_informative_free
-            - n_pseudo_free
-            - n_noise
+            - n_noise_total
+            - n_noise_anchors
+            - n_noise_free
             - proxies_from_clusters
             - n_features_expected
             - n_features_configured
-
         Raises:
-        ------
             ValueError: If self.n_features is inconsistent (should not happen if validated).
-
             This is a safeguard against manual tampering with the instance attributes. This should not happen if the
             instance was created via the normal validators. If you encounter this, please report a bug.
-
-        Note:
-            n_features_expected = n_informative + n_pseudo + n_noise + proxies_from_clusters
-            n_features_configured = self.n_features (may be larger than expected)
         """
         proxies = self._proxies_from_clusters(self.corr_clusters)
         n_inf_anchors = self.count_informative_anchors()
+        n_noise_anchors = self.count_noise_anchors()
         return {
             "n_informative_total": int(self.n_informative),
             "n_informative_anchors": int(n_inf_anchors),
             "n_informative_free": int(max(self.n_informative - n_inf_anchors, 0)),
-            # If you want symmetry, you could also subtract pseudo/noise anchors here.
-            "n_pseudo_free": int(self.n_pseudo),
-            "n_noise": int(self.n_noise),
+            "n_noise_total": int(self.n_noise),
+            "n_noise_anchors": int(n_noise_anchors),
+            "n_noise_free": int(max(self.n_noise - n_noise_anchors, 0)),
             "proxies_from_clusters": int(proxies),
-            "n_features_expected": int(self.n_informative + self.n_pseudo + self.n_noise + proxies),
-            # n_features is Optional during early normalization; coerce safely for summarization
+            "n_features_expected": int(self.n_informative + self.n_noise + proxies),
             "n_features_configured": int(self.n_features or 0),
         }
 
@@ -912,7 +1033,6 @@ class DatasetConfig(BaseModel):
                 "n_informative_total",
                 "n_informative_anchors",
                 "n_informative_free",
-                "n_pseudo_free",
                 "n_noise",
                 "proxies_from_clusters",
                 "n_features_expected",
@@ -924,7 +1044,6 @@ class DatasetConfig(BaseModel):
             lines.append(f"- n_informative_total    : {b['n_informative_total']}")
             lines.append(f"- n_informative_anchors  : {b['n_informative_anchors']}")
             lines.append(f"- n_informative_free     : {b['n_informative_free']}")
-            lines.append(f"- n_pseudo_free          : {b['n_pseudo_free']}")
             lines.append(f"- n_noise                : {b['n_noise']}")
             lines.append(f"- proxies_from_clusters  : {b['proxies_from_clusters']}")
             lines.append(f"- n_features_expected    : {b['n_features_expected']}")

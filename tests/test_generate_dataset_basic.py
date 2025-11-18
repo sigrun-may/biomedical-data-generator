@@ -18,7 +18,6 @@ def test_shapes_and_roles_with_cluster_proxies():
     cfg = DatasetConfig(
         n_samples=120,
         n_informative=2,
-        n_pseudo=0,
         n_noise=1,
         corr_clusters=[
             CorrClusterConfig(
@@ -29,7 +28,7 @@ def test_shapes_and_roles_with_cluster_proxies():
                 anchor_effect_size=1.0,
             )
         ],
-        n_features=2 + 0 + 1 + (4 - 1),
+        n_features=2 + 1 + (4 - 1),
         class_counts={0: 60, 1: 60},  # Explicit class counts
         random_state=11,
     )
@@ -37,7 +36,7 @@ def test_shapes_and_roles_with_cluster_proxies():
     assert X.shape == (120, cfg.n_features)
     assert y.shape == (120,)
     # indices consistency
-    idx_all = set(meta.informative_idx) | set(meta.pseudo_idx) | set(meta.noise_idx)
+    idx_all = set(meta.informative_idx) | set(meta.noise_idx) | set().union(*meta.corr_cluster_indices.values())
     assert len(idx_all) == cfg.n_features
     # cluster index map present
     assert isinstance(meta.corr_cluster_indices, dict) and len(meta.corr_cluster_indices) >= 1
@@ -47,7 +46,6 @@ def test_class_counts_exact_match():
     cfg = DatasetConfig(
         n_samples=400,
         n_informative=3,
-        n_pseudo=0,
         n_noise=0,
         corr_clusters=[
             CorrClusterConfig(
@@ -71,7 +69,6 @@ def test_invalid_n_classes_raises():
     cfg = DatasetConfig(
         n_samples=50,
         n_informative=2,
-        n_pseudo=0,
         n_noise=0,
         n_features=2,
         n_classes=1,

@@ -26,11 +26,10 @@ def test_noise_distributions_basic(dist):
     cfg = DatasetConfig(
         n_samples=120,
         n_informative=2,
-        n_pseudo=1,
         n_noise=4,
         noise_distribution=dist,
         noise_scale=1.5,
-        n_features=2 + 1 + 4,
+        n_features=2 + 4,
         class_counts={0: 60, 1: 60},  # Explicit class counts
         random_state=42,
     )
@@ -54,12 +53,11 @@ def test_noise_params_override_scale():
     cfg = DatasetConfig(
         n_samples=100,
         n_informative=1,
-        n_pseudo=0,
         n_noise=2,
         noise_distribution=NoiseDistribution.normal,
         noise_scale=2.0,
         noise_params={"scale": 0.3, "loc": 0.0},
-        n_features=1 + 0 + 2,
+        n_features=1 + 2,
         class_counts={0: 50, 1: 50},  # Explicit class counts
         random_state=0,
     )
@@ -73,11 +71,10 @@ def test_determinism_random_state():
     cfg = DatasetConfig(
         n_samples=80,
         n_informative=2,
-        n_pseudo=1,
         n_noise=3,
         noise_distribution=NoiseDistribution.laplace,
         noise_scale=1.0,
-        n_features=2 + 1 + 3,
+        n_features=2 + 3,
         class_counts={0: 40, 1: 40},  # Explicit class counts
         random_state=7,
     )

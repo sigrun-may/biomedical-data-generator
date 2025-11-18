@@ -18,7 +18,6 @@ def main() -> None:
         n_samples=200,
         n_features=10,  # = informative + pseudo + noise + proxies_from_clusters
         n_informative=4,
-        n_pseudo=2,
         n_noise=4,
         n_classes=2,
         weights=[0.6, 0.4],

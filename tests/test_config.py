@@ -16,7 +16,6 @@ def test_n_features_too_small_raises():
         DatasetConfig(
             n_samples=10,
             n_informative=2,
-            n_pseudo=0,
             n_noise=0,
             corr_clusters=[CorrClusterConfig(n_cluster_features=5, rho=0.7)],
             n_features=3,  # too small: needs 2 + (5-1) = 6
@@ -29,7 +28,6 @@ def test_relaxed_autofixes_n_features():
     cfg = DatasetConfig.relaxed(
         n_samples=10,
         n_informative=2,
-        n_pseudo=0,
         n_noise=0,
         corr_clusters=[CorrClusterConfig(n_cluster_features=5, rho=0.7)],
         n_features=3,  # will be raised to 6
@@ -40,7 +38,7 @@ def test_relaxed_autofixes_n_features():
 def test_init_has_no_warnings(recwarn):
     from biomedical_data_generator import DatasetConfig
 
-    DatasetConfig(n_samples=5, n_informative=1, n_pseudo=0, n_noise=0)
+    DatasetConfig(n_samples=5, n_informative=1, n_noise=0)
     assert not recwarn  # no warnings expected
 
 
@@ -50,7 +48,6 @@ def test_breakdown_matches_required_n_features():
     cfg = DatasetConfig.relaxed(
         n_samples=1,
         n_informative=3,
-        n_pseudo=1,
         n_noise=2,
         corr_clusters=[
             CorrClusterConfig(n_cluster_features=4, rho=0.6),
@@ -60,8 +57,8 @@ def test_breakdown_matches_required_n_features():
     b = cfg.breakdown()
     # proxies = (4-1) + (3-1) = 5
     assert b["proxies_from_clusters"] == 5
-    assert b["n_features_expected"] == 3 + 1 + 2 + 5 == 11
-    assert cfg.n_features == 11
+    assert b["n_features_expected"] == 3 + 2 + 5 == 10
+    assert cfg.n_features == 10
 
 
 def test_corr_clusters_accept_dicts_and_models():
@@ -69,10 +66,10 @@ def test_corr_clusters_accept_dicts_and_models():
 
     cfg = DatasetConfig.relaxed(
         n_samples=1,
-        n_informative=1,
+        n_informative=2,
         corr_clusters=[
             {"n_cluster_features": 3, "rho": 0.7, "anchor_role": "informative"},
             CorrClusterConfig(n_cluster_features=2, rho=0.5),
         ],
     )
-    assert cfg.n_features == 1 + (3 - 1) + (2 - 1) == 4
+    assert cfg.n_features == 2 + (3 - 1) + (2 - 1) == 5

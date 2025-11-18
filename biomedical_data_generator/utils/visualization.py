@@ -229,7 +229,6 @@ def plot_correlation_matrices_per_cluster(
 
 def plot_all_correlation_clusters(
     df: pd.DataFrame,
-    meta: Any,
     *,
     correlation_method: Literal["pearson", "kendall", "spearman"] = "spearman",
     title: str | None = None,
@@ -248,7 +247,6 @@ def plot_all_correlation_clusters(
 
     Args:
         df: DataFrame with all features.
-        meta: Meta object with cluster information.
         correlation_method: Correlation method to use.
         title: Optional plot title.
         figsize: Figure size.

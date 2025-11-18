@@ -16,9 +16,8 @@ def test_feature_names_match_dataframe_columns():
     """Verify meta.feature_names exactly matches DataFrame columns."""
     cfg = DatasetConfig(
         n_samples=50,
-        n_features=7,
+        n_features=5,
         n_informative=2,
-        n_pseudo=2,
         n_noise=3,
         n_classes=2,
         class_counts={0: 25, 1: 25},
@@ -33,7 +32,6 @@ def test_feature_names_match_dataframe_columns():
 
     # Check naming scheme
     assert meta.feature_names[0].startswith("i")  # informative
-    assert any(name.startswith("p") for name in meta.feature_names)  # pseudo
     assert any(name.startswith("n") for name in meta.feature_names)  # noise
 
 
@@ -47,7 +45,6 @@ def test_anchor_improves_classification_accuracy():
     cfg_with = DatasetConfig(
         n_samples=200,
         n_informative=1,
-        n_pseudo=1,
         n_noise=3,
         corr_clusters=[
             CorrClusterConfig(
@@ -59,7 +56,7 @@ def test_anchor_improves_classification_accuracy():
                 anchor_class=1,
             )
         ],
-        n_features=1 + 1 + 3 + (3 - 1),
+        n_features=1 + 3 + (3 - 1),
         n_classes=2,
         class_counts={0: 100, 1: 100},
         class_sep=1.0,
@@ -70,7 +67,6 @@ def test_anchor_improves_classification_accuracy():
     cfg_without = DatasetConfig(
         n_samples=200,
         n_informative=1,
-        n_pseudo=1,
         n_noise=3,
         corr_clusters=[
             CorrClusterConfig(
@@ -80,7 +76,7 @@ def test_anchor_improves_classification_accuracy():
                 anchor_role="noise",  # NOT informative
             )
         ],
-        n_features=1 + 1 + 3 + 3,  # noise anchor: all 3 features are proxies
+        n_features=1 + 3 + 3,  # noise anchor: all 3 features are proxies
         n_classes=2,
         class_counts={0: 100, 1: 100},
         class_sep=1.0,
@@ -115,14 +111,13 @@ def test_class_specific_correlation_in_clusters():
     """
     cfg = DatasetConfig(
         n_samples=200,
-        n_informative=0,
-        n_pseudo=0,
+        n_informative=1,
         n_noise=0,
         corr_clusters=[
             CorrClusterConfig(
                 n_cluster_features=4,
                 structure="equicorrelated",
-                anchor_role="pseudo",
+                anchor_role="informative",
                 class_rho={1: 0.9},  # Class 1: high correlation
                 rho_baseline=0.1,  # Other classes: low correlation
             )
@@ -165,9 +160,8 @@ def test_metadata_completeness():
     """Verify DatasetMeta contains all required fields."""
     cfg = DatasetConfig(
         n_samples=100,
-        n_features=10,
+        n_features=8,
         n_informative=3,
-        n_pseudo=2,
         n_noise=5,
         n_classes=2,
         class_counts={0: 50, 1: 50},
@@ -178,7 +172,6 @@ def test_metadata_completeness():
     # Required fields
     assert hasattr(meta, "feature_names")
     assert hasattr(meta, "informative_idx")
-    assert hasattr(meta, "pseudo_idx")
     assert hasattr(meta, "noise_idx")
     assert hasattr(meta, "y_counts")
     assert hasattr(meta, "y_weights")
@@ -204,9 +197,8 @@ def test_single_sample_per_class():
     """Edge case: Minimum viable dataset (1 sample per class)."""
     cfg = DatasetConfig(
         n_samples=3,
-        n_features=5,
+        n_features=4,
         n_informative=2,
-        n_pseudo=1,
         n_noise=2,
         n_classes=3,
         class_counts={0: 1, 1: 1, 2: 1},
@@ -214,7 +206,7 @@ def test_single_sample_per_class():
     )
     X, y, meta = generate_dataset(cfg, return_dataframe=False)
 
-    assert X.shape == (3, 5)
+    assert X.shape == (3, 4)
     assert len(y) == 3
     assert set(y) == {0, 1, 2}
     assert meta.y_counts == {0: 1, 1: 1, 2: 1}
@@ -226,9 +218,8 @@ def test_many_classes():
     samples_per_class = 10
     cfg = DatasetConfig(
         n_samples=n_classes * samples_per_class,
-        n_features=8,
+        n_features=6,
         n_informative=3,
-        n_pseudo=2,
         n_noise=3,
         n_classes=n_classes,
         class_counts={i: samples_per_class for i in range(n_classes)},
@@ -236,7 +227,7 @@ def test_many_classes():
     )
     X, y, meta = generate_dataset(cfg, return_dataframe=False)
 
-    assert X.shape == (120, 8)
+    assert X.shape == (120, 6)
     assert len(set(y)) == n_classes
     assert meta.n_classes == n_classes
     assert all(meta.y_counts[i] == samples_per_class for i in range(n_classes))
@@ -249,7 +240,6 @@ def test_extreme_noise_scales():
         n_samples=100,
         n_features=5,
         n_informative=2,
-        n_pseudo=0,
         n_noise=3,
         n_classes=2,
         class_counts={0: 50, 1: 50},
@@ -266,7 +256,6 @@ def test_extreme_noise_scales():
         n_samples=100,
         n_features=5,
         n_informative=2,
-        n_pseudo=0,
         n_noise=3,
         n_classes=2,
         class_counts={0: 50, 1: 50},
@@ -283,9 +272,8 @@ def test_imbalanced_dataset_90_10():
     """Realistic medical scenario: 90% healthy, 10% diseased."""
     cfg = DatasetConfig(
         n_samples=1000,
-        n_features=10,
+        n_features=8,
         n_informative=3,
-        n_pseudo=2,
         n_noise=5,
         n_classes=2,
         class_counts={0: 900, 1: 100},  # 90/10 split

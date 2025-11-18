@@ -329,7 +329,7 @@ def test_find_seed_for_correlation_from_cluster_class_specific():
         rho=0.2,  # baseline
         class_rho={1: 0.9},  # high correlation in class 1
         structure="equicorrelated",
-        anchor_role="pseudo",
+        anchor_role="informative",
     )
 
     # Search for class 1 (should target rho=0.9)

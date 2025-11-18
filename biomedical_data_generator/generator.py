@@ -17,6 +17,7 @@ from numpy.typing import NDArray
 from pandas import DataFrame
 
 from .config import DatasetConfig, NoiseDistribution
+from .effects.batch import apply_batch_effects_from_config
 from .features.correlated import sample_cluster
 from .features.informative import shift_classes
 from .features.noise import sample_noise
@@ -54,30 +55,32 @@ def _labels_from_counts(counts: dict[int, int], n_classes: int, rng: np.random.G
     return y
 
 
-# ==================
-# Naming & role map
-# ==================
+#
 def _make_names_and_roles(
     cfg: DatasetConfig,
-) -> tuple[list[str], list[int], list[int], list[int], dict[int, list[int]], dict[int, int | None]]:
-    """Build feature names and role indices.
+) -> tuple[
+    list[str],  # names
+    list[int],  # informative_idx (incl. anchors)
+    list[int],  # noise_idx (independent/free noise)
+    dict[int, list[int]],  # cluster_indices[cid] -> list of cols
+    dict[int, int | None],  # anchor_idx[cid] -> anchor col or None
+]:
+    """Build feature names and role indices with explicit proxy handling.
 
     Naming policy:
-      - Cluster features always start with the cluster prefix, e.g. 'corr{cid}_*'.
-      - If a cluster has an informative anchor, its first column is named 'corr{cid}_anchor'.
-        The remaining cluster members are named 'corr{cid}_{k}' with k = 2..n.
-      - If a cluster has no informative anchor, all members are named 'corr{cid}_{k}' with k = 1..n
-        and are counted as pseudo features.
-      - Free informative features (outside clusters) are named 'i1, i2, ...' independently
-        of how many anchors exist (anchors do NOT consume the 'i*' numbering).
-      - Free pseudo features are 'p1, p2, ...'; noise features are 'n1, n2, ...'.
+      - Cluster features are prefixed with the correlation prefix, e.g. 'corr{cid}_*'.
+      - If a cluster has an informative anchor, its first column is 'corr{cid}_anchor'.
+        The remaining cluster members are *proxies* and are named 'corr{cid}_{k}'.
+      - If a cluster has no informative anchor, *all* members are proxies
+        and are named 'corr{cid}_{k}'.
+      - Free informative (outside clusters) are 'i1, i2, ...'.
+      - Independent/free noise are 'n1, n2, ...'.
 
-    The function returns:
-      names, informative_idx, pseudo_idx, noise_idx, cluster_indices, anchor_idx
+    Returns:
+      names, informative_idx, noise_idx, cluster_indices, anchor_idx
     """
     names: list[str] = []
     informative_idx: list[int] = []
-    pseudo_idx: list[int] = []
     noise_idx: list[int] = []
     cluster_indices: dict[int, list[int]] = {}
     anchor_idx: dict[int, int | None] = {}
@@ -85,19 +88,20 @@ def _make_names_and_roles(
     current = 0
     proxies_from_clusters = 0
 
-    # Helper counters that control ONLY the printed numbering (not the role counts)
+    # Pretty counters for free features (only affect printed numbering)
     free_inf_count = 0
-    free_pseudo_count = 0
     free_noise_count = 0
 
-    # 1) clusters first for contiguous columns
+    # -------------------------
+    # 1) clusters (contiguous)
+    # -------------------------
     if cfg.corr_clusters:
         for cid, c in enumerate(cfg.corr_clusters, start=1):
             cols = list(range(current, current + c.n_cluster_features))
             cluster_indices[cid] = cols
 
             if c.anchor_role == "informative":
-                # first col is anchor -> name includes cluster id
+                # anchor (first col)
                 anchor_col = cols[0]
                 anchor_idx[cid] = anchor_col
                 if cfg.feature_naming == "prefixed":
@@ -106,30 +110,29 @@ def _make_names_and_roles(
                     names.append(f"feature_{len(names)+1}")
                 informative_idx.append(anchor_col)
 
-                # proxies (remaining columns in this cluster)
+                # proxies (remaining cols)
                 for k, col in enumerate(cols[1:], start=2):
                     if cfg.feature_naming == "prefixed":
                         names.append(f"{cfg.prefix_corr}{cid}_{k}")
                     else:
                         names.append(f"feature_{len(names)+1}")
-                    pseudo_idx.append(col)
-
                 proxies_from_clusters += max(c.n_cluster_features - 1, 0)
 
             else:
-                # no informative anchor: all cluster members are pseudo features
+                # no informative anchor => all are proxies
                 anchor_idx[cid] = None
                 for k, col in enumerate(cols, start=1):
                     if cfg.feature_naming == "prefixed":
                         names.append(f"{cfg.prefix_corr}{cid}_{k}")
                     else:
                         names.append(f"feature_{len(names)+1}")
-                    pseudo_idx.append(col)
                 proxies_from_clusters += c.n_cluster_features
 
             current += c.n_cluster_features
 
-    # 2) free informative outside clusters
+    # --------------------------------------------
+    # 2) free informative outside of any clusters
+    # --------------------------------------------
     n_anchors = sum(1 for c in (cfg.corr_clusters or []) if c.anchor_role == "informative")
     if cfg.n_informative < n_anchors:
         raise ValueError(f"n_informative ({cfg.n_informative}) < number of informative anchors ({n_anchors}).")
@@ -143,16 +146,9 @@ def _make_names_and_roles(
             names.append(f"feature_{len(names)+1}")
         informative_idx.append(len(names) - 1)
 
-    # 3) free pseudo (exactly cfg.n_pseudo, independent of proxies)
-    for _ in range(cfg.n_pseudo):
-        free_pseudo_count += 1
-        if cfg.feature_naming == "prefixed":
-            names.append(f"{cfg.prefix_pseudo}{free_pseudo_count}")
-        else:
-            names.append(f"feature_{len(names)+1}")
-        pseudo_idx.append(len(names) - 1)
-
-    # 4) noise
+    # ------------------------
+    # 3) independent/free noise
+    # ------------------------
     for _ in range(cfg.n_noise):
         free_noise_count += 1
         if cfg.feature_naming == "prefixed":
@@ -161,18 +157,25 @@ def _make_names_and_roles(
             names.append(f"feature_{len(names)+1}")
         noise_idx.append(len(names) - 1)
 
-    # Totals validation with proxies added on top
-    n_features_expected = cfg.n_informative + cfg.n_pseudo + cfg.n_noise + proxies_from_clusters
+    # ---------------------------------
+    # 4) sanity checks / derived totals
+    # ---------------------------------
+    # Total features are: informative (anchors + free) + proxies(from clusters) + noise
+    n_features_expected = cfg.n_informative + proxies_from_clusters + cfg.n_noise
+
     if len(names) != n_features_expected:
-        raise AssertionError((len(names), n_features_expected))
-    if cfg.n_features != n_features_expected:
-        raise ValueError(
-            "cfg.n_features must equal n_informative + n_pseudo + n_noise + proxies_from_clusters "
-            f"= {cfg.n_informative} + {cfg.n_pseudo} + {cfg.n_noise} + {proxies_from_clusters} "
-            f"= {n_features_expected}, but got n_features={cfg.n_features}."
+        raise AssertionError(
+            f"constructed={len(names)} but expected={n_features_expected} "
+            f"(n_informative={cfg.n_informative}, proxies_from_clusters={proxies_from_clusters}, n_noise={cfg.n_noise})"
         )
 
-    return names, informative_idx, pseudo_idx, noise_idx, cluster_indices, anchor_idx
+    if hasattr(cfg, "n_features") and cfg.n_features != n_features_expected:
+        raise ValueError(
+            "cfg.n_features must equal n_informative + proxies_from_clusters + n_noise "
+            f"= {cfg.n_informative} + {proxies_from_clusters} + {cfg.n_noise} "
+            f"= {n_features_expected}, but got n_features={cfg.n_features}."
+        )
+    return names, informative_idx, noise_idx, cluster_indices, anchor_idx
 
 
 def _resolve_noise_params(dist: str, noise_scale: float, noise_params: Mapping[str, Any] | None) -> dict[str, float]:
@@ -245,12 +248,12 @@ def generate_dataset(
     """Generate an n-class classification dataset with optional correlated clusters.
 
     Features are ordered as: cluster features (anchors first within each cluster),
-    then free informative features, then free pseudo features, then noise features.
+    then free informative features, then noise features.
     Labels y must be explicitly specified via `cfg.class_counts` (exact per-class sample counts).
     Class-wise shifts are then applied to informative features and cluster anchors
     (via `anchor_effect_size`) to create class separation.
     Reproducibility is controlled by `cfg.random_state` and optional per-cluster seeds.
-    Feature names follow either a "prefixed" scheme (e.g., `i*`, `corr{cid}_k`, `p*`, `n*`)
+    Feature names follow either a "prefixed" scheme (e.g., `i*`, `corr{cid}_k`, `n*`)
     or a generic `feature_1..p`. The returned `meta` includes role masks, cluster indices,
     empirical class proportions, and the resolved configuration.
 
@@ -267,7 +270,7 @@ def generate_dataset(
     -------
         tuple:
             - X (pandas.DataFrame | np.ndarray): Shape (n_samples, n_features). By default a DataFrame
-              with feature names in canonical order (clusters → free informative → free pseudo → noise).
+              with feature names in canonical order (clusters → free informative → noise).
             - y (np.ndarray): Shape (n_samples,). Integer labels in {0, 1, ..., n_classes-1}.
             - meta (DatasetMeta): Metadata including role masks, cluster indices/labels, empirical class
               weights, and the resolved configuration.
@@ -302,7 +305,7 @@ def generate_dataset(
     y = _labels_from_counts(cfg.class_counts, cfg.n_classes, rng_global)  # shape (n_samples,), dtype=int
 
     # names & roles (+ totals validation inside)
-    names, inf_idx, pse_idx, noi_idx, cluster_idx, anch_idx = _make_names_and_roles(cfg)
+    names, inf_idx, noi_idx, cluster_idx, anch_idx = _make_names_and_roles(cfg)
 
     # --- Step 2a: build matrices per cluster (respect per-cluster seed if provided) ---
     cluster_matrices: list[NDArray[np.float64]] = []
@@ -314,9 +317,11 @@ def generate_dataset(
     col_start = 0
     if cfg.corr_clusters:
         for cid, c in enumerate(cfg.corr_clusters, start=1):
-            # Choose a deterministic RNG for this cluster
-            seed = c.random_state if c.random_state is not None else cfg.random_state
-            rng = np.random.default_rng(seed)
+            # Use separate generator if cluster.random_state specified, else share main generator
+            if c.random_state is not None:
+                cluster_rng = np.random.default_rng(c.random_state)
+            else:
+                cluster_rng = rng_global
 
             # IMPORTANT:
             # - Only pass class_labels if class_rho is explicitly configured.
@@ -325,7 +330,7 @@ def generate_dataset(
                 B = sample_cluster(
                     n_samples=cfg.n_samples,
                     n_features=c.n_cluster_features,
-                    rng=rng,
+                    rng=cluster_rng,
                     structure=c.structure,
                     baseline_rho=c.rho_baseline,
                     class_labels=y,  # <-- only in the class_rho branch
@@ -335,14 +340,14 @@ def generate_dataset(
                 B = sample_cluster(
                     n_samples=cfg.n_samples,
                     n_features=c.n_cluster_features,
-                    rng=rng,
+                    rng=cluster_rng,
                     structure=c.structure,
                     rho=float(c.rho) if c.rho is not None else 0.0,
                 )
 
             # weak global coupling (same g for all cluster columns)
             if getattr(cfg, "corr_between", 0.0) and cfg.corr_between > 0.0:
-                g = rng.normal(0.0, 1.0, size=(cfg.n_samples, 1))
+                g = cluster_rng.normal(0.0, 1.0, size=(cfg.n_samples, 1))
                 B = B + np.sqrt(cfg.corr_between) * g
 
             # Record anchor metadata for a later mean-shift (anchor-only)
@@ -360,27 +365,14 @@ def generate_dataset(
             cluster_label_map[cid] = getattr(c, "label", None)
             cluster_matrices.append(B)
             col_start += c.n_cluster_features
-
-            # --- Optional development guard (keep commented out in release) ---
-            # import numpy as _np
-            # C = _np.corrcoef(B, rowvar=False); off = C[~_np.eye(C.shape[0], bool)]
-            # assert _np.isfinite(off).all()
-            # if getattr(c, "class_rho", None) is None and float(c.rho or 0.0) > 0.0:
-            #     assert off.mean() > 0.2, f"Mean off-diagonal too low for cid={cid}: {off.mean():.3f}"
-
     X_clusters = np.concatenate(cluster_matrices, axis=1) if cluster_matrices else np.empty((cfg.n_samples, 0))
 
-    # 2b) free informative (exactly n_informative - n_anchors)
+    # 2a) free informative (exactly n_informative - n_anchors)
     n_anchors = sum(1 for c in (cfg.corr_clusters or []) if c.anchor_role == "informative")
     n_inf_free = cfg.n_informative - n_anchors
     X_inf = rng_global.normal(size=(cfg.n_samples, n_inf_free)) if n_inf_free > 0 else np.empty((cfg.n_samples, 0))
 
-    # 2c) free pseudo (exactly cfg.n_pseudo, independent of proxies)
-    X_pseudo = (
-        rng_global.normal(size=(cfg.n_samples, cfg.n_pseudo)) if cfg.n_pseudo > 0 else np.empty((cfg.n_samples, 0))
-    )
-
-    # 2d) noise
+    # 2b) free noise
     if cfg.n_noise > 0:
         params = _resolve_noise_params(cfg.noise_distribution, cfg.noise_scale, cfg.noise_params)
         distribution = (
@@ -403,8 +395,8 @@ def generate_dataset(
     else:
         X_noise = np.empty((cfg.n_samples, 0))
 
-    # Concatenate in naming order: [clusters] + [free informative] + [free pseudo] + [noise]
-    X = np.concatenate([X_clusters, X_inf, X_pseudo, X_noise], axis=1)
+    # Concatenate in naming order: [clusters] + [free informative] + [noise]
+    X = np.concatenate([X_clusters, X_inf, X_noise], axis=1)
 
     # Check totals
     assert X.shape[1] == len(names) == cfg.n_features, (X.shape[1], len(names), cfg.n_features)
@@ -436,11 +428,28 @@ def generate_dataset(
         spread_non_anchors=bool(getattr(cfg, "spread_non_anchors", True)),
     )
 
+    # STEP 4: Apply batch effects (if configured)
+    batch_labels = None
+    batch_effects = None
+    if cfg.batch is not None and cfg.batch.n_batches > 1:
+        # Use separate generator if batch.random_state specified, else share main generator
+        if cfg.batch.random_state is not None:
+            batch_rng = np.random.default_rng(cfg.batch.random_state)
+        else:
+            batch_rng = rng_global
+
+        X, batch_labels, batch_effects = apply_batch_effects_from_config(
+            X=X,
+            y=y,
+            batch_config=cfg.batch,
+            informative_indices=inf_idx,
+            rng=batch_rng,
+        )
+
     # Final metadata
     meta = DatasetMeta(
         feature_names=names,
         informative_idx=inf_idx,
-        pseudo_idx=pse_idx,
         noise_idx=noi_idx,
         corr_cluster_indices=cluster_idx,
         anchor_idx=anch_idx,
