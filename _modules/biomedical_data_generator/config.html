@@ -162,66 +162,107 @@
     <span class="n">laplace</span> <span class="o">=</span> <span class="s2">&quot;laplace&quot;</span>  <span class="c1"># heavy tails; nice to show outliers</span>
 
 
-<span class="k">class</span><span class="w"> </span><span class="nc">BatchConfig</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">BatchEffectsConfig</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Configuration for simulating batch effects.</span>
 
-<span class="sd">    Simulate batch effects by adding random intercepts to specified columns. The intercepts are drawn from a normal</span>
-<span class="sd">    distribution with mean 0 and standard deviation `effect_strength`. Optionally, the batch assignment can</span>
-<span class="sd">    be confounded with the class labels.</span>
+<span class="sd">    Simulate batch effects by adding random intercepts or scaling factors</span>
+<span class="sd">    to specified features. This can be used to mimic:</span>
+<span class="sd">      - site-to-site differences (multi-center studies),</span>
+<span class="sd">      - instrument calibration shifts,</span>
+<span class="sd">      - cohort / recruitment waves (temporal batches).</span>
+
+<span class="sd">    Randomness and reproducibility</span>
+<span class="sd">    ------------------------------</span>
+<span class="sd">    Batch effects are integrated into the dataset-level RNG in a predictable way:</span>
+
+<span class="sd">    - In :func:`generate_dataset`, a single</span>
+<span class="sd">      ``rng_global = np.random.default_rng(cfg.random_state)`` is created.</span>
+
+<span class="sd">    - If ``BatchEffectsConfig.random_state`` is ``None`` (recommended),</span>
+<span class="sd">      **all batch-related draws reuse this global generator**:</span>
+<span class="sd">        * batch assignment (random or confounded),</span>
+<span class="sd">        * batch effects (additive or multiplicative).</span>
+<span class="sd">      In this default mode, ``DatasetConfig.random_state`` is the **single knob**</span>
+<span class="sd">      that reproduces the entire dataset, *including* batch effects.</span>
+
+<span class="sd">    - If ``BatchEffectsConfig.random_state`` is an integer, a dedicated RNG</span>
+<span class="sd">      ``np.random.default_rng(batch.random_state)`` is created and passed to the</span>
+<span class="sd">      batch-effect routines. Use this only if you explicitly want to keep batch</span>
+<span class="sd">      effects fixed while changing other aspects of the dataset.</span>
+
+<span class="sd">    Conceptual separation</span>
+<span class="sd">    ---------------------</span>
+<span class="sd">    - ``confounding_with_class`` controls **sampling bias**:</span>
+<span class="sd">      which samples (classes) are recruited into which batch.</span>
+
+<span class="sd">    - ``effect_strength`` and ``effect_type`` control **technical variation**:</span>
+<span class="sd">      how strongly the measurement shifts between batches.</span>
 
 <span class="sd">    Args:</span>
-<span class="sd">        n_batches (int): Number of batches (0 or 1 means no batch effect).</span>
-<span class="sd">        effect_strength (float): Standard deviation of the batch intercepts.</span>
-<span class="sd">        effect_type (Literal[&quot;additive&quot;, &quot;multiplicative&quot;]): Type of batch effect.</span>
-<span class="sd">            - &quot;additive&quot;: Additive intercepts (default).</span>
-<span class="sd">            - &quot;multiplicative&quot;: Multiplicative scaling factors.</span>
+<span class="sd">        n_batches (int):</span>
+<span class="sd">            Number of batches. Values 0 or 1 effectively disable batch effects.</span>
+<span class="sd">        effect_strength (float):</span>
+<span class="sd">            Scale of batch effects.</span>
+<span class="sd">            - For ``effect_type=&quot;additive&quot;``: standard deviation of batch intercepts.</span>
+<span class="sd">            - For ``effect_type=&quot;multiplicative&quot;``: standard deviation of the</span>
+<span class="sd">              multiplicative factor (applied as ``X&#39; = X * (1 + b_batch)``).</span>
+<span class="sd">        effect_type (Literal[&quot;additive&quot;, &quot;multiplicative&quot;]):</span>
+<span class="sd">            Type of batch effect.</span>
+<span class="sd">            - ``&quot;additive&quot;``: Additive intercepts (shifts in feature means).</span>
+<span class="sd">            - ``&quot;multiplicative&quot;``: Multiplicative scaling (changes in variance/scale).</span>
 <span class="sd">        confounding_with_class: Degree of confounding between batch and class (0.0-1.0).</span>
 <span class="sd">            Controls how strongly batch assignment correlates with class labels,</span>
 <span class="sd">            simulating **recruitment bias** in multi-center studies.</span>
 
 <span class="sd">            The parameter determines the probability that samples from the same</span>
 <span class="sd">            class are assigned to the same batch:</span>
-
-<span class="sd">            - 0.0 = Independent: Batch assignment ignores class labels</span>
-<span class="sd">              → Each batch has approximately equal class proportions</span>
-
-<span class="sd">            - 0.5 = Moderate correlation: Samples from the same class are</span>
-<span class="sd">              moderately likely to end up in the same batch</span>
-<span class="sd">              → Batches show noticeable class imbalance</span>
-
-<span class="sd">            - 1.0 = Perfect correlation: Samples from the same class are</span>
-<span class="sd">              always assigned to the same batch</span>
-<span class="sd">              → Each batch contains only one class (if n_batches ≥ n_classes)</span>
-
-<span class="sd">            This controls **sampling bias** (who gets recruited where), while</span>
-<span class="sd">            `effect_strength` controls **technical variation** (measurement differences).</span>
-<span class="sd">        affected_features (list[int] | Literal[&quot;all&quot;, &quot;informative&quot;]): Features to affect.</span>
-<span class="sd">            &quot;all&quot; affects all features, &quot;informative&quot; affects only informative features,</span>
-<span class="sd">            or provide list of 0-based column indices.</span>
-<span class="sd">        proportions (list[float] | None): Optional proportions for batch sizes. Must sum to 1.</span>
-<span class="sd">        random_state (int | None): Random seed for reproducibility.</span>
+<span class="sd">            Semantics (for two classes / two batches, equal base proportions):</span>
+<span class="sd">                - 0.0 → independent: each batch has ~50/50 class mix.</span>
+<span class="sd">                - 0.5 → moderate correlation</span>
+<span class="sd">                - 0.8 → strong recruitment bias (most samples of a class go to one batch).</span>
+<span class="sd">                - 1.0 → perfect confounding: each class maps to one preferred batch</span>
+<span class="sd">                  (if ``n_batches &gt;= n_classes``).</span>
+<span class="sd">        affected_features (list[int] | Literal[&quot;all&quot;, &quot;informative&quot;]):</span>
+<span class="sd">            Which features should be affected:</span>
+<span class="sd">            - ``&quot;all&quot;``: apply batch effects to all features.</span>
+<span class="sd">            - ``&quot;informative&quot;``: apply only to informative features</span>
+<span class="sd">              (indices passed from the generator).</span>
+<span class="sd">            - list of ints: explicit 0-based column indices.</span>
+<span class="sd">        proportions (list[float] | None):</span>
+<span class="sd">            Optional target proportions for batch sizes. Values are normalized</span>
+<span class="sd">            to sum to 1. If ``None``, batches are (approximately) equal in size.</span>
+<span class="sd">        random_state (int | None):</span>
+<span class="sd">            Optional seed **specific to batch effects**.</span>
+<span class="sd">            - ``None`` (recommended): reuse the dataset-level RNG created from</span>
+<span class="sd">              ``DatasetConfig.random_state``.</span>
+<span class="sd">            - ``int``: use a dedicated RNG ``np.random.default_rng(random_state)``</span>
+<span class="sd">              for batch assignment and effects. This allows advanced users to</span>
+<span class="sd">              keep batch effects reproducible even if the dataset-level seed</span>
+<span class="sd">              changes.</span>
 
 <span class="sd">    Examples:</span>
-<span class="sd">        &gt;&gt;&gt; # Simple random batches</span>
-<span class="sd">        &gt;&gt;&gt; BatchConfig(n_batches=3, effect_strength=0.5)</span>
+<span class="sd">    --------</span>
+<span class="sd">    &gt;&gt;&gt; # Simple random batches, all controlled by DatasetConfig.random_state</span>
+<span class="sd">    &gt;&gt;&gt; BatchEffectsConfig(n_batches=3, effect_strength=0.5)</span>
 
-<span class="sd">        &gt;&gt;&gt; # Confounded batches (recruitment bias)</span>
-<span class="sd">        &gt;&gt;&gt; BatchConfig(</span>
-<span class="sd">        ...     n_batches=2,</span>
-<span class="sd">        ...     effect_strength=0.8,</span>
-<span class="sd">        ...     confounding_with_class=0.9</span>
-<span class="sd">        ... )</span>
+<span class="sd">    &gt;&gt;&gt; # Confounded batches (recruitment bias)</span>
+<span class="sd">    &gt;&gt;&gt; BatchEffectsConfig(</span>
+<span class="sd">    ...     n_batches=2,</span>
+<span class="sd">    ...     effect_strength=0.8,</span>
+<span class="sd">    ...     confounding_with_class=0.9,</span>
+<span class="sd">    ... )</span>
 
-<span class="sd">        &gt;&gt;&gt; # Unbalanced batches</span>
-<span class="sd">        &gt;&gt;&gt; BatchConfig(</span>
-<span class="sd">        ...     n_batches=3,</span>
-<span class="sd">        ...     proportions=[0.5, 0.3, 0.2],</span>
-<span class="sd">        ...     effect_strength=0.5</span>
-<span class="sd">        ... )</span>
+<span class="sd">    &gt;&gt;&gt; # Unbalanced batches with an explicit batch seed</span>
+<span class="sd">    &gt;&gt;&gt; BatchEffectsConfig(</span>
+<span class="sd">    ...     n_batches=3,</span>
+<span class="sd">    ...     proportions=[0.5, 0.3, 0.2],</span>
+<span class="sd">    ...     effect_strength=0.5,</span>
+<span class="sd">    ...     random_state=123,</span>
+<span class="sd">    ... )</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="n">n_batches</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">default</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">ge</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>  <span class="c1"># 0 or 1 =&gt; no batch effect</span>
-    <span class="n">effect_strength</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">default</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span> <span class="n">gt</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>  <span class="c1"># std of batch intercepts</span>
+    <span class="n">effect_strength</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">default</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span> <span class="n">gt</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>  <span class="c1"># std of batch effects</span>
     <span class="n">effect_type</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;additive&quot;</span><span class="p">,</span> <span class="s2">&quot;multiplicative&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;additive&quot;</span>
     <span class="n">confounding_with_class</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">default</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">ge</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">le</span><span class="o">=</span><span class="mf">1.0</span><span class="p">)</span>  <span class="c1"># in [0,1]</span>
     <span class="n">affected_features</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">|</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;all&quot;</span><span class="p">,</span> <span class="s2">&quot;informative&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;all&quot;</span>  <span class="c1"># 0-based column indices; &quot;all&quot; =&gt; all</span>
@@ -236,6 +277,83 @@
             <span class="k">if</span> <span class="ow">not</span> <span class="n">np</span><span class="o">.</span><span class="n">isclose</span><span class="p">(</span><span class="nb">sum</span><span class="p">(</span><span class="n">v</span><span class="p">),</span> <span class="mf">1.0</span><span class="p">,</span> <span class="n">atol</span><span class="o">=</span><span class="mf">1e-6</span><span class="p">):</span>
                 <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;proportions must sum to 1, got </span><span class="si">{</span><span class="nb">sum</span><span class="p">(</span><span class="n">v</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">v</span>
+
+
+<span class="c1"># class BatchEffectsConfig(BaseModel):</span>
+<span class="c1">#     &quot;&quot;&quot;Configuration for simulating batch effects.</span>
+<span class="c1">#</span>
+<span class="c1">#     Simulate batch effects by adding random intercepts to specified columns. The intercepts are drawn from a normal</span>
+<span class="c1">#     distribution with mean 0 and standard deviation `effect_strength`. Optionally, the batch assignment can</span>
+<span class="c1">#     be confounded with the class labels.</span>
+<span class="c1">#</span>
+<span class="c1">#     Args:</span>
+<span class="c1">#         n_batches (int): Number of batches (0 or 1 means no batch effect).</span>
+<span class="c1">#         effect_strength (float): Standard deviation of the batch intercepts.</span>
+<span class="c1">#         effect_type (Literal[&quot;additive&quot;, &quot;multiplicative&quot;]): Type of batch effect.</span>
+<span class="c1">#             - &quot;additive&quot;: Additive intercepts (default).</span>
+<span class="c1">#             - &quot;multiplicative&quot;: Multiplicative scaling factors.</span>
+<span class="c1">#         confounding_with_class: Degree of confounding between batch and class (0.0-1.0).</span>
+<span class="c1">#             Controls how strongly batch assignment correlates with class labels,</span>
+<span class="c1">#             simulating **recruitment bias** in multi-center studies.</span>
+<span class="c1">#</span>
+<span class="c1">#             The parameter determines the probability that samples from the same</span>
+<span class="c1">#             class are assigned to the same batch:</span>
+<span class="c1">#</span>
+<span class="c1">#             - 0.0 = Independent: Batch assignment ignores class labels</span>
+<span class="c1">#               → Each batch has approximately equal class proportions</span>
+<span class="c1">#</span>
+<span class="c1">#             - 0.5 = Moderate correlation: Samples from the same class are</span>
+<span class="c1">#               moderately likely to end up in the same batch</span>
+<span class="c1">#               → Batches show noticeable class imbalance</span>
+<span class="c1">#</span>
+<span class="c1">#             - 1.0 = Perfect correlation: Samples from the same class are</span>
+<span class="c1">#               always assigned to the same batch</span>
+<span class="c1">#               → Each batch contains only one class (if n_batches ≥ n_classes)</span>
+<span class="c1">#</span>
+<span class="c1">#             This controls **sampling bias** (who gets recruited where), while</span>
+<span class="c1">#             `effect_strength` controls **technical variation** (measurement differences).</span>
+<span class="c1">#         affected_features (list[int] | Literal[&quot;all&quot;, &quot;informative&quot;]): Features to affect.</span>
+<span class="c1">#             &quot;all&quot; affects all features, &quot;informative&quot; affects only informative features,</span>
+<span class="c1">#             or provide list of 0-based column indices.</span>
+<span class="c1">#         proportions (list[float] | None): Optional proportions for batch sizes. Must sum to 1.</span>
+<span class="c1">#         random_state (int | None): Random seed for reproducibility.</span>
+<span class="c1">#</span>
+<span class="c1">#     Examples:</span>
+<span class="c1">#         &gt;&gt;&gt; # Simple random batches</span>
+<span class="c1">#         &gt;&gt;&gt; BatchEffectsConfig(n_batches=3, effect_strength=0.5)</span>
+<span class="c1">#</span>
+<span class="c1">#         &gt;&gt;&gt; # Confounded batches (recruitment bias)</span>
+<span class="c1">#         &gt;&gt;&gt; BatchEffectsConfig(</span>
+<span class="c1">#         ...     n_batches=2,</span>
+<span class="c1">#         ...     effect_strength=0.8,</span>
+<span class="c1">#         ...     confounding_with_class=0.9</span>
+<span class="c1">#         ... )</span>
+<span class="c1">#</span>
+<span class="c1">#         &gt;&gt;&gt; # Unbalanced batches</span>
+<span class="c1">#         &gt;&gt;&gt; BatchEffectsConfig(</span>
+<span class="c1">#         ...     n_batches=3,</span>
+<span class="c1">#         ...     proportions=[0.5, 0.3, 0.2],</span>
+<span class="c1">#         ...     effect_strength=0.5</span>
+<span class="c1">#         ... )</span>
+<span class="c1">#     &quot;&quot;&quot;</span>
+<span class="c1">#</span>
+<span class="c1">#     n_batches: int = Field(default=0, ge=0)  # 0 or 1 =&gt; no batch effect</span>
+<span class="c1">#     effect_strength: float = Field(default=0.5, gt=0)  # std of batch intercepts</span>
+<span class="c1">#     effect_type: Literal[&quot;additive&quot;, &quot;multiplicative&quot;] = &quot;additive&quot;</span>
+<span class="c1">#     confounding_with_class: float = Field(default=0.0, ge=0.0, le=1.0)  # in [0,1]</span>
+<span class="c1">#     affected_features: list[int] | Literal[&quot;all&quot;, &quot;informative&quot;] = &quot;all&quot;  # 0-based column indices; &quot;all&quot; =&gt; all</span>
+<span class="c1">#     proportions: list[float] | None = None  # optional proportions for batches</span>
+<span class="c1">#     random_state: int | None = None</span>
+<span class="c1">#</span>
+<span class="c1">#     @field_validator(&quot;proportions&quot;)</span>
+<span class="c1">#     @classmethod</span>
+<span class="c1">#     def validate_proportions(cls, v):</span>
+<span class="c1">#         &quot;&quot;&quot;Ensure proportions sum to ~1.&quot;&quot;&quot;</span>
+<span class="c1">#         if v is not None:</span>
+<span class="c1">#             if not np.isclose(sum(v), 1.0, atol=1e-6):</span>
+<span class="c1">#                 raise ValueError(f&quot;proportions must sum to 1, got {sum(v)}&quot;)</span>
+<span class="c1">#         return v</span>
+<span class="c1">#</span>
 
 
 <span class="k">class</span><span class="w"> </span><span class="nc">CorrClusterConfig</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
@@ -674,14 +792,12 @@
 <span class="sd">        * Free informative features:  i1, i2, ...</span>
 <span class="sd">        * Free noise features:        n1, n2, ...</span>
 <span class="sd">        * Correlated clusters:        corr{cid}_anchor, corr{cid}_2, ..., corr{cid}_k</span>
-<span class="sd">          (Non-anchors are “proxies” in the metadata.)</span>
 <span class="sd">    - If `feature_naming=&quot;simple&quot;`, a generic `feature_{i}` scheme is used.</span>
 
 <span class="sd">    Relationship to DatasetMeta (output, ground truth)</span>
 <span class="sd">    --------------------------------------------------</span>
 <span class="sd">    The generation step produces a `DatasetMeta` object describing resolved structure:</span>
 <span class="sd">      - `informative_idx`: indices of all informative features (anchors + free informative)</span>
-<span class="sd">      - `proxy_idx`:      indices of all cluster non-anchors (derived from clusters)</span>
 <span class="sd">      - `noise_idx`:      indices of all independent noise features (free noise)</span>
 <span class="sd">      - `corr_cluster_indices`: mapping cluster_id → list of column indices</span>
 <span class="sd">      - `anchor_idx`: mapping cluster_id → anchor column (or None for degenerate forms)</span>
@@ -702,14 +818,6 @@
 <span class="sd">       Breakdown:</span>
 <span class="sd">         - informative_anchors = 1  → free_informative = 4 − 1 = 3</span>
 <span class="sd">         - noise_anchors = 1        → free_noise       = 3 − 1 = 2</span>
-
-<span class="sd">    Notes:</span>
-<span class="sd">    -----</span>
-<span class="sd">    • The “proxies add on top” rule is consistent with the cluster docstring:</span>
-<span class="sd">      “Anchor first, followed by (k−1) proxies; proxies count as additional features.”  # see CorrClusterConfig Notes</span>
-<span class="sd">    • The required-features calculation is derived solely from `n_informative`, `n_noise`, and</span>
-<span class="sd">      Σ (n_cluster_features − 1) across all clusters.</span>
-<span class="sd">    • There is intentionally no input field `n_proxy`. Proxies are implied by cluster sizes.</span>
 
 <span class="sd">    See Also:</span>
 <span class="sd">    --------</span>
@@ -745,7 +853,7 @@
     <span class="n">corr_between</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.0</span>  <span class="c1"># correlation between different clusters/roles (0 = independent)</span>
     <span class="n">anchor_mode</span><span class="p">:</span> <span class="n">AnchorMode</span> <span class="o">=</span> <span class="s2">&quot;equalized&quot;</span>
     <span class="n">effect_size</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;small&quot;</span><span class="p">,</span> <span class="s2">&quot;medium&quot;</span><span class="p">,</span> <span class="s2">&quot;large&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;medium&quot;</span>  <span class="c1"># controls default anchor_effect_size</span>
-    <span class="n">batch</span><span class="p">:</span> <span class="n">BatchConfig</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">batch</span><span class="p">:</span> <span class="n">BatchEffectsConfig</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
     <span class="n">random_state</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
 
     <span class="c1"># ---------- helpers (typed) ----------</span>

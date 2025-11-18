@@ -208,8 +208,7 @@ They are <strong>added on top</strong> of <cite>n_informative + n_noise</cite> w
 <dt>If <cite>feature_naming=”prefixed”</cite>:</dt><dd><ul>
 <li><p>Free informative features:  i1, i2, …</p></li>
 <li><p>Free noise features:        n1, n2, …</p></li>
-<li><p>Correlated clusters:        corr{cid}_anchor, corr{cid}_2, …, corr{cid}_k
-(Non-anchors are “proxies” in the metadata.)</p></li>
+<li><p>Correlated clusters:        corr{cid}_anchor, corr{cid}_2, …, corr{cid}_k</p></li>
 </ul>
 </dd>
 </dl>
@@ -222,7 +221,6 @@ They are <strong>added on top</strong> of <cite>n_informative + n_noise</cite> w
 <dl class="simple">
 <dt>The generation step produces a <cite>DatasetMeta</cite> object describing resolved structure:</dt><dd><ul class="simple">
 <li><p><cite>informative_idx</cite>: indices of all informative features (anchors + free informative)</p></li>
-<li><p><cite>proxy_idx</cite>:      indices of all cluster non-anchors (derived from clusters)</p></li>
 <li><p><cite>noise_idx</cite>:      indices of all independent noise features (free noise)</p></li>
 <li><p><cite>corr_cluster_indices</cite>: mapping cluster_id → list of column indices</p></li>
 <li><p><cite>anchor_idx</cite>: mapping cluster_id → anchor column (or None for degenerate forms)</p></li>
@@ -257,16 +255,6 @@ Breakdown:</p>
 </div></blockquote>
 </li>
 </ol>
-</section>
-<section id="notes">
-<h2>Notes:<a class="headerlink" href="#notes" title="Link to this heading"></a></h2>
-<ul class="simple">
-<li><p>The “proxies add on top” rule is consistent with the cluster docstring:
-“Anchor first, followed by (k−1) proxies; proxies count as additional features.”  # see CorrClusterConfig Notes</p></li>
-<li><p>The required-features calculation is derived solely from <cite>n_informative</cite>, <cite>n_noise</cite>, and
-Σ (n_cluster_features − 1) across all clusters.</p></li>
-<li><p>There is intentionally no input field <cite>n_proxy</cite>. Proxies are implied by cluster sizes.</p></li>
-</ul>
 </section>
 <section id="see-also">
 <h2>See Also:<a class="headerlink" href="#see-also" title="Link to this heading"></a></h2>
@@ -672,7 +660,7 @@ notebooks to avoid interruptions.</p>
 <li><p><strong>corr_between</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>)</p></li>
 <li><p><strong>anchor_mode</strong> (<a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Literal" title="(in Python v3.14)"><em>Literal</em></a><em>[</em><em>'equalized'</em><em>, </em><em>'strong'</em><em>]</em>)</p></li>
 <li><p><strong>effect_size</strong> (<a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Literal" title="(in Python v3.14)"><em>Literal</em></a><em>[</em><em>'small'</em><em>, </em><em>'medium'</em><em>, </em><em>'large'</em><em>]</em>)</p></li>
-<li><p><strong>batch</strong> (<em>BatchConfig</em><em> | </em><em>None</em>)</p></li>
+<li><p><strong>batch</strong> (<em>BatchEffectsConfig</em><em> | </em><em>None</em>)</p></li>
 <li><p><strong>random_state</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a><em> | </em><em>None</em>)</p></li>
 </ul>
 </dd>
