@@ -5,7 +5,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>biomedical_data_generator.generator &mdash; Biomedical Data Generator 0.1.5rc1 documentation</title>
+  <title>biomedical_data_generator.generator &mdash; Biomedical Data Generator 0.1.5rc2 documentation</title>
       <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=b86133f3" />
       <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=e59714d7" />
       <link rel="stylesheet" type="text/css" href="../../_static/copybutton.css?v=76b2166b" />
@@ -14,7 +14,7 @@
   
       <script src="../../_static/jquery.js?v=5d32c60e"></script>
       <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="../../_static/documentation_options.js?v=cd91370b"></script>
+      <script src="../../_static/documentation_options.js?v=fa69bd61"></script>
       <script src="../../_static/doctools.js?v=9bcbadda"></script>
       <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
       <script src="../../_static/clipboard.min.js?v=a7894cd8"></script>
@@ -99,6 +99,7 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="kn">import</span> <span class="n">DataFrame</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">.config</span><span class="w"> </span><span class="kn">import</span> <span class="n">DatasetConfig</span><span class="p">,</span> <span class="n">NoiseDistribution</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.effects.batch</span><span class="w"> </span><span class="kn">import</span> <span class="n">apply_batch_effects_from_config</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">.features.correlated</span><span class="w"> </span><span class="kn">import</span> <span class="n">sample_cluster</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">.features.informative</span><span class="w"> </span><span class="kn">import</span> <span class="n">shift_classes</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">.features.noise</span><span class="w"> </span><span class="kn">import</span> <span class="n">sample_noise</span>
@@ -136,30 +137,32 @@
     <span class="k">return</span> <span class="n">y</span>
 
 
-<span class="c1"># ==================</span>
-<span class="c1"># Naming &amp; role map</span>
-<span class="c1"># ==================</span>
+<span class="c1">#</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">_make_names_and_roles</span><span class="p">(</span>
     <span class="n">cfg</span><span class="p">:</span> <span class="n">DatasetConfig</span><span class="p">,</span>
-<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">],</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">],</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">],</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">]],</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span><span class="p">]]:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Build feature names and role indices.</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span>
+    <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span>  <span class="c1"># names</span>
+    <span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">],</span>  <span class="c1"># informative_idx (incl. anchors)</span>
+    <span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">],</span>  <span class="c1"># noise_idx (independent/free noise)</span>
+    <span class="nb">dict</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">]],</span>  <span class="c1"># cluster_indices[cid] -&gt; list of cols</span>
+    <span class="nb">dict</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span><span class="p">],</span>  <span class="c1"># anchor_idx[cid] -&gt; anchor col or None</span>
+<span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Build feature names and role indices with explicit proxy handling.</span>
 
 <span class="sd">    Naming policy:</span>
-<span class="sd">      - Cluster features always start with the cluster prefix, e.g. &#39;corr{cid}_*&#39;.</span>
-<span class="sd">      - If a cluster has an informative anchor, its first column is named &#39;corr{cid}_anchor&#39;.</span>
-<span class="sd">        The remaining cluster members are named &#39;corr{cid}_{k}&#39; with k = 2..n.</span>
-<span class="sd">      - If a cluster has no informative anchor, all members are named &#39;corr{cid}_{k}&#39; with k = 1..n</span>
-<span class="sd">        and are counted as pseudo features.</span>
-<span class="sd">      - Free informative features (outside clusters) are named &#39;i1, i2, ...&#39; independently</span>
-<span class="sd">        of how many anchors exist (anchors do NOT consume the &#39;i*&#39; numbering).</span>
-<span class="sd">      - Free pseudo features are &#39;p1, p2, ...&#39;; noise features are &#39;n1, n2, ...&#39;.</span>
+<span class="sd">      - Cluster features are prefixed with the correlation prefix, e.g. &#39;corr{cid}_*&#39;.</span>
+<span class="sd">      - If a cluster has an informative anchor, its first column is &#39;corr{cid}_anchor&#39;.</span>
+<span class="sd">        The remaining cluster members are *proxies* and are named &#39;corr{cid}_{k}&#39;.</span>
+<span class="sd">      - If a cluster has no informative anchor, *all* members are proxies</span>
+<span class="sd">        and are named &#39;corr{cid}_{k}&#39;.</span>
+<span class="sd">      - Free informative (outside clusters) are &#39;i1, i2, ...&#39;.</span>
+<span class="sd">      - Independent/free noise are &#39;n1, n2, ...&#39;.</span>
 
-<span class="sd">    The function returns:</span>
-<span class="sd">      names, informative_idx, pseudo_idx, noise_idx, cluster_indices, anchor_idx</span>
+<span class="sd">    Returns:</span>
+<span class="sd">      names, informative_idx, noise_idx, cluster_indices, anchor_idx</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">names</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
     <span class="n">informative_idx</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
-    <span class="n">pseudo_idx</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
     <span class="n">noise_idx</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
     <span class="n">cluster_indices</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">]]</span> <span class="o">=</span> <span class="p">{}</span>
     <span class="n">anchor_idx</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
@@ -167,19 +170,20 @@
     <span class="n">current</span> <span class="o">=</span> <span class="mi">0</span>
     <span class="n">proxies_from_clusters</span> <span class="o">=</span> <span class="mi">0</span>
 
-    <span class="c1"># Helper counters that control ONLY the printed numbering (not the role counts)</span>
+    <span class="c1"># Pretty counters for free features (only affect printed numbering)</span>
     <span class="n">free_inf_count</span> <span class="o">=</span> <span class="mi">0</span>
-    <span class="n">free_pseudo_count</span> <span class="o">=</span> <span class="mi">0</span>
     <span class="n">free_noise_count</span> <span class="o">=</span> <span class="mi">0</span>
 
-    <span class="c1"># 1) clusters first for contiguous columns</span>
+    <span class="c1"># -------------------------</span>
+    <span class="c1"># 1) clusters (contiguous)</span>
+    <span class="c1"># -------------------------</span>
     <span class="k">if</span> <span class="n">cfg</span><span class="o">.</span><span class="n">corr_clusters</span><span class="p">:</span>
         <span class="k">for</span> <span class="n">cid</span><span class="p">,</span> <span class="n">c</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">cfg</span><span class="o">.</span><span class="n">corr_clusters</span><span class="p">,</span> <span class="n">start</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
             <span class="n">cols</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="n">current</span><span class="p">,</span> <span class="n">current</span> <span class="o">+</span> <span class="n">c</span><span class="o">.</span><span class="n">n_cluster_features</span><span class="p">))</span>
             <span class="n">cluster_indices</span><span class="p">[</span><span class="n">cid</span><span class="p">]</span> <span class="o">=</span> <span class="n">cols</span>
 
             <span class="k">if</span> <span class="n">c</span><span class="o">.</span><span class="n">anchor_role</span> <span class="o">==</span> <span class="s2">&quot;informative&quot;</span><span class="p">:</span>
-                <span class="c1"># first col is anchor -&gt; name includes cluster id</span>
+                <span class="c1"># anchor (first col)</span>
                 <span class="n">anchor_col</span> <span class="o">=</span> <span class="n">cols</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
                 <span class="n">anchor_idx</span><span class="p">[</span><span class="n">cid</span><span class="p">]</span> <span class="o">=</span> <span class="n">anchor_col</span>
                 <span class="k">if</span> <span class="n">cfg</span><span class="o">.</span><span class="n">feature_naming</span> <span class="o">==</span> <span class="s2">&quot;prefixed&quot;</span><span class="p">:</span>
@@ -188,30 +192,29 @@
                     <span class="n">names</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;feature_</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">names</span><span class="p">)</span><span class="o">+</span><span class="mi">1</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
                 <span class="n">informative_idx</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">anchor_col</span><span class="p">)</span>
 
-                <span class="c1"># proxies (remaining columns in this cluster)</span>
+                <span class="c1"># proxies (remaining cols)</span>
                 <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">col</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">cols</span><span class="p">[</span><span class="mi">1</span><span class="p">:],</span> <span class="n">start</span><span class="o">=</span><span class="mi">2</span><span class="p">):</span>
                     <span class="k">if</span> <span class="n">cfg</span><span class="o">.</span><span class="n">feature_naming</span> <span class="o">==</span> <span class="s2">&quot;prefixed&quot;</span><span class="p">:</span>
                         <span class="n">names</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">cfg</span><span class="o">.</span><span class="n">prefix_corr</span><span class="si">}{</span><span class="n">cid</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">k</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
                     <span class="k">else</span><span class="p">:</span>
                         <span class="n">names</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;feature_</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">names</span><span class="p">)</span><span class="o">+</span><span class="mi">1</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-                    <span class="n">pseudo_idx</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">col</span><span class="p">)</span>
-
                 <span class="n">proxies_from_clusters</span> <span class="o">+=</span> <span class="nb">max</span><span class="p">(</span><span class="n">c</span><span class="o">.</span><span class="n">n_cluster_features</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
 
             <span class="k">else</span><span class="p">:</span>
-                <span class="c1"># no informative anchor: all cluster members are pseudo features</span>
+                <span class="c1"># no informative anchor =&gt; all are proxies</span>
                 <span class="n">anchor_idx</span><span class="p">[</span><span class="n">cid</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
                 <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">col</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">cols</span><span class="p">,</span> <span class="n">start</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
                     <span class="k">if</span> <span class="n">cfg</span><span class="o">.</span><span class="n">feature_naming</span> <span class="o">==</span> <span class="s2">&quot;prefixed&quot;</span><span class="p">:</span>
                         <span class="n">names</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">cfg</span><span class="o">.</span><span class="n">prefix_corr</span><span class="si">}{</span><span class="n">cid</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">k</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
                     <span class="k">else</span><span class="p">:</span>
                         <span class="n">names</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;feature_</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">names</span><span class="p">)</span><span class="o">+</span><span class="mi">1</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-                    <span class="n">pseudo_idx</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">col</span><span class="p">)</span>
                 <span class="n">proxies_from_clusters</span> <span class="o">+=</span> <span class="n">c</span><span class="o">.</span><span class="n">n_cluster_features</span>
 
             <span class="n">current</span> <span class="o">+=</span> <span class="n">c</span><span class="o">.</span><span class="n">n_cluster_features</span>
 
-    <span class="c1"># 2) free informative outside clusters</span>
+    <span class="c1"># --------------------------------------------</span>
+    <span class="c1"># 2) free informative outside of any clusters</span>
+    <span class="c1"># --------------------------------------------</span>
     <span class="n">n_anchors</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="mi">1</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="p">(</span><span class="n">cfg</span><span class="o">.</span><span class="n">corr_clusters</span> <span class="ow">or</span> <span class="p">[])</span> <span class="k">if</span> <span class="n">c</span><span class="o">.</span><span class="n">anchor_role</span> <span class="o">==</span> <span class="s2">&quot;informative&quot;</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">cfg</span><span class="o">.</span><span class="n">n_informative</span> <span class="o">&lt;</span> <span class="n">n_anchors</span><span class="p">:</span>
         <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;n_informative (</span><span class="si">{</span><span class="n">cfg</span><span class="o">.</span><span class="n">n_informative</span><span class="si">}</span><span class="s2">) &lt; number of informative anchors (</span><span class="si">{</span><span class="n">n_anchors</span><span class="si">}</span><span class="s2">).&quot;</span><span class="p">)</span>
@@ -225,16 +228,9 @@
             <span class="n">names</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;feature_</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">names</span><span class="p">)</span><span class="o">+</span><span class="mi">1</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
         <span class="n">informative_idx</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">names</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
 
-    <span class="c1"># 3) free pseudo (exactly cfg.n_pseudo, independent of proxies)</span>
-    <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">cfg</span><span class="o">.</span><span class="n">n_pseudo</span><span class="p">):</span>
-        <span class="n">free_pseudo_count</span> <span class="o">+=</span> <span class="mi">1</span>
-        <span class="k">if</span> <span class="n">cfg</span><span class="o">.</span><span class="n">feature_naming</span> <span class="o">==</span> <span class="s2">&quot;prefixed&quot;</span><span class="p">:</span>
-            <span class="n">names</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">cfg</span><span class="o">.</span><span class="n">prefix_pseudo</span><span class="si">}{</span><span class="n">free_pseudo_count</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="n">names</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;feature_</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">names</span><span class="p">)</span><span class="o">+</span><span class="mi">1</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-        <span class="n">pseudo_idx</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">names</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
-
-    <span class="c1"># 4) noise</span>
+    <span class="c1"># ------------------------</span>
+    <span class="c1"># 3) independent/free noise</span>
+    <span class="c1"># ------------------------</span>
     <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">cfg</span><span class="o">.</span><span class="n">n_noise</span><span class="p">):</span>
         <span class="n">free_noise_count</span> <span class="o">+=</span> <span class="mi">1</span>
         <span class="k">if</span> <span class="n">cfg</span><span class="o">.</span><span class="n">feature_naming</span> <span class="o">==</span> <span class="s2">&quot;prefixed&quot;</span><span class="p">:</span>
@@ -243,18 +239,25 @@
             <span class="n">names</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;feature_</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">names</span><span class="p">)</span><span class="o">+</span><span class="mi">1</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
         <span class="n">noise_idx</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">names</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
 
-    <span class="c1"># Totals validation with proxies added on top</span>
-    <span class="n">n_features_expected</span> <span class="o">=</span> <span class="n">cfg</span><span class="o">.</span><span class="n">n_informative</span> <span class="o">+</span> <span class="n">cfg</span><span class="o">.</span><span class="n">n_pseudo</span> <span class="o">+</span> <span class="n">cfg</span><span class="o">.</span><span class="n">n_noise</span> <span class="o">+</span> <span class="n">proxies_from_clusters</span>
+    <span class="c1"># ---------------------------------</span>
+    <span class="c1"># 4) sanity checks / derived totals</span>
+    <span class="c1"># ---------------------------------</span>
+    <span class="c1"># Total features are: informative (anchors + free) + proxies(from clusters) + noise</span>
+    <span class="n">n_features_expected</span> <span class="o">=</span> <span class="n">cfg</span><span class="o">.</span><span class="n">n_informative</span> <span class="o">+</span> <span class="n">proxies_from_clusters</span> <span class="o">+</span> <span class="n">cfg</span><span class="o">.</span><span class="n">n_noise</span>
+
     <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">names</span><span class="p">)</span> <span class="o">!=</span> <span class="n">n_features_expected</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="ne">AssertionError</span><span class="p">((</span><span class="nb">len</span><span class="p">(</span><span class="n">names</span><span class="p">),</span> <span class="n">n_features_expected</span><span class="p">))</span>
-    <span class="k">if</span> <span class="n">cfg</span><span class="o">.</span><span class="n">n_features</span> <span class="o">!=</span> <span class="n">n_features_expected</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-            <span class="s2">&quot;cfg.n_features must equal n_informative + n_pseudo + n_noise + proxies_from_clusters &quot;</span>
-            <span class="sa">f</span><span class="s2">&quot;= </span><span class="si">{</span><span class="n">cfg</span><span class="o">.</span><span class="n">n_informative</span><span class="si">}</span><span class="s2"> + </span><span class="si">{</span><span class="n">cfg</span><span class="o">.</span><span class="n">n_pseudo</span><span class="si">}</span><span class="s2"> + </span><span class="si">{</span><span class="n">cfg</span><span class="o">.</span><span class="n">n_noise</span><span class="si">}</span><span class="s2"> + </span><span class="si">{</span><span class="n">proxies_from_clusters</span><span class="si">}</span><span class="s2"> &quot;</span>
-            <span class="sa">f</span><span class="s2">&quot;= </span><span class="si">{</span><span class="n">n_features_expected</span><span class="si">}</span><span class="s2">, but got n_features=</span><span class="si">{</span><span class="n">cfg</span><span class="o">.</span><span class="n">n_features</span><span class="si">}</span><span class="s2">.&quot;</span>
+        <span class="k">raise</span> <span class="ne">AssertionError</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;constructed=</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">names</span><span class="p">)</span><span class="si">}</span><span class="s2"> but expected=</span><span class="si">{</span><span class="n">n_features_expected</span><span class="si">}</span><span class="s2"> &quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;(n_informative=</span><span class="si">{</span><span class="n">cfg</span><span class="o">.</span><span class="n">n_informative</span><span class="si">}</span><span class="s2">, proxies_from_clusters=</span><span class="si">{</span><span class="n">proxies_from_clusters</span><span class="si">}</span><span class="s2">, n_noise=</span><span class="si">{</span><span class="n">cfg</span><span class="o">.</span><span class="n">n_noise</span><span class="si">}</span><span class="s2">)&quot;</span>
         <span class="p">)</span>
 
-    <span class="k">return</span> <span class="n">names</span><span class="p">,</span> <span class="n">informative_idx</span><span class="p">,</span> <span class="n">pseudo_idx</span><span class="p">,</span> <span class="n">noise_idx</span><span class="p">,</span> <span class="n">cluster_indices</span><span class="p">,</span> <span class="n">anchor_idx</span>
+    <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">cfg</span><span class="p">,</span> <span class="s2">&quot;n_features&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">cfg</span><span class="o">.</span><span class="n">n_features</span> <span class="o">!=</span> <span class="n">n_features_expected</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="s2">&quot;cfg.n_features must equal n_informative + proxies_from_clusters + n_noise &quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;= </span><span class="si">{</span><span class="n">cfg</span><span class="o">.</span><span class="n">n_informative</span><span class="si">}</span><span class="s2"> + </span><span class="si">{</span><span class="n">proxies_from_clusters</span><span class="si">}</span><span class="s2"> + </span><span class="si">{</span><span class="n">cfg</span><span class="o">.</span><span class="n">n_noise</span><span class="si">}</span><span class="s2"> &quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;= </span><span class="si">{</span><span class="n">n_features_expected</span><span class="si">}</span><span class="s2">, but got n_features=</span><span class="si">{</span><span class="n">cfg</span><span class="o">.</span><span class="n">n_features</span><span class="si">}</span><span class="s2">.&quot;</span>
+        <span class="p">)</span>
+    <span class="k">return</span> <span class="n">names</span><span class="p">,</span> <span class="n">informative_idx</span><span class="p">,</span> <span class="n">noise_idx</span><span class="p">,</span> <span class="n">cluster_indices</span><span class="p">,</span> <span class="n">anchor_idx</span>
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">_resolve_noise_params</span><span class="p">(</span><span class="n">dist</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">noise_scale</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">noise_params</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">float</span><span class="p">]:</span>
@@ -329,12 +332,12 @@
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Generate an n-class classification dataset with optional correlated clusters.</span>
 
 <span class="sd">    Features are ordered as: cluster features (anchors first within each cluster),</span>
-<span class="sd">    then free informative features, then free pseudo features, then noise features.</span>
+<span class="sd">    then free informative features, then noise features.</span>
 <span class="sd">    Labels y must be explicitly specified via `cfg.class_counts` (exact per-class sample counts).</span>
 <span class="sd">    Class-wise shifts are then applied to informative features and cluster anchors</span>
 <span class="sd">    (via `anchor_effect_size`) to create class separation.</span>
 <span class="sd">    Reproducibility is controlled by `cfg.random_state` and optional per-cluster seeds.</span>
-<span class="sd">    Feature names follow either a &quot;prefixed&quot; scheme (e.g., `i*`, `corr{cid}_k`, `p*`, `n*`)</span>
+<span class="sd">    Feature names follow either a &quot;prefixed&quot; scheme (e.g., `i*`, `corr{cid}_k`, `n*`)</span>
 <span class="sd">    or a generic `feature_1..p`. The returned `meta` includes role masks, cluster indices,</span>
 <span class="sd">    empirical class proportions, and the resolved configuration.</span>
 
@@ -351,7 +354,7 @@
 <span class="sd">    -------</span>
 <span class="sd">        tuple:</span>
 <span class="sd">            - X (pandas.DataFrame | np.ndarray): Shape (n_samples, n_features). By default a DataFrame</span>
-<span class="sd">              with feature names in canonical order (clusters → free informative → free pseudo → noise).</span>
+<span class="sd">              with feature names in canonical order (clusters → free informative → noise).</span>
 <span class="sd">            - y (np.ndarray): Shape (n_samples,). Integer labels in {0, 1, ..., n_classes-1}.</span>
 <span class="sd">            - meta (DatasetMeta): Metadata including role masks, cluster indices/labels, empirical class</span>
 <span class="sd">              weights, and the resolved configuration.</span>
@@ -386,7 +389,7 @@
     <span class="n">y</span> <span class="o">=</span> <span class="n">_labels_from_counts</span><span class="p">(</span><span class="n">cfg</span><span class="o">.</span><span class="n">class_counts</span><span class="p">,</span> <span class="n">cfg</span><span class="o">.</span><span class="n">n_classes</span><span class="p">,</span> <span class="n">rng_global</span><span class="p">)</span>  <span class="c1"># shape (n_samples,), dtype=int</span>
 
     <span class="c1"># names &amp; roles (+ totals validation inside)</span>
-    <span class="n">names</span><span class="p">,</span> <span class="n">inf_idx</span><span class="p">,</span> <span class="n">pse_idx</span><span class="p">,</span> <span class="n">noi_idx</span><span class="p">,</span> <span class="n">cluster_idx</span><span class="p">,</span> <span class="n">anch_idx</span> <span class="o">=</span> <span class="n">_make_names_and_roles</span><span class="p">(</span><span class="n">cfg</span><span class="p">)</span>
+    <span class="n">names</span><span class="p">,</span> <span class="n">inf_idx</span><span class="p">,</span> <span class="n">noi_idx</span><span class="p">,</span> <span class="n">cluster_idx</span><span class="p">,</span> <span class="n">anch_idx</span> <span class="o">=</span> <span class="n">_make_names_and_roles</span><span class="p">(</span><span class="n">cfg</span><span class="p">)</span>
 
     <span class="c1"># --- Step 2a: build matrices per cluster (respect per-cluster seed if provided) ---</span>
     <span class="n">cluster_matrices</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">NDArray</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">]]</span> <span class="o">=</span> <span class="p">[]</span>
@@ -398,9 +401,11 @@
     <span class="n">col_start</span> <span class="o">=</span> <span class="mi">0</span>
     <span class="k">if</span> <span class="n">cfg</span><span class="o">.</span><span class="n">corr_clusters</span><span class="p">:</span>
         <span class="k">for</span> <span class="n">cid</span><span class="p">,</span> <span class="n">c</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">cfg</span><span class="o">.</span><span class="n">corr_clusters</span><span class="p">,</span> <span class="n">start</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
-            <span class="c1"># Choose a deterministic RNG for this cluster</span>
-            <span class="n">seed</span> <span class="o">=</span> <span class="n">c</span><span class="o">.</span><span class="n">random_state</span> <span class="k">if</span> <span class="n">c</span><span class="o">.</span><span class="n">random_state</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">cfg</span><span class="o">.</span><span class="n">random_state</span>
-            <span class="n">rng</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">default_rng</span><span class="p">(</span><span class="n">seed</span><span class="p">)</span>
+            <span class="c1"># Use separate generator if cluster.random_state specified, else share main generator</span>
+            <span class="k">if</span> <span class="n">c</span><span class="o">.</span><span class="n">random_state</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">cluster_rng</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">default_rng</span><span class="p">(</span><span class="n">c</span><span class="o">.</span><span class="n">random_state</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">cluster_rng</span> <span class="o">=</span> <span class="n">rng_global</span>
 
             <span class="c1"># IMPORTANT:</span>
             <span class="c1"># - Only pass class_labels if class_rho is explicitly configured.</span>
@@ -409,7 +414,7 @@
                 <span class="n">B</span> <span class="o">=</span> <span class="n">sample_cluster</span><span class="p">(</span>
                     <span class="n">n_samples</span><span class="o">=</span><span class="n">cfg</span><span class="o">.</span><span class="n">n_samples</span><span class="p">,</span>
                     <span class="n">n_features</span><span class="o">=</span><span class="n">c</span><span class="o">.</span><span class="n">n_cluster_features</span><span class="p">,</span>
-                    <span class="n">rng</span><span class="o">=</span><span class="n">rng</span><span class="p">,</span>
+                    <span class="n">rng</span><span class="o">=</span><span class="n">cluster_rng</span><span class="p">,</span>
                     <span class="n">structure</span><span class="o">=</span><span class="n">c</span><span class="o">.</span><span class="n">structure</span><span class="p">,</span>
                     <span class="n">baseline_rho</span><span class="o">=</span><span class="n">c</span><span class="o">.</span><span class="n">rho_baseline</span><span class="p">,</span>
                     <span class="n">class_labels</span><span class="o">=</span><span class="n">y</span><span class="p">,</span>  <span class="c1"># &lt;-- only in the class_rho branch</span>
@@ -419,14 +424,14 @@
                 <span class="n">B</span> <span class="o">=</span> <span class="n">sample_cluster</span><span class="p">(</span>
                     <span class="n">n_samples</span><span class="o">=</span><span class="n">cfg</span><span class="o">.</span><span class="n">n_samples</span><span class="p">,</span>
                     <span class="n">n_features</span><span class="o">=</span><span class="n">c</span><span class="o">.</span><span class="n">n_cluster_features</span><span class="p">,</span>
-                    <span class="n">rng</span><span class="o">=</span><span class="n">rng</span><span class="p">,</span>
+                    <span class="n">rng</span><span class="o">=</span><span class="n">cluster_rng</span><span class="p">,</span>
                     <span class="n">structure</span><span class="o">=</span><span class="n">c</span><span class="o">.</span><span class="n">structure</span><span class="p">,</span>
                     <span class="n">rho</span><span class="o">=</span><span class="nb">float</span><span class="p">(</span><span class="n">c</span><span class="o">.</span><span class="n">rho</span><span class="p">)</span> <span class="k">if</span> <span class="n">c</span><span class="o">.</span><span class="n">rho</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="mf">0.0</span><span class="p">,</span>
                 <span class="p">)</span>
 
             <span class="c1"># weak global coupling (same g for all cluster columns)</span>
             <span class="k">if</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">cfg</span><span class="p">,</span> <span class="s2">&quot;corr_between&quot;</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">)</span> <span class="ow">and</span> <span class="n">cfg</span><span class="o">.</span><span class="n">corr_between</span> <span class="o">&gt;</span> <span class="mf">0.0</span><span class="p">:</span>
-                <span class="n">g</span> <span class="o">=</span> <span class="n">rng</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="n">cfg</span><span class="o">.</span><span class="n">n_samples</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
+                <span class="n">g</span> <span class="o">=</span> <span class="n">cluster_rng</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="n">cfg</span><span class="o">.</span><span class="n">n_samples</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
                 <span class="n">B</span> <span class="o">=</span> <span class="n">B</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">cfg</span><span class="o">.</span><span class="n">corr_between</span><span class="p">)</span> <span class="o">*</span> <span class="n">g</span>
 
             <span class="c1"># Record anchor metadata for a later mean-shift (anchor-only)</span>
@@ -444,27 +449,14 @@
             <span class="n">cluster_label_map</span><span class="p">[</span><span class="n">cid</span><span class="p">]</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">c</span><span class="p">,</span> <span class="s2">&quot;label&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
             <span class="n">cluster_matrices</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">B</span><span class="p">)</span>
             <span class="n">col_start</span> <span class="o">+=</span> <span class="n">c</span><span class="o">.</span><span class="n">n_cluster_features</span>
-
-            <span class="c1"># --- Optional development guard (keep commented out in release) ---</span>
-            <span class="c1"># import numpy as _np</span>
-            <span class="c1"># C = _np.corrcoef(B, rowvar=False); off = C[~_np.eye(C.shape[0], bool)]</span>
-            <span class="c1"># assert _np.isfinite(off).all()</span>
-            <span class="c1"># if getattr(c, &quot;class_rho&quot;, None) is None and float(c.rho or 0.0) &gt; 0.0:</span>
-            <span class="c1">#     assert off.mean() &gt; 0.2, f&quot;Mean off-diagonal too low for cid={cid}: {off.mean():.3f}&quot;</span>
-
     <span class="n">X_clusters</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">(</span><span class="n">cluster_matrices</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span> <span class="k">if</span> <span class="n">cluster_matrices</span> <span class="k">else</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">((</span><span class="n">cfg</span><span class="o">.</span><span class="n">n_samples</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span>
 
-    <span class="c1"># 2b) free informative (exactly n_informative - n_anchors)</span>
+    <span class="c1"># 2a) free informative (exactly n_informative - n_anchors)</span>
     <span class="n">n_anchors</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="mi">1</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="p">(</span><span class="n">cfg</span><span class="o">.</span><span class="n">corr_clusters</span> <span class="ow">or</span> <span class="p">[])</span> <span class="k">if</span> <span class="n">c</span><span class="o">.</span><span class="n">anchor_role</span> <span class="o">==</span> <span class="s2">&quot;informative&quot;</span><span class="p">)</span>
     <span class="n">n_inf_free</span> <span class="o">=</span> <span class="n">cfg</span><span class="o">.</span><span class="n">n_informative</span> <span class="o">-</span> <span class="n">n_anchors</span>
     <span class="n">X_inf</span> <span class="o">=</span> <span class="n">rng_global</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="n">cfg</span><span class="o">.</span><span class="n">n_samples</span><span class="p">,</span> <span class="n">n_inf_free</span><span class="p">))</span> <span class="k">if</span> <span class="n">n_inf_free</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="k">else</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">((</span><span class="n">cfg</span><span class="o">.</span><span class="n">n_samples</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span>
 
-    <span class="c1"># 2c) free pseudo (exactly cfg.n_pseudo, independent of proxies)</span>
-    <span class="n">X_pseudo</span> <span class="o">=</span> <span class="p">(</span>
-        <span class="n">rng_global</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="n">cfg</span><span class="o">.</span><span class="n">n_samples</span><span class="p">,</span> <span class="n">cfg</span><span class="o">.</span><span class="n">n_pseudo</span><span class="p">))</span> <span class="k">if</span> <span class="n">cfg</span><span class="o">.</span><span class="n">n_pseudo</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="k">else</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">((</span><span class="n">cfg</span><span class="o">.</span><span class="n">n_samples</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span>
-    <span class="p">)</span>
-
-    <span class="c1"># 2d) noise</span>
+    <span class="c1"># 2b) free noise</span>
     <span class="k">if</span> <span class="n">cfg</span><span class="o">.</span><span class="n">n_noise</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
         <span class="n">params</span> <span class="o">=</span> <span class="n">_resolve_noise_params</span><span class="p">(</span><span class="n">cfg</span><span class="o">.</span><span class="n">noise_distribution</span><span class="p">,</span> <span class="n">cfg</span><span class="o">.</span><span class="n">noise_scale</span><span class="p">,</span> <span class="n">cfg</span><span class="o">.</span><span class="n">noise_params</span><span class="p">)</span>
         <span class="n">distribution</span> <span class="o">=</span> <span class="p">(</span>
@@ -487,8 +479,8 @@
     <span class="k">else</span><span class="p">:</span>
         <span class="n">X_noise</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">((</span><span class="n">cfg</span><span class="o">.</span><span class="n">n_samples</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span>
 
-    <span class="c1"># Concatenate in naming order: [clusters] + [free informative] + [free pseudo] + [noise]</span>
-    <span class="n">X</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">([</span><span class="n">X_clusters</span><span class="p">,</span> <span class="n">X_inf</span><span class="p">,</span> <span class="n">X_pseudo</span><span class="p">,</span> <span class="n">X_noise</span><span class="p">],</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+    <span class="c1"># Concatenate in naming order: [clusters] + [free informative] + [noise]</span>
+    <span class="n">X</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">([</span><span class="n">X_clusters</span><span class="p">,</span> <span class="n">X_inf</span><span class="p">,</span> <span class="n">X_noise</span><span class="p">],</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
 
     <span class="c1"># Check totals</span>
     <span class="k">assert</span> <span class="n">X</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="n">names</span><span class="p">)</span> <span class="o">==</span> <span class="n">cfg</span><span class="o">.</span><span class="n">n_features</span><span class="p">,</span> <span class="p">(</span><span class="n">X</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="nb">len</span><span class="p">(</span><span class="n">names</span><span class="p">),</span> <span class="n">cfg</span><span class="o">.</span><span class="n">n_features</span><span class="p">)</span>
@@ -520,11 +512,28 @@
         <span class="n">spread_non_anchors</span><span class="o">=</span><span class="nb">bool</span><span class="p">(</span><span class="nb">getattr</span><span class="p">(</span><span class="n">cfg</span><span class="p">,</span> <span class="s2">&quot;spread_non_anchors&quot;</span><span class="p">,</span> <span class="kc">True</span><span class="p">)),</span>
     <span class="p">)</span>
 
+    <span class="c1"># STEP 4: Apply batch effects (if configured)</span>
+    <span class="n">batch_labels</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">batch_effects</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="k">if</span> <span class="n">cfg</span><span class="o">.</span><span class="n">batch</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">cfg</span><span class="o">.</span><span class="n">batch</span><span class="o">.</span><span class="n">n_batches</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="c1"># Use separate generator if batch.random_state specified, else share main generator</span>
+        <span class="k">if</span> <span class="n">cfg</span><span class="o">.</span><span class="n">batch</span><span class="o">.</span><span class="n">random_state</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">batch_rng</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">default_rng</span><span class="p">(</span><span class="n">cfg</span><span class="o">.</span><span class="n">batch</span><span class="o">.</span><span class="n">random_state</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">batch_rng</span> <span class="o">=</span> <span class="n">rng_global</span>
+
+        <span class="n">X</span><span class="p">,</span> <span class="n">batch_labels</span><span class="p">,</span> <span class="n">batch_effects</span> <span class="o">=</span> <span class="n">apply_batch_effects_from_config</span><span class="p">(</span>
+            <span class="n">X</span><span class="o">=</span><span class="n">X</span><span class="p">,</span>
+            <span class="n">y</span><span class="o">=</span><span class="n">y</span><span class="p">,</span>
+            <span class="n">batch_config</span><span class="o">=</span><span class="n">cfg</span><span class="o">.</span><span class="n">batch</span><span class="p">,</span>
+            <span class="n">informative_indices</span><span class="o">=</span><span class="n">inf_idx</span><span class="p">,</span>
+            <span class="n">rng</span><span class="o">=</span><span class="n">batch_rng</span><span class="p">,</span>
+        <span class="p">)</span>
+
     <span class="c1"># Final metadata</span>
     <span class="n">meta</span> <span class="o">=</span> <span class="n">DatasetMeta</span><span class="p">(</span>
         <span class="n">feature_names</span><span class="o">=</span><span class="n">names</span><span class="p">,</span>
         <span class="n">informative_idx</span><span class="o">=</span><span class="n">inf_idx</span><span class="p">,</span>
-        <span class="n">pseudo_idx</span><span class="o">=</span><span class="n">pse_idx</span><span class="p">,</span>
         <span class="n">noise_idx</span><span class="o">=</span><span class="n">noi_idx</span><span class="p">,</span>
         <span class="n">corr_cluster_indices</span><span class="o">=</span><span class="n">cluster_idx</span><span class="p">,</span>
         <span class="n">anchor_idx</span><span class="o">=</span><span class="n">anch_idx</span><span class="p">,</span>

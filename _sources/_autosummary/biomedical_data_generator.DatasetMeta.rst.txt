@@ -26,11 +26,13 @@
    
       ~DatasetMeta.anchor_mode
       ~DatasetMeta.anchor_strength
+      ~DatasetMeta.batch_config
+      ~DatasetMeta.batch_intercepts
+      ~DatasetMeta.batch_labels
       ~DatasetMeta.random_state
       ~DatasetMeta.spread_non_anchors
       ~DatasetMeta.feature_names
       ~DatasetMeta.informative_idx
-      ~DatasetMeta.pseudo_idx
       ~DatasetMeta.noise_idx
       ~DatasetMeta.corr_cluster_indices
       ~DatasetMeta.anchor_idx

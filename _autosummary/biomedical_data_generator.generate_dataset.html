@@ -6,7 +6,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>biomedical_data_generator.generate_dataset &mdash; Biomedical Data Generator 0.1.5rc1 documentation</title>
+  <title>biomedical_data_generator.generate_dataset &mdash; Biomedical Data Generator 0.1.5rc2 documentation</title>
       <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=b86133f3" />
       <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=e59714d7" />
       <link rel="stylesheet" type="text/css" href="../_static/copybutton.css?v=76b2166b" />
@@ -15,7 +15,7 @@
   
       <script src="../_static/jquery.js?v=5d32c60e"></script>
       <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="../_static/documentation_options.js?v=cd91370b"></script>
+      <script src="../_static/documentation_options.js?v=fa69bd61"></script>
       <script src="../_static/doctools.js?v=9bcbadda"></script>
       <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
       <script src="../_static/clipboard.min.js?v=a7894cd8"></script>
@@ -92,12 +92,12 @@
 <span class="sig-prename descclassname"><span class="pre">biomedical_data_generator.</span></span><span class="sig-name descname"><span class="pre">generate_dataset</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cfg</span></span></em>, <em class="sig-param"><span class="positional-only-separator o"><abbr title="Positional-only parameter separator (PEP 570)"><span class="pre">/</span></abbr></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">return_dataframe</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">overrides</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/biomedical_data_generator/generator.html#generate_dataset"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#biomedical_data_generator.generate_dataset" title="Link to this definition"></a></dt>
 <dd><p>Generate an n-class classification dataset with optional correlated clusters.</p>
 <p>Features are ordered as: cluster features (anchors first within each cluster),
-then free informative features, then free pseudo features, then noise features.
+then free informative features, then noise features.
 Labels y must be explicitly specified via <cite>cfg.class_counts</cite> (exact per-class sample counts).
 Class-wise shifts are then applied to informative features and cluster anchors
 (via <cite>anchor_effect_size</cite>) to create class separation.
 Reproducibility is controlled by <cite>cfg.random_state</cite> and optional per-cluster seeds.
-Feature names follow either a “prefixed” scheme (e.g., <cite>i*</cite>, <cite>corr{cid}_k</cite>, <cite>p*</cite>, <cite>n*</cite>)
+Feature names follow either a “prefixed” scheme (e.g., <cite>i*</cite>, <cite>corr{cid}_k</cite>, <cite>n*</cite>)
 or a generic <cite>feature_1..p</cite>. The returned <cite>meta</cite> includes role masks, cluster indices,
 empirical class proportions, and the resolved configuration.</p>
 <dl class="field-list simple">
@@ -122,7 +122,7 @@ with column names. If False, return <cite>X</cite> as a NumPy array in the same 
 <div><dl class="simple">
 <dt>tuple:</dt><dd><ul class="simple">
 <li><p>X (pandas.DataFrame | np.ndarray): Shape (n_samples, n_features). By default a DataFrame
-with feature names in canonical order (clusters → free informative → free pseudo → noise).</p></li>
+with feature names in canonical order (clusters → free informative → noise).</p></li>
 <li><p>y (np.ndarray): Shape (n_samples,). Integer labels in {0, 1, …, n_classes-1}.</p></li>
 <li><p>meta (DatasetMeta): Metadata including role masks, cluster indices/labels, empirical class
 weights, and the resolved configuration.</p></li>

@@ -5,7 +5,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>biomedical_data_generator.config &mdash; Biomedical Data Generator 0.1.5rc1 documentation</title>
+  <title>biomedical_data_generator.config &mdash; Biomedical Data Generator 0.1.5rc2 documentation</title>
       <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=b86133f3" />
       <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=e59714d7" />
       <link rel="stylesheet" type="text/css" href="../../_static/copybutton.css?v=76b2166b" />
@@ -14,7 +14,7 @@
   
       <script src="../../_static/jquery.js?v=5d32c60e"></script>
       <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="../../_static/documentation_options.js?v=cd91370b"></script>
+      <script src="../../_static/documentation_options.js?v=fa69bd61"></script>
       <script src="../../_static/doctools.js?v=9bcbadda"></script>
       <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
       <script src="../../_static/clipboard.min.js?v=a7894cd8"></script>
@@ -166,17 +166,38 @@
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Configuration for simulating batch effects.</span>
 
 <span class="sd">    Simulate batch effects by adding random intercepts to specified columns. The intercepts are drawn from a normal</span>
-<span class="sd">    distribution with mean 0 and standard deviation `sigma`. Optionally, the batch assignment can</span>
+<span class="sd">    distribution with mean 0 and standard deviation `effect_strength`. Optionally, the batch assignment can</span>
 <span class="sd">    be confounded with the class labels.</span>
 
 <span class="sd">    Args:</span>
 <span class="sd">        n_batches (int): Number of batches (0 or 1 means no batch effect).</span>
 <span class="sd">        effect_strength (float): Standard deviation of the batch intercepts.</span>
 <span class="sd">        effect_type (Literal[&quot;additive&quot;, &quot;multiplicative&quot;]): Type of batch effect.</span>
-<span class="sd">        confounding_with_class (float): Degree of confounding with class labels, in [0,1].</span>
-<span class="sd">            0.5 means no confounding, 1 means perfect confounding.</span>
-<span class="sd">        affected_features (list[int] | Literal[&quot;all&quot;]): 0-based column indices to which batch effects are</span>
-<span class="sd">            applied. &quot;all&quot; means all features are affected.</span>
+<span class="sd">            - &quot;additive&quot;: Additive intercepts (default).</span>
+<span class="sd">            - &quot;multiplicative&quot;: Multiplicative scaling factors.</span>
+<span class="sd">        confounding_with_class: Degree of confounding between batch and class (0.0-1.0).</span>
+<span class="sd">            Controls how strongly batch assignment correlates with class labels,</span>
+<span class="sd">            simulating **recruitment bias** in multi-center studies.</span>
+
+<span class="sd">            The parameter determines the probability that samples from the same</span>
+<span class="sd">            class are assigned to the same batch:</span>
+
+<span class="sd">            - 0.0 = Independent: Batch assignment ignores class labels</span>
+<span class="sd">              → Each batch has approximately equal class proportions</span>
+
+<span class="sd">            - 0.5 = Moderate correlation: Samples from the same class are</span>
+<span class="sd">              moderately likely to end up in the same batch</span>
+<span class="sd">              → Batches show noticeable class imbalance</span>
+
+<span class="sd">            - 1.0 = Perfect correlation: Samples from the same class are</span>
+<span class="sd">              always assigned to the same batch</span>
+<span class="sd">              → Each batch contains only one class (if n_batches ≥ n_classes)</span>
+
+<span class="sd">            This controls **sampling bias** (who gets recruited where), while</span>
+<span class="sd">            `effect_strength` controls **technical variation** (measurement differences).</span>
+<span class="sd">        affected_features (list[int] | Literal[&quot;all&quot;, &quot;informative&quot;]): Features to affect.</span>
+<span class="sd">            &quot;all&quot; affects all features, &quot;informative&quot; affects only informative features,</span>
+<span class="sd">            or provide list of 0-based column indices.</span>
 <span class="sd">        proportions (list[float] | None): Optional proportions for batch sizes. Must sum to 1.</span>
 <span class="sd">        random_state (int | None): Random seed for reproducibility.</span>
 
@@ -203,7 +224,7 @@
     <span class="n">effect_strength</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">default</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span> <span class="n">gt</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>  <span class="c1"># std of batch intercepts</span>
     <span class="n">effect_type</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;additive&quot;</span><span class="p">,</span> <span class="s2">&quot;multiplicative&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;additive&quot;</span>
     <span class="n">confounding_with_class</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">default</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">ge</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">le</span><span class="o">=</span><span class="mf">1.0</span><span class="p">)</span>  <span class="c1"># in [0,1]</span>
-    <span class="n">affected_features</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">|</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;all&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;all&quot;</span>  <span class="c1"># 0-based column indices; &quot;all&quot; =&gt; all</span>
+    <span class="n">affected_features</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">|</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;all&quot;</span><span class="p">,</span> <span class="s2">&quot;informative&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;all&quot;</span>  <span class="c1"># 0-based column indices; &quot;all&quot; =&gt; all</span>
     <span class="n">proportions</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>  <span class="c1"># optional proportions for batches</span>
     <span class="n">random_state</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
 
@@ -240,7 +261,6 @@
 <span class="sd">        rho_baseline: Baseline correlation for other classes if class_rho is set. Default is 0.0 (independent).</span>
 <span class="sd">        anchor_role: Biological relevance of the anchor marker.</span>
 <span class="sd">            - &quot;informative&quot;: true biomarker (predictive of disease)</span>
-<span class="sd">            - &quot;pseudo&quot;: confounding variable (correlated but not causal)</span>
 <span class="sd">            - &quot;noise&quot;: random measurement (no biological signal)</span>
 <span class="sd">        anchor_effect_size: Strength of the anchor&#39;s disease association.</span>
 <span class="sd">            Can be specified as:</span>
@@ -268,15 +288,6 @@
 <span class="sd">        ...     label=&quot;Inflammation pathway&quot;</span>
 <span class="sd">        ... )</span>
 
-<span class="sd">        Confounding variables (e.g., age-related markers):</span>
-
-<span class="sd">        &gt;&gt;&gt; age_confounders = CorrClusterConfig(</span>
-<span class="sd">        ...     n_cluster_features=3,</span>
-<span class="sd">        ...     rho=0.6,</span>
-<span class="sd">        ...     anchor_role=&quot;pseudo&quot;,</span>
-<span class="sd">        ...     label=&quot;Age-related markers&quot;</span>
-<span class="sd">        ... )</span>
-
 <span class="sd">        Weak disease signal with custom effect size:</span>
 
 <span class="sd">        &gt;&gt;&gt; weak_signal = CorrClusterConfig(</span>
@@ -301,7 +312,7 @@
 <span class="sd">        - Cluster contributes `n_cluster_features` features to the dataset</span>
 <span class="sd">        - Anchor appears first, followed by `(n_cluster_features-1)` proxies</span>
 <span class="sd">        - Only the anchor has predictive power; proxies are correlated distractors</span>
-<span class="sd">        - Proxies count as additional features beyond n_informative/n_pseudo/n_noise</span>
+<span class="sd">        - Proxies count as additional features beyond n_informative/n_noise</span>
 
 <span class="sd">    See Also:</span>
 <span class="sd">    --------</span>
@@ -332,7 +343,7 @@
     <span class="p">)</span>
 
     <span class="c1"># Biological relevance</span>
-    <span class="n">anchor_role</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;informative&quot;</span><span class="p">,</span> <span class="s2">&quot;pseudo&quot;</span><span class="p">,</span> <span class="s2">&quot;noise&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;informative&quot;</span>
+    <span class="n">anchor_role</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;informative&quot;</span><span class="p">,</span> <span class="s2">&quot;noise&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;informative&quot;</span>
     <span class="n">anchor_effect_size</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;small&quot;</span><span class="p">,</span> <span class="s2">&quot;medium&quot;</span><span class="p">,</span> <span class="s2">&quot;large&quot;</span><span class="p">]</span> <span class="o">|</span> <span class="nb">float</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
     <span class="n">anchor_class</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
 
@@ -559,9 +570,6 @@
                 <span class="n">lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;  → Moderate signal (typical biomarker)&quot;</span><span class="p">)</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="n">lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;  → Strong signal (easy to detect)&quot;</span><span class="p">)</span>
-
-        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">anchor_role</span> <span class="o">==</span> <span class="s2">&quot;pseudo&quot;</span><span class="p">:</span>
-            <span class="n">lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;  → Confounding variable (not causal)&quot;</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;  → Random noise (no signal)&quot;</span><span class="p">)</span>
 
@@ -598,13 +606,115 @@
 <span class="k">class</span><span class="w"> </span><span class="nc">DatasetConfig</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Configuration for synthetic dataset generation.</span>
 
-<span class="sd">    The strict `mode=&quot;before&quot;` normalizer fills/validates `n_features` without Pydantic warnings.</span>
+<span class="sd">    Overview</span>
+<span class="sd">    --------</span>
+<span class="sd">    This model defines the *input-level* controls for building a synthetic dataset.</span>
+<span class="sd">    It combines:</span>
+<span class="sd">      - Base role counts: `n_informative` and `n_noise`</span>
+<span class="sd">      - Correlated clusters: `corr_clusters` (each with 1 anchor + (k−1) non-anchors)</span>
+<span class="sd">      - Class distribution, separation strength, naming, and optional batch effects</span>
 
-<span class="sd">    Note:</span>
-<span class="sd">    - The &#39;before&#39; validator normalizes *raw* inputs:</span>
-<span class="sd">      * fills n_features if omitted,</span>
-<span class="sd">      * enforces n_features &gt;= minimal requirement (strict).</span>
-<span class="sd">    - Use `DatasetConfig.relaxed(...)` if you want silent auto-fix instead of a validation error.</span>
+<span class="sd">        Terminology</span>
+<span class="sd">    -----------</span>
+<span class="sd">    - **Anchor**: the designated first feature of a cluster; can be informative or noise.</span>
+<span class="sd">    - **Proxy**: any correlated, non-anchor member of a cluster.</span>
+<span class="sd">    - **Free informative/noise**: features outside clusters, after accounting for anchors.</span>
+
+<span class="sd">    Anchors vs. Proxies — Counting Semantics</span>
+<span class="sd">    ----------------------------------------</span>
+<span class="sd">    • Each correlated cluster contributes exactly 1 **anchor** (the first feature in the cluster)</span>
+<span class="sd">      and (k−1) **non-anchor** members (k = n_cluster_features).</span>
+
+<span class="sd">    • The anchor has a role `anchor_role` ∈ {&quot;informative&quot;, &quot;noise&quot;}:</span>
+<span class="sd">        - If `anchor_role == &quot;informative&quot;`, the anchor **counts toward `n_informative`**.</span>
+<span class="sd">        - If `anchor_role == &quot;noise&quot;`, the anchor **counts toward `n_noise`**.</span>
+
+<span class="sd">    • **Proxies** are the non-anchor members of a cluster. They are *derived* from</span>
+<span class="sd">      `corr_clusters` and are **not configured directly** (there is no input field like `n_proxy`).</span>
+<span class="sd">      They are **added on top** of `n_informative + n_noise` with the formula:</span>
+<span class="sd">          proxies_from_clusters = Σ_over_clusters (n_cluster_features − 1)</span>
+
+<span class="sd">    Expected feature count (strict)</span>
+<span class="sd">    -------------------------------</span>
+<span class="sd">    The minimal required total number of features is:</span>
+<span class="sd">        n_features_expected = n_informative + n_noise + proxies_from_clusters</span>
+<span class="sd">    with:</span>
+<span class="sd">        proxies_from_clusters = sum(max(0, c.n_cluster_features - 1) for c in corr_clusters)</span>
+
+<span class="sd">    The strict `@model_validator(mode=&quot;before&quot;)` computes this minimum and:</span>
+<span class="sd">      - fills `n_features` if omitted,</span>
+<span class="sd">      - enforces `n_features &gt;= n_features_expected`,</span>
+<span class="sd">      - raises a clear error message if too small.</span>
+<span class="sd">    (See `_required_n_features` and the “before” normalizer for details.)</span>
+
+<span class="sd">    Derived “free” counts (interpretation aid)</span>
+<span class="sd">    ------------------------------------------</span>
+<span class="sd">    For reasoning and naming it is often helpful to split base counts into:</span>
+<span class="sd">      - `n_informative_anchors` = number of clusters with `anchor_role=&quot;informative&quot;`</span>
+<span class="sd">      - `n_informative_free`   = `n_informative - n_informative_anchors`</span>
+<span class="sd">      - `n_noise_anchors`      = number of clusters with `anchor_role=&quot;noise&quot;`</span>
+<span class="sd">      - `n_noise_free`         = `n_noise - n_noise_anchors`</span>
+<span class="sd">    These “free” features are outside clusters; the cluster anchors are part of the base counts.</span>
+
+<span class="sd">    Validation &amp; Normalization</span>
+<span class="sd">    --------------------------</span>
+<span class="sd">    - **Before-construction validator** (`mode=&quot;before&quot;`):</span>
+<span class="sd">        * Computes `n_features_expected` from raw input</span>
+<span class="sd">        * Fills or checks `n_features` accordingly (strict lower bound)</span>
+<span class="sd">        * Performs basic shape/type checks on class-related fields</span>
+<span class="sd">    - **After-construction validator** (`mode=&quot;after&quot;`):</span>
+<span class="sd">        * Sanity checks for noise distribution and parameters</span>
+<span class="sd">        * (Recommended) Invariants:</span>
+<span class="sd">            - `n_informative &gt;= #informative_anchors`</span>
+<span class="sd">            - `n_noise &gt;= #noise_anchors`</span>
+
+<span class="sd">    Naming policy</span>
+<span class="sd">    -------------</span>
+<span class="sd">    - If `feature_naming=&quot;prefixed&quot;`:</span>
+<span class="sd">        * Free informative features:  i1, i2, ...</span>
+<span class="sd">        * Free noise features:        n1, n2, ...</span>
+<span class="sd">        * Correlated clusters:        corr{cid}_anchor, corr{cid}_2, ..., corr{cid}_k</span>
+<span class="sd">          (Non-anchors are “proxies” in the metadata.)</span>
+<span class="sd">    - If `feature_naming=&quot;simple&quot;`, a generic `feature_{i}` scheme is used.</span>
+
+<span class="sd">    Relationship to DatasetMeta (output, ground truth)</span>
+<span class="sd">    --------------------------------------------------</span>
+<span class="sd">    The generation step produces a `DatasetMeta` object describing resolved structure:</span>
+<span class="sd">      - `informative_idx`: indices of all informative features (anchors + free informative)</span>
+<span class="sd">      - `proxy_idx`:      indices of all cluster non-anchors (derived from clusters)</span>
+<span class="sd">      - `noise_idx`:      indices of all independent noise features (free noise)</span>
+<span class="sd">      - `corr_cluster_indices`: mapping cluster_id → list of column indices</span>
+<span class="sd">      - `anchor_idx`: mapping cluster_id → anchor column (or None for degenerate forms)</span>
+<span class="sd">    This meta is the single source of truth for downstream visualization/evaluation.</span>
+
+<span class="sd">    Examples (counting)</span>
+<span class="sd">    -------------------</span>
+<span class="sd">    1) One cluster k=4 with an informative anchor, plus n_informative=3, n_noise=2</span>
+<span class="sd">       proxies_from_clusters = (4−1) = 3</span>
+<span class="sd">       n_features_expected   = 3 + 2 + 3 = 8</span>
+<span class="sd">       Breakdown:</span>
+<span class="sd">         - informative_anchors = 1  → free_informative = 3 − 1 = 2</span>
+<span class="sd">         - noise_anchors = 0        → free_noise       = 2 − 0 = 2</span>
+
+<span class="sd">    2) Two clusters: k=5 (informative anchor), k=3 (&quot;noise&quot; anchor), base n_informative=4, n_noise=3</span>
+<span class="sd">       proxies_from_clusters = (5−1) + (3−1) = 6</span>
+<span class="sd">       n_features_expected   = 4 + 3 + 6 = 13</span>
+<span class="sd">       Breakdown:</span>
+<span class="sd">         - informative_anchors = 1  → free_informative = 4 − 1 = 3</span>
+<span class="sd">         - noise_anchors = 1        → free_noise       = 3 − 1 = 2</span>
+
+<span class="sd">    Notes:</span>
+<span class="sd">    -----</span>
+<span class="sd">    • The “proxies add on top” rule is consistent with the cluster docstring:</span>
+<span class="sd">      “Anchor first, followed by (k−1) proxies; proxies count as additional features.”  # see CorrClusterConfig Notes</span>
+<span class="sd">    • The required-features calculation is derived solely from `n_informative`, `n_noise`, and</span>
+<span class="sd">      Σ (n_cluster_features − 1) across all clusters.</span>
+<span class="sd">    • There is intentionally no input field `n_proxy`. Proxies are implied by cluster sizes.</span>
+
+<span class="sd">    See Also:</span>
+<span class="sd">    --------</span>
+<span class="sd">    CorrClusterConfig  : Correlated cluster settings (size, rho, anchor role/effect/class)</span>
+<span class="sd">    DatasetMeta        : Output ground-truth meta (indices for anchors, proxies, cluster layout)</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="n">model_config</span> <span class="o">=</span> <span class="n">ConfigDict</span><span class="p">(</span><span class="n">extra</span><span class="o">=</span><span class="s2">&quot;forbid&quot;</span><span class="p">,</span> <span class="n">use_enum_values</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
@@ -612,7 +722,6 @@
     <span class="n">n_samples</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">100</span>
     <span class="n">n_features</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
     <span class="n">n_informative</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">2</span>
-    <span class="n">n_pseudo</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span>
     <span class="n">n_noise</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span>
     <span class="n">noise_distribution</span><span class="p">:</span> <span class="n">NoiseDistribution</span> <span class="o">=</span> <span class="n">NoiseDistribution</span><span class="o">.</span><span class="n">normal</span>
     <span class="n">noise_scale</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1.0</span>
@@ -627,7 +736,7 @@
     <span class="c1"># naming</span>
     <span class="n">feature_naming</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;prefixed&quot;</span><span class="p">,</span> <span class="s2">&quot;simple&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;prefixed&quot;</span>
     <span class="n">prefix_informative</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;i&quot;</span>
-    <span class="n">prefix_pseudo</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;p&quot;</span>
+    <span class="n">prefix_proxy</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;p&quot;</span>
     <span class="n">prefix_noise</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;n&quot;</span>
     <span class="n">prefix_corr</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;corr&quot;</span>
 
@@ -680,11 +789,7 @@
 <span class="sd">        Each cluster of size &#39;k&#39; contributes (k - 1) *additional* features,</span>
 <span class="sd">        because its anchor is already counted in the base role counts.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">base</span> <span class="o">=</span> <span class="p">(</span>
-            <span class="nb">int</span><span class="p">(</span><span class="n">raw_config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;n_informative&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span>
-            <span class="o">+</span> <span class="nb">int</span><span class="p">(</span><span class="n">raw_config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;n_pseudo&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span>
-            <span class="o">+</span> <span class="nb">int</span><span class="p">(</span><span class="n">raw_config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;n_noise&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span>
-        <span class="p">)</span>
+        <span class="n">base</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">raw_config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;n_informative&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span> <span class="o">+</span> <span class="nb">int</span><span class="p">(</span><span class="n">raw_config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;n_noise&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span>
         <span class="n">extra_from_clusters</span> <span class="o">=</span> <span class="mi">0</span>
         <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="bp">cls</span><span class="o">.</span><span class="n">_iter_cluster_dicts</span><span class="p">(</span><span class="n">raw_config</span><span class="p">):</span>
             <span class="n">n_cluster_features</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">c</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;n_cluster_features&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span>
@@ -698,12 +803,19 @@
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;n_noise must be &gt;= 0&quot;</span><span class="p">)</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">noise_scale</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;noise_scale must be &gt; 0&quot;</span><span class="p">)</span>
-        <span class="c1"># Optional: validate uniform bounds if both provided</span>
+        <span class="c1"># validate uniform bounds if both provided</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">noise_distribution</span> <span class="o">==</span> <span class="n">NoiseDistribution</span><span class="o">.</span><span class="n">uniform</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">noise_params</span><span class="p">:</span>
             <span class="n">low</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">noise_params</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;low&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
             <span class="n">high</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">noise_params</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;high&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
             <span class="k">if</span> <span class="n">low</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">high</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="ow">not</span> <span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">low</span><span class="p">)</span> <span class="o">&lt;</span> <span class="nb">float</span><span class="p">(</span><span class="n">high</span><span class="p">)):</span>
                 <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;For uniform noise, require low &lt; high.&quot;</span><span class="p">)</span>
+
+        <span class="n">inf_anchors</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">count_informative_anchors</span><span class="p">()</span>
+        <span class="n">noise_anchors</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">count_noise_anchors</span><span class="p">()</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_informative</span> <span class="o">&lt;</span> <span class="n">inf_anchors</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;n_informative (</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">n_informative</span><span class="si">}</span><span class="s2">) &lt; number of informative anchors (</span><span class="si">{</span><span class="n">inf_anchors</span><span class="si">}</span><span class="s2">).&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_noise</span> <span class="o">&lt;</span> <span class="n">noise_anchors</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;n_noise (</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">n_noise</span><span class="si">}</span><span class="s2">) &lt; number of noise anchors (</span><span class="si">{</span><span class="n">noise_anchors</span><span class="si">}</span><span class="s2">).&quot;</span><span class="p">)</span>
         <span class="k">return</span> <span class="bp">self</span>
 
     <span class="nd">@model_validator</span><span class="p">(</span><span class="n">mode</span><span class="o">=</span><span class="s2">&quot;before&quot;</span><span class="p">)</span>
@@ -849,12 +961,11 @@
         <span class="n">kwargs</span><span class="p">[</span><span class="s2">&quot;corr_clusters&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">norm_clusters</span>
 
         <span class="c1"># Compute required n_features</span>
-        <span class="c1"># n_features = free informative + free pseudo + free noise + sum(n_cluster_features-1 per cluster)</span>
+        <span class="c1"># n_features = free informative + free noise + sum(n_cluster_features-1 per cluster)</span>
         <span class="n">n_inf</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;n_informative&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span>
-        <span class="n">n_pse</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;n_pseudo&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span>
         <span class="n">n_noise</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;n_noise&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span>
         <span class="n">proxies</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="n">cc</span><span class="o">.</span><span class="n">n_cluster_features</span> <span class="o">-</span> <span class="mi">1</span> <span class="k">for</span> <span class="n">cc</span> <span class="ow">in</span> <span class="n">norm_clusters</span><span class="p">)</span>
-        <span class="n">required</span> <span class="o">=</span> <span class="n">n_inf</span> <span class="o">+</span> <span class="n">n_pse</span> <span class="o">+</span> <span class="n">n_noise</span> <span class="o">+</span> <span class="n">proxies</span>
+        <span class="n">required</span> <span class="o">=</span> <span class="n">n_inf</span> <span class="o">+</span> <span class="n">n_noise</span> <span class="o">+</span> <span class="n">proxies</span>
 
         <span class="n">n_feat</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;n_features&quot;</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">n_feat</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="nb">int</span><span class="p">(</span><span class="n">n_feat</span><span class="p">)</span> <span class="o">&lt;</span> <span class="n">required</span><span class="p">:</span>
@@ -910,7 +1021,6 @@
 <span class="sd">        Note: This is a subset of n_informative, not a separate count.</span>
 
 <span class="sd">        Returns:</span>
-<span class="sd">        -------</span>
 <span class="sd">            The number of clusters with anchor_role == &quot;informative&quot;.</span>
 
 <span class="sd">        Note:</span>
@@ -918,6 +1028,17 @@
 <span class="sd">            use `self._proxies_from_clusters(self.corr_clusters)`.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="nb">sum</span><span class="p">(</span><span class="mi">1</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">corr_clusters</span> <span class="ow">or</span> <span class="p">[])</span> <span class="k">if</span> <span class="n">c</span><span class="o">.</span><span class="n">anchor_role</span> <span class="o">==</span> <span class="s2">&quot;informative&quot;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="DatasetConfig.count_noise_anchors">
+<a class="viewcode-back" href="../../_autosummary/biomedical_data_generator.DatasetConfig.html#biomedical_data_generator.DatasetConfig.count_noise_anchors">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">count_noise_anchors</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Count clusters whose anchor is &#39;noise&#39; (non-informative anchor).</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            The number of clusters with anchor_role == &quot;noise&quot;.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="nb">sum</span><span class="p">(</span><span class="mi">1</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">corr_clusters</span> <span class="ow">or</span> <span class="p">[])</span> <span class="k">if</span> <span class="n">c</span><span class="o">.</span><span class="n">anchor_role</span> <span class="o">==</span> <span class="s2">&quot;noise&quot;</span><span class="p">)</span></div>
 
 
     <span class="nd">@staticmethod</span>
@@ -941,46 +1062,49 @@
             <span class="k">return</span> <span class="mi">0</span>
         <span class="k">return</span> <span class="nb">sum</span><span class="p">(</span><span class="nb">max</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">int</span><span class="p">(</span><span class="n">c</span><span class="o">.</span><span class="n">n_cluster_features</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">clusters</span><span class="p">)</span>
 
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">n_informative_free</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Informative features outside clusters (excludes informative anchors).&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="nb">max</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">n_informative</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">count_informative_anchors</span><span class="p">(),</span> <span class="mi">0</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">n_noise_free</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Independent noise features (excludes noise anchors).&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="nb">max</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">n_noise</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">count_noise_anchors</span><span class="p">(),</span> <span class="mi">0</span><span class="p">)</span>
+
 <div class="viewcode-block" id="DatasetConfig.breakdown">
 <a class="viewcode-back" href="../../_autosummary/biomedical_data_generator.DatasetConfig.html#biomedical_data_generator.DatasetConfig.breakdown">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">breakdown</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">int</span><span class="p">]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return a structured breakdown of feature counts, incl. cluster proxies.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Structured feature counts incl. cluster proxies and anchor split.</span>
 
 <span class="sd">        Returns:</span>
-<span class="sd">        -------</span>
 <span class="sd">            A dict with keys:</span>
 <span class="sd">            - n_informative_total</span>
 <span class="sd">            - n_informative_anchors</span>
 <span class="sd">            - n_informative_free</span>
-<span class="sd">            - n_pseudo_free</span>
-<span class="sd">            - n_noise</span>
+<span class="sd">            - n_noise_total</span>
+<span class="sd">            - n_noise_anchors</span>
+<span class="sd">            - n_noise_free</span>
 <span class="sd">            - proxies_from_clusters</span>
 <span class="sd">            - n_features_expected</span>
 <span class="sd">            - n_features_configured</span>
-
 <span class="sd">        Raises:</span>
-<span class="sd">        ------</span>
 <span class="sd">            ValueError: If self.n_features is inconsistent (should not happen if validated).</span>
-
 <span class="sd">            This is a safeguard against manual tampering with the instance attributes. This should not happen if the</span>
 <span class="sd">            instance was created via the normal validators. If you encounter this, please report a bug.</span>
-
-<span class="sd">        Note:</span>
-<span class="sd">            n_features_expected = n_informative + n_pseudo + n_noise + proxies_from_clusters</span>
-<span class="sd">            n_features_configured = self.n_features (may be larger than expected)</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">proxies</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_proxies_from_clusters</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">corr_clusters</span><span class="p">)</span>
         <span class="n">n_inf_anchors</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">count_informative_anchors</span><span class="p">()</span>
+        <span class="n">n_noise_anchors</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">count_noise_anchors</span><span class="p">()</span>
         <span class="k">return</span> <span class="p">{</span>
             <span class="s2">&quot;n_informative_total&quot;</span><span class="p">:</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">n_informative</span><span class="p">),</span>
             <span class="s2">&quot;n_informative_anchors&quot;</span><span class="p">:</span> <span class="nb">int</span><span class="p">(</span><span class="n">n_inf_anchors</span><span class="p">),</span>
             <span class="s2">&quot;n_informative_free&quot;</span><span class="p">:</span> <span class="nb">int</span><span class="p">(</span><span class="nb">max</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">n_informative</span> <span class="o">-</span> <span class="n">n_inf_anchors</span><span class="p">,</span> <span class="mi">0</span><span class="p">)),</span>
-            <span class="c1"># If you want symmetry, you could also subtract pseudo/noise anchors here.</span>
-            <span class="s2">&quot;n_pseudo_free&quot;</span><span class="p">:</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">n_pseudo</span><span class="p">),</span>
-            <span class="s2">&quot;n_noise&quot;</span><span class="p">:</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">n_noise</span><span class="p">),</span>
+            <span class="s2">&quot;n_noise_total&quot;</span><span class="p">:</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">n_noise</span><span class="p">),</span>
+            <span class="s2">&quot;n_noise_anchors&quot;</span><span class="p">:</span> <span class="nb">int</span><span class="p">(</span><span class="n">n_noise_anchors</span><span class="p">),</span>
+            <span class="s2">&quot;n_noise_free&quot;</span><span class="p">:</span> <span class="nb">int</span><span class="p">(</span><span class="nb">max</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">n_noise</span> <span class="o">-</span> <span class="n">n_noise_anchors</span><span class="p">,</span> <span class="mi">0</span><span class="p">)),</span>
             <span class="s2">&quot;proxies_from_clusters&quot;</span><span class="p">:</span> <span class="nb">int</span><span class="p">(</span><span class="n">proxies</span><span class="p">),</span>
-            <span class="s2">&quot;n_features_expected&quot;</span><span class="p">:</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">n_informative</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_pseudo</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_noise</span> <span class="o">+</span> <span class="n">proxies</span><span class="p">),</span>
-            <span class="c1"># n_features is Optional during early normalization; coerce safely for summarization</span>
+            <span class="s2">&quot;n_features_expected&quot;</span><span class="p">:</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">n_informative</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_noise</span> <span class="o">+</span> <span class="n">proxies</span><span class="p">),</span>
             <span class="s2">&quot;n_features_configured&quot;</span><span class="p">:</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">n_features</span> <span class="ow">or</span> <span class="mi">0</span><span class="p">),</span>
         <span class="p">}</span></div>
 
@@ -1010,7 +1134,6 @@
                 <span class="s2">&quot;n_informative_total&quot;</span><span class="p">,</span>
                 <span class="s2">&quot;n_informative_anchors&quot;</span><span class="p">,</span>
                 <span class="s2">&quot;n_informative_free&quot;</span><span class="p">,</span>
-                <span class="s2">&quot;n_pseudo_free&quot;</span><span class="p">,</span>
                 <span class="s2">&quot;n_noise&quot;</span><span class="p">,</span>
                 <span class="s2">&quot;proxies_from_clusters&quot;</span><span class="p">,</span>
                 <span class="s2">&quot;n_features_expected&quot;</span><span class="p">,</span>
@@ -1022,7 +1145,6 @@
             <span class="n">lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;- n_informative_total    : </span><span class="si">{</span><span class="n">b</span><span class="p">[</span><span class="s1">&#39;n_informative_total&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
             <span class="n">lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;- n_informative_anchors  : </span><span class="si">{</span><span class="n">b</span><span class="p">[</span><span class="s1">&#39;n_informative_anchors&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
             <span class="n">lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;- n_informative_free     : </span><span class="si">{</span><span class="n">b</span><span class="p">[</span><span class="s1">&#39;n_informative_free&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-            <span class="n">lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;- n_pseudo_free          : </span><span class="si">{</span><span class="n">b</span><span class="p">[</span><span class="s1">&#39;n_pseudo_free&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
             <span class="n">lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;- n_noise                : </span><span class="si">{</span><span class="n">b</span><span class="p">[</span><span class="s1">&#39;n_noise&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
             <span class="n">lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;- proxies_from_clusters  : </span><span class="si">{</span><span class="n">b</span><span class="p">[</span><span class="s1">&#39;proxies_from_clusters&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
             <span class="n">lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;- n_features_expected    : </span><span class="si">{</span><span class="n">b</span><span class="p">[</span><span class="s1">&#39;n_features_expected&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>

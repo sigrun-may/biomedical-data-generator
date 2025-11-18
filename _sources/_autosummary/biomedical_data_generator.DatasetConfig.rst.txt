@@ -18,6 +18,7 @@
       ~DatasetConfig.construct
       ~DatasetConfig.copy
       ~DatasetConfig.count_informative_anchors
+      ~DatasetConfig.count_noise_anchors
       ~DatasetConfig.dict
       ~DatasetConfig.from_orm
       ~DatasetConfig.from_yaml
@@ -56,10 +57,11 @@
       ~DatasetConfig.model_extra
       ~DatasetConfig.model_fields
       ~DatasetConfig.model_fields_set
+      ~DatasetConfig.n_informative_free
+      ~DatasetConfig.n_noise_free
       ~DatasetConfig.n_samples
       ~DatasetConfig.n_features
       ~DatasetConfig.n_informative
-      ~DatasetConfig.n_pseudo
       ~DatasetConfig.n_noise
       ~DatasetConfig.noise_distribution
       ~DatasetConfig.noise_scale
@@ -70,7 +72,7 @@
       ~DatasetConfig.class_sep
       ~DatasetConfig.feature_naming
       ~DatasetConfig.prefix_informative
-      ~DatasetConfig.prefix_pseudo
+      ~DatasetConfig.prefix_proxy
       ~DatasetConfig.prefix_noise
       ~DatasetConfig.prefix_corr
       ~DatasetConfig.corr_clusters
