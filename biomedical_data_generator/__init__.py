@@ -8,7 +8,7 @@
 
 """Data generator main package."""
 
-from .config import BatchEffectsConfig, CorrClusterConfig, DatasetConfig, NoiseDistribution
+from .config import BatchEffectsConfig, CorrClusterConfig, DatasetConfig, ClassConfig
 from .features.correlated import sample_cluster
 from .generator import (
     DatasetMeta,
@@ -20,7 +20,7 @@ __all__ = [
     "DatasetConfig",
     "CorrClusterConfig",
     "BatchEffectsConfig",
-    "NoiseDistribution",
+    "ClassConfig",
     "DatasetMeta",
     "generate_dataset",
     "sample_cluster",

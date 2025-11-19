@@ -8,8 +8,8 @@
 
 from __future__ import annotations
 
-from collections.abc import Iterable, Mapping, MutableMapping
-from typing import Any, Literal, TypeAlias, cast, Sequence
+from collections.abc import Iterable, Mapping, Sequence
+from typing import Any, Literal, TypeAlias, cast
 
 import numpy as np
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
@@ -18,16 +18,21 @@ AnchorMode: TypeAlias = Literal["equalized", "strong"]
 DistributionType = Literal[
     "normal",
     "lognormal",
-    "exp_normal", # np.exp(rng.normal()) - direct control over underlying parameters for lognormal distribution
+    "exp_normal",  # np.exp(rng.normal()) - direct control over underlying parameters for lognormal distribution
     "uniform",
     "exponential",
     "laplace",
 ]
 
 
+# ---------------------------------------------------------------------------
+# Shared helpers
+# ---------------------------------------------------------------------------
+
+
 def validate_distribution_params(
-        params: dict[str, float],
-        distribution: str
+    params: dict[str, float],
+    distribution: str,
 ) -> dict[str, float]:
     """Shared validator for distribution parameters.
 
@@ -61,8 +66,7 @@ def validate_distribution_params(
     invalid = provided - (schema["required"] | schema["optional"])
     if invalid:
         raise ValueError(
-            f"Invalid parameters {invalid} for '{distribution}'. "
-            f"Allowed: {schema['required'] | schema['optional']}"
+            f"Invalid parameters {invalid} for '{distribution}'. " f"Allowed: {schema['required'] | schema['optional']}"
         )
 
     missing = schema["required"] - provided
@@ -71,14 +75,13 @@ def validate_distribution_params(
 
     # Distribution-specific checks
     if distribution == "uniform":
-        # Both parameters must be present (already checked via 'required')
-        # Now validate their relationship
         try:
             low = float(params["low"])
             high = float(params["high"])
         except (ValueError, TypeError) as e:
             raise ValueError(
-                f"uniform parameters must be numeric, got low={params['low']}, high={params['high']}") from e
+                f"uniform parameters must be numeric, got low={params['low']}, high={params['high']}"
+            ) from e
 
         if not (low < high):
             raise ValueError(f"uniform: 'high' ({high}) must be > 'low' ({low})")
@@ -103,8 +106,7 @@ def validate_distribution_params(
         if sigma_val <= 0:
             raise ValueError(f"'sigma' must be > 0, got {sigma_val}")
 
-    # loc and mean can be any real number (no additional constraints)
-    # Validate they are numeric if present
+    # loc and mean must be numeric if present
     for param_name in ["loc", "mean"]:
         if param_name in params:
             try:
@@ -115,10 +117,15 @@ def validate_distribution_params(
     return params
 
 
+# ---------------------------------------------------------------------------
+# Class configuration
+# ---------------------------------------------------------------------------
+
+
 class ClassConfig(BaseModel):
     """Configuration for a single class in the dataset.
 
-    Each class is defined by its sample count, distribution, and optional metadata.
+    Each class is defined by its sample count, distribution, and optional label.
     Class labels (0, 1, 2, ...) are assigned by position in the list.
 
     Args:
@@ -157,14 +164,26 @@ class ClassConfig(BaseModel):
         - label is auto-generated if None or empty string
         - Auto-generated labels follow pattern "class_{idx}"
     """
+
     model_config = ConfigDict(extra="forbid")
 
-    n_samples: int = Field(default=30, ge=1, description="Number of samples in this class")
-    class_distribution: DistributionType = Field(default="normal", description="Distribution type")
-    class_distribution_params: dict[str, Any] = Field(
-        default_factory=lambda: {"loc": 0, "scale": 1}, description="Distribution parameters"
+    n_samples: int = Field(
+        default=30,
+        ge=1,
+        description="Number of samples in this class.",
     )
-    label: str | None = Field(default=None, description="Label (auto-generated as 'class_{idx}' if None)")
+    class_distribution: DistributionType = Field(
+        default="normal",
+        description="Distribution type for base feature generation.",
+    )
+    class_distribution_params: dict[str, Any] = Field(
+        default_factory=lambda: {"loc": 0, "scale": 1},
+        description="Distribution parameters.",
+    )
+    label: str | None = Field(
+        default=None,
+        description="Label (auto-generated as 'class_{idx}' if None).",
+    )
 
     @field_validator("class_distribution_params")
     @classmethod
@@ -222,14 +241,14 @@ class BatchEffectsConfig(BaseModel):
       how strongly the measurement shifts between batches.
 
     Args:
-        n_batches (int):
+        n_batches:
             Number of batches. Values 0 or 1 effectively disable batch effects.
-        effect_strength (float):
+        effect_strength:
             Scale of batch effects.
             - For ``effect_type="additive"``: standard deviation of batch intercepts.
-            - For ``effect_type="multiplicative"``: standard deviation of the
+            - For ``effect_type="multipliclicative"``: standard deviation of the
               multiplicative factor (applied as ``X' = X * (1 + b_batch)``).
-        effect_type (Literal["additive", "multiplicative"]):
+        effect_type:
             Type of batch effect.
             - ``"additive"``: Additive intercepts (shifts in feature means).
             - ``"multiplicative"``: Multiplicative scaling (changes in variance/scale).
@@ -248,58 +267,56 @@ class BatchEffectsConfig(BaseModel):
         affected_features (list[int] | Literal["all", "informative"]):
             Which features should be affected:
             - ``"all"``: apply batch effects to all features.
-            - ``"informative"``: apply only to informative features
-              (indices passed from the generator).
+            - ``"informative"``: apply only to informative features.
             - list of ints: explicit 0-based column indices.
-        proportions (list[float] | None):
+        proportions:
             Optional target proportions for batch sizes. Values are normalized
             to sum to 1. If ``None``, batches are (approximately) equal in size.
-        random_state (int | None):
-            Optional seed **specific to batch effects**.
-            - ``None`` (recommended): reuse the dataset-level RNG created from
-              ``DatasetConfig.random_state``.
-            - ``int``: use a dedicated RNG ``np.random.default_rng(random_state)``
-              for batch assignment and effects. This allows advanced users to
-              keep batch effects reproducible even if the dataset-level seed
-              changes.
-
-    Examples:
-    --------
-    >>> # Simple random batches, all controlled by DatasetConfig.random_state
-    >>> BatchEffectsConfig(n_batches=3, effect_strength=0.5)
-
-    >>> # Confounded batches (recruitment bias)
-    >>> BatchEffectsConfig(
-    ...     n_batches=2,
-    ...     effect_strength=0.8,
-    ...     confounding_with_class=0.9,
-    ... )
-
-    >>> # Unbalanced batches with an explicit batch seed
-    >>> BatchEffectsConfig(
-    ...     n_batches=3,
-    ...     proportions=[0.5, 0.3, 0.2],
-    ...     effect_strength=0.5,
-    ...     random_state=123,
-    ... )
+        random_state:
+            Optional seed specific to batch effects. ``None`` → reuse dataset RNG.
     """
 
+    model_config = ConfigDict(extra="forbid")
+
     n_batches: int = Field(default=0, ge=0)  # 0 or 1 => no batch effect
-    effect_strength: float = Field(default=0.5, gt=0)  # std of batch effects
+    effect_strength: float = Field(default=0.5, gt=0.0)  # std of batch effects
     effect_type: Literal["additive", "multiplicative"] = "additive"
     confounding_with_class: float = Field(default=0.0, ge=0.0, le=1.0)  # in [0,1]
     affected_features: list[int] | Literal["all", "informative"] = "all"  # 0-based column indices; "all" => all
-    proportions: list[float] | None = None  # optional proportions for batches
+    proportions: list[float] | None = None  # optional batch proportions
     random_state: int | None = None
 
     @field_validator("proportions")
     @classmethod
-    def validate_proportions(cls, v):
-        """Ensure proportions sum to ~1."""
-        if v is not None:
-            if not np.isclose(sum(v), 1.0, atol=1e-6):
-                raise ValueError(f"proportions must sum to 1, got {sum(v)}")
-        return v
+    def validate_proportions(cls, v: list[float] | None, info):
+        """Ensure proportions are non-negative, match n_batches, and sum to 1."""
+        if v is None:
+            return v
+
+        if len(v) == 0:
+            raise ValueError("proportions must not be empty if provided.")
+
+        # Non-negative entries
+        for p in v:
+            if p < 0:
+                raise ValueError(f"proportions must be non-negative, got {p}.")
+
+        # Check length vs n_batches (if > 0)
+        n_batches = info.data.get("n_batches")
+        if isinstance(n_batches, int) and n_batches > 0 and len(v) != n_batches:
+            raise ValueError(f"proportions length ({len(v)}) must match n_batches ({n_batches}).")
+
+        total = float(sum(v))
+        if total <= 0:
+            raise ValueError(f"Sum of proportions must be > 0, got {total}.")
+
+        # Normalize to sum to 1.0
+        return [p / total for p in v]
+
+
+# ---------------------------------------------------------------------------
+# Correlated clusters
+# ---------------------------------------------------------------------------
 
 
 class CorrClusterConfig(BaseModel):
@@ -310,100 +327,70 @@ class CorrClusterConfig(BaseModel):
     acts as the "anchor" (driver), while the others are "proxies" (followers).
 
     Args:
-        n_cluster_features: Number of biomarkers in the cluster (including anchor). Must be >= 1.
-        rho: Correlation strength between biomarkers in the cluster.
-            - 0.0 = independent
-            - 0.5 = moderate correlation
-            - 0.8+ = strong correlation (typical for pathway markers)
-            - Range: [0, 1) for equicorrelated; (-1, 1) for toeplitz
-            Default is 0.8.
-        structure: Pattern of correlation within the cluster.
-            - "equicorrelated": all pairs have the same correlation (default)
-            - "toeplitz": correlation decreases with distance
-        class_structure: Mapping of class index to correlation structure.
-        class_rho: Mapping of class index to correlation strength.
-        rho_baseline: Baseline correlation for other classes if class_rho is set. Default is 0.0 (independent).
-        anchor_role: Biological relevance of the anchor marker.
-            - "informative": true biomarker (predictive of disease)
-            - "noise": random measurement (no biological signal)
-        anchor_effect_size: Strength of the anchor's disease association.
-            Can be specified as:
-            - Preset: "small" (0.5), "medium" (1.0), "large" (1.5)
-            - Custom float: any positive value
-            - None: defaults to "medium" (1.0)
-            Only relevant when `anchor_role="informative"`.
-        anchor_class: Disease class that this anchor predicts (0, 1, 2, ...).
-            If None, the anchor contributes to all classes. Only used when
-            `anchor_role="informative"`.
-        random_state: Random seed for reproducibility of this specific cluster.
-            If None, uses the global dataset seed.
-        label: Descriptive name for documentation (e.g., "Inflammation markers").
-
-    Examples:
-    --------
-        Strong inflammatory pathway in diseased patients:
-
-        >>> inflammation = CorrClusterConfig(
-        ...     n_cluster_features=5,
-        ...     rho=0.8,
-        ...     anchor_role="informative",
-        ...     anchor_effect_size="large",
-        ...     anchor_class=1,  # disease class
-        ...     label="Inflammation pathway"
-        ... )
-
-        Weak disease signal with custom effect size:
-
-        >>> weak_signal = CorrClusterConfig(
-        ...     n_cluster_features=4,
-        ...     rho=0.5,
-        ...     anchor_role="informative",
-        ...     anchor_effect_size=0.3,  # custom weak effect
-        ...     label="Subtle biomarkers"
-        ... )
-
-    Notes:
-    -----
-        Medical interpretation:
-        - **Anchor**: The primary biomarker (e.g., CRP in inflammation)
-        - **Proxies**: Secondary markers that follow the anchor (e.g., IL-6, TNF-α)
-        - **rho=0.8**: Typical for tightly regulated biological pathways
-        - **rho=0.5**: Moderate biological coupling
-        - **effect_size="large"**: Strong disease association (easy to detect)
-        - **effect_size="small"**: Subtle signal (requires large sample size)
-
-        Technical details:
-        - Cluster contributes `n_cluster_features` features to the dataset
-        - Anchor appears first, followed by `(n_cluster_features-1)` proxies
-        - Only the anchor has predictive power; proxies are correlated distractors
-        - Proxies count as additional features beyond n_informative/n_noise
-
-    See Also:
-    --------
-        DatasetConfig : Overall dataset configuration
-        generate_dataset : Main generation function
+        n_cluster_features:
+            Number of biomarkers in the cluster (including anchor). Must be >= 1.
+        rho:
+            Correlation strength between biomarkers in the cluster:
+              - 0.0 = independent
+              - 0.5 = moderate correlation
+              - 0.8+ = strong correlation
+            For equicorrelated:
+                - lower bound = -1 / (p-1) for p > 1
+                - upper bound < 1
+            For toeplitz:
+                - |rho| < 1
+        structure:
+            "equicorrelated" or "toeplitz".
+        class_structure:
+            Per-class override for correlation structure.
+        class_rho:
+            Per-class override for correlation strength.
+        rho_baseline:
+            Fallback correlation for classes not in class_rho (default 0.0).
+        anchor_role:
+            "informative" or "noise".
+        anchor_effect_size:
+            "small" (0.5), "medium" (1.0), "large" (1.5), custom > 0, or None.
+        anchor_class:
+            Class index the anchor predicts (if informative). None → all classes.
+        random_state:
+            Optional seed for this cluster. If None, uses the global dataset seed.
+        label:
+            Descriptive name for documentation.
     """
 
     model_config = ConfigDict(extra="forbid")
 
     # Core cluster structure and correlation settings
-    n_cluster_features: int = Field(..., ge=1, description="Number of biomarkers in cluster")
-
-    # global correlation (default mode)
-    structure: Literal["equicorrelated", "toeplitz"] = Field(
-        default="equicorrelated", description="Default correlation structure for all classes"
+    n_cluster_features: int = Field(
+        ...,
+        ge=1,
+        description="Number of biomarkers in cluster (including anchor).",
     )
-    rho: float = Field(default=0.8, description="Default correlation strength for all classes")
 
-    # per-class correlation (optional)
+    structure: Literal["equicorrelated", "toeplitz"] = Field(
+        default="equicorrelated",
+        description="Default correlation structure for all classes.",
+    )
+    rho: float = Field(
+        default=0.8,
+        description="Default correlation strength for all classes.",
+    )
+
+    # Per-class correlation (optional)
     class_structure: dict[int, Literal["equicorrelated", "toeplitz"]] | None = Field(
-        default=None, description="Per-class correlation structure (overrides 'structure' for specified classes)"
+        default=None,
+        description="Per-class correlation structure (overrides 'structure' for specified classes).",
     )
     class_rho: dict[int, float] | None = Field(
-        default=None, description="Per-class correlation strength (activates class-specific mode)"
+        default=None,
+        description="Per-class correlation strength (activates class-specific mode).",
     )
     rho_baseline: float = Field(
-        default=0.0, ge=-1.0, lt=1.0, description="Fallback correlation for classes not in class_rho"
+        default=0.0,
+        ge=-1.0,
+        lt=1.0,
+        description="Fallback correlation for classes not in class_rho.",
     )
 
     # Biological relevance
@@ -420,7 +407,7 @@ class CorrClusterConfig(BaseModel):
     def _validate_size(cls, v: int) -> int:
         """Ensure cluster has at least one marker."""
         if v < 1:
-            raise ValueError(f"n_cluster_features must be >= 1, got {v}")
+            raise ValueError(f"n_cluster_features must be >= 1, got {v}.")
         return v
 
     @field_validator("rho")
@@ -450,12 +437,47 @@ class CorrClusterConfig(BaseModel):
         lower = -1.0 / (p - 1) if (structure == "equicorrelated" and p > 1) else -1.0
         for cls_idx, rho_val in v.items():
             if cls_idx < 0:
-                raise ValueError(f"class_rho keys must be >= 0, got {cls_idx}")
+                raise ValueError(f"class_rho keys must be >= 0, got {cls_idx}.")
             if not (lower < float(rho_val) < 1.0):
                 raise ValueError(
                     f"class_rho[{cls_idx}]={rho_val} invalid for {structure} (p={p}); "
                     f"require {lower:.6f} < rho < 1."
                 )
+        return v
+
+    @field_validator("rho_baseline")
+    @classmethod
+    def _validate_rho_baseline(cls, v: float, info):
+        """Validate rho_baseline against structure constraints.
+
+        rho_baseline must satisfy the same positive-definiteness constraints
+        as rho and class_rho, since it's used as a correlation parameter
+        for classes not specified in class_rho.
+
+        Args:
+            v: The rho_baseline value to validate.
+            info: Validation context with access to other fields.
+
+        Returns:
+            The validated rho_baseline value.
+
+        Raises:
+            ValueError: If rho_baseline violates PD constraints for the structure.
+        """
+        p = int(info.data.get("n_cluster_features", 2))
+        structure = info.data.get("structure", "equicorrelated")
+
+        if structure == "equicorrelated":
+            lower = -1.0 / (p - 1) if p > 1 else float("-inf")
+            if not (lower < v < 1.0):
+                raise ValueError(
+                    f"rho_baseline={v} invalid for equicorrelated with "
+                    f"n_cluster_features={p}; require {lower:.6f} < rho_baseline < 1.0"
+                )
+        else:  # toeplitz
+            if not (-1.0 < v < 1.0):
+                raise ValueError(f"rho_baseline={v} invalid for toeplitz; require |rho_baseline| < 1.0")
+
         return v
 
     @field_validator("class_structure")
@@ -467,7 +489,7 @@ class CorrClusterConfig(BaseModel):
 
         for cls_idx in v.keys():
             if cls_idx < 0:
-                raise ValueError(f"class_structure keys must be >= 0, got {cls_idx}")
+                raise ValueError(f"class_structure keys must be >= 0, got {cls_idx}.")
         return v
 
     @model_validator(mode="after")
@@ -480,43 +502,6 @@ class CorrClusterConfig(BaseModel):
             )
         return self
 
-    def is_class_specific(self) -> bool:
-        """Check if this cluster uses class-specific correlation.
-
-        Returns:
-            True if class_rho is set (activates class-specific mode).
-        """
-        return self.class_rho is not None
-
-    def get_rho_for_class(self, class_idx: int) -> float:
-        """Get correlation strength for a specific class.
-
-        Args:
-            class_idx: Class label (0, 1, 2, ...).
-
-        Returns:
-            Correlation strength for this class.
-        """
-        if not self.is_class_specific():
-            return self.rho
-
-        assert self.class_rho is not None  # type guard
-        return self.class_rho.get(class_idx, self.rho_baseline)
-
-    def get_structure_for_class(self, class_idx: int) -> Literal["equicorrelated", "toeplitz"]:
-        """Get correlation structure for a specific class.
-
-        Args:
-            class_idx: Class label (0, 1, 2, ...).
-
-        Returns:
-            Structure type for this class.
-        """
-        if self.class_structure is None:
-            return self.structure
-
-        return self.class_structure.get(class_idx, self.structure)
-
     @field_validator("anchor_effect_size")
     @classmethod
     def _validate_effect_size(cls, v) -> Literal["small", "medium", "large"] | float | None:
@@ -527,50 +512,49 @@ class CorrClusterConfig(BaseModel):
         # Preset string
         if isinstance(v, str):
             if v not in ("small", "medium", "large"):
-                raise ValueError(f"anchor_effect_size must be 'small', 'medium', or 'large', got '{v}'")
+                raise ValueError("anchor_effect_size must be 'small', 'medium', or 'large', " f"got '{v}'.")
             return cast(Literal["small", "medium", "large"], v)
 
         # Custom float
         try:
             val = float(v)
             if val <= 0:
-                raise ValueError(f"anchor_effect_size must be > 0, got {val}")
+                raise ValueError(f"anchor_effect_size must be > 0, got {val}.")
             return val
         except (TypeError, ValueError) as e:
-            raise ValueError(f"anchor_effect_size must be 'small'/'medium'/'large' or positive float, got {v}") from e
+            raise ValueError(
+                "anchor_effect_size must be 'small'/'medium'/'large' or positive float, " f"got {v}."
+            ) from e
 
     @field_validator("anchor_class")
     @classmethod
     def _validate_anchor_class(cls, v: int | None) -> int | None:
         """Ensure disease class is non-negative if specified."""
         if v is not None and v < 0:
-            raise ValueError(f"anchor_class must be >= 0 or None, got {v}")
+            raise ValueError(f"anchor_class must be >= 0 or None, got {v}.")
         return v
 
+    # Convenience methods -----------------------------------------------------
+
+    def is_class_specific(self) -> bool:
+        """Check if this cluster uses class-specific correlation."""
+        return self.class_rho is not None
+
+    def get_rho_for_class(self, class_idx: int) -> float:
+        """Get correlation strength for a specific class."""
+        if not self.is_class_specific():
+            return self.rho
+        assert self.class_rho is not None
+        return self.class_rho.get(class_idx, self.rho_baseline)
+
+    def get_structure_for_class(self, class_idx: int) -> Literal["equicorrelated", "toeplitz"]:
+        """Get correlation structure for a specific class."""
+        if self.class_structure is None:
+            return self.structure
+        return self.class_structure.get(class_idx, self.structure)
+
     def resolve_anchor_effect_size(self) -> float:
-        """Convert anchor_effect_size to numeric value.
-
-        Returns:
-            Numeric effect size for calculations.
-            - "small" → 0.5
-            - "medium" → 1.0  (default)
-            - "large" → 1.5
-            - custom float → as specified
-
-        Examples:
-        --------
-            >>> c = CorrClusterConfig(n_cluster_features=3, rho=0.7, anchor_effect_size="large")
-            >>> c.resolve_anchor_effect_size()
-            1.5
-
-            >>> c = CorrClusterConfig(n_cluster_features=3, rho=0.7, anchor_effect_size=0.8)
-            >>> c.resolve_anchor_effect_size()
-            0.8
-
-            >>> c = CorrClusterConfig(n_cluster_features=3, rho=0.7)  # default
-            >>> c.resolve_anchor_effect_size()
-            1.0
-        """
+        """Convert anchor_effect_size to a numeric effect size."""
         if self.anchor_effect_size is None:
             return 1.0  # default to medium
 
@@ -593,7 +577,7 @@ class CorrClusterConfig(BaseModel):
         lines = []
         lines.append(f"{'=' * 60}")
         lines.append(f"Biomarker Cluster: {self.label or 'Unnamed'}")
-        lines.append(f"{'=' * 60}")
+        lines.append("=" * 60)
         lines.append("")
 
         # Cluster structure
@@ -652,17 +636,18 @@ class CorrClusterConfig(BaseModel):
     def __str__(self) -> str:
         """Concise representation for quick reference."""
         parts = [f"n_cluster_features={self.n_cluster_features}", f"rho={self.rho}"]
-
         if self.anchor_role != "informative":
             parts.append(self.anchor_role)
-
         if self.anchor_effect_size:
             parts.append(f"effect={self.anchor_effect_size}")
-
         if self.label:
             parts.append(f"'{self.label}'")
-
         return f"CorrCluster({', '.join(parts)})"
+
+
+# ---------------------------------------------------------------------------
+# Dataset configuration
+# ---------------------------------------------------------------------------
 
 
 class DatasetConfig(BaseModel):
@@ -673,110 +658,50 @@ class DatasetConfig(BaseModel):
     This model defines the *input-level* controls for building a synthetic dataset.
     It combines:
       - Base role counts: `n_informative` and `n_noise`
-      - Correlated clusters: `corr_clusters` (each with 1 anchor + (k−1) non-anchors)
-      - Class distribution, separation strength, naming, and optional batch effects
+      - Correlated clusters: `corr_clusters` (each 1 anchor + (k−1) proxies)
+      - Class definitions: `class_configs` (with per-class n_samples and labels)
+      - Optional batch effects
 
-    Class specification via `class_configs` list.
-    `n_samples` and `n_classes` are computed properties.
-
-    Examples:
-        >>> # Minimal (auto-labels: "class_0", "class_1")
-        >>> cfg = DatasetConfig(
-        ...     class_configs=[ClassConfig(n_samples=100), ClassConfig(n_samples=50)],
-        ...     n_informative=5,
-        ...     n_noise=10
-        ... )
-        >>> print(cfg.n_samples, cfg.n_classes)  # 150, 2
-        >>> print(cfg.class_labels)  # ["class_0", "class_1"]
-
-        >>> # Explicit labels
-        >>> cfg = DatasetConfig(
-        ...     class_configs=[
-        ...         ClassConfig(n_samples=100, label="healthy"),
-        ...         ClassConfig(n_samples=50, label="diseased")
-        ...     ],
-        ...     n_informative=5
-        ... )
-
-    Distribution Types:
+    Derived quantities
     ------------------
-    - "normal": Gaussian distribution
-    - "lognormal": Log-normal via NumPy's `rng.lognormal(mean, sigma)`
-      (mean/sigma refer to the underlying normal distribution on log-scale)
-    - "exp_normal": Explicit `np.exp(rng.normal(loc, scale))`
-      (gives you direct control over the pre-transformation parameters)
-    - "uniform", "exponential", "laplace": Standard distributions
+    These attributes are **derived** and must not be passed by the user:
 
-    Terminology
-    -----------
-    - **Anchor**: the designated first feature of a cluster; can be informative or noise.
-    - **Proxy**: any correlated, non-anchor member of a cluster.
-    - **Free informative/noise**: features outside clusters, after accounting for anchors.
+    - ``n_samples``  = sum(c.n_samples for c in class_configs)
+    - ``n_classes``  = len(class_configs)
+    - ``n_features`` = n_informative + n_noise + proxies_from_clusters
 
-    Anchors vs. Proxies — Counting Semantics
-    ----------------------------------------
-    • Each correlated cluster contributes exactly 1 **anchor** (the first feature in the cluster)
-      and (k−1) **non-anchor** members (k = n_cluster_features).
+      where
 
-    • The anchor has a role `anchor_role` ∈ {"informative", "noise"}:
-        - If `anchor_role == "informative"`, the anchor **counts toward `n_informative`**.
-        - If `anchor_role == "noise"`, the anchor **counts toward `n_noise`**.
+        proxies_from_clusters = sum(max(0, k - 1) for each CorrClusterConfig
+                                    with n_cluster_features = k)
 
-    • **Proxies** are the non-anchor members of a cluster. They are *derived* from
-      `corr_clusters` and are **not configured directly** (there is no input field like `n_proxy`).
-      They are **added on top** of `n_informative + n_noise` with the formula:
-          proxies_from_clusters = Σ_over_clusters (n_cluster_features − 1)
+    Labels
+    ------
+    - If a ClassConfig label is None or "", it is auto-filled as "class_{idx}".
+    - `class_labels` returns the list of resolved labels.
 
-    Feature count
-    -------------------------------
-    The number of features is:
-        n_features = n_informative + n_noise + proxies_from_clusters
-    with:
-        proxies_from_clusters = sum(max(0, c.n_cluster_features - 1) for c in corr_clusters)
-
-    Number of samples and classes
-    --------------------------------
-    - `n_samples` = total samples across all classes = sum(c.n_samples for c in class_configs)
-    - `n_classes` = number of classes = len(class_configs)
-    - `class_labels` = list of class labels from `class_configs` (auto-generated if None)
-    - `class_distribution` and `class_distribution_params` are per-class settings
-      defined in each `ClassConfig` entry.
-
-    Derived “free” counts (interpretation aid)
-    ------------------------------------------
-    For reasoning and naming it is often helpful to split base counts into:
-      - `n_informative_anchors` = number of clusters with `anchor_role="informative"`
-      - `n_informative_free`   = `n_informative - n_informative_anchors`
-      - `n_noise_anchors`      = number of clusters with `anchor_role="noise"`
-      - `n_noise_free`         = `n_noise - n_noise_anchors`
-    These “free” features are outside clusters; the cluster anchors are part of the base counts.
-
-    Validation & Normalization
+    Validation & normalization
     --------------------------
-    - **Before-construction validator** (`mode="before"`):
-        * Performs basic shape/type checks on class-related fields
-    - **After-construction validator** (`mode="after"`):
-        * Sanity checks for noise distribution and parameters
-        * (Recommended) Invariants:
-            - `n_informative >= #informative_anchors`
-            - `n_noise >= #noise_anchors`
+    - A `mode="before"` validator:
+        * forbids manual `n_samples`, `n_classes`, `n_features`
+        * normalizes `class_sep`:
+             - scalar → broadcast to length `n_classes - 1`
+             - sequence → checked for numeric entries and length `n_classes - 1`
+    - A `mode="after"` validator:
+        * checks:
+             - `n_informative >= #informative_anchors`
+             - `n_noise       >= #noise_anchors`
+             - `corr_between` in [-1, 1]
+             - `anchor_class` indices are < `n_classes`
 
     Naming policy
     -------------
     - If `feature_naming="prefixed"`:
-        * Free informative features:  i1, i2, ...
-        * Free noise features:        n1, n2, ...
-        * Correlated clusters:        corr{cid}_anchor, corr{cid}_2, ..., corr{cid}_k
+        * Free informative:  i1, i2, ...
+        * Free noise:        n1, n2, ...
+        * Correlated:        corr{cid}_anchor, corr{cid}_2, ..., corr{cid}_k
     - If `feature_naming="simple"`, a generic `feature_{i}` scheme is used.
 
-    Relationship to DatasetMeta (output, ground truth)
-    --------------------------------------------------
-    The generation step produces a `DatasetMeta` object describing resolved structure:
-      - `informative_idx`: indices of all informative features (anchors + free informative)
-      - `noise_idx`:      indices of all independent noise features (free noise)
-      - `corr_cluster_indices`: mapping cluster_id → list of column indices
-      - `anchor_idx`: mapping cluster_id → anchor column (or None for degenerate forms)
-    This meta is the single source of truth for downstream visualization/evaluation.
 
     Examples (counting)
     -------------------
@@ -799,53 +724,54 @@ class DatasetConfig(BaseModel):
     CorrClusterConfig  : Correlated cluster settings (size, rho, anchor role/effect/class)
     DatasetMeta        : Output ground-truth meta (indices for anchors, proxies, cluster layout)
     """
+
     model_config = ConfigDict(extra="forbid", use_enum_values=True)
 
-    # core dataset structure
+    # Core dataset structure
     n_informative: int = Field(default=2, ge=0)
     n_noise: int = Field(default=0, ge=0)
 
-    # multi-class controls
-    class_configs: list[ClassConfig] = Field(..., min_length=2)
-    class_sep: list[float] = [1.5]  # separation between classes, check len(classes) - 1
+    # Multi-class controls
+    class_configs: list[ClassConfig] = Field(
+        [ClassConfig(n_samples=30, label="healthy"), ClassConfig(n_samples=30, label="diseased")], min_length=2
+    )
+    class_sep: list[float] = Field(
+        default_factory=lambda: [1.5],
+        description="Class separation values (normalized to length n_classes - 1).",
+    )
 
-    # distribution configuration using NumPy Generator API.
-    noise_distribution: DistributionType = "normal"  # e.g., "normal", "lognormal"
-    noise_distribution_params: dict[str, Any] = {"loc": 0, "scale": 1} # or e.g. {"shape": 2.0, "scale": 1.0}
+    # Noise distribution (NumPy Generator API)
+    noise_distribution: DistributionType = "normal"
+    noise_distribution_params: dict[str, Any] = Field(default_factory=lambda: {"loc": 0, "scale": 1})
 
-    # naming
+    # Naming
     feature_naming: Literal["prefixed", "simple"] = "prefixed"
     prefix_informative: str = "i"
     prefix_noise: str = "n"
     prefix_corr: str = "corr"
 
-    # structure
+    # Correlated structure
     corr_clusters: list[CorrClusterConfig] = Field(default_factory=list)
     corr_between: float = 0.0  # correlation between different clusters/roles (0 = independent)
 
+    # Batch effects
     batch: BatchEffectsConfig | None = None
+
+    # Global seed
     random_state: int | None = None
 
-    # ---------- helpers (typed) ----------
+    # ------------------------------------------------------------------ helpers
+
     @staticmethod
-    def _iter_cluster_dicts(raw_config: Mapping[str, Any]) -> Iterable[Mapping[str, Any]]:
-        """Yield cluster dicts from raw_config, regardless of whether items are dicts or CorrCluster instances.
+    def _iter_cluster_dicts(
+        raw_config: Mapping[str, Any],
+    ) -> Iterable[Mapping[str, Any]]:
+        """Yield cluster dicts from raw_config, regardless of item type.
 
-        Args:
-            raw_config: The raw input config mapping.
-
-        Yields:
-        ------
-            An iterable of cluster dicts.
-
-        Raises:
-        ------
-            TypeError: If any entry is neither a dict nor a CorrCluster instance.
-
-        Note:
-        This is a static method because it operates on raw input data before model instantiation.
+        This helper is kept for potential external use (e.g., pre-inspection of
+        raw YAML configs). It is not used in the main validation path.
         """
-        clusters: Any = raw_config.get("corr_clusters")  # could be None / list[dict] / list[CorrCluster]
+        clusters: Any = raw_config.get("corr_clusters")  # list[dict] / list[CorrClusterConfig] / None
         if not clusters:
             return []
         out: list[Mapping[str, Any]] = []
@@ -855,98 +781,102 @@ class DatasetConfig(BaseModel):
             elif isinstance(cc, Mapping):
                 out.append(cc)
             else:
-                raise TypeError(f"corr_clusters entries must be Mapping or CorrCluster, got {type(cc).__name__}")
+                raise TypeError(
+                    "corr_clusters entries must be Mapping or CorrClusterConfig, " f"got {type(cc).__name__}"
+                )
         return out
 
     @classmethod
-    def _compute_n_features(cls, raw_config: Mapping[str, Any]) -> int:
-        """Compute the number of features based on roles and correlated clusters.
-
-        Assumption
-        ----------
-        Each cluster of size 'k' contributes (k - 1) *additional* features,
-        because its anchor is already counted in the base role counts.
-        """
-        base = int(raw_config.get("n_informative", 0)) + int(raw_config.get("n_noise", 0))
-        extra_from_clusters = 0
-        for c in cls._iter_cluster_dicts(raw_config):
-            n_cluster_features = int(c.get("n_cluster_features", 0))
-            extra_from_clusters += max(0, n_cluster_features - 1)
-        return base + extra_from_clusters
-
-    @classmethod
-    def _compute_n_samples(cls, raw_config: Mapping[str, Any]) -> dict[str, Any]:
-        """Compute `n_samples` from `class_configs`. Manual `n_samples` is forbidden."""
-        # work on a mutable copy
-        if isinstance(raw_config, cls):
-            d: dict[str, Any] = raw_config.model_dump()
-        elif isinstance(raw_config, Mapping):
-            d: dict[str, Any] = dict(raw_config)
-        else:
-            raise TypeError(f"DatasetConfig expects a mapping-like raw_config, got {type(raw_config).__name__}")
-
-        # forbid manual override
-        if "n_samples" in d and d["n_samples"] is not None:
-            raise ValueError(
-                "n_samples cannot be set manually; it is computed from `class_configs`. "
-                "Provide classes with ClassConfig(n_samples=...) instead."
-            )
-
-        classes = d.get("class_configs") or []
-        if not classes:
-            raise ValueError("`class_configs` must be provided and non-empty to compute `n_samples`")
-
-        total = 0
-        for entry in classes:
-            if isinstance(entry, ClassConfig):
-                total += int(entry.n_samples)
-            elif isinstance(entry, Mapping):
-                n = entry.get("n_samples")
-                if n is None:
-                    raise ValueError("Each class dict must include `n_samples`")
-                try:
-                    total += int(n)
-                except (TypeError, ValueError) as e:
-                    raise TypeError(f"class n_samples must be integer-like, got {n!r}") from e
-            else:
-                raise TypeError(f"classes entries must be ClassConfig or Mapping, got {type(entry).__name__}")
-
-        if total <= 0:
-            raise ValueError(f"Sum of class n_samples must be > 0, got {total}")
-
-        d["n_samples"] = total
-        return d
-
-    @classmethod
     def _validate_sep_value(cls, class_separation: Any) -> float:
-        """Validate a single class separation value."""
-        # numeric check
+        """Validate a single class separation value (numeric & finite)."""
         try:
             fv = float(class_separation)
         except (TypeError, ValueError) as e:
             raise TypeError(f"class_sep entries must be numeric, got {class_separation!r}") from e
-        # finite check
-        if not (fv == fv) or fv == float("inf") or fv == float("-inf"):
+        if not np.isfinite(fv):
             raise ValueError(f"class_sep entries must be finite numbers, got {class_separation!r}")
         return fv
 
+    # ------------------------------------------------------ before validator
+
+    @model_validator(mode="before")
+    @classmethod
+    def _normalize_and_validate(cls, data: Any) -> Any:
+        """Normalize incoming data BEFORE model construction.
+
+        - Forbids manual `n_samples`, `n_classes`, `n_features`.
+        - Normalizes `class_sep` to a list of length `n_classes - 1`.
+        """
+        if isinstance(data, cls):
+            return data
+
+        if not isinstance(data, Mapping):
+            raise TypeError(f"DatasetConfig expects a mapping-like raw_config, got {type(data).__name__}")
+
+        d: dict[str, Any] = dict(data)
+
+        # Forbid manual override of derived attributes
+        for forbidden in ("n_samples", "n_classes", "n_features"):
+            if forbidden in d:
+                raise ValueError(
+                    f"{forbidden} is derived from class_configs/corr_clusters and "
+                    "must not be set manually on DatasetConfig."
+                )
+
+        classes = d.get("class_configs")
+        if not isinstance(classes, Sequence) or isinstance(classes, (str, bytes)):
+            raise TypeError("class_configs must be a non-string sequence of class definitions.")
+
+        n_classes = len(classes)
+        if n_classes < 2:
+            raise ValueError(f"At least two classes are required, got {n_classes}.")
+
+        # Normalize class_sep:
+        # - scalar → broadcast
+        # - sequence → validate entries and length
+        raw_sep = d.get("class_sep", [1.5])
+        if isinstance(raw_sep, (int, float)):
+            sep_list = [cls._validate_sep_value(raw_sep)] * (n_classes - 1)
+        elif isinstance(raw_sep, Sequence) and not isinstance(raw_sep, (str, bytes)):
+            sep_list = [cls._validate_sep_value(v) for v in raw_sep]
+        else:
+            raise TypeError(f"class_sep must be a number or sequence, got {type(raw_sep).__name__}")
+
+        if len(sep_list) != n_classes - 1:
+            raise ValueError(f"class_sep length must be n_classes - 1 ({n_classes - 1}), " f"got {len(sep_list)}.")
+
+        d["class_sep"] = sep_list
+        return d
+
+    # ------------------------------------------------------ field validation
+
+    @field_validator("noise_distribution_params")
+    @classmethod
+    def _validate_noise_params(cls, v: dict[str, float] | None, info) -> dict[str, float] | None:
+        """Validate distribution parameters match the chosen noise distribution."""
+        if v is None:
+            return v
+        distribution = info.data.get("noise_distribution", "normal")
+        return validate_distribution_params(v, distribution)
+
+    # ------------------------------------------------------ after validators
 
     @model_validator(mode="after")
     def _auto_generate_labels(self):
         """Auto-generate labels as 'class_{idx}' if not provided."""
         for idx, cls_cfg in enumerate(self.class_configs):
             if cls_cfg.label is None or cls_cfg.label == "":
+                # ClassConfig is a BaseModel, so we need object.__setattr__
                 object.__setattr__(cls_cfg, "label", f"class_{idx}")
         return self
 
-    # ---------- validation (strict, no warnings) ----------
     @model_validator(mode="after")
     def __post_init__(self):
+        """Sanity checks tying together anchors, counts, and classes."""
         if self.n_noise < 0:
-            raise ValueError("n_noise must be >= 0")
-
+            raise ValueError("n_noise must be >= 0.")
         if self.n_informative < 0:
-            raise ValueError("n_informative must be >= 0")
+            raise ValueError("n_informative must be >= 0.")
 
         inf_anchors = self.count_informative_anchors()
         noise_anchors = self.count_noise_anchors()
@@ -954,117 +884,34 @@ class DatasetConfig(BaseModel):
             raise ValueError(f"n_informative ({self.n_informative}) < number of informative anchors ({inf_anchors}).")
         if self.n_noise < noise_anchors:
             raise ValueError(f"n_noise ({self.n_noise}) < number of noise anchors ({noise_anchors}).")
+
+        # Corr-between range sanity check
+        if not (-1.0 <= float(self.corr_between) <= 1.0):
+            raise ValueError(f"corr_between must lie in [-1, 1], got {self.corr_between}.")
+
+        # anchor_class indices must be < n_classes
+        max_idx = self.n_classes - 1
+        for cluster in self.corr_clusters or []:
+            if cluster.anchor_class is not None and cluster.anchor_class > max_idx:
+                raise ValueError(
+                    f"CorrClusterConfig.anchor_class={cluster.anchor_class} "
+                    f"but only {self.n_classes} classes are defined (max index {max_idx})."
+                )
+
         return self
 
-    @model_validator(mode="before")
-    @classmethod
-    def _normalize_and_validate(cls, data: Any) -> Any:
-        """Normalize incoming data BEFORE model construction.
+    # ------------------------------------------------------ convenience API
 
-        This is a 'before' validator, so it works on raw input data. It fills in
-        n_features and enforces n_features >= required minimum, n_samples from classes,
-        and performs basic type/shape checks on class-related fields.
-
-        Args:
-            cls: The DatasetConfig class.
-            data: The raw input data (any mapping-like).
-
-        Returns:
-        -------
-            A mapping with normalized/validated fields, suitable for model construction.
-
-        Raises:
-        ------
-            TypeError: If data is not a mapping or if fields have wrong types.
-            ValueError: If value constraints are violated.
-
-        Note:
-            This does NOT modify the original data dict.
-        """
-        if isinstance(data, cls):
-            # already a DatasetConfig instance
-            return data
-
-        # ensure we work on a mutable mapping copy
-        if isinstance(data, Mapping):
-            d: dict[str, Any] = dict(data)
-        else:
-            raise TypeError(f"DatasetConfig expects a mapping-like raw_config, got {type(data).__name__}")
-
-        # n_features fill
-        d["n_features"] = cls._compute_n_features(d)
-
-        # Validate / normalize class_sep
-        # Accept either a single numeric (broadcast) or a sequence of length (n_classes - 1).
-        classes = d.get("class_configs")
-        try:
-            n_classes = int(len(classes))
-        except Exception:
-            raise TypeError("class_configs must be a sequence-like of class definitions")
-
-        if n_classes < 2:
-            # model-level min_length prevents this, but be defensive
-            raise ValueError(f"At least two classes are required, got {n_classes}")
-
-        # validate class_separation
-        class_separation = d.get("class_sep", [1.5])
-        if isinstance(class_separation, (int, float)):
-            # broadcast single value
-            sep_list = [float(class_separation)] * (n_classes - 1)
-        elif isinstance(class_separation, Sequence):
-            sep_list = []
-            for val in class_separation:
-                sep_list.append(cls._validate_sep_value(val))
-        else:
-            raise TypeError(f"class_sep must be a number or sequence, got {type(class_separation).__name__}")
-        if len(sep_list) != n_classes - 1:
-            raise ValueError(f"class_sep length must be n_classes - 1 ({n_classes - 1}), got {len(sep_list)}")
-        d["class_sep"] = sep_list
-
-        # n_samples from classes
-        d["n_samples"] = cls._compute_n_samples(d)
-
-        return d
-
-    @field_validator("noise_distribution_params")
-    @classmethod
-    def _validate_noise_params(cls, v: dict[str, float] | None, info) -> dict[str, float] | None:
-        """Validate distribution parameters match the chosen distribution."""
-        if v is None:
-            return v
-
-        distribution = info.data.get("noise_distribution", "normal")
-        return validate_distribution_params(v, distribution)
-
-    # ---------- convenience factories ----------
     @classmethod
     def from_yaml(cls, path: str) -> DatasetConfig:
-        """Load from YAML and validate via the same 'before' pipeline.
-
-        Args:
-            cls: The DatasetConfig class.
-            path: Path to a YAML file.
-
-        Returns:
-        -------
-            A validated DatasetConfig instance.
-
-        Raises:
-        ------
-            FileNotFoundError: If the file does not exist.
-            yaml.YAMLError: If the file cannot be parsed as YAML.
-            pydantic.ValidationError: If the loaded config is invalid.
-
-        Note:
-            This requires PyYAML to be installed.
-        """
+        """Load from YAML and validate via the same pipeline."""
         import yaml  # local import to keep core dependencies lean
 
         with open(path, encoding="utf-8") as f:
             raw_config: dict[str, Any] = yaml.safe_load(f) or {}
         return cls.model_validate(raw_config)
 
-    # --- Convenience helpers for introspection ---------------------------------
+    # ------------------------------ anchor / proxy accounting ----------------
 
     def count_informative_anchors(self) -> int:
         """Count clusters whose anchor contributes as 'informative'.
@@ -1088,23 +935,13 @@ class DatasetConfig(BaseModel):
         """
         return sum(1 for c in (self.corr_clusters or []) if c.anchor_role == "noise")
 
-    # ---------------------------------
     @staticmethod
-    def _proxies_from_clusters(clusters: Iterable[CorrClusterConfig] | None) -> int:
-        """Compute the number of additional features contributed by clusters beyond their anchor.
+    def _proxies_from_clusters(
+        clusters: Iterable[CorrClusterConfig] | None,
+    ) -> int:
+        """Number of additional features contributed by all clusters.
 
-        Number of *additional* features contributed by clusters beyond their anchor. For a cluster of size k,
-        proxies = max(0, k - 1) regardless of anchor_role.
-
-        Args:
-            clusters: An iterable of CorrCluster instances (or None).
-
-        Returns:
-        -------
-            The total number of additional features contributed by all clusters.
-
-        Note:
-            This is consistent with the required_n_features calculation.
+        For a cluster of size k, proxies = max(0, k - 1) regardless of anchor_role.
         """
         if not clusters:
             return 0
@@ -1120,25 +957,40 @@ class DatasetConfig(BaseModel):
         """Independent noise features (excludes noise anchors)."""
         return max(self.n_noise - self.count_noise_anchors(), 0)
 
+    # ------------------------------ derived global counts ---------------------
+
     @property
     def n_samples(self) -> int:
-        """Total samples (computed from class_configs)."""
+        """Total samples (derived from class_configs)."""
         return sum(c.n_samples for c in self.class_configs)
 
     @property
     def n_classes(self) -> int:
-        """Number of classes (computed from class_configs)."""
+        """Number of classes (derived from class_configs)."""
         return len(self.class_configs)
+
+    @property
+    def n_features(self) -> int:
+        """Total number of features (informative + noise + cluster proxies)."""
+        proxies = self._proxies_from_clusters(self.corr_clusters)
+        return int(self.n_informative + self.n_noise + proxies)
+
+    # ------------------------------ class-level helpers ----------------------
 
     @property
     def class_labels(self) -> list[str]:
         """List of class labels (auto-generated or user-provided)."""
-        return [c.label for c in self.class_configs]
+        return [
+            c.label if (c.label is not None and c.label != "") else f"class_{i}"
+            for i, c in enumerate(self.class_configs)
+        ]
 
     @property
     def class_counts(self) -> dict[int, int]:
         """Class counts as dict {class_idx: n_samples}."""
         return {idx: c.n_samples for idx, c in enumerate(self.class_configs)}
+
+    # ------------------------------ summary / breakdown ----------------------
 
     def breakdown(self) -> dict[str, int]:
         """Structured feature counts incl. cluster proxies and anchor split.
@@ -1153,10 +1005,6 @@ class DatasetConfig(BaseModel):
             - n_noise_free
             - proxies_from_clusters
             - n_features
-        Raises:
-            ValueError:
-            This is a safeguard against manual tampering with the instance attributes. This should not happen if the
-            instance was created via the normal validators. If you encounter this, please report a bug.
         """
         proxies = self._proxies_from_clusters(self.corr_clusters)
         n_inf_anchors = self.count_informative_anchors()
@@ -1169,7 +1017,7 @@ class DatasetConfig(BaseModel):
             "n_noise_anchors": int(n_noise_anchors),
             "n_noise_free": int(max(self.n_noise - n_noise_anchors, 0)),
             "proxies_from_clusters": int(proxies),
-            "n_features": int(self.n_informative + self.n_noise + proxies),
+            "n_features": int(self.n_features),
         }
 
     def summary(self, *, per_cluster: bool = False, as_markdown: bool = False) -> str:
@@ -1180,7 +1028,6 @@ class DatasetConfig(BaseModel):
             as_markdown: Render as a Markdown table-like text.
 
         Returns:
-        -------
             A formatted string summarizing the feature layout and counts.
         """
         b = self.breakdown()
@@ -1195,10 +1042,11 @@ class DatasetConfig(BaseModel):
                 "n_informative_total",
                 "n_informative_anchors",
                 "n_informative_free",
-                "n_noise",
+                "n_noise_total",
+                "n_noise_anchors",
+                "n_noise_free",
                 "proxies_from_clusters",
-                "n_features_expected",
-                "n_features_configured",
+                "n_features",
             ]:
                 lines.append(f"| {k} | {b[k]} |")
         else:
@@ -1206,34 +1054,35 @@ class DatasetConfig(BaseModel):
             lines.append(f"- n_informative_total    : {b['n_informative_total']}")
             lines.append(f"- n_informative_anchors  : {b['n_informative_anchors']}")
             lines.append(f"- n_informative_free     : {b['n_informative_free']}")
-            lines.append(f"- n_noise                : {b['n_noise']}")
+            lines.append(f"- n_noise_total          : {b['n_noise_total']}")
+            lines.append(f"- n_noise_anchors        : {b['n_noise_anchors']}")
+            lines.append(f"- n_noise_free           : {b['n_noise_free']}")
             lines.append(f"- proxies_from_clusters  : {b['proxies_from_clusters']}")
-            lines.append(f"- n_features_expected    : {b['n_features_expected']}")
-            lines.append(f"- n_features_configured  : {b['n_features_configured']}")
+            lines.append(f"- n_features             : {b['n_features']}")
 
         if per_cluster and self.corr_clusters:
-            header = "| id | size | role | rho | structure | label | proxies |" if as_markdown else "Clusters:"
             if as_markdown:
                 lines.append("")
                 lines.append("### Clusters")
                 lines.append("")
-                lines.append(header)
+                lines.append("| id | size | role | rho | structure | label | proxies |")
                 lines.append("|----|------|------|-----|-----------|-------|---------|")
             else:
-                lines.append(header)
+                lines.append("Clusters:")
 
             for i, c in enumerate(self.corr_clusters, start=1):
-                proxies = max(0, c.n_cluster_features - 1)  # consistent with required_n_features
+                proxies = max(0, c.n_cluster_features - 1)
                 label = c.label or ""
                 if as_markdown:
                     lines.append(
-                        f"| {i} | {c.n_cluster_features} | {c.anchor_role} | {c.rho} | {c.structure} | "
-                        f"{label} | {proxies} |"
+                        f"| {i} | {c.n_cluster_features} | {c.anchor_role} | "
+                        f"{c.rho} | {c.structure} | {label} | {proxies} |"
                     )
                 else:
                     lines.append(
-                        f"- #{i}: n_cluster_features={c.n_cluster_features}, role={c.anchor_role}, rho={c.rho}, "
-                        f"structure={c.structure}, label={label}, proxies={proxies}"
+                        f"- #{i}: n_cluster_features={c.n_cluster_features}, "
+                        f"role={c.anchor_role}, rho={c.rho}, structure={c.structure}, "
+                        f"label={label}, proxies={proxies}"
                     )
 
         return "\n".join(lines)
