@@ -9,75 +9,180 @@
 from __future__ import annotations
 
 from collections.abc import Iterable, Mapping, MutableMapping
-from enum import Enum
-from typing import Any, Literal, TypeAlias, cast
+from typing import Any, Literal, TypeAlias, cast, Sequence
 
 import numpy as np
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
-RawConfig: TypeAlias = Mapping[str, Any]
-MutableRawConfig: TypeAlias = MutableMapping[str, Any]
 AnchorMode: TypeAlias = Literal["equalized", "strong"]
+DistributionType = Literal[
+    "normal",
+    "lognormal",
+    "exp_normal", # np.exp(rng.normal()) - direct control over underlying parameters for lognormal distribution
+    "uniform",
+    "exponential",
+    "laplace",
+]
 
 
-class NoiseDistribution(str, Enum):
-    """Supported noise distributions for generating noise features.
-
-    Semantics:
-    - `noise_distribution`: choice of distribution used *during sampling*:
-        * normal  → Gaussian (normal) distribution
-        * laplace → Laplace distribution (heavy tails; useful for simulating outliers)
-        * uniform → Uniform distribution (bounded noise)
-    - `noise_scale`: scale parameter used *during sampling*:
-        * normal  → standard deviation σ
-        * laplace → diversity b
-        * uniform → half-width (samples are in [−noise_scale, +noise_scale] by default)
-      Distribution-specific values in `noise_params` (e.g. 'scale', 'low', 'high', 'loc')
-      take precedence over `noise_scale`.
-
-    - `noise_params` (optional): fine-grained overrides passed to the sampler:
-        * normal  → {'loc': float, 'scale': float}
-        * uniform → {'low': float, 'high': float}
-        * laplace → {'loc': float, 'scale': float}
-      If a key is omitted, sensible defaults are used:
-        * normal  → loc=0.0, scale=noise_scale
-        * uniform → low=−noise_scale, high=+noise_scale
-        * laplace → loc=0.0, scale=noise_scale
+def validate_distribution_params(
+        params: dict[str, float],
+        distribution: str
+) -> dict[str, float]:
+    """Shared validator for distribution parameters.
 
     Args:
-        normal: Gaussian (normal) distribution.
-        uniform: Uniform distribution.
-        laplace: Laplace distribution (heavy tails; useful for simulating outliers).
+        params: Parameter dict to validate.
+        distribution: Distribution type (e.g., "normal", "uniform").
+
+    Returns:
+        Validated parameter dict.
+
+    Raises:
+        ValueError: If parameters are invalid for the given distribution.
+    """
+    if not params:
+        return params
+
+    param_schema = {
+        "normal": {"required": set(), "optional": {"loc", "scale"}},
+        "uniform": {"required": {"low", "high"}, "optional": set()},
+        "laplace": {"required": set(), "optional": {"loc", "scale"}},
+        "exponential": {"required": set(), "optional": {"scale"}},
+        "lognormal": {"required": set(), "optional": {"mean", "sigma"}},
+        "exp_normal": {"required": set(), "optional": {"loc", "scale"}},
+    }
+
+    schema = param_schema.get(distribution)
+    if not schema:
+        return params
+
+    provided = set(params.keys())
+    invalid = provided - (schema["required"] | schema["optional"])
+    if invalid:
+        raise ValueError(
+            f"Invalid parameters {invalid} for '{distribution}'. "
+            f"Allowed: {schema['required'] | schema['optional']}"
+        )
+
+    missing = schema["required"] - provided
+    if missing:
+        raise ValueError(f"Missing required parameters {missing} for '{distribution}'")
+
+    # Distribution-specific checks
+    if distribution == "uniform":
+        # Both parameters must be present (already checked via 'required')
+        # Now validate their relationship
+        try:
+            low = float(params["low"])
+            high = float(params["high"])
+        except (ValueError, TypeError) as e:
+            raise ValueError(
+                f"uniform parameters must be numeric, got low={params['low']}, high={params['high']}") from e
+
+        if not (low < high):
+            raise ValueError(f"uniform: 'high' ({high}) must be > 'low' ({low})")
+
+    # Scale parameters must be positive (normal, laplace, exponential, exp_normal)
+    if "scale" in params:
+        try:
+            scale_val = float(params["scale"])
+        except (ValueError, TypeError) as e:
+            raise ValueError(f"'scale' must be numeric, got {params['scale']}") from e
+
+        if scale_val <= 0:
+            raise ValueError(f"'scale' must be > 0, got {scale_val}")
+
+    # Sigma must be positive (lognormal)
+    if "sigma" in params:
+        try:
+            sigma_val = float(params["sigma"])
+        except (ValueError, TypeError) as e:
+            raise ValueError(f"'sigma' must be numeric, got {params['sigma']}") from e
+
+        if sigma_val <= 0:
+            raise ValueError(f"'sigma' must be > 0, got {sigma_val}")
+
+    # loc and mean can be any real number (no additional constraints)
+    # Validate they are numeric if present
+    for param_name in ["loc", "mean"]:
+        if param_name in params:
+            try:
+                float(params[param_name])
+            except (ValueError, TypeError) as e:
+                raise ValueError(f"'{param_name}' must be numeric, got {params[param_name]}") from e
+
+    return params
+
+
+class ClassConfig(BaseModel):
+    """Configuration for a single class in the dataset.
+
+    Each class is defined by its sample count, distribution, and optional metadata.
+    Class labels (0, 1, 2, ...) are assigned by position in the list.
+
+    Args:
+        n_samples: Number of samples for this class (must be >= 1).
+        class_distribution: Distribution type for feature generation.
+        class_distribution_params: Parameters for the chosen distribution.
+        label: Optional descriptive name. Auto-generated as "class_0", "class_1", etc. if not provided.
 
     Examples:
-    --------
-        ```python
-        from biomedical_data_generator import DatasetConfig, NoiseDistribution
-        cfg = DatasetConfig(
-            n_samples=100,
-            n_features=10,
-            n_informative=2,
-            n_noise=5,
-            noise_distribution=NoiseDistribution.laplace,
-            noise_params={'loc': 0.0, 'scale': 0.5},
-            noise_scale=2.0,
-            random_state=42
-        )
-        ```
-    See also:
-         - numpy.random.Generator documentation for parameters:
-              https://numpy.org/doc/stable/reference/random/generator.html#distributions
+        >>> # Auto-generated labels
+        >>> configs = [
+        ...     ClassConfig(n_samples=100),  # label → "class_0"
+        ...     ClassConfig(n_samples=50)    # label → "class_1"
+        ... ]
 
-    Note:
-        - The chosen distribution `noise_distribution` is applied to all noise features uniformly.
-        - The `noise_params` can be used to fine-tune the noise characteristics.
-        - For teaching outliers/heavy tails, `laplace` is useful; for bounded noise, use `uniform`.
+        >>> # Explicit semantic labels
+        >>> configs = [
+        ...     ClassConfig(n_samples=100, label="healthy"),
+        ...     ClassConfig(n_samples=50, label="diseased")
+        ... ]
 
+        >>> # Different distributions per class
+        >>> configs = [
+        ...     ClassConfig(n_samples=50, label="control", class_distribution="normal"),
+        ...     ClassConfig(
+        ...         n_samples=30,
+        ...         label="diseased",
+        ...         class_distribution="lognormal",
+        ...         class_distribution_params={"mean": 0, "sigma": 0.5}
+        ...     )
+        ... ]
+
+    Notes:
+        - Class index is determined by position: first config = class 0, etc.
+        - n_samples is exact (not a weight or proportion)
+        - label is auto-generated if None or empty string
+        - Auto-generated labels follow pattern "class_{idx}"
     """
+    model_config = ConfigDict(extra="forbid")
 
-    normal = "normal"
-    uniform = "uniform"
-    laplace = "laplace"  # heavy tails; nice to show outliers
+    n_samples: int = Field(default=30, ge=1, description="Number of samples in this class")
+    class_distribution: DistributionType = Field(default="normal", description="Distribution type")
+    class_distribution_params: dict[str, Any] = Field(
+        default_factory=lambda: {"loc": 0, "scale": 1}, description="Distribution parameters"
+    )
+    label: str | None = Field(default=None, description="Label (auto-generated as 'class_{idx}' if None)")
+
+    @field_validator("class_distribution_params")
+    @classmethod
+    def _validate_class_params(cls, v: dict[str, float] | None, info) -> dict[str, float] | None:
+        """Validate distribution parameters match the chosen distribution."""
+        if v is None:
+            return v
+        distribution = info.data.get("class_distribution", "normal")
+        return validate_distribution_params(v, distribution)
+
+    def __str__(self) -> str:
+        """Concise string representation."""
+        parts = [f"n={self.n_samples}"]
+        if self.label:
+            parts.append(f"label='{self.label}'")
+        if self.class_distribution != "normal":
+            parts.append(f"dist={self.class_distribution}")
+        return f"ClassConfig({', '.join(parts)})"
 
 
 class BatchEffectsConfig(BaseModel):
@@ -195,83 +300,6 @@ class BatchEffectsConfig(BaseModel):
             if not np.isclose(sum(v), 1.0, atol=1e-6):
                 raise ValueError(f"proportions must sum to 1, got {sum(v)}")
         return v
-
-
-# class BatchEffectsConfig(BaseModel):
-#     """Configuration for simulating batch effects.
-#
-#     Simulate batch effects by adding random intercepts to specified columns. The intercepts are drawn from a normal
-#     distribution with mean 0 and standard deviation `effect_strength`. Optionally, the batch assignment can
-#     be confounded with the class labels.
-#
-#     Args:
-#         n_batches (int): Number of batches (0 or 1 means no batch effect).
-#         effect_strength (float): Standard deviation of the batch intercepts.
-#         effect_type (Literal["additive", "multiplicative"]): Type of batch effect.
-#             - "additive": Additive intercepts (default).
-#             - "multiplicative": Multiplicative scaling factors.
-#         confounding_with_class: Degree of confounding between batch and class (0.0-1.0).
-#             Controls how strongly batch assignment correlates with class labels,
-#             simulating **recruitment bias** in multi-center studies.
-#
-#             The parameter determines the probability that samples from the same
-#             class are assigned to the same batch:
-#
-#             - 0.0 = Independent: Batch assignment ignores class labels
-#               → Each batch has approximately equal class proportions
-#
-#             - 0.5 = Moderate correlation: Samples from the same class are
-#               moderately likely to end up in the same batch
-#               → Batches show noticeable class imbalance
-#
-#             - 1.0 = Perfect correlation: Samples from the same class are
-#               always assigned to the same batch
-#               → Each batch contains only one class (if n_batches ≥ n_classes)
-#
-#             This controls **sampling bias** (who gets recruited where), while
-#             `effect_strength` controls **technical variation** (measurement differences).
-#         affected_features (list[int] | Literal["all", "informative"]): Features to affect.
-#             "all" affects all features, "informative" affects only informative features,
-#             or provide list of 0-based column indices.
-#         proportions (list[float] | None): Optional proportions for batch sizes. Must sum to 1.
-#         random_state (int | None): Random seed for reproducibility.
-#
-#     Examples:
-#         >>> # Simple random batches
-#         >>> BatchEffectsConfig(n_batches=3, effect_strength=0.5)
-#
-#         >>> # Confounded batches (recruitment bias)
-#         >>> BatchEffectsConfig(
-#         ...     n_batches=2,
-#         ...     effect_strength=0.8,
-#         ...     confounding_with_class=0.9
-#         ... )
-#
-#         >>> # Unbalanced batches
-#         >>> BatchEffectsConfig(
-#         ...     n_batches=3,
-#         ...     proportions=[0.5, 0.3, 0.2],
-#         ...     effect_strength=0.5
-#         ... )
-#     """
-#
-#     n_batches: int = Field(default=0, ge=0)  # 0 or 1 => no batch effect
-#     effect_strength: float = Field(default=0.5, gt=0)  # std of batch intercepts
-#     effect_type: Literal["additive", "multiplicative"] = "additive"
-#     confounding_with_class: float = Field(default=0.0, ge=0.0, le=1.0)  # in [0,1]
-#     affected_features: list[int] | Literal["all", "informative"] = "all"  # 0-based column indices; "all" => all
-#     proportions: list[float] | None = None  # optional proportions for batches
-#     random_state: int | None = None
-#
-#     @field_validator("proportions")
-#     @classmethod
-#     def validate_proportions(cls, v):
-#         """Ensure proportions sum to ~1."""
-#         if v is not None:
-#             if not np.isclose(sum(v), 1.0, atol=1e-6):
-#                 raise ValueError(f"proportions must sum to 1, got {sum(v)}")
-#         return v
-#
 
 
 class CorrClusterConfig(BaseModel):
@@ -648,7 +676,38 @@ class DatasetConfig(BaseModel):
       - Correlated clusters: `corr_clusters` (each with 1 anchor + (k−1) non-anchors)
       - Class distribution, separation strength, naming, and optional batch effects
 
-        Terminology
+    Class specification via `class_configs` list.
+    `n_samples` and `n_classes` are computed properties.
+
+    Examples:
+        >>> # Minimal (auto-labels: "class_0", "class_1")
+        >>> cfg = DatasetConfig(
+        ...     class_configs=[ClassConfig(n_samples=100), ClassConfig(n_samples=50)],
+        ...     n_informative=5,
+        ...     n_noise=10
+        ... )
+        >>> print(cfg.n_samples, cfg.n_classes)  # 150, 2
+        >>> print(cfg.class_labels)  # ["class_0", "class_1"]
+
+        >>> # Explicit labels
+        >>> cfg = DatasetConfig(
+        ...     class_configs=[
+        ...         ClassConfig(n_samples=100, label="healthy"),
+        ...         ClassConfig(n_samples=50, label="diseased")
+        ...     ],
+        ...     n_informative=5
+        ... )
+
+    Distribution Types:
+    ------------------
+    - "normal": Gaussian distribution
+    - "lognormal": Log-normal via NumPy's `rng.lognormal(mean, sigma)`
+      (mean/sigma refer to the underlying normal distribution on log-scale)
+    - "exp_normal": Explicit `np.exp(rng.normal(loc, scale))`
+      (gives you direct control over the pre-transformation parameters)
+    - "uniform", "exponential", "laplace": Standard distributions
+
+    Terminology
     -----------
     - **Anchor**: the designated first feature of a cluster; can be informative or noise.
     - **Proxy**: any correlated, non-anchor member of a cluster.
@@ -668,18 +727,20 @@ class DatasetConfig(BaseModel):
       They are **added on top** of `n_informative + n_noise` with the formula:
           proxies_from_clusters = Σ_over_clusters (n_cluster_features − 1)
 
-    Expected feature count (strict)
+    Feature count
     -------------------------------
-    The minimal required total number of features is:
-        n_features_expected = n_informative + n_noise + proxies_from_clusters
+    The number of features is:
+        n_features = n_informative + n_noise + proxies_from_clusters
     with:
         proxies_from_clusters = sum(max(0, c.n_cluster_features - 1) for c in corr_clusters)
 
-    The strict `@model_validator(mode="before")` computes this minimum and:
-      - fills `n_features` if omitted,
-      - enforces `n_features >= n_features_expected`,
-      - raises a clear error message if too small.
-    (See `_required_n_features` and the “before” normalizer for details.)
+    Number of samples and classes
+    --------------------------------
+    - `n_samples` = total samples across all classes = sum(c.n_samples for c in class_configs)
+    - `n_classes` = number of classes = len(class_configs)
+    - `class_labels` = list of class labels from `class_configs` (auto-generated if None)
+    - `class_distribution` and `class_distribution_params` are per-class settings
+      defined in each `ClassConfig` entry.
 
     Derived “free” counts (interpretation aid)
     ------------------------------------------
@@ -693,8 +754,6 @@ class DatasetConfig(BaseModel):
     Validation & Normalization
     --------------------------
     - **Before-construction validator** (`mode="before"`):
-        * Computes `n_features_expected` from raw input
-        * Fills or checks `n_features` accordingly (strict lower bound)
         * Performs basic shape/type checks on class-related fields
     - **After-construction validator** (`mode="after"`):
         * Sanity checks for noise distribution and parameters
@@ -740,41 +799,36 @@ class DatasetConfig(BaseModel):
     CorrClusterConfig  : Correlated cluster settings (size, rho, anchor role/effect/class)
     DatasetMeta        : Output ground-truth meta (indices for anchors, proxies, cluster layout)
     """
-
     model_config = ConfigDict(extra="forbid", use_enum_values=True)
 
-    n_samples: int = 100
-    n_features: int | None = None
-    n_informative: int = 2
-    n_noise: int = 0
-    noise_distribution: NoiseDistribution = NoiseDistribution.normal
-    noise_scale: float = 1.0
-    noise_params: Mapping[str, Any] | None = Field(default=None)
+    # core dataset structure
+    n_informative: int = Field(default=2, ge=0)
+    n_noise: int = Field(default=0, ge=0)
 
     # multi-class controls
-    n_classes: int = 2
-    weights: list[float] | None = None  # will be normalized by generator; only length is checked here
-    class_counts: dict[int, int] | None = None  # exact class sizes; overrides weights if provided
-    class_sep: float = 1.5
+    class_configs: list[ClassConfig] = Field(..., min_length=2)
+    class_sep: list[float] = [1.5]  # separation between classes, check len(classes) - 1
+
+    # distribution configuration using NumPy Generator API.
+    noise_distribution: DistributionType = "normal"  # e.g., "normal", "lognormal"
+    noise_distribution_params: dict[str, Any] = {"loc": 0, "scale": 1} # or e.g. {"shape": 2.0, "scale": 1.0}
 
     # naming
     feature_naming: Literal["prefixed", "simple"] = "prefixed"
     prefix_informative: str = "i"
-    prefix_proxy: str = "p"
     prefix_noise: str = "n"
     prefix_corr: str = "corr"
 
     # structure
     corr_clusters: list[CorrClusterConfig] = Field(default_factory=list)
     corr_between: float = 0.0  # correlation between different clusters/roles (0 = independent)
-    anchor_mode: AnchorMode = "equalized"
-    effect_size: Literal["small", "medium", "large"] = "medium"  # controls default anchor_effect_size
+
     batch: BatchEffectsConfig | None = None
     random_state: int | None = None
 
     # ---------- helpers (typed) ----------
     @staticmethod
-    def _iter_cluster_dicts(raw_config: RawConfig) -> Iterable[Mapping[str, Any]]:
+    def _iter_cluster_dicts(raw_config: Mapping[str, Any]) -> Iterable[Mapping[str, Any]]:
         """Yield cluster dicts from raw_config, regardless of whether items are dicts or CorrCluster instances.
 
         Args:
@@ -805,8 +859,8 @@ class DatasetConfig(BaseModel):
         return out
 
     @classmethod
-    def _required_n_features(cls, raw_config: RawConfig) -> int:
-        """Compute the minimal number of features needed based on roles and correlated clusters.
+    def _compute_n_features(cls, raw_config: Mapping[str, Any]) -> int:
+        """Compute the number of features based on roles and correlated clusters.
 
         Assumption
         ----------
@@ -820,19 +874,79 @@ class DatasetConfig(BaseModel):
             extra_from_clusters += max(0, n_cluster_features - 1)
         return base + extra_from_clusters
 
+    @classmethod
+    def _compute_n_samples(cls, raw_config: Mapping[str, Any]) -> dict[str, Any]:
+        """Compute `n_samples` from `class_configs`. Manual `n_samples` is forbidden."""
+        # work on a mutable copy
+        if isinstance(raw_config, cls):
+            d: dict[str, Any] = raw_config.model_dump()
+        elif isinstance(raw_config, Mapping):
+            d: dict[str, Any] = dict(raw_config)
+        else:
+            raise TypeError(f"DatasetConfig expects a mapping-like raw_config, got {type(raw_config).__name__}")
+
+        # forbid manual override
+        if "n_samples" in d and d["n_samples"] is not None:
+            raise ValueError(
+                "n_samples cannot be set manually; it is computed from `class_configs`. "
+                "Provide classes with ClassConfig(n_samples=...) instead."
+            )
+
+        classes = d.get("class_configs") or []
+        if not classes:
+            raise ValueError("`class_configs` must be provided and non-empty to compute `n_samples`")
+
+        total = 0
+        for entry in classes:
+            if isinstance(entry, ClassConfig):
+                total += int(entry.n_samples)
+            elif isinstance(entry, Mapping):
+                n = entry.get("n_samples")
+                if n is None:
+                    raise ValueError("Each class dict must include `n_samples`")
+                try:
+                    total += int(n)
+                except (TypeError, ValueError) as e:
+                    raise TypeError(f"class n_samples must be integer-like, got {n!r}") from e
+            else:
+                raise TypeError(f"classes entries must be ClassConfig or Mapping, got {type(entry).__name__}")
+
+        if total <= 0:
+            raise ValueError(f"Sum of class n_samples must be > 0, got {total}")
+
+        d["n_samples"] = total
+        return d
+
+    @classmethod
+    def _validate_sep_value(cls, class_separation: Any) -> float:
+        """Validate a single class separation value."""
+        # numeric check
+        try:
+            fv = float(class_separation)
+        except (TypeError, ValueError) as e:
+            raise TypeError(f"class_sep entries must be numeric, got {class_separation!r}") from e
+        # finite check
+        if not (fv == fv) or fv == float("inf") or fv == float("-inf"):
+            raise ValueError(f"class_sep entries must be finite numbers, got {class_separation!r}")
+        return fv
+
+
+    @model_validator(mode="after")
+    def _auto_generate_labels(self):
+        """Auto-generate labels as 'class_{idx}' if not provided."""
+        for idx, cls_cfg in enumerate(self.class_configs):
+            if cls_cfg.label is None or cls_cfg.label == "":
+                object.__setattr__(cls_cfg, "label", f"class_{idx}")
+        return self
+
     # ---------- validation (strict, no warnings) ----------
     @model_validator(mode="after")
     def __post_init__(self):
         if self.n_noise < 0:
             raise ValueError("n_noise must be >= 0")
-        if self.noise_scale <= 0:
-            raise ValueError("noise_scale must be > 0")
-        # validate uniform bounds if both provided
-        if self.noise_distribution == NoiseDistribution.uniform and self.noise_params:
-            low = self.noise_params.get("low", None)
-            high = self.noise_params.get("high", None)
-            if low is not None and high is not None and not (float(low) < float(high)):
-                raise ValueError("For uniform noise, require low < high.")
+
+        if self.n_informative < 0:
+            raise ValueError("n_informative must be >= 0")
 
         inf_anchors = self.count_informative_anchors()
         noise_anchors = self.count_noise_anchors()
@@ -845,10 +959,11 @@ class DatasetConfig(BaseModel):
     @model_validator(mode="before")
     @classmethod
     def _normalize_and_validate(cls, data: Any) -> Any:
-        """Normalize incoming raw_config BEFORE model construction.
+        """Normalize incoming data BEFORE model construction.
 
         This is a 'before' validator, so it works on raw input data. It fills in
-        missing n_features and enforces n_features >= required minimum.
+        n_features and enforces n_features >= required minimum, n_samples from classes,
+        and performs basic type/shape checks on class-related fields.
 
         Args:
             cls: The DatasetConfig class.
@@ -861,7 +976,7 @@ class DatasetConfig(BaseModel):
         Raises:
         ------
             TypeError: If data is not a mapping or if fields have wrong types.
-            ValueError: If n_features is too small or if other value constraints are violated.
+            ValueError: If value constraints are violated.
 
         Note:
             This does NOT modify the original data dict.
@@ -876,132 +991,52 @@ class DatasetConfig(BaseModel):
         else:
             raise TypeError(f"DatasetConfig expects a mapping-like raw_config, got {type(data).__name__}")
 
-        # n_features fill/check
-        required = cls._required_n_features(d)
-        n_features = d.get("n_features")
-        if n_features is None:
-            d["n_features"] = required
-        else:
-            try:
-                n_features_int = int(n_features)
-            except Exception as e:  # noqa: BLE001
-                raise TypeError(f"n_features must be an integer, got {n_features!r}") from e
-            if n_features_int < required:
-                raise ValueError(
-                    f"n_features={n_features_int} is too small; requires at least {required} "
-                    f"(given roles + correlated clusters)."
-                )
-            d["n_features"] = n_features_int
+        # n_features fill
+        d["n_features"] = cls._compute_n_features(d)
 
-        # n_classes: defer strict check to runtime; keep type sanity here
+        # Validate / normalize class_sep
+        # Accept either a single numeric (broadcast) or a sequence of length (n_classes - 1).
+        classes = d.get("class_configs")
         try:
-            n_classes = int(d.get("n_classes", 2))
-        except Exception as e:  # noqa: BLE001
-            raise TypeError("n_classes must be an integer") from e
-        d["n_classes"] = n_classes
+            n_classes = int(len(classes))
+        except Exception:
+            raise TypeError("class_configs must be a sequence-like of class definitions")
 
-        # weights length (if provided) must match n_classes
-        weights = d.get("weights")
-        if weights is not None:
-            if not isinstance(weights, list) or not all(isinstance(x, (int, float)) for x in weights):
-                raise TypeError("weights must be a list of numbers")
-            if len(weights) != n_classes:
-                raise ValueError(f"weights length ({len(weights)}) must equal n_classes ({n_classes})")
+        if n_classes < 2:
+            # model-level min_length prevents this, but be defensive
+            raise ValueError(f"At least two classes are required, got {n_classes}")
 
-        # class_sep must be finite (basic sanity)
-        class_separation = float(d.get("class_sep", 1.0))
-        if (
-            not (class_separation == class_separation)
-            or class_separation == float("inf")
-            or class_separation == float("-inf")
-        ):
-            raise ValueError("class_sep must be a finite float")
-        d["class_sep"] = class_separation
+        # validate class_separation
+        class_separation = d.get("class_sep", [1.5])
+        if isinstance(class_separation, (int, float)):
+            # broadcast single value
+            sep_list = [float(class_separation)] * (n_classes - 1)
+        elif isinstance(class_separation, Sequence):
+            sep_list = []
+            for val in class_separation:
+                sep_list.append(cls._validate_sep_value(val))
+        else:
+            raise TypeError(f"class_sep must be a number or sequence, got {type(class_separation).__name__}")
+        if len(sep_list) != n_classes - 1:
+            raise ValueError(f"class_sep length must be n_classes - 1 ({n_classes - 1}), got {len(sep_list)}")
+        d["class_sep"] = sep_list
+
+        # n_samples from classes
+        d["n_samples"] = cls._compute_n_samples(d)
 
         return d
 
-    @field_validator("weights")
+    @field_validator("noise_distribution_params")
     @classmethod
-    def _validate_weights(cls, v, info):
-        """Non-negative, correct length; normalization happens in the generator."""
+    def _validate_noise_params(cls, v: dict[str, float] | None, info) -> dict[str, float] | None:
+        """Validate distribution parameters match the chosen distribution."""
         if v is None:
             return v
-        n_classes = info.data.get("n_classes", None)
-        if n_classes is not None and len(v) != n_classes:
-            raise ValueError(f"weights length must equal n_classes (got {len(v)} vs {n_classes})")
-        if any(w < 0 for w in v):
-            raise ValueError("weights must be non-negative.")
-        if all(w == 0 for w in v):
-            raise ValueError("at least one weight must be > 0.")
-        return v
 
-    @field_validator("class_counts")
-    @classmethod
-    def _validate_class_counts(cls, v, info):
-        """Exact counts must cover all classes and sum to n_samples."""
-        if v is None:
-            return v
-        n_samples = info.data.get("n_samples")
-        n_classes = info.data.get("n_classes")
-        keys = set(v.keys())
-        expected = set(range(n_classes))
-        if keys != expected:
-            raise ValueError(f"class_counts keys must be {expected} (got {keys}).")
-        total = sum(int(c) for c in v.values())
-        if total != n_samples:
-            raise ValueError(f"sum(class_counts) must equal n_samples (got {total} vs {n_samples}).")
-        if any(int(c) < 0 for c in v.values()):
-            raise ValueError("class_counts must be non-negative.")
-        return {int(k): int(c) for k, c in v.items()}
+        distribution = info.data.get("noise_distribution", "normal")
+        return validate_distribution_params(v, distribution)
 
     # ---------- convenience factories ----------
-
-    @classmethod
-    def relaxed(cls, **kwargs: Any) -> DatasetConfig:
-        """Create a configuration, silently autofixing n_features to the required minimum.
-
-        Convenience factory that silently 'autofixes' n_features to the required minimum. Prefer this in teaching
-        notebooks to avoid interruptions.
-
-        Args:
-            **kwargs: Any valid DatasetConfig field.
-
-        Returns:
-        -------
-            A validated DatasetConfig instance with n_features >= required minimum.
-
-        Note:
-            This does NOT modify the original kwargs dict.
-        """
-        raw = kwargs.get("corr_clusters") or []
-        norm_clusters = []
-        for c in raw:
-            if isinstance(c, CorrClusterConfig):
-                norm_clusters.append(c)
-            else:
-                norm_clusters.append(CorrClusterConfig.model_validate(c))
-        kwargs["corr_clusters"] = norm_clusters
-
-        # Compute required n_features
-        # n_features = free informative + free noise + sum(n_cluster_features-1 per cluster)
-        n_inf = int(kwargs.get("n_informative", 0))
-        n_noise = int(kwargs.get("n_noise", 0))
-        proxies = sum(cc.n_cluster_features - 1 for cc in norm_clusters)
-        required = n_inf + n_noise + proxies
-
-        n_feat = kwargs.get("n_features")
-        if n_feat is None or int(n_feat) < required:
-            kwargs["n_features"] = required
-
-        return cls(**kwargs)
-
-        # d: dict[str, Any] = dict(kwargs)
-        # required = cls._required_n_features(d)
-        # nf = d.get("n_features")
-        # if nf is None or int(nf) < required:
-        #     d["n_features"] = required
-        # return cls.model_validate(d)
-
     @classmethod
     def from_yaml(cls, path: str) -> DatasetConfig:
         """Load from YAML and validate via the same 'before' pipeline.
@@ -1053,6 +1088,7 @@ class DatasetConfig(BaseModel):
         """
         return sum(1 for c in (self.corr_clusters or []) if c.anchor_role == "noise")
 
+    # ---------------------------------
     @staticmethod
     def _proxies_from_clusters(clusters: Iterable[CorrClusterConfig] | None) -> int:
         """Compute the number of additional features contributed by clusters beyond their anchor.
@@ -1084,6 +1120,26 @@ class DatasetConfig(BaseModel):
         """Independent noise features (excludes noise anchors)."""
         return max(self.n_noise - self.count_noise_anchors(), 0)
 
+    @property
+    def n_samples(self) -> int:
+        """Total samples (computed from class_configs)."""
+        return sum(c.n_samples for c in self.class_configs)
+
+    @property
+    def n_classes(self) -> int:
+        """Number of classes (computed from class_configs)."""
+        return len(self.class_configs)
+
+    @property
+    def class_labels(self) -> list[str]:
+        """List of class labels (auto-generated or user-provided)."""
+        return [c.label for c in self.class_configs]
+
+    @property
+    def class_counts(self) -> dict[int, int]:
+        """Class counts as dict {class_idx: n_samples}."""
+        return {idx: c.n_samples for idx, c in enumerate(self.class_configs)}
+
     def breakdown(self) -> dict[str, int]:
         """Structured feature counts incl. cluster proxies and anchor split.
 
@@ -1096,10 +1152,9 @@ class DatasetConfig(BaseModel):
             - n_noise_anchors
             - n_noise_free
             - proxies_from_clusters
-            - n_features_expected
-            - n_features_configured
+            - n_features
         Raises:
-            ValueError: If self.n_features is inconsistent (should not happen if validated).
+            ValueError:
             This is a safeguard against manual tampering with the instance attributes. This should not happen if the
             instance was created via the normal validators. If you encounter this, please report a bug.
         """
@@ -1114,8 +1169,7 @@ class DatasetConfig(BaseModel):
             "n_noise_anchors": int(n_noise_anchors),
             "n_noise_free": int(max(self.n_noise - n_noise_anchors, 0)),
             "proxies_from_clusters": int(proxies),
-            "n_features_expected": int(self.n_informative + self.n_noise + proxies),
-            "n_features_configured": int(self.n_features or 0),
+            "n_features": int(self.n_informative + self.n_noise + proxies),
         }
 
     def summary(self, *, per_cluster: bool = False, as_markdown: bool = False) -> str:
