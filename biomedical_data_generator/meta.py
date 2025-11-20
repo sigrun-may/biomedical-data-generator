@@ -62,12 +62,10 @@ class DatasetMeta:
     anchor_target_cls: dict[int, int | None]  # target class for the anchor (one-vs-rest)
     cluster_label: dict[int, str | None]  # didactic tags per cluster
 
-    # Class distribution
-    y_counts: dict[int, int]
-
     # Provenance / signal settings
     n_classes: int
     class_names: list[str]
+    samples_per_class: dict[int, int]
     class_sep: list[float]
     corr_between: float
 
