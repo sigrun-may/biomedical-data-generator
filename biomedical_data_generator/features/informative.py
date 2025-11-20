@@ -1,24 +1,20 @@
-# informative.py
 # Copyright (c) 2025 Sigrun May,
 # Ostfalia Hochschule für angewandte Wissenschaften
 #
 # This software is distributed under the terms of the MIT license
 # which is available at https://opensource.org/licenses/MIT
 
-"""Generation of *free* informative features and class separation.
+"""Generation of free informative features and class separation.
 
-This module is responsible only for:
+This module builds numeric class labels from DatasetConfig.class_configs,
+samples base values for free informative features according to per-class
+distributions, and applies class-wise mean shifts controlled by
+DatasetConfig.class_sep.
 
-- building class labels y from DatasetConfig.class_configs,
-- sampling base values for free informative features according to the
-  per-class distributions (ClassConfig),
-- applying class-wise mean shifts controlled by DatasetConfig.class_sep.
-
-Correlated clusters (including anchors) are handled entirely in
-`correlated.py`. Noise features are handled in `noise.py`.
-
-The shifting logic is implemented in `shift_classes` and can also be
-re-used by other modules (e.g. for anchor effects in correlated clusters).
+Correlated clusters (including anchors) are handled in `correlated.py`.
+Noise features are handled in `noise.py`. The shifting logic is implemented
+in `shift_classes` and can be reused by other modules (for example, for
+anchor effects in correlated clusters).
 """
 
 from __future__ import annotations
@@ -45,7 +41,20 @@ def _normalize_class_sep(
     class_sep: float | Sequence[float],
     K: int,
 ) -> np.ndarray:
-    """Return a (K-1,)-vector of separations between neighbouring classes."""
+    """Return a (K-1,) vector of separations between neighbouring classes.
+
+    Args:
+        class_sep: A scalar or sequence controlling separations between
+            neighbouring classes. If scalar, it is broadcast to length K-1.
+        K: Number of classes (must be >= 2).
+
+    Returns:
+        np.ndarray: 1-D array of length K-1 containing finite separations.
+
+    Raises:
+        ValueError: If K < 2, if scalar is not finite, if sequence is not 1-D,
+            if sequence length is not K-1, or if any entry is non-finite.
+    """
     if K <= 1:
         raise ValueError(f"_normalize_class_sep: K must be >= 2, got {K}.")
 
@@ -68,7 +77,17 @@ def _normalize_class_sep(
 
 
 def _class_offsets_from_sep(sep_vec: np.ndarray) -> np.ndarray:
-    """Construct centered class-wise offsets from a (K-1,)-separation vector."""
+    """Construct centered class-wise offsets from a (K-1,) separation vector.
+
+    The returned offsets have length K where K = len(sep_vec) + 1. Offsets
+    are cumulative sums of the separation entries and are mean-centered.
+
+    Args:
+        sep_vec: 1-D array of length K-1 representing pairwise separations.
+
+    Returns:
+        np.ndarray: 1-D array of length K with class offsets whose mean is zero.
+    """
     K = sep_vec.shape[0] + 1
     mu = np.empty(K, dtype=float)
     mu[0] = 0.0
@@ -84,13 +103,26 @@ def _class_offsets_from_sep(sep_vec: np.ndarray) -> np.ndarray:
 
 
 def _build_class_labels(cfg: DatasetConfig) -> np.ndarray:
-    """Build numeric class labels 0..K-1 from DatasetConfig.class_configs."""
+    """Build numeric class labels 0..K-1 from DatasetConfig.class_configs.
+
+    Args:
+        cfg: DatasetConfig containing class_configs with per-class n_samples.
+
+    Returns:
+        np.ndarray: 1-D integer array of length cfg.n_samples with labels in
+            {0, ..., K-1}.
+
+    Raises:
+        RuntimeError: If the concatenated label length does not match cfg.n_samples.
+    """
     labels: list[np.ndarray] = []
     for idx, cls_cfg in enumerate(cfg.class_configs):
         labels.append(np.full(cls_cfg.n_samples, idx, dtype=int))
     y = np.concatenate(labels, axis=0)
     if y.shape[0] != cfg.n_samples:
-        raise RuntimeError(f"Inconsistent label construction: got {y.shape[0]} labels, " f"expected {cfg.n_samples}.")
+        raise RuntimeError(
+            f"Inconsistent label construction: got {y.shape[0]} labels, expected {cfg.n_samples}."
+        )
     return y
 
 
@@ -112,52 +144,32 @@ def shift_classes(
 ) -> None:
     """Apply class-wise mean shifts to informative features and optional anchors.
 
-    This function modifies X *in place*.
+    This function modifies *X* in place.
 
-    Parameters
-    ----------
-    X:
-        Array of shape (n_samples, n_features).
-    y:
-        Array of shape (n_samples,) with class labels in {0, ..., K-1}.
-    informative_idx:
-        Indices of informative (non-anchor) features.
-        Any index present in `anchor_contrib` is skipped here and treated
-        as an anchor instead.
-    anchor_contrib:
-        Optional mapping: col -> (beta, cls_target)
+    Args:
+        X: Array of shape (n_samples, n_features).
+        y: 1-D integer label array with values in {0, ..., K-1}.
+        informative_idx: Indices of informative (non-anchor) features. Any
+            index present in `anchor_contrib` is skipped and treated as an anchor.
+        anchor_contrib: Optional mapping from column index to (beta, cls_target),
+            where beta is a per-anchor multiplier and cls_target is the target
+            class index for a one-vs-rest shift.
+        class_sep: Scalar or sequence controlling multi-class separation. If
+            scalar, it denotes uniform separation; if sequence, it must have
+            length K-1 describing neighbor separations.
+        anchor_strength: Global multiplicative factor for anchors.
+        anchor_mode: Either `"equalized"` (anchor effect roughly invariant in K)
+            or `"strong"` (anchor effect grows with K).
+        spread_non_anchors: If True, non-anchor informative features receive the
+            multi-class offsets defined by `class_sep`. If False, they are left
+            unchanged and only anchors are shifted.
 
-        - col: column index of the anchor feature.
-        - beta: per-anchor effect multiplier (e.g. derived from
-          CorrClusterConfig.resolve_anchor_effect_size()).
-        - cls_target: index of the "disease" / target class for the
-          one-vs-rest shift.
+    Returns:
+        None
 
-        For the free informative stage (`informative.py`), this argument
-        is typically None. In the correlated stage, it can be used to
-        implement one-vs-rest anchors.
-
-    class_sep:
-        Scalar or sequence controlling the multi-class separation and
-        providing a scale for anchors.
-
-        - If scalar: uniform separation between neighbouring classes.
-        - If sequence: length (K-1), where entry j approximates
-              mu_{j+1} - mu_j
-          for the non-anchor informative features.
-
-    anchor_strength:
-        Global multiplicative factor for all anchors (used only if
-        anchor_contrib is not None).
-
-    anchor_mode:
-        - "equalized": anchor effect size is roughly invariant in K.
-        - "strong": anchor effect grows with K and can dominate non-anchors.
-
-    spread_non_anchors:
-        If True (default), non-anchor informative features receive the
-        multi-class offsets defined by class_sep. If False, they are left
-        unchanged and only anchors are shifted.
+    Raises:
+        ValueError: For invalid shapes, unknown anchor_mode, or out-of-range
+            anchor targets.
     """
     if X.size == 0:
         return
@@ -224,36 +236,23 @@ def generate_informative_features(
     cfg: DatasetConfig,
     rng: np.random.Generator,
 ) -> tuple[np.ndarray, np.ndarray]:
-    """Generate all *free* informative features (no anchors, no clusters).
+    """Generate all free informative features (no anchors, no clusters).
 
-    This function encapsulates the "informative" stage for independent
-    informative features:
+    The function performs:
+    1. Build numeric labels `y` from `cfg.class_configs`.
+    2. Allocate a matrix `x_informative` of shape (n_samples, n_informative_free).
+    3. Sample base values for each class via `sample_2d_array`.
+    4. Apply class-wise mean shifts (multi-class offsets only).
 
-    1. Builds numeric labels y from cfg.class_configs.
-    2. Allocates a matrix X_inf of shape (n_samples, n_informative_free).
-    3. Samples base values for each class using ClassConfig.class_distribution
-       and class_distribution_params via `sample_2d_array`.
-    4. Applies class-wise mean shifts as defined in `shift_classes` for all
-       informative columns (multi-class offsets only; no anchors).
-
-    The generator and DatasetMeta can derive all structural information
-    (block position, counts, indices) directly from `DatasetConfig`
-    (e.g. `cfg.n_informative_free`, `cfg.n_samples`).
-
-    Parameters
-    ----------
-    cfg:
-        DatasetConfig with validated fields and derived quantities.
-    rng:
-        NumPy random Generator (global dataset RNG).
+    Args:
+        cfg: DatasetConfig with validated fields and derived quantities.
+        rng: NumPy random Generator.
 
     Returns:
-    -------
-    X_inf:
-        Array of shape (n_samples, n_informative_free) with all free
-        informative features.
-    y:
-        Array of shape (n_samples,) with class labels in {0, ..., K-1}.
+        tuple:
+            x_informative: Array of shape (n_samples, n_informative_free) with
+                free informative features.
+            y: Array of shape (n_samples,) with class labels in {0, ..., K-1}.
     """
     n_samples = cfg.n_samples
     n_inf = int(cfg.n_informative_free)  # excludes informative anchors by design
@@ -263,11 +262,11 @@ def generate_informative_features(
 
     # Corner case: no informative features → return empty matrix
     if n_inf == 0:
-        X_empty = np.empty((n_samples, 0), dtype=float)
-        return X_empty, y
+        x_empty_empty = np.empty((n_samples, 0), dtype=float)
+        return x_empty_empty, y
 
     # 2) Sample base values per class (before mean shifts)
-    X_inf = np.empty((n_samples, n_inf), dtype=float)
+    x_informative = np.empty((n_samples, n_inf), dtype=float)
 
     start = 0
     for cls_cfg in cfg.class_configs:
@@ -280,13 +279,13 @@ def generate_informative_features(
             rng=rng,
             size=(n_cls, n_inf),
         )
-        X_inf[start:stop, :] = block
+        x_informative[start:stop, :] = block
         start = stop
 
     # 3) Apply class-wise mean shifts to all informative columns
     informative_idx = np.arange(n_inf, dtype=int)
     shift_classes(
-        X_inf,
+        x_informative,
         y,
         informative_idx=informative_idx,
         anchor_contrib=None,  # no anchors in this stage
@@ -295,4 +294,4 @@ def generate_informative_features(
         spread_non_anchors=True,
     )
 
-    return X_inf, y
+    return x_informative, y
