@@ -366,10 +366,11 @@ class TestShiftClassesNonAnchorSpread:
             spread_non_anchors=True
         )
 
-        # For K=3: spread_vec = 2.0 * ([0, 1, 2] - 1.0) / 2 = 2.0 * [-1, 0, 1] / 2 = [-1, 0, 1]
-        expected_cls0 = -1.0
+        # For K=3, class_sep=2.0: sep_vec = [2.0, 2.0]
+        # cumulative: [0, 2, 4], centered: [-2, 0, 2]
+        expected_cls0 = -2.0
         expected_cls1 = 0.0
-        expected_cls2 = 1.0
+        expected_cls2 = 2.0
 
         np.testing.assert_allclose(X[y == 0, 0], expected_cls0, rtol=1e-10)
         np.testing.assert_allclose(X[y == 1, 0], expected_cls1, rtol=1e-10)
@@ -427,10 +428,11 @@ class TestShiftClassesCombinedEffects:
         )
 
         # Column 0, 2 should have spread (non-anchors)
-        # For K=3: spread = [-0.5, 0, 0.5]
-        np.testing.assert_allclose(X[y == 0, 0], -0.5, rtol=1e-10)
+        # For K=3, class_sep=1.0: sep_vec = [1.0, 1.0]
+        # cumulative: [0, 1, 2], centered: [-1, 0, 1]
+        np.testing.assert_allclose(X[y == 0, 0], -1.0, rtol=1e-10)
         np.testing.assert_allclose(X[y == 1, 0], 0.0, atol=1e-10)
-        np.testing.assert_allclose(X[y == 2, 0], 0.5, rtol=1e-10)
+        np.testing.assert_allclose(X[y == 2, 0], 1.0, rtol=1e-10)
 
         # Column 1 should have anchor effect for class 0
         # A = 1.0 * 1.0 * 1.0 * 2/3
@@ -500,8 +502,9 @@ class TestShiftClassesMultipleClasses:
             spread_non_anchors=True
         )
 
-        # For K=5: spread_vec = ([0,1,2,3,4] - 2) / 4 = [-0.5, -0.25, 0, 0.25, 0.5]
-        expected = np.array([-0.5, -0.25, 0.0, 0.25, 0.5])
+        # For K=5, class_sep=1.0: sep_vec = [1.0, 1.0, 1.0, 1.0]
+        # cumulative: [0, 1, 2, 3, 4], centered: [-2, -1, 0, 1, 2]
+        expected = np.array([-2.0, -1.0, 0.0, 1.0, 2.0])
 
         for k in range(5):
             np.testing.assert_allclose(X[y == k, 0], expected[k], rtol=1e-10)

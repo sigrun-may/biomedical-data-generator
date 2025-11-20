@@ -16,7 +16,7 @@ import pandas as pd
 from numpy.typing import NDArray
 from pandas import DataFrame
 
-from .config import DatasetConfig, NoiseDistribution
+from .config import DatasetConfig
 from .effects.batch import apply_batch_effects_from_config
 from .features.correlated import sample_cluster
 from .features.informative import shift_classes
@@ -200,14 +200,11 @@ def _resolve_noise_params(dist: str, noise_scale: float, noise_params: Mapping[s
         ValueError: If dist is unsupported.
     """
     # normalize
-    if isinstance(dist, NoiseDistribution):
-        key = dist.value
-    else:
-        key = str(dist)
-        # handle accidental Enum stringification like "NoiseDistribution.uniform"
-        if key.startswith("NoiseDistribution."):
-            key = key.split(".", 1)[1]
-        key = key.lower()
+    key = str(dist)
+    # handle accidental Enum stringification like "NoiseDistribution.uniform"
+    if key.startswith("NoiseDistribution."):
+        key = key.split(".", 1)[1]
+    key = key.lower()
 
     if key == "normal":
         params = {"loc": 0.0, "scale": float(noise_scale)}

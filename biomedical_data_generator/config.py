@@ -15,7 +15,7 @@ import numpy as np
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 AnchorMode: TypeAlias = Literal["equalized", "strong"]
-DistributionType = Literal[
+DistributionType: TypeAlias = Literal[
     "normal",
     "lognormal",
     "exp_normal",  # np.exp(rng.normal()) - direct control over underlying parameters for lognormal distribution
