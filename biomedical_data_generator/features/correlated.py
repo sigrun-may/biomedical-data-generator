@@ -28,7 +28,7 @@ CorrelationStructure = Literal["equicorrelated", "toeplitz"]
 __all__ = [
     "CorrelationStructure",
     "build_correlation_matrix",
-    "sample_cluster",
+    "sample_correlated_cluster",
 ]
 
 
@@ -148,7 +148,7 @@ def _cholesky_with_jitter(
 # ============================================================================
 # Public sampler
 # ============================================================================
-def sample_cluster(
+def sample_correlated_cluster(
     n_samples: int,
     n_features: int,
     rng: np.random.Generator,

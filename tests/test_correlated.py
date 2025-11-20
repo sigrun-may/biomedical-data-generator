@@ -119,7 +119,7 @@ def test_cholesky_with_jitter_handles_near_singular():
 def test_sample_cluster_global_equicorrelated_matches_mean():
     n, p, rho = 500, 6, 0.6
     rng = np.random.default_rng(0)
-    X = corr.sample_cluster(n, p, rng, structure="equicorrelated", rho=rho)
+    X = corr.sample_correlated_cluster(n, p, rng, structure="equicorrelated", rho=rho)
     C_emp = np.corrcoef(X, rowvar=False).astype(np.float64)
     mean_off = correlation_tools.compute_correlation_metrics(C_emp)["mean_offdiag"]
     assert np.isfinite(mean_off)
@@ -130,7 +130,7 @@ def test_sample_cluster_global_equicorrelated_matches_mean():
 def test_sample_cluster_global_toeplitz_lag_decay():
     n, p, rho = 800, 6, 0.35
     rng = np.random.default_rng(1)
-    X = corr.sample_cluster(n, p, rng, structure="toeplitz", rho=rho)
+    X = corr.sample_correlated_cluster(n, p, rng, structure="toeplitz", rho=rho)
     C_emp = np.corrcoef(X, rowvar=False).astype(np.float64)
     # First and second off-diagonals should be close to rho and rho**2
     lag1 = np.mean([C_emp[i, i + 1] for i in range(p - 1)])
@@ -143,7 +143,7 @@ def test_sample_cluster_class_specific_means():
     n, p = 600, 5
     labels = np.array([0] * (n // 2) + [1] * (n - n // 2), dtype=np.int64)
     rng = np.random.default_rng(7)
-    X = corr.sample_cluster(
+    X = corr.sample_correlated_cluster(
         n_samples=n,
         n_features=p,
         rng=rng,
@@ -164,10 +164,10 @@ def test_sample_cluster_errors():
     rng = np.random.default_rng(0)
     # Missing rho in global mode
     with pytest.raises(ValueError):
-        corr.sample_cluster(10, 3, rng)
+        corr.sample_correlated_cluster(10, 3, rng)
     # Label length mismatch
     with pytest.raises(ValueError):
-        corr.sample_cluster(
+        corr.sample_correlated_cluster(
             n_samples=10,
             n_features=3,
             rng=rng,
@@ -378,7 +378,7 @@ def test_find_best_seed_for_correlation_returns_best():
 def test_assess_correlation_quality():
     """Quality assessment computes all metrics and checks tolerance."""
     rng = np.random.default_rng(42)
-    X = corr.sample_cluster(300, 6, rng, structure="equicorrelated", rho=0.65)
+    X = corr.sample_correlated_cluster(300, 6, rng, structure="equicorrelated", rho=0.65)
 
     quality = correlation_tools.assess_correlation_quality(X, rho_target=0.65, tolerance=0.03)
 

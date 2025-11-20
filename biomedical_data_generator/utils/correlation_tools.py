@@ -23,7 +23,7 @@ from numpy.typing import NDArray
 
 # Runtime dependencies
 from biomedical_data_generator.config import CorrClusterConfig
-from biomedical_data_generator.features.correlated import sample_cluster
+from biomedical_data_generator.features.correlated import sample_correlated_cluster
 
 # Type alias kept local to avoid circular imports
 CorrelationStructure = Literal["equicorrelated", "toeplitz"]
@@ -289,7 +289,7 @@ def find_seed_for_correlation(
     seed = start_seed
     for try_idx in range(1, max_tries + 1):
         rng = np.random.default_rng(seed)
-        X = sample_cluster(n_samples, n_cluster_features, rng, structure=structure, rho=rho)
+        X = sample_correlated_cluster(n_samples, n_cluster_features, rng, structure=structure, rho=rho)
         C: NDArray[np.float64] = np.corrcoef(X, rowvar=False).astype(np.float64, copy=False)
 
         m = compute_correlation_metrics(C)
@@ -465,7 +465,7 @@ def find_best_seed_for_correlation(
 
     for s in range(start_seed, start_seed + max_tries):
         rng = np.random.default_rng(s)
-        X = sample_cluster(n_samples, n_cluster_features, rng, structure=structure, rho=rho)
+        X = sample_correlated_cluster(n_samples, n_cluster_features, rng, structure=structure, rho=rho)
         C = np.corrcoef(X, rowvar=False)
         m = compute_correlation_metrics(C)
         delta = abs(m["mean_offdiag"] - rho)
