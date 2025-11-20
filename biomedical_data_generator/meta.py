@@ -63,12 +63,12 @@ class DatasetMeta:
     cluster_label: dict[int, str | None]  # didactic tags per cluster
 
     # Class distribution
-    y_weights: tuple[float, ...]
     y_counts: dict[int, int]
 
     # Provenance / signal settings
     n_classes: int
-    class_sep: float
+    class_names: list[str]
+    class_sep: list[float]
     corr_between: float
 
     # --- optional (with defaults) ---
