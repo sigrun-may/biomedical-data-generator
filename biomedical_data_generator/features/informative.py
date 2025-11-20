@@ -24,11 +24,10 @@ re-used by other modules (e.g. for anchor effects in correlated clusters).
 from __future__ import annotations
 
 from collections.abc import Iterable, Mapping, Sequence
-from typing import Any, Tuple
 
 import numpy as np
 
-from biomedical_data_generator.config import DatasetConfig, AnchorMode
+from biomedical_data_generator.config import AnchorMode, DatasetConfig
 from biomedical_data_generator.utils.sampling import sample_2d_array
 
 __all__ = [
@@ -62,9 +61,7 @@ def _normalize_class_sep(
     if sep_vec.ndim != 1:
         raise ValueError(f"class_sep must be 1D, got shape {sep_vec.shape}.")
     if sep_vec.shape[0] != K - 1:
-        raise ValueError(
-            f"class_sep length must be K-1 (={K-1}), got {sep_vec.shape[0]}."
-        )
+        raise ValueError(f"class_sep length must be K-1 (={K-1}), got {sep_vec.shape[0]}.")
     if not np.all(np.isfinite(sep_vec)):
         raise ValueError("class_sep entries must be finite numbers.")
     return sep_vec
@@ -93,10 +90,7 @@ def _build_class_labels(cfg: DatasetConfig) -> np.ndarray:
         labels.append(np.full(cls_cfg.n_samples, idx, dtype=int))
     y = np.concatenate(labels, axis=0)
     if y.shape[0] != cfg.n_samples:
-        raise RuntimeError(
-            f"Inconsistent label construction: got {y.shape[0]} labels, "
-            f"expected {cfg.n_samples}."
-        )
+        raise RuntimeError(f"Inconsistent label construction: got {y.shape[0]} labels, " f"expected {cfg.n_samples}.")
     return y
 
 
@@ -110,7 +104,7 @@ def shift_classes(
     y: np.ndarray,
     *,
     informative_idx: Iterable[int],
-    anchor_contrib: Mapping[int, Tuple[float, int]] | None = None,
+    anchor_contrib: Mapping[int, tuple[float, int]] | None = None,
     class_sep: float | Sequence[float] = 1.0,
     anchor_strength: float = 1.0,
     anchor_mode: AnchorMode = "equalized",  # "equalized" or "strong"
@@ -200,9 +194,7 @@ def shift_classes(
     if anchor_contrib:
         for col, (beta, cls_target) in anchor_contrib.items():
             if not (0 <= cls_target < K):
-                raise ValueError(
-                    f"anchor_contrib: cls_target={cls_target} out of range for K={K}."
-                )
+                raise ValueError(f"anchor_contrib: cls_target={cls_target} out of range for K={K}.")
 
             beta_val = float(beta)
 
@@ -255,7 +247,7 @@ def generate_informative_features(
     rng:
         NumPy random Generator (global dataset RNG).
 
-    Returns
+    Returns:
     -------
     X_inf:
         Array of shape (n_samples, n_informative_free) with all free
@@ -297,8 +289,8 @@ def generate_informative_features(
         X_inf,
         y,
         informative_idx=informative_idx,
-        anchor_contrib=None,         # no anchors in this stage
-        class_sep=cfg.class_sep,     # already normalised in DatasetConfig
+        anchor_contrib=None,  # no anchors in this stage
+        class_sep=cfg.class_sep,  # already normalised in DatasetConfig
         # anchor_strength / anchor_mode defaults are unused here
         spread_non_anchors=True,
     )

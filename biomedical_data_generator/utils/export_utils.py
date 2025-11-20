@@ -4,10 +4,11 @@
 
 from __future__ import annotations
 
-import pandas as pd
-import numpy as np
-from numpy.typing import NDArray
 from pathlib import Path
+
+import numpy as np
+import pandas as pd
+from numpy.typing import NDArray
 
 from biomedical_data_generator.meta import DatasetMeta
 
@@ -19,14 +20,14 @@ __all__ = [
 
 
 def to_labeled_dataframe(
-        X: pd.DataFrame | NDArray[np.float64],
-        y: NDArray[np.int64] | None = None,
-        meta: DatasetMeta | None = None,
-        *,
-        include_labels: bool = True,
-        label_col_name: str = "y",
-        label_str_col_name: str = "y_label",
-        feature_names: list[str] | None = None,
+    X: pd.DataFrame | NDArray[np.float64],
+    y: NDArray[np.int64] | None = None,
+    meta: DatasetMeta | None = None,
+    *,
+    include_labels: bool = True,
+    label_col_name: str = "y",
+    label_str_col_name: str = "y_label",
+    feature_names: list[str] | None = None,
 ) -> pd.DataFrame:
     """Convert generated dataset to DataFrame with optional labels.
 
@@ -58,7 +59,7 @@ def to_labeled_dataframe(
         >>> df_features = to_labeled_dataframe(X, meta=meta, include_labels=False)
 
         >>> # Custom column names
-        >>> df = to_labeled_dataframe(X, y, meta, 
+        >>> df = to_labeled_dataframe(X, y, meta,
         ...                   label_col_name="class",
         ...                   label_str_col_name="diagnosis")
     """
@@ -84,9 +85,7 @@ def to_labeled_dataframe(
 
         # Validate shape
         if df.shape[0] != len(y):
-            raise ValueError(
-                f"Shape mismatch: X has {df.shape[0]} samples but y has {len(y)}"
-            )
+            raise ValueError(f"Shape mismatch: X has {df.shape[0]} samples but y has {len(y)}")
 
         # Add numeric labels
         df[label_col_name] = y
@@ -98,15 +97,14 @@ def to_labeled_dataframe(
     return df
 
 
-
 def to_csv(
-        X: pd.DataFrame | NDArray[np.float64],
-        y: NDArray[np.int64],
-        meta: DatasetMeta,
-        filepath: str | Path,
-        *,
-        include_labels: bool = True,
-        **csv_kwargs,
+    X: pd.DataFrame | NDArray[np.float64],
+    y: NDArray[np.int64],
+    meta: DatasetMeta,
+    filepath: str | Path,
+    *,
+    include_labels: bool = True,
+    **csv_kwargs,
 ) -> None:
     """Export dataset to CSV file.
 
@@ -129,13 +127,13 @@ def to_csv(
 
 
 def to_parquet(
-        X: pd.DataFrame | NDArray[np.float64],
-        y: NDArray[np.int64],
-        meta: DatasetMeta,
-        filepath: str | Path,
-        *,
-        include_labels: bool = True,
-        **parquet_kwargs,
+    X: pd.DataFrame | NDArray[np.float64],
+    y: NDArray[np.int64],
+    meta: DatasetMeta,
+    filepath: str | Path,
+    *,
+    include_labels: bool = True,
+    **parquet_kwargs,
 ) -> None:
     """Export dataset to Parquet file (efficient for large datasets).
 

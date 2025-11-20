@@ -4,23 +4,24 @@
 # This software is distributed under the terms of the MIT license
 # which is available at https://opensource.org/licenses/MIT
 
+"""Utility functions for sampling from distributions."""
+
 from __future__ import annotations
 
-from typing import Any, Dict, Tuple
+from typing import Any
 
 import numpy as np
 
 from biomedical_data_generator.config import DistributionType  # uses the validated set of names
-
 
 __all__ = ["sample_2d_array"]
 
 
 def sample_2d_array(
     distribution: DistributionType,
-    params: Dict[str, Any],
+    params: dict[str, Any],
     rng: np.random.Generator,
-    size: Tuple[int, int],
+    size: tuple[int, int],
 ) -> np.ndarray:
     """Draw a block of independent samples from a NumPy RNG distribution.
 
@@ -41,8 +42,6 @@ def sample_2d_array(
         fn = getattr(rng, distribution)  # e.g. rng.normal, rng.uniform, ...
     except AttributeError as exc:
         # Should not happen if DistributionType and config validators are in sync
-        raise ValueError(
-            f"Unsupported distribution '{distribution}' for this RNG."
-        ) from exc
+        raise ValueError(f"Unsupported distribution '{distribution}' for this RNG.") from exc
 
     return fn(size=size, **params)
