@@ -47,6 +47,7 @@ pydantic = "*"
 
 matplotlib = { version = "*", optional = true }
 seaborn    = { version = "*", optional = true }
+scikit-learn = "*"
 
 [tool.poetry.extras]
 visualization = ["matplotlib", "seaborn"]
@@ -67,6 +68,7 @@ twine = "^6.2.0"
 pytest = "^8.0.0"
 pytest-cov = "^5.0.0"
 coverage = {version="^7.6.0", extras=["toml"]}
+scikit-learn = "*"
 
 [tool.poetry.group.doc.dependencies]
 sphinx = "*"
