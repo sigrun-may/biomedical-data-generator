@@ -8,6 +8,7 @@
 
 from __future__ import annotations
 
+import warnings
 from collections.abc import Iterable, Mapping, Sequence
 from typing import Any, Literal, TypeAlias, cast
 
@@ -892,6 +893,19 @@ class DatasetConfig(BaseModel):
         return validate_distribution_params(v, distribution)
 
     # ------------------------------------------------------ after validators
+    @model_validator(mode="after")
+    def _enforce_minimum_informative(self):
+        """Ensure n_informative >= number of informative anchors."""
+        required = self.count_informative_anchors()
+        if self.n_informative < required:
+            old = self.n_informative
+            object.__setattr__(self, "n_informative", required)
+            warnings.warn(
+                f"[DatasetConfig] n_informative was increased from {old} to {required} "
+                f"because your correlated clusters define {required} informative anchors.",
+                UserWarning,
+            )
+        return self
 
     @model_validator(mode="after")
     def _auto_generate_labels(self):
