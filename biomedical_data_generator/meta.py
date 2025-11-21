@@ -75,31 +75,31 @@ class DatasetMeta:
 
     # Index sets (0-based column indices)
     informative_idx: list[int]  # includes cluster anchors + free informative features
-    noise_idx: list[int]        # independent / free noise features (no anchors)
+    noise_idx: list[int]  # independent / free noise features (no anchors)
 
     # Correlated clusters
     corr_cluster_indices: dict[int, list[int]]  # cluster_id -> list of column indices
-    anchor_idx: dict[int, int | None]           # cluster_id -> anchor col (or None)
+    anchor_idx: dict[int, int | None]  # cluster_id -> anchor col (or None)
 
     # Per-cluster properties (mirroring CorrClusterConfig)
-    anchor_role: dict[int, str]                 # "informative" | "noise"
-    anchor_effect_size: dict[int, float]        # numeric effect size used for the anchor
-    anchor_class: dict[int, int | None]         # class index the anchor predicts (one-vs-rest)
-    cluster_label: dict[int, str | None]        # descriptive label per cluster (didactic tag)
+    anchor_role: dict[int, str]  # "informative" | "noise"
+    anchor_effect_size: dict[int, float]  # numeric effect size used for the anchor
+    anchor_class: dict[int, int | None]  # class index the anchor predicts (one-vs-rest)
+    cluster_label: dict[int, str | None]  # descriptive label per cluster (didactic tag)
 
     # ---------------- provenance / global settings ----------------
 
     n_classes: int
     class_names: list[str]
     samples_per_class: dict[int, int]
-    class_sep: list[float]                      # resolved class separation per boundary
-    corr_between: float                         # correlation between different clusters/roles
+    class_sep: list[float]  # resolved class separation per boundary
+    corr_between: float  # correlation between different clusters/roles
 
     # ---------------- batch effects (optional) ----------------
 
-    batch_labels: np.ndarray | None = None                      # shape (n_samples,)
-    batch_intercepts: dict[int, np.ndarray] | None = None       # batch_id -> intercepts per affected feature
-    batch_config: dict[str, object] | None = None               # serialized BatchEffectsConfig
+    batch_labels: np.ndarray | None = None  # shape (n_samples,)
+    batch_intercepts: dict[int, np.ndarray] | None = None  # batch_id -> intercepts per affected feature
+    batch_config: dict[str, object] | None = None  # serialized BatchEffectsConfig
 
     # ---------------- generator config snapshot ----------------
 

@@ -16,12 +16,12 @@
 from __future__ import annotations
 
 from collections.abc import Mapping
-from typing import Literal, Any
+from typing import Any, Literal
 
 import numpy as np
 from numpy.typing import NDArray
 
-from biomedical_data_generator import DatasetConfig, CorrClusterConfig
+from biomedical_data_generator import CorrClusterConfig, DatasetConfig
 
 CorrelationStructure = Literal["equicorrelated", "toeplitz"]
 
@@ -234,9 +234,9 @@ def sample_correlated_cluster(
 
 
 def sample_all_correlated_clusters(
-        cfg: DatasetConfig,
-        rng: np.random.Generator,
-        y: np.ndarray,
+    cfg: DatasetConfig,
+    rng: np.random.Generator,
+    y: np.ndarray,
 ) -> tuple[NDArray[np.float64], dict[str, Any]]:
     """Sample all correlated feature clusters as per cfg.
 

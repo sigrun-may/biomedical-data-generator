@@ -22,7 +22,8 @@ The goals are:
 
 from __future__ import annotations
 
-from typing import Any, Sequence
+from collections.abc import Sequence
+from typing import Any
 
 import numpy as np
 import pandas as pd
@@ -34,7 +35,6 @@ from biomedical_data_generator.config import (
     DatasetConfig,
 )
 from biomedical_data_generator.generator import generate_dataset
-
 
 # ---------------------------------------------------------------------------#
 # Helper: translate total sample size + weights into per-class counts
@@ -68,10 +68,7 @@ def _compute_class_sizes(
         return [base + (1 if i < remainder else 0) for i in range(n_classes)]
 
     if len(weights) != n_classes:
-        raise ValueError(
-            f"weights must have length n_classes={n_classes}, "
-            f"got length {len(weights)}."
-        )
+        raise ValueError(f"weights must have length n_classes={n_classes}, " f"got length {len(weights)}.")
 
     # Normalize to sum=1.0
     w = np.asarray(weights, dtype=float)
@@ -141,7 +138,7 @@ def make_biomedical_dataset(
 
     and the proxies contributed by this wrapper are exactly ``n_redundant``.
 
-    Notes
+    Notes:
     -----
     - ``n_features`` must equal ``n_informative + n_redundant + n_noise``
       in this wrapper (no repeated features). If ``n_noise == 0``, it is
@@ -155,7 +152,7 @@ def make_biomedical_dataset(
     obtain a ``DataFrame`` and ``Series`` instead. Set ``return_meta=True``
     to additionally return the :class:`DatasetMeta` object.
 
-    Returns
+    Returns:
     -------
     (X, y) or (X, y, meta)
         Depending on ``return_meta``. ``X`` is a NumPy array or
@@ -231,9 +228,7 @@ def make_biomedical_dataset(
         weights=weights,
     )
 
-    class_configs: list[ClassConfig] = [
-        ClassConfig(n_samples=int(sz)) for sz in class_sizes
-    ]
+    class_configs: list[ClassConfig] = [ClassConfig(n_samples=int(sz)) for sz in class_sizes]
 
     # ------------------------------------------------------------------
     # 3) Optional batch-effect configuration
@@ -310,8 +305,7 @@ def make_biomedical_dataset(
             # Treat that as "no clusters yet" and append our redundant cluster.
             if not isinstance(existing, list):
                 raise TypeError(
-                    "corr_clusters must be a list of CorrClusterConfig or dicts; "
-                    f"got {type(existing).__name__}."
+                    "corr_clusters must be a list of CorrClusterConfig or dicts; " f"got {type(existing).__name__}."
                 )
             existing_extended = list(existing)
             existing_extended.extend(corr_clusters)

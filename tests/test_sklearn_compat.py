@@ -1,15 +1,13 @@
 import numpy as np
 import pandas as pd
 import pytest
-from sklearn.linear_model import LogisticRegression
-from sklearn.pipeline import make_pipeline
-from sklearn.preprocessing import StandardScaler
-from sklearn.metrics import balanced_accuracy_score
-
-from sklearn.datasets import make_classification as skl_make_classification
+from sklearn.datasets import make_classification as skl_make_classification  # type: ignore[import-untyped]
+from sklearn.linear_model import LogisticRegression  # type: ignore[import-untyped]
+from sklearn.metrics import balanced_accuracy_score  # type: ignore[import-untyped]
+from sklearn.pipeline import make_pipeline  # type: ignore[import-untyped]
+from sklearn.preprocessing import StandardScaler  # type: ignore[import-untyped]
 
 from biomedical_data_generator.utils.sklearn_compat import make_biomedical_dataset
-
 
 # --------------------------------------------------------------------------- #
 # Basic API compatibility: shapes, dtypes, output types
