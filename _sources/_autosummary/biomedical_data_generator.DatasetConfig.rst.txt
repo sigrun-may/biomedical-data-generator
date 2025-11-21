@@ -37,7 +37,6 @@
       ~DatasetConfig.parse_file
       ~DatasetConfig.parse_obj
       ~DatasetConfig.parse_raw
-      ~DatasetConfig.relaxed
       ~DatasetConfig.schema
       ~DatasetConfig.schema_json
       ~DatasetConfig.summary
@@ -52,33 +51,30 @@
 
    .. autosummary::
    
+      ~DatasetConfig.class_counts
+      ~DatasetConfig.class_labels
       ~DatasetConfig.model_computed_fields
       ~DatasetConfig.model_config
       ~DatasetConfig.model_extra
       ~DatasetConfig.model_fields
       ~DatasetConfig.model_fields_set
+      ~DatasetConfig.n_classes
+      ~DatasetConfig.n_features
       ~DatasetConfig.n_informative_free
       ~DatasetConfig.n_noise_free
       ~DatasetConfig.n_samples
-      ~DatasetConfig.n_features
       ~DatasetConfig.n_informative
       ~DatasetConfig.n_noise
-      ~DatasetConfig.noise_distribution
-      ~DatasetConfig.noise_scale
-      ~DatasetConfig.noise_params
-      ~DatasetConfig.n_classes
-      ~DatasetConfig.weights
-      ~DatasetConfig.class_counts
+      ~DatasetConfig.class_configs
       ~DatasetConfig.class_sep
+      ~DatasetConfig.noise_distribution
+      ~DatasetConfig.noise_distribution_params
       ~DatasetConfig.feature_naming
       ~DatasetConfig.prefix_informative
-      ~DatasetConfig.prefix_proxy
       ~DatasetConfig.prefix_noise
       ~DatasetConfig.prefix_corr
       ~DatasetConfig.corr_clusters
       ~DatasetConfig.corr_between
-      ~DatasetConfig.anchor_mode
-      ~DatasetConfig.effect_size
       ~DatasetConfig.batch
       ~DatasetConfig.random_state
    

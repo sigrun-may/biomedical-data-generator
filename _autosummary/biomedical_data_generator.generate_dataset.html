@@ -58,7 +58,6 @@
 </li>
 <li class="toctree-l1"><a class="reference internal" href="biomedical_data_generator.find_seed_for_correlation.html">biomedical_data_generator.find_seed_for_correlation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="biomedical_data_generator.DatasetConfig.html">biomedical_data_generator.DatasetConfig</a></li>
-<li class="toctree-l1"><a class="reference internal" href="biomedical_data_generator.DatasetMeta.html">biomedical_data_generator.DatasetMeta</a></li>
 </ul>
 
         </div>
@@ -90,53 +89,7 @@
 <dl class="py function">
 <dt class="sig sig-object py" id="biomedical_data_generator.generate_dataset">
 <span class="sig-prename descclassname"><span class="pre">biomedical_data_generator.</span></span><span class="sig-name descname"><span class="pre">generate_dataset</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cfg</span></span></em>, <em class="sig-param"><span class="positional-only-separator o"><abbr title="Positional-only parameter separator (PEP 570)"><span class="pre">/</span></abbr></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">return_dataframe</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">overrides</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/biomedical_data_generator/generator.html#generate_dataset"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#biomedical_data_generator.generate_dataset" title="Link to this definition"></a></dt>
-<dd><p>Generate an n-class classification dataset with optional correlated clusters.</p>
-<p>Features are ordered as: cluster features (anchors first within each cluster),
-then free informative features, then noise features.
-Labels y must be explicitly specified via <cite>cfg.class_counts</cite> (exact per-class sample counts).
-Class-wise shifts are then applied to informative features and cluster anchors
-(via <cite>anchor_effect_size</cite>) to create class separation.
-Reproducibility is controlled by <cite>cfg.random_state</cite> and optional per-cluster seeds.
-Feature names follow either a “prefixed” scheme (e.g., <cite>i*</cite>, <cite>corr{cid}_k</cite>, <cite>n*</cite>)
-or a generic <cite>feature_1..p</cite>. The returned <cite>meta</cite> includes role masks, cluster indices,
-empirical class proportions, and the resolved configuration.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>cfg</strong> (<a class="reference internal" href="biomedical_data_generator.DatasetConfig.html#biomedical_data_generator.DatasetConfig" title="biomedical_data_generator.DatasetConfig"><code class="xref py py-class docutils literal notranslate"><span class="pre">DatasetConfig</span></code></a>) – Configuration including feature counts, cluster layout, correlation
-parameters, naming policy, randomness controls, <cite>n_classes</cite>, and <cite>class_counts</cite>.
-The <cite>class_counts</cite> parameter is required and must be a dict mapping class indices
-to exact sample counts (e.g., {0: 50, 1: 50}).</p></li>
-<li><p><strong>return_dataframe</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code></a>, <em>optional</em>) – If True (default), return <cite>X</cite> as a <cite>pandas.DataFrame</cite>
-with column names. If False, return <cite>X</cite> as a NumPy array in the same column order.</p></li>
-<li><p><strong>**overrides</strong> – Optional config overrides merged into <cite>cfg</cite> (e.g., <cite>n_samples=…</cite>).</p></li>
-</ul>
-</dd>
-<dt class="field-even">Return type<span class="colon">:</span></dt>
-<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.14)">tuple</a>[<em>DataFrame</em> | <a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.3)"><em>ndarray</em></a>[<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.14)">tuple</a>[<a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.14)"><em>Any</em></a>, …], <a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.dtype.html#numpy.dtype" title="(in NumPy v2.3)"><em>dtype</em></a>[<em>float64</em>]], <a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.3)"><em>ndarray</em></a>[<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.14)">tuple</a>[<a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.14)"><em>Any</em></a>, …], <a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.dtype.html#numpy.dtype" title="(in NumPy v2.3)"><em>dtype</em></a>[<em>int64</em>]], <a class="reference internal" href="biomedical_data_generator.DatasetMeta.html#biomedical_data_generator.DatasetMeta" title="biomedical_data_generator.meta.DatasetMeta"><em>DatasetMeta</em></a>]</p>
-</dd>
-</dl>
-<section id="returns">
-<h2>Returns:<a class="headerlink" href="#returns" title="Link to this heading"></a></h2>
-<blockquote>
-<div><dl class="simple">
-<dt>tuple:</dt><dd><ul class="simple">
-<li><p>X (pandas.DataFrame | np.ndarray): Shape (n_samples, n_features). By default a DataFrame
-with feature names in canonical order (clusters → free informative → noise).</p></li>
-<li><p>y (np.ndarray): Shape (n_samples,). Integer labels in {0, 1, …, n_classes-1}.</p></li>
-<li><p>meta (DatasetMeta): Metadata including role masks, cluster indices/labels, empirical class
-weights, and the resolved configuration.</p></li>
-</ul>
-</dd>
-</dl>
-</div></blockquote>
-</section>
-<section id="raises">
-<h2>Raises:<a class="headerlink" href="#raises" title="Link to this heading"></a></h2>
-<blockquote>
-<div><p>ValueError: If <cite>class_counts</cite> is not specified or if sum(class_counts) != n_samples.</p>
-</div></blockquote>
-</section>
+<dd><p>Generate dataset with clean module boundaries.</p>
 </dd></dl>
 
 </section>
