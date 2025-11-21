@@ -12,8 +12,6 @@
 # - For n very small (e.g., n=30), the *empirical* sample correlations are noisy.
 #   The *population* correlation implied by construction is correct, but your
 #   finite-sample estimate will vary substantially — this is expected.
-# You can extend realism later (copulas, heteroskedasticity, blockwise structures)
-# WITHOUT changing this public API by adding optional post-steps elsewhere.
 
 from __future__ import annotations
 
@@ -231,3 +229,47 @@ def sample_correlated_cluster(
 
     standard_normal = rng.standard_normal(size=(n_samples, n_features), dtype=np.float64)
     return (standard_normal @ L_global.T).astype(np.float64, copy=False)
+
+
+def sample_all_correlated_clusters(cfg, rng_global, y) -> tuple[NDArray[np.float64], dict[str, dict[int, object]]]:
+    """Sample all correlated feature clusters as per cfg.
+
+    Args:
+        cfg: DatasetConfig with corr_clusters defined.
+        rng_global: Shared NumPy random Generator.
+        y: Class labels array of shape (n_samples,).
+
+    Returns:
+        x_clusters: Array of shape (n_samples, total_cluster_features).
+        cluster_meta: Dict of lists for each cluster meta field.
+    """
+    n_samples = cfg.n_samples
+    clusters = cfg.corr_clusters
+    cluster_cfgs = []
+
+    cluster_array_list = []
+    for cluster_cfg in clusters:
+        x_cluster = sample_correlated_cluster(
+            n_samples=n_samples,
+            n_features=cluster_cfg.n_cluster_features,
+            rng=rng_global,
+            structure=cluster_cfg.structure,
+            rho=cluster_cfg.rho,
+            class_labels=y,
+            class_rho=cluster_cfg.class_rho,
+            baseline_rho=cluster_cfg.rho_baseline,
+        )
+        cluster_array_list.append(x_cluster)
+        cluster_cfgs.append(cluster_cfg)
+
+    x_clusters = np.hstack(cluster_array_list)
+
+    # Aggregate meta fields into dicts keyed by cluster index (0-based)
+    cluster_meta = {
+        "anchor_role": {cid: c.anchor_role for cid, c in enumerate(cluster_cfgs)},
+        "anchor_effect_size": {cid: c.anchor_effect_size for cid, c in enumerate(cluster_cfgs)},
+        "anchor_class": {cid: c.anchor_class for cid, c in enumerate(cluster_cfgs)},
+        "label": {cid: c.label for cid, c in enumerate(cluster_cfgs)},
+    }
+
+    return x_clusters, cluster_meta
