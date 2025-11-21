@@ -59,7 +59,7 @@ class DatasetMeta:
     anchor_idx: dict[int, int | None]  # cluster_id -> anchor col (or None)
     anchor_role: dict[int, str]  # "informative" | "noise"
     anchor_effect_size: dict[int, float]  # effect size (beta) for the anchor
-    anchor_target_cls: dict[int, int | None]  # target class for the anchor (one-vs-rest)
+    anchor_class: dict[int, int | None]  # target class for the anchor (one-vs-rest)
     cluster_label: dict[int, str | None]  # didactic tags per cluster
 
     # Provenance / signal settings
@@ -70,9 +70,7 @@ class DatasetMeta:
     corr_between: float
 
     # --- optional (with defaults) ---
-    anchor_strength: float = 1.0
     anchor_mode: AnchorMode = "equalized"
-    spread_non_anchors: bool = True
 
     # Batch effects metadata
     batch_labels: np.ndarray | None = None
