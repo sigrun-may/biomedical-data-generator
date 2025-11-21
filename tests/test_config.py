@@ -16,7 +16,7 @@ def _minimal_class_configs(n_classes: int = 2, n_per_class: int = 5) -> list[Cla
 
     We pass dicts so that Pydantic constructs ClassConfig internally.
     """
-    return [ClassConfig(n_samples= n_per_class) for _ in range(n_classes)]
+    return [ClassConfig(n_samples=n_per_class) for _ in range(n_classes)]
 
 
 def test_manual_derived_fields_forbidden():

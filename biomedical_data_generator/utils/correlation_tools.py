@@ -22,7 +22,6 @@ import pandas as pd
 from numpy.typing import NDArray
 
 # Runtime dependencies
-from biomedical_data_generator.config import CorrClusterConfig
 from biomedical_data_generator.features.correlated import sample_correlated_cluster
 
 # Type alias kept local to avoid circular imports
@@ -37,7 +36,6 @@ __all__ = [
     "variance_partition_pc1",
     # seed search
     "find_seed_for_correlation",
-    "find_seed_for_correlation_from_config",
     "find_best_seed_for_correlation",
     # cluster slicing
     "parse_cluster_id",

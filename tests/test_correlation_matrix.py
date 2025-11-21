@@ -249,7 +249,9 @@ class TestBuildCorrelationMatrix:
 
             # Check eigenvalues are all positive
             eigenvalues = np.linalg.eigvalsh(R)
-            assert np.all(eigenvalues > 0), f"Matrix not positive definite for correlation={correlation}: eigenvalues={eigenvalues}"
+            assert np.all(
+                eigenvalues > 0
+            ), f"Matrix not positive definite for correlation={correlation}: eigenvalues={eigenvalues}"
 
     def test_determinant_positive_both_structures(self):
         """Determinant is positive for valid correlation matrices."""

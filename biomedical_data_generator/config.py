@@ -335,7 +335,7 @@ class CorrClusterConfig(BaseModel):
         correlation: float
         structure:   "equicorrelated" or "toeplitz"
 
-        Example:
+    Example:
             correlation = 0.7
             structure   = "equicorrelated"
 
@@ -445,9 +445,7 @@ class CorrClusterConfig(BaseModel):
                     )
             else:  # toeplitz
                 if not (-1.0 < rho < 1.0):
-                    raise ValueError(
-                        f"correlation={rho} invalid for toeplitz; require |correlation| < 1."
-                    )
+                    raise ValueError(f"correlation={rho} invalid for toeplitz; require |correlation| < 1.")
 
         if isinstance(v, dict):
             for cls_idx, rho_val in v.items():
@@ -467,10 +465,7 @@ class CorrClusterConfig(BaseModel):
 
         if isinstance(v, str):
             if v not in ("small", "medium", "large"):
-                raise ValueError(
-                    "anchor_effect_size must be 'small', 'medium', or 'large', "
-                    f"got '{v}'."
-                )
+                raise ValueError("anchor_effect_size must be 'small', 'medium', or 'large', " f"got '{v}'.")
             return cast(Literal["small", "medium", "large"], v)
 
         try:
@@ -480,8 +475,7 @@ class CorrClusterConfig(BaseModel):
             return val
         except (TypeError, ValueError) as e:
             raise ValueError(
-                "anchor_effect_size must be 'small'/'medium'/'large' or positive float, "
-                f"got {v}."
+                "anchor_effect_size must be 'small'/'medium'/'large' or positive float, " f"got {v}."
             ) from e
 
     @field_validator("anchor_class")
@@ -536,8 +530,7 @@ class CorrClusterConfig(BaseModel):
         # Cluster structure
         lines.append("Cluster Structure:")
         lines.append(
-            f"  Number of markers: {self.n_cluster_features} "
-            f"(1 anchor + {self.n_cluster_features - 1} proxies)"
+            f"  Number of markers: {self.n_cluster_features} " f"(1 anchor + {self.n_cluster_features - 1} proxies)"
         )
         lines.append(f"  Structure: {self.structure}")
 

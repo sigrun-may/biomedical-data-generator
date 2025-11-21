@@ -6,7 +6,7 @@
 
 """Functions to generate correlated feature clusters simulating biomarker patterns.
 
-IMPORTANT:
+Important:
 - We do NOT standardize or rescale here. If you need standardization, do it
   later in generator.py (after assembling all blocks), so responsibilities stay clear.
 - For n very small (e.g., n=30), the *empirical* sample correlations are noisy.
@@ -89,9 +89,7 @@ def build_correlation_matrix(
     if structure == "toeplitz":
         # PD condition: |correlation| < 1 (strict).
         if not (-1.0 < correlation < 1.0):
-            raise ValueError(
-                f"Invalid correlation={correlation} for toeplitz; require |correlation| < 1."
-            )
+            raise ValueError(f"Invalid correlation={correlation} for toeplitz; require |correlation| < 1.")
         indices = np.arange(n_features, dtype=np.int64)
         distances = np.abs(indices[:, None] - indices[None, :])
         corr_matrix = np.power(correlation, distances, dtype=np.float64)
@@ -157,9 +155,7 @@ def _cholesky_with_jitter(
     # Let NumPy raise a clean error using the original matrix.
     np.linalg.cholesky(corr_matrix)
     # Give a clear, typed error path for mypy and callers.
-    raise np.linalg.LinAlgError(
-        f"Cholesky failed after {max_tries} tries (last jitter={jitter:g})."
-    )
+    raise np.linalg.LinAlgError(f"Cholesky failed after {max_tries} tries (last jitter={jitter:g}).")
 
 
 # ============================================================================
@@ -193,8 +189,10 @@ def sample_correlated_cluster(
         correlation:
             Either a float (global mode) or a dict mapping class indices to
             correlation strengths (class-specific mode).
+
     Returns:
         Array X of shape (n_samples, n_features), dtype float64.
+
     Raises:
         TypeError: if `correlation` is None or a class-specific mapping with < 2 classes.
     """
@@ -300,7 +298,7 @@ def sample_all_correlated_clusters(
             unique_classes = np.unique(y)
 
             for cls in unique_classes:
-                class_mask = (y == cls)
+                class_mask = y == cls
                 n_in_class = int(class_mask.sum())
                 if n_in_class == 0:
                     continue
@@ -342,18 +340,10 @@ def sample_all_correlated_clusters(
 
     # Aggregate meta fields into dicts keyed by cluster index (0-based)
     cluster_meta = {
-        "anchor_role": {
-            cluster_id: cfg.anchor_role for cluster_id, cfg in enumerate(cluster_cfgs)
-        },
-        "anchor_effect_size": {
-            cluster_id: cfg.anchor_effect_size for cluster_id, cfg in enumerate(cluster_cfgs)
-        },
-        "anchor_class": {
-            cluster_id: cfg.anchor_class for cluster_id, cfg in enumerate(cluster_cfgs)
-        },
-        "label": {
-            cluster_id: cfg.label for cluster_id, cfg in enumerate(cluster_cfgs)
-        },
+        "anchor_role": {cluster_id: cfg.anchor_role for cluster_id, cfg in enumerate(cluster_cfgs)},
+        "anchor_effect_size": {cluster_id: cfg.anchor_effect_size for cluster_id, cfg in enumerate(cluster_cfgs)},
+        "anchor_class": {cluster_id: cfg.anchor_class for cluster_id, cfg in enumerate(cluster_cfgs)},
+        "label": {cluster_id: cfg.label for cluster_id, cfg in enumerate(cluster_cfgs)},
     }
 
     return x_clusters, cluster_meta
