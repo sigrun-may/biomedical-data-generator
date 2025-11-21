@@ -130,7 +130,7 @@ def make_biomedical_dataset(
 
     - One **informative anchor** (shared signal)
     - ``n_redundant`` **proxy** features that are strongly correlated
-      (equicorrelated with a high ``rho``)
+      (equicorrelated with a high ``correlation``)
 
     In terms of :class:`DatasetConfig`, this means:
 
@@ -264,7 +264,7 @@ def make_biomedical_dataset(
         redundant_cluster = CorrClusterConfig(
             n_cluster_features=n_cluster_features,
             structure="equicorrelated",
-            rho=0.9,
+            correlation=0.9,
             anchor_role="informative",
             anchor_effect_size=None,  # use DatasetConfig / informative defaults
             anchor_class=1 if n_classes > 1 else 0,

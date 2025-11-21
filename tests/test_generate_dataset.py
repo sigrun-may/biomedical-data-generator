@@ -43,7 +43,7 @@
 #         random_state=42,
 #         corr_clusters=[
 #             CorrCluster(
-#                 n_cluster_features=3, rho=0.6, anchor_role="informative", anchor_effect_size=1.0, anchor_class=2
+#                 n_cluster_features=3, correlation=0.6, anchor_role="informative", anchor_effect_size=1.0, anchor_class=2
 #             )
 #         ],
 #     )
@@ -95,7 +95,7 @@
 #         feature_naming="prefixed",
 #         corr_clusters=[
 #             CorrCluster(
-#                 n_cluster_features=3, rho=0.5, anchor_role="informative", anchor_effect_size=1.0, anchor_class=1
+#                 n_cluster_features=3, correlation=0.5, anchor_role="informative", anchor_effect_size=1.0, anchor_class=1
 #             )
 #         ],
 #     )
@@ -129,7 +129,7 @@
 #         random_state=11,
 #         corr_clusters=[
 #             CorrCluster(
-#                 n_cluster_features=4, rho=0.6, anchor_role="informative", anchor_effect_size=1.2, anchor_class=2
+#                 n_cluster_features=4, correlation=0.6, anchor_role="informative", anchor_effect_size=1.2, anchor_class=2
 #             )
 #         ],
 #     )
@@ -159,7 +159,7 @@
 #         random_state=123,
 #         corr_clusters=[
 #             CorrCluster(
-#                 n_cluster_features=3, rho=0.5, anchor_role="informative", anchor_effect_size=1.0, anchor_class=0
+#                 n_cluster_features=3, correlation=0.5, anchor_role="informative", anchor_effect_size=1.0, anchor_class=0
 #             )
 #         ],
 #     )
@@ -207,11 +207,11 @@
 # def test_generate_correlated_cluster_and_find_seed_for_correlation():
 #     n = 400
 #     size = 5
-#     rho_target = 0.65
+#     correlation_target = 0.65
 #     seed, meta = find_seed_for_correlation(
 #         n_samples=n,
 #         n_cluster_features=size,
-#         rho_target=rho_target,
+#         correlation_target=correlation_target,
 #         structure="equicorrelated",
 #         tol=0.03,
 #         start_seed=0,
@@ -219,7 +219,7 @@
 #     )
 #     assert isinstance(seed, int)
 #     assert "mean_offdiag" in meta and "min_offdiag" in meta
-#     assert abs(meta["mean_offdiag"] - rho_target) <= 0.07  # acceptance tol is 0.03, allow a bit more slack here
+#     assert abs(meta["mean_offdiag"] - correlation_target) <= 0.07  # acceptance tol is 0.03, allow a bit more slack here
 #
 #
 # def test_dataset_seed_for_class_weights_helper():
@@ -234,7 +234,7 @@
 #         random_state=None,  # will be set by the helper
 #         corr_clusters=[
 #             CorrCluster(
-#                 n_cluster_features=3, rho=0.6, anchor_role="informative", anchor_effect_size=1.0, anchor_class=1
+#                 n_cluster_features=3, correlation=0.6, anchor_role="informative", anchor_effect_size=1.0, anchor_class=1
 #             )
 #         ],
 #     )
@@ -272,7 +272,7 @@
 #         random_state=None,
 #         corr_clusters=[
 #             CorrCluster(
-#                 n_cluster_features=3, rho=0.5, anchor_role="informative", anchor_effect_size=1.0, anchor_class=0
+#                 n_cluster_features=3, correlation=0.5, anchor_role="informative", anchor_effect_size=1.0, anchor_class=0
 #             )
 #         ],
 #     )
@@ -314,7 +314,7 @@
 #
 #     # correlated cluster parameter validation in cluster-only generator
 #     with pytest.raises(ValueError):
-#         _ = sample_cluster(n_samples=100, n_features=0, rho=0.5)
+#         _ = sample_cluster(n_samples=100, n_features=0, correlation=0.5)
 #
 #     with pytest.raises(ValueError):
-#         _ = sample_cluster(n_samples=100, n_features=3, rho=1.1)
+#         _ = sample_cluster(n_samples=100, n_features=3, correlation=1.1)

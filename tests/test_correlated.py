@@ -18,29 +18,29 @@ from biomedical_data_generator.utils import correlation_tools
 
 
 def test_build_corr_equicorrelated_exact_values():
-    p, rho = 5, 0.6
-    R = corr.build_correlation_matrix(p, rho, "equicorrelated")
+    p, correlation = 5, 0.6
+    R = corr.build_correlation_matrix(p, correlation, "equicorrelated")
     assert R.shape == (p, p)
     assert R.dtype == np.float64
     # Diagonal exactly 1
     assert np.allclose(np.diag(R), 1.0)
-    # Off-diagonals exactly rho for equicorrelated
+    # Off-diagonals exactly correlation for equicorrelated
     mask = ~np.eye(p, dtype=bool)
-    assert np.allclose(R[mask], rho)
+    assert np.allclose(R[mask], correlation)
 
 
 def test_build_corr_toeplitz_exact_values():
-    p, rho = 6, 0.4
-    R = corr.build_correlation_matrix(p, rho, "toeplitz")
+    p, correlation = 6, 0.4
+    R = corr.build_correlation_matrix(p, correlation, "toeplitz")
     # Diagonal exactly 1
     assert np.allclose(np.diag(R), 1.0)
     # Check a few Toeplitz powers
     for d in (1, 2, 3):
         vals = np.diag(R, k=d)
-        assert np.allclose(vals, rho**d, atol=1e-12)
+        assert np.allclose(vals, correlation**d, atol=1e-12)
 
 
-def test_build_corr_invalid_rho_equicorr_raises():
+def test_build_corr_invalid_correlation_equicorr_raises():
     p = 4
     lower = -1.0 / (p - 1)  # = -1/3
     with pytest.raises(ValueError):
@@ -49,7 +49,7 @@ def test_build_corr_invalid_rho_equicorr_raises():
         corr.build_correlation_matrix(p, 1.0, "equicorrelated")
 
 
-def test_build_corr_invalid_rho_toeplitz_raises():
+def test_build_corr_invalid_correlation_toeplitz_raises():
     with pytest.raises(ValueError):
         corr.build_correlation_matrix(5, -1.0, "toeplitz")
     with pytest.raises(ValueError):
@@ -69,7 +69,7 @@ def test_build_corr_unknown_structure_raises():
 def test_offdiag_mean_behavior():
     # p==1 => defined as 1.0
     assert correlation_tools.compute_correlation_metrics(np.array([[1.0]]))["mean_offdiag"] == 1.0
-    # equicorrelated matrix => mean equals rho
+    # equicorrelated matrix => mean equals correlation
     R = corr.build_correlation_matrix(5, 0.3, "equicorrelated")
     assert np.isclose(correlation_tools.compute_correlation_metrics(R)["mean_offdiag"], 0.3)
 
@@ -88,7 +88,7 @@ def test_compute_correlation_metrics_single_feature():
 
 
 def test_compute_correlation_metrics_equicorrelated():
-    """Equicorrelated matrix => mean_offdiag equals rho."""
+    """Equicorrelated matrix => mean_offdiag equals correlation."""
     R = corr.build_correlation_matrix(5, 0.3, "equicorrelated")
     metrics = correlation_tools.compute_correlation_metrics(R)
     assert np.isclose(metrics["mean_offdiag"], 0.3)
@@ -117,26 +117,26 @@ def test_cholesky_with_jitter_handles_near_singular():
 
 
 def test_sample_cluster_global_equicorrelated_matches_mean():
-    n, p, rho = 500, 6, 0.6
+    n, p, correlation = 500, 6, 0.6
     rng = np.random.default_rng(0)
-    X = corr.sample_correlated_cluster(n, p, rng, structure="equicorrelated", rho=rho)
+    X = corr.sample_correlated_cluster(n, p, rng, structure="equicorrelated", correlation=correlation)
     C_emp = np.corrcoef(X, rowvar=False).astype(np.float64)
     mean_off = correlation_tools.compute_correlation_metrics(C_emp)["mean_offdiag"]
     assert np.isfinite(mean_off)
     # Sampling noise: allow small tolerance
-    assert abs(mean_off - rho) <= 0.06
+    assert abs(mean_off - correlation) <= 0.06
 
 
 def test_sample_cluster_global_toeplitz_lag_decay():
-    n, p, rho = 800, 6, 0.35
+    n, p, correlation = 800, 6, 0.35
     rng = np.random.default_rng(1)
-    X = corr.sample_correlated_cluster(n, p, rng, structure="toeplitz", rho=rho)
+    X = corr.sample_correlated_cluster(n, p, rng, structure="toeplitz", correlation=correlation)
     C_emp = np.corrcoef(X, rowvar=False).astype(np.float64)
-    # First and second off-diagonals should be close to rho and rho**2
+    # First and second off-diagonals should be close to correlation and correlation**2
     lag1 = np.mean([C_emp[i, i + 1] for i in range(p - 1)])
     lag2 = np.mean([C_emp[i, i + 2] for i in range(p - 2)])
-    assert abs(lag1 - rho) <= 0.06
-    assert abs(lag2 - rho**2) <= 0.06
+    assert abs(lag1 - correlation) <= 0.06
+    assert abs(lag2 - correlation**2) <= 0.06
 
 
 def test_sample_cluster_class_specific_means():
@@ -148,9 +148,7 @@ def test_sample_cluster_class_specific_means():
         n_features=p,
         rng=rng,
         structure="equicorrelated",
-        class_labels=labels,
-        class_rho={0: 0.7, 1: 0.2},
-        baseline_rho=0.0,
+        correlation={0: 0.7, 1: 0.2},
     )
     X0 = X[labels == 0]
     X1 = X[labels == 1]
@@ -162,18 +160,26 @@ def test_sample_cluster_class_specific_means():
 
 def test_sample_cluster_errors():
     rng = np.random.default_rng(0)
-    # Missing rho in global mode
-    with pytest.raises(ValueError):
+    # Missing correlation in global mode
+    with pytest.raises(TypeError):
         corr.sample_correlated_cluster(10, 3, rng)
-    # Label length mismatch
+    # Missing class-specific correlation
+    with pytest.raises(TypeError):
+        corr.sample_correlated_cluster(
+            10,
+            3,
+            rng,
+            structure="equicorrelated",
+            correlation={0: 0.5},
+        )
+    # Invalid structure
     with pytest.raises(ValueError):
         corr.sample_correlated_cluster(
-            n_samples=10,
-            n_features=3,
-            rng=rng,
-            structure="equicorrelated",
-            rho=0.5,
-            class_labels=np.array([0, 1, 0], dtype=np.int64),
+            10,
+            3,
+            rng,
+            structure="invalid-structure",
+            correlation=0.5,
         )
 
 
@@ -184,7 +190,7 @@ def test_find_seed_for_correlation_tol_mode():
     seed, meta = correlation_tools.find_seed_for_correlation(
         n_samples=200,
         n_cluster_features=4,
-        rho=0.5,
+        correlation=0.5,
         structure="equicorrelated",
         tolerance=0.03,
         start_seed=0,
@@ -202,7 +208,7 @@ def test_find_seed_for_correlation_impossible_threshold_raises():
         correlation_tools.find_seed_for_correlation(
             n_samples=80,
             n_cluster_features=5,
-            rho=0.2,
+            correlation=0.2,
             structure="toeplitz",
             metric="min_offdiag",
             threshold=0.99,  # unrealistic
@@ -220,7 +226,7 @@ def test_find_seed_for_correlation_best_on_fail_fallback():
     seed, meta = correlation_tools.find_seed_for_correlation(
         n_samples=80,
         n_cluster_features=5,
-        rho=0.2,
+        correlation=0.2,
         structure="toeplitz",
         metric="min_offdiag",
         threshold=0.99,  # unrealistic
@@ -241,7 +247,7 @@ def test_find_seed_for_correlation_threshold_mode():
     seed, meta = correlation_tools.find_seed_for_correlation(
         n_samples=300,
         n_cluster_features=6,
-        rho=0.65,
+        correlation=0.65,
         structure="equicorrelated",
         metric="min_offdiag",
         threshold=0.50,  # Achievable threshold
@@ -260,7 +266,7 @@ def test_find_seed_for_correlation_return_matrix():
     seed, meta = correlation_tools.find_seed_for_correlation(
         n_samples=100,
         n_cluster_features=4,
-        rho=0.6,
+        correlation=0.6,
         structure="equicorrelated",
         tolerance=0.05,
         start_seed=0,
@@ -277,7 +283,7 @@ def test_find_seed_for_correlation_p_gt_n_warning():
     seed, meta = correlation_tools.find_seed_for_correlation(
         n_samples=50,
         n_cluster_features=100,  # p > n
-        rho=0.5,
+        correlation=0.5,
         structure="equicorrelated",
         tolerance=0.03,
         start_seed=0,
@@ -290,74 +296,15 @@ def test_find_seed_for_correlation_p_gt_n_warning():
 
 
 # -------------------------
-# find_seed_for_correlation_from_cluster
-# -------------------------
-
-
-def test_find_seed_for_correlation_from_cluster_basic():
-    """Cluster wrapper correctly resolves rho and structure."""
-    from biomedical_data_generator import CorrClusterConfig
-
-    cluster = CorrClusterConfig(
-        n_cluster_features=5,
-        rho=0.7,
-        structure="equicorrelated",
-        anchor_role="informative",
-    )
-
-    seed, meta = correlation_tools.find_seed_for_correlation_from_config(
-        cluster=cluster,
-        n_samples=200,
-        tolerance=0.05,
-        max_tries=50,
-    )
-
-    assert isinstance(seed, int)
-    assert meta["accepted"] is True
-    assert abs(meta["mean_offdiag"] - 0.7) <= 0.05
-    assert "cluster_label" in meta
-    assert "cluster_anchor_role" in meta
-    assert meta["cluster_anchor_role"] == "informative"
-
-
-def test_find_seed_for_correlation_from_cluster_class_specific():
-    """Cluster wrapper handles class-specific rho."""
-    from biomedical_data_generator import CorrClusterConfig
-
-    cluster = CorrClusterConfig(
-        n_cluster_features=4,
-        rho=0.2,  # baseline
-        class_rho={1: 0.9},  # high correlation in class 1
-        structure="equicorrelated",
-        anchor_role="informative",
-    )
-
-    # Search for class 1 (should target rho=0.9)
-    seed, meta = correlation_tools.find_seed_for_correlation_from_config(
-        cluster=cluster,
-        n_samples=200,
-        class_idx=1,
-        tolerance=0.05,
-        max_tries=50,
-    )
-
-    assert isinstance(seed, int)
-    assert meta["target"] == 0.9  # Should use class 1's rho
-    assert meta["class_idx"] == 1
-
-
-# -------------------------
 # find_best_seed_for_correlation
 # -------------------------
-
-
 def test_find_best_seed_for_correlation_returns_best():
     """Best-of-N scanner returns seed with smallest deviation."""
     seed, metrics = correlation_tools.find_best_seed_for_correlation(
         max_tries=20,
         n_samples=200,
         n_cluster_features=5,
-        rho=0.65,
+        correlation=0.65,
         structure="equicorrelated",
         start_seed=0,
     )
@@ -378,9 +325,9 @@ def test_find_best_seed_for_correlation_returns_best():
 def test_assess_correlation_quality():
     """Quality assessment computes all metrics and checks tolerance."""
     rng = np.random.default_rng(42)
-    X = corr.sample_correlated_cluster(300, 6, rng, structure="equicorrelated", rho=0.65)
+    X = corr.sample_correlated_cluster(300, 6, rng, structure="equicorrelated", correlation=0.65)
 
-    quality = correlation_tools.assess_correlation_quality(X, rho_target=0.65, tolerance=0.03)
+    quality = correlation_tools.assess_correlation_quality(X, correlation_target=0.65, tolerance=0.03)
 
     assert "mean_offdiag" in quality
     assert "deviation_offdiag" in quality

@@ -11,13 +11,13 @@ import pytest
 from biomedical_data_generator.utils.correlation_tools import pc1_share, pc1_share_from_corr, variance_partition_pc1
 
 
-def _equicorr_matrix(p: int, rho: float) -> np.ndarray:
-    """Equicorrelation matrix with 1 on diag and rho off-diagonal."""
+def _equicorr_matrix(p: int, correlation: float) -> np.ndarray:
+    """Equicorrelation matrix with 1 on diag and correlation off-diagonal."""
     if not (0 <= p):
         raise ValueError("p must be non-negative")
     if p == 0:
         return np.zeros((0, 0), dtype=float)
-    M = np.full((p, p), rho, dtype=float)
+    M = np.full((p, p), correlation, dtype=float)
     np.fill_diagonal(M, 1.0)
     return M
 
@@ -33,23 +33,23 @@ def test_pc1_share_from_corr_identity(p: int):
     assert np.isclose(val, expected, rtol=0, atol=1e-12)
 
 
-@pytest.mark.parametrize("p,rho", [(3, 0.2), (6, 0.7), (8, 0.4)])
-def test_pc1_share_from_corr_equicorr_formula(p: int, rho: float):
-    C = _equicorr_matrix(p, rho)
-    # Equicorr eigenvalues: lambda_max = 1 + (p-1)rho; others = 1 - rho
-    expected = (1.0 + (p - 1) * rho) / p
+@pytest.mark.parametrize("p,correlation", [(3, 0.2), (6, 0.7), (8, 0.4)])
+def test_pc1_share_from_corr_equicorr_formula(p: int, correlation: float):
+    C = _equicorr_matrix(p, correlation)
+    # Equicorr eigenvalues: lambda_max = 1 + (p-1)correlation; others = 1 - correlation
+    expected = (1.0 + (p - 1) * correlation) / p
     got = pc1_share_from_corr(C)
     assert np.isfinite(got)
     assert 0.0 <= got <= 1.0
     assert np.isclose(got, expected, rtol=0, atol=1e-12)
 
 
-def _make_shared_signal_block(n: int, p: int, rho_target: float, seed: int = 0) -> pd.DataFrame:
+def _make_shared_signal_block(n: int, p: int, correlation_target: float, seed: int = 0) -> pd.DataFrame:
     """Generate correlated features via a shared latent z (anchor + proxies)."""
     rng = np.random.default_rng(seed)
     z = rng.normal(size=n)
     # choose sigma^2 so that corr ≈ a^2/(a^2+sigma^2) with a=1
-    sigma2 = (1.0 - rho_target) / max(rho_target, 1e-9)
+    sigma2 = (1.0 - correlation_target) / max(correlation_target, 1e-9)
     sigma = float(np.sqrt(max(sigma2, 1e-12)))
     X = np.column_stack([z + rng.normal(scale=sigma, size=n) for _ in range(p)]).astype(float)
     # standardize columns
@@ -59,8 +59,8 @@ def _make_shared_signal_block(n: int, p: int, rho_target: float, seed: int = 0) 
 
 
 def test_pc1_share_df_vs_corr_close():
-    n, p, rho = 400, 6, 0.6
-    X_df = _make_shared_signal_block(n, p, rho, seed=1)
+    n, p, correlation = 400, 6, 0.6
+    X_df = _make_shared_signal_block(n, p, correlation, seed=1)
     C = X_df.corr(method="pearson").to_numpy(dtype=float)
     s1 = pc1_share(X_df, method="pearson", rowvar=False)
     s2 = pc1_share_from_corr(C)
@@ -78,7 +78,7 @@ def test_pc1_share_numpy_rowvar_equivalence():
 
 
 def test_variance_partition_matches_pc1_and_counts():
-    X_df = _make_shared_signal_block(n=300, p=7, rho_target=0.5, seed=7)
+    X_df = _make_shared_signal_block(n=300, p=7, correlation_target=0.5, seed=7)
     vp = variance_partition_pc1(X_df, method="pearson", rowvar=False)
     s = pc1_share(X_df, method="pearson", rowvar=False)
     assert set(vp.keys()) == {"n_features", "pc1_evr", "pc1_var_ratio"}
@@ -89,7 +89,7 @@ def test_variance_partition_matches_pc1_and_counts():
 
 
 def test_spearman_path_runs_and_bounds():
-    X_df = _make_shared_signal_block(n=250, p=5, rho_target=0.4, seed=5)
+    X_df = _make_shared_signal_block(n=250, p=5, correlation_target=0.4, seed=5)
     # apply a monotone transform to check robustness of the code path
     X_mon = X_df.apply(np.exp)
     val = pc1_share(X_mon, method="spearman", rowvar=False)

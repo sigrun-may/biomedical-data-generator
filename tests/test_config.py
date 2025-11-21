@@ -8,13 +8,15 @@
 
 import pytest
 
+from biomedical_data_generator import ClassConfig
 
-def _minimal_class_configs(n_classes: int = 2, n_per_class: int = 5) -> list[dict]:
+
+def _minimal_class_configs(n_classes: int = 2, n_per_class: int = 5) -> list[ClassConfig]:
     """Return a minimal list of raw class configs for testing.
 
     We pass dicts so that Pydantic constructs ClassConfig internally.
     """
-    return [{"n_samples": n_per_class} for _ in range(n_classes)]
+    return [ClassConfig(n_samples= n_per_class) for _ in range(n_classes)]
 
 
 def test_manual_derived_fields_forbidden():
@@ -68,8 +70,8 @@ def test_breakdown_matches_n_features():
         n_informative=3,
         n_noise=2,
         corr_clusters=[
-            CorrClusterConfig(n_cluster_features=4, rho=0.6),
-            CorrClusterConfig(n_cluster_features=3, rho=0.5),
+            CorrClusterConfig(n_cluster_features=4, correlation=0.6),
+            CorrClusterConfig(n_cluster_features=3, correlation=0.5),
         ],
         class_configs=_minimal_class_configs(2, 1),
     )
@@ -102,8 +104,8 @@ def test_corr_clusters_accept_dicts_and_models():
         n_informative=2,
         n_noise=0,
         corr_clusters=[
-            {"n_cluster_features": 3, "rho": 0.7, "anchor_role": "informative"},
-            CorrClusterConfig(n_cluster_features=2, rho=0.5),
+            {"n_cluster_features": 3, "correlation": 0.7, "anchor_role": "informative"},
+            CorrClusterConfig(n_cluster_features=2, correlation=0.5),
         ],
         class_configs=_minimal_class_configs(2, 1),
     )
@@ -182,7 +184,7 @@ def test_anchor_class_out_of_range_raises():
             corr_clusters=[
                 CorrClusterConfig(
                     n_cluster_features=2,
-                    rho=0.7,
+                    correlation=0.7,
                     anchor_role="informative",
                     anchor_class=5,  # out of range
                 )

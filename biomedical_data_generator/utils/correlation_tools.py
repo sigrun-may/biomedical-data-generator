@@ -95,7 +95,7 @@ def compute_correlation_metrics(corr_matrix: NDArray[np.floating[Any]]) -> dict[
 
 def assess_correlation_quality(
     X: NDArray[np.float64],
-    rho_target: float,
+    correlation_target: float,
     *,
     tolerance: float = 0.05,
     structure: CorrelationStructure = "equicorrelated",
@@ -104,7 +104,7 @@ def assess_correlation_quality(
 
     Args:
         X: Feature matrix of shape (n_samples, n_features).
-        rho_target: Target correlation value.
+        correlation_target: Target correlation value.
         tolerance: Acceptable deviation from target.
         structure: Correlation structure ("equicorrelated" or "toeplitz").
 
@@ -123,10 +123,10 @@ def assess_correlation_quality(
     """
     C = np.corrcoef(X, rowvar=False)
     m = compute_correlation_metrics(C)
-    dev = abs(m["mean_offdiag"] - rho_target)
+    dev = abs(m["mean_offdiag"] - correlation_target)
     return {
         **m,
-        "target": float(rho_target),
+        "target": float(correlation_target),
         "deviation_offdiag": float(dev),
         "within_tolerance": bool(dev <= tolerance),
         "structure": structure,
@@ -220,24 +220,24 @@ def variance_partition_pc1(
 # ============================================================================
 # Seed search (core)
 # ============================================================================
-def _validate_rho(structure: CorrelationStructure, p: int, rho: float) -> None:
+def _validate_correlation(structure: CorrelationStructure, p: int, correlation: float) -> None:
     if structure == "equicorrelated":
         if p < 2:
-            if not (-1.0 < rho < 1.0):
-                raise ValueError("For p=1 require |rho| < 1.")
+            if not (-1.0 < correlation < 1.0):
+                raise ValueError("For p=1 require |correlation| < 1.")
             return
         lower = -1.0 / (p - 1)
-        if not (lower < rho < 1.0):
-            raise ValueError(f"Equicorrelated requires {lower:.6f} < rho < 1.0 (p={p}), got {rho}.")
+        if not (lower < correlation < 1.0):
+            raise ValueError(f"Equicorrelated requires {lower:.6f} < correlation < 1.0 (p={p}), got {correlation}.")
     else:
-        if not (-1.0 < rho < 1.0):
-            raise ValueError("Toeplitz requires |rho| < 1.0.")
+        if not (-1.0 < correlation < 1.0):
+            raise ValueError("Toeplitz requires |correlation| < 1.0.")
 
 
 def find_seed_for_correlation(
     n_samples: int,
     n_cluster_features: int,
-    rho: float,
+    correlation: float,
     structure: CorrelationStructure = "equicorrelated",
     *,
     metric: Literal["mean_offdiag", "min_offdiag", "max_offdiag", "std_offdiag"] = "mean_offdiag",
@@ -255,7 +255,7 @@ def find_seed_for_correlation(
     Args:
         n_samples: Number of samples to generate.
         n_cluster_features: Number of features in the cluster.
-        rho: Target correlation value.
+        correlation: Target correlation value.
         structure: Correlation structure ("equicorrelated" or "toeplitz").
         metric: Correlation metric to evaluate ("mean_offdiag", "min_offdiag", "max_offdiag", "std_offdiag").
         tolerance: Acceptable deviation from target (for "tolerance" mode).
@@ -274,7 +274,7 @@ def find_seed_for_correlation(
         raise ValueError("Provide either `tolerance` or `threshold`.")
     if n_cluster_features < 2:
         raise ValueError("n_cluster_features must be >= 2 for correlation-based selection.")
-    _validate_rho(structure, n_cluster_features, rho)
+    _validate_correlation(structure, n_cluster_features, correlation)
 
     def _ok(val: float, thr: float, op_: str) -> bool:
         return (val >= thr) if op_ == ">=" else (val <= thr)
@@ -289,12 +289,12 @@ def find_seed_for_correlation(
     seed = start_seed
     for try_idx in range(1, max_tries + 1):
         rng = np.random.default_rng(seed)
-        X = sample_correlated_cluster(n_samples, n_cluster_features, rng, structure=structure, rho=rho)
+        X = sample_correlated_cluster(n_samples, n_cluster_features, rng, structure=structure, correlation=correlation)
         C: NDArray[np.float64] = np.corrcoef(X, rowvar=False).astype(np.float64, copy=False)
 
         m = compute_correlation_metrics(C)
         mean_off = m["mean_offdiag"]
-        deviation = abs(mean_off - rho)
+        deviation = abs(mean_off - correlation)
         metric_val = float(m[metric])
 
         p_gt_n_warn = False
@@ -321,7 +321,7 @@ def find_seed_for_correlation(
             "structure": structure,
             "n_samples": n_samples,
             "n_features": n_cluster_features,
-            "target": float(rho),
+            "target": float(correlation),
             "metric": metric,
             "metric_value": metric_val,
             "deviation_offdiag": float(deviation),
@@ -356,81 +356,9 @@ def find_seed_for_correlation(
 
     raise RuntimeError(
         f"No seed satisfied the criterion within {max_tries} tries "
-        f"(mode={mode}, metric={metric}, target={rho}, tolerance={tolerance}, "
+        f"(mode={mode}, metric={metric}, target={correlation}, tolerance={tolerance}, "
         f"threshold={threshold}, op={op})."
     )
-
-
-# ============================================================================
-# Convenience wrapper (CorrCluster)
-# ============================================================================
-def find_seed_for_correlation_from_config(
-    cluster: CorrClusterConfig,
-    *,
-    n_samples: int,
-    class_idx: int | None = None,
-    metric: Literal["mean_offdiag", "min_offdiag", "max_offdiag", "std_offdiag"] = "mean_offdiag",
-    tolerance: float | None = 0.02,
-    threshold: float | None = None,
-    op: Literal[">=", "<="] = ">=",
-    start_seed: int = 0,
-    max_tries: int = 200,
-    return_best_on_fail: bool = True,
-    return_matrix: bool = False,
-    enforce_p_le_n_in_tolerance: bool = True,
-) -> tuple[int, dict[str, Any]]:
-    """Find a random seed for a CorrCluster that yields desired correlation properties.
-
-    Args:
-        cluster: CorrCluster configuration.
-        n_samples: Number of samples to generate.
-        class_idx: Optional class index for class-specific clusters.
-        metric: Correlation metric to evaluate ("mean_offdiag", "min_offdiag", "max_offdiag", "std_offdiag").
-        tolerance: Acceptable deviation from target (for "tolerance" mode).
-        threshold: Metric threshold (for "threshold" mode).
-        op: Operator for threshold comparison (">=" or "<=").
-        start_seed: Seed to start searching from.
-        max_tries: Maximum number of seeds to try.
-        return_best_on_fail: If True, return best found seed if none satisfy criterion.
-        return_matrix: If True, include correlation matrix in metadata.
-        enforce_p_le_n_in_tolerance: If True, enforce n_features <= n_samples in tolerance mode.
-
-    Returns:
-        Tuple of (seed, metadata dictionary).
-    """
-    if class_idx is None or not cluster.is_class_specific():
-        rho = cluster.rho
-        structure = cluster.structure
-    else:
-        rho = cluster.get_rho_for_class(class_idx)
-        structure = cluster.get_structure_for_class(class_idx)
-
-    seed, meta = find_seed_for_correlation(
-        n_samples=n_samples,
-        n_cluster_features=cluster.n_cluster_features,
-        rho=rho,
-        structure=structure,
-        metric=metric,
-        tolerance=tolerance,
-        threshold=threshold,
-        op=op,
-        start_seed=start_seed,
-        max_tries=max_tries,
-        return_best_on_fail=return_best_on_fail,
-        return_matrix=return_matrix,
-        enforce_p_le_n_in_tolerance=enforce_p_le_n_in_tolerance,
-    )
-
-    meta = dict(meta)
-    meta.update(
-        {
-            "cluster_label": cluster.label,
-            "cluster_anchor_role": cluster.anchor_role,
-            "cluster_random_state": cluster.random_state,
-            "class_idx": class_idx,
-        }
-    )
-    return seed, meta
 
 
 # ============================================================================
@@ -440,7 +368,7 @@ def find_best_seed_for_correlation(
     max_tries: int,
     n_samples: int,
     n_cluster_features: int,
-    rho: float,
+    correlation: float,
     structure: CorrelationStructure = "equicorrelated",
     *,
     start_seed: int = 0,
@@ -451,24 +379,24 @@ def find_best_seed_for_correlation(
         max_tries: Number of random seeds to try.
         n_samples: Number of samples to generate.
         n_cluster_features: Number of features in the cluster.
-        rho: Target correlation value.
+        correlation: Target correlation value.
         structure: Correlation structure ("equicorrelated" or "toeplitz").
         start_seed: Seed to start searching from.
 
     Returns:
         Tuple of (best_seed, metrics dictionary).
     """
-    _validate_rho(structure, n_cluster_features, rho)
+    _validate_correlation(structure, n_cluster_features, correlation)
     best_seed = start_seed
     best_delta = float("inf")
     best_metrics: dict[str, float] | None = None
 
     for s in range(start_seed, start_seed + max_tries):
         rng = np.random.default_rng(s)
-        X = sample_correlated_cluster(n_samples, n_cluster_features, rng, structure=structure, rho=rho)
+        X = sample_correlated_cluster(n_samples, n_cluster_features, rng, structure=structure, correlation=correlation)
         C = np.corrcoef(X, rowvar=False)
         m = compute_correlation_metrics(C)
-        delta = abs(m["mean_offdiag"] - rho)
+        delta = abs(m["mean_offdiag"] - correlation)
         if delta < best_delta:
             best_seed, best_delta, best_metrics = s, delta, m
 
