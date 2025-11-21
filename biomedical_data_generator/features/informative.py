@@ -35,8 +35,6 @@ __all__ = [
 # ---------------------------------------------------------------------------
 # Helpers for class separation
 # ---------------------------------------------------------------------------
-
-
 def _normalize_class_sep(
     class_sep: float | Sequence[float],
     K: int,
@@ -60,7 +58,7 @@ def _normalize_class_sep(
 
     # Scalar → broadcast
     if np.isscalar(class_sep):
-        v = float(class_sep)
+        v = float(np.asarray(class_sep).item())
         if not np.isfinite(v):
             raise ValueError(f"class_sep must be finite, got {class_sep!r}.")
         return np.full(K - 1, v, dtype=float)
@@ -88,20 +86,15 @@ def _class_offsets_from_sep(sep_vec: np.ndarray) -> np.ndarray:
     Returns:
         np.ndarray: 1-D array of length K with class offsets whose mean is zero.
     """
-    K = sep_vec.shape[0] + 1
-    mu = np.empty(K, dtype=float)
-    mu[0] = 0.0
-    for k in range(1, K):
-        mu[k] = mu[k - 1] + sep_vec[k - 1]
-    mu -= mu.mean()
-    return mu
+    sep = np.asarray(sep_vec, dtype=float).ravel()
+    offsets = np.concatenate(([0.0], np.cumsum(sep)))
+    offsets -= offsets.mean()
+    return offsets
 
 
 # ---------------------------------------------------------------------------
 # Label construction
 # ---------------------------------------------------------------------------
-
-
 def _build_class_labels(cfg: DatasetConfig) -> np.ndarray:
     """Build numeric class labels 0..K-1 from DatasetConfig.class_configs.
 
@@ -120,9 +113,7 @@ def _build_class_labels(cfg: DatasetConfig) -> np.ndarray:
         labels.append(np.full(cls_cfg.n_samples, idx, dtype=int))
     y = np.concatenate(labels, axis=0)
     if y.shape[0] != cfg.n_samples:
-        raise RuntimeError(
-            f"Inconsistent label construction: got {y.shape[0]} labels, expected {cfg.n_samples}."
-        )
+        raise RuntimeError(f"Inconsistent label construction: got {y.shape[0]} labels, expected {cfg.n_samples}.")
     return y
 
 
@@ -137,7 +128,7 @@ def shift_classes(
     *,
     informative_idx: Iterable[int],
     anchor_contrib: Mapping[int, tuple[float, int]] | None = None,
-    class_sep: float | Sequence[float] = 1.0,
+    class_sep: list[float],
     anchor_strength: float = 1.0,
     anchor_mode: AnchorMode = "equalized",  # "equalized" or "strong"
     spread_non_anchors: bool = True,
@@ -154,8 +145,7 @@ def shift_classes(
         anchor_contrib: Optional mapping from column index to (beta, cls_target),
             where beta is a per-anchor multiplier and cls_target is the target
             class index for a one-vs-rest shift.
-        class_sep: Scalar or sequence controlling multi-class separation. If
-            scalar, it denotes uniform separation; if sequence, it must have
+        class_sep: Controlling multi-class separation. Must have
             length K-1 describing neighbor separations.
         anchor_strength: Global multiplicative factor for anchors.
         anchor_mode: Either `"equalized"` (anchor effect roughly invariant in K)
@@ -190,7 +180,11 @@ def shift_classes(
     class_offsets = _class_offsets_from_sep(sep_vec)
 
     # sep_scale: scalar strength representative of the pairwise separations
-    sep_scale = float(np.mean(np.abs(sep_vec))) if K > 1 else float(sep_vec[0])
+    # Use .item() to obtain a native Python float for mypy compatibility.
+    if K > 1:
+        sep_scale = float(np.mean(np.abs(sep_vec)).item())
+    else:
+        sep_scale = float(np.asarray(sep_vec)[0].item())
 
     anchor_cols = set(anchor_contrib.keys()) if anchor_contrib else set()
 
@@ -230,8 +224,6 @@ def shift_classes(
 # ---------------------------------------------------------------------------
 # Public API: generate_informative_features
 # ---------------------------------------------------------------------------
-
-
 def generate_informative_features(
     cfg: DatasetConfig,
     rng: np.random.Generator,
