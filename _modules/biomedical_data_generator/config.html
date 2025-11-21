@@ -802,6 +802,38 @@
 <span class="sd">         - informative_anchors = 1  → free_informative = 4 − 1 = 3</span>
 <span class="sd">         - noise_anchors = 1        → free_noise       = 3 − 1 = 2</span>
 
+<span class="sd">    Example usage:</span>
+<span class="sd">    --------------</span>
+<span class="sd">        &gt;&gt;&gt; cfg = DatasetConfig(</span>
+<span class="sd">        ...     n_informative=5,</span>
+<span class="sd">        ...     n_noise=3,</span>
+<span class="sd">        ...     class_configs=[</span>
+<span class="sd">        ...         ClassConfig(n_samples=50, label=&quot;healthy&quot;),</span>
+<span class="sd">        ...         ClassConfig(n_samples=50, label=&quot;diseased&quot;),</span>
+<span class="sd">        ...     ],</span>
+<span class="sd">        ...     corr_clusters=[</span>
+<span class="sd">        ...         CorrClusterConfig(</span>
+<span class="sd">        ...             n_cluster_features=4,</span>
+<span class="sd">        ...             rho=0.8,</span>
+<span class="sd">        ...             anchor_role=&quot;informative&quot;,</span>
+<span class="sd">        ...             anchor_effect_size=&quot;medium&quot;,</span>
+<span class="sd">        ...             anchor_class=1,</span>
+<span class="sd">        ...             label=&quot;Metabolic Pathway A&quot;</span>
+<span class="sd">        ...         ),</span>
+<span class="sd">        ...         CorrClusterConfig(</span>
+<span class="sd">        ...             n_cluster_features=3,</span>
+<span class="sd">        ...             rho=0.5,</span>
+<span class="sd">        ...             anchor_role=&quot;noise&quot;,</span>
+<span class="sd">        ...             label=&quot;Random Noise Cluster&quot;</span>
+<span class="sd">        ...         )</span>
+<span class="sd">        ...     ],</span>
+<span class="sd">        ...     corr_between=0.1,</span>
+<span class="sd">        ...     noise_distribution=&quot;normal&quot;,</span>
+<span class="sd">        ...     noise_distribution_params={&quot;loc&quot;: 0, &quot;scale&quot;: 1},</span>
+<span class="sd">        ...     feature_naming=&quot;prefixed&quot;,</span>
+<span class="sd">        ...     random_state=42</span>
+<span class="sd">        ... )</span>
+
 <span class="sd">    See Also:</span>
 <span class="sd">    --------</span>
 <span class="sd">    CorrClusterConfig  : Correlated cluster settings (size, rho, anchor role/effect/class)</span>
