@@ -93,26 +93,26 @@
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>n_samples</strong> (<em>int</em>) – Number of samples to generate.</p></li>
-<li><p><strong>n_cluster_features</strong> (<em>int</em>) – Number of features in the cluster.</p></li>
-<li><p><strong>rho</strong> (<em>float</em>) – Target correlation value.</p></li>
-<li><p><strong>structure</strong> (<em>Literal</em><em>[</em><em>'equicorrelated'</em><em>, </em><em>'toeplitz'</em><em>]</em>) – Correlation structure (“equicorrelated” or “toeplitz”).</p></li>
-<li><p><strong>metric</strong> (<em>Literal</em><em>[</em><em>'mean_offdiag'</em><em>, </em><em>'min_offdiag'</em><em>, </em><em>'max_offdiag'</em><em>, </em><em>'std_offdiag'</em><em>]</em>) – Correlation metric to evaluate (“mean_offdiag”, “min_offdiag”, “max_offdiag”, “std_offdiag”).</p></li>
-<li><p><strong>tolerance</strong> (<em>float</em><em> | </em><em>None</em>) – Acceptable deviation from target (for “tolerance” mode).</p></li>
-<li><p><strong>threshold</strong> (<em>float</em><em> | </em><em>None</em>) – Metric threshold (for “threshold” mode).</p></li>
-<li><p><strong>op</strong> (<em>Literal</em><em>[</em><em>'&gt;='</em><em>, </em><em>'&lt;='</em><em>]</em>) – Operator for threshold comparison (“&gt;=” or “&lt;=”).</p></li>
-<li><p><strong>start_seed</strong> (<em>int</em>) – Seed to start searching from.</p></li>
-<li><p><strong>max_tries</strong> (<em>int</em>) – Maximum number of seeds to try.</p></li>
-<li><p><strong>return_best_on_fail</strong> (<em>bool</em>) – If True, return best found seed if none satisfy criterion.</p></li>
-<li><p><strong>return_matrix</strong> (<em>bool</em>) – If True, include correlation matrix in metadata.</p></li>
-<li><p><strong>enforce_p_le_n_in_tolerance</strong> (<em>bool</em>) – If True, enforce n_features &lt;= n_samples in tolerance mode.</p></li>
+<li><p><strong>n_samples</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a>) – Number of samples to generate.</p></li>
+<li><p><strong>n_cluster_features</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a>) – Number of features in the cluster.</p></li>
+<li><p><strong>rho</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>) – Target correlation value.</p></li>
+<li><p><strong>structure</strong> (<a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Literal" title="(in Python v3.14)"><em>Literal</em></a><em>[</em><em>'equicorrelated'</em><em>, </em><em>'toeplitz'</em><em>]</em>) – Correlation structure (“equicorrelated” or “toeplitz”).</p></li>
+<li><p><strong>metric</strong> (<a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Literal" title="(in Python v3.14)"><em>Literal</em></a><em>[</em><em>'mean_offdiag'</em><em>, </em><em>'min_offdiag'</em><em>, </em><em>'max_offdiag'</em><em>, </em><em>'std_offdiag'</em><em>]</em>) – Correlation metric to evaluate (“mean_offdiag”, “min_offdiag”, “max_offdiag”, “std_offdiag”).</p></li>
+<li><p><strong>tolerance</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a><em> | </em><em>None</em>) – Acceptable deviation from target (for “tolerance” mode).</p></li>
+<li><p><strong>threshold</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a><em> | </em><em>None</em>) – Metric threshold (for “threshold” mode).</p></li>
+<li><p><strong>op</strong> (<a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Literal" title="(in Python v3.14)"><em>Literal</em></a><em>[</em><em>'&gt;='</em><em>, </em><em>'&lt;='</em><em>]</em>) – Operator for threshold comparison (“&gt;=” or “&lt;=”).</p></li>
+<li><p><strong>start_seed</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a>) – Seed to start searching from.</p></li>
+<li><p><strong>max_tries</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a>) – Maximum number of seeds to try.</p></li>
+<li><p><strong>return_best_on_fail</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a>) – If True, return best found seed if none satisfy criterion.</p></li>
+<li><p><strong>return_matrix</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a>) – If True, include correlation matrix in metadata.</p></li>
+<li><p><strong>enforce_p_le_n_in_tolerance</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a>) – If True, enforce n_features &lt;= n_samples in tolerance mode.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>Tuple of (seed, metadata dictionary).</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>tuple[int, dict[str, <em>Any</em>]]</p>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.14)">tuple</a>[<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)">int</a>, <a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)">dict</a>[<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)">str</a>, <a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.14)"><em>Any</em></a>]]</p>
 </dd>
 </dl>
 </dd></dl>
