@@ -16,10 +16,12 @@
 from __future__ import annotations
 
 from collections.abc import Mapping
-from typing import Literal
+from typing import Literal, Any
 
 import numpy as np
 from numpy.typing import NDArray
+
+from biomedical_data_generator import DatasetConfig, CorrClusterConfig
 
 CorrelationStructure = Literal["equicorrelated", "toeplitz"]
 
@@ -231,20 +233,32 @@ def sample_correlated_cluster(
     return (standard_normal @ L_global.T).astype(np.float64, copy=False)
 
 
-def sample_all_correlated_clusters(cfg, rng_global, y) -> tuple[NDArray[np.float64], dict[str, dict[int, object]]]:
+def sample_all_correlated_clusters(
+        cfg: DatasetConfig,
+        rng: np.random.Generator,
+        y: np.ndarray,
+) -> tuple[NDArray[np.float64], dict[str, Any]]:
     """Sample all correlated feature clusters as per cfg.
 
     Args:
         cfg: DatasetConfig with corr_clusters defined.
-        rng_global: Shared NumPy random Generator.
+        rng: Shared NumPy random Generator.
         y: Class labels array of shape (n_samples,).
 
     Returns:
-        x_clusters: Array of shape (n_samples, total_cluster_features).
+        x_clusters: Array of shape (n_samples, total_cluster_features)
+            concatenated in the same order as cfg.corr_clusters.
         cluster_meta: Dict of lists for each cluster meta field.
+            per-cluster metadata:
+            {
+                "anchor_role":       {cluster_id: str, ...},
+                "anchor_effect_size":{cluster_id: float, ...},
+                "anchor_class":      {cluster_id: int | None, ...},
+                "cluster_label":     {cluster_id: str | None, ...},
+            }
     """
     n_samples = cfg.n_samples
-    clusters = cfg.corr_clusters
+    clusters: list[CorrClusterConfig] = cfg.corr_clusters or []
     cluster_cfgs = []
 
     cluster_array_list = []
@@ -252,7 +266,7 @@ def sample_all_correlated_clusters(cfg, rng_global, y) -> tuple[NDArray[np.float
         x_cluster = sample_correlated_cluster(
             n_samples=n_samples,
             n_features=cluster_cfg.n_cluster_features,
-            rng=rng_global,
+            rng=rng,
             structure=cluster_cfg.structure,
             rho=cluster_cfg.rho,
             class_labels=y,
@@ -262,14 +276,17 @@ def sample_all_correlated_clusters(cfg, rng_global, y) -> tuple[NDArray[np.float
         cluster_array_list.append(x_cluster)
         cluster_cfgs.append(cluster_cfg)
 
-    x_clusters = np.hstack(cluster_array_list)
+    if cluster_cfgs:
+        x_clusters = np.hstack(cluster_array_list)
+    else:
+        # no clusters configured → empty array with n_samples rows
+        x_clusters = np.empty((y.shape[0], 0), dtype=float)
 
     # Aggregate meta fields into dicts keyed by cluster index (0-based)
     cluster_meta = {
-        "anchor_role": {cid: c.anchor_role for cid, c in enumerate(cluster_cfgs)},
-        "anchor_effect_size": {cid: c.anchor_effect_size for cid, c in enumerate(cluster_cfgs)},
-        "anchor_class": {cid: c.anchor_class for cid, c in enumerate(cluster_cfgs)},
-        "label": {cid: c.label for cid, c in enumerate(cluster_cfgs)},
+        "anchor_role": {cluster_id: cfg.anchor_role for cluster_id, cfg in enumerate(cluster_cfgs)},
+        "anchor_effect_size": {cluster_id: cfg.anchor_effect_size for cluster_id, cfg in enumerate(cluster_cfgs)},
+        "anchor_class": {cluster_id: cfg.anchor_class for cluster_id, cfg in enumerate(cluster_cfgs)},
+        "label": {cluster_id: cfg.label for cluster_id, cfg in enumerate(cluster_cfgs)},
     }
-
     return x_clusters, cluster_meta
