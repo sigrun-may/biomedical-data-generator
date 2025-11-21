@@ -11,7 +11,6 @@
 from .config import BatchEffectsConfig, ClassConfig, CorrClusterConfig, DatasetConfig
 from .features.correlated import sample_correlated_cluster
 from .generator import (
-    DatasetMeta,
     generate_dataset,
 )
 from .utils.correlation_tools import find_seed_for_correlation
@@ -21,7 +20,6 @@ __all__ = [
     "CorrClusterConfig",
     "BatchEffectsConfig",
     "ClassConfig",
-    "DatasetMeta",
     "generate_dataset",
     "sample_correlated_cluster",
     "find_seed_for_correlation",
