@@ -62,23 +62,17 @@ def _make_names_and_roles(
       ``anchor_idx`` so that proxy indices can be derived later as
       ``set(cluster_indices[cid]) - {anchor_idx[cid]}``.
 
-    Parameters
-    ----------
-    cfg:
-        Resolved :class:`DatasetConfig` used for generation.
-    n_cluster_cols:
-        Number of columns in ``x_clusters``.
-    n_inf_cols:
-        Number of columns in ``x_informative``.
-    n_noise_cols:
-        Number of columns in ``x_noise``.
-    cluster_meta:
-        Metadata returned by :func:`sample_correlated_cluster`.
-        Currently unused here but kept for future extensions.
+    Args:
+        cfg: Resolved :class:`DatasetConfig` used for generation.
+        n_cluster_cols: Number of columns in ``x_clusters``.
+        n_inf_cols: Number of columns in ``x_informative``.
+        n_noise_cols: Number of columns in ``x_noise``.
+        cluster_meta:
+            Metadata returned by :func:`sample_correlated_cluster`.
+            Currently unused here but kept for future extensions.
 
     Returns:
-    -------
-    names, informative_idx, noise_idx, cluster_indices, anchor_idx
+        names, informative_idx, noise_idx, cluster_indices, anchor_idx
     """
     names: list[str] = []
     informative_idx: list[int] = []
@@ -292,10 +286,10 @@ def generate_dataset(cfg, /, *, return_dataframe=True, **overrides):
         corr_between=cfg.corr_between,
         batch_labels=batch_labels,
         batch_intercepts=batch_effects,
+        batch_config=cfg.batch.model_dump() if cfg.batch is not None else None,
         random_state=cfg.random_state,
         resolved_config=cfg.model_dump(),
     )
-
     if return_dataframe:
         return pd.DataFrame(x, columns=names), y, meta
     return x, y, meta
