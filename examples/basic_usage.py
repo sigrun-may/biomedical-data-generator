@@ -4,48 +4,49 @@
 # This software is distributed under the terms of the MIT license
 # which is available at https://opensource.org/licenses/MIT
 
-"""Basic usage example for biomedical_data_generator."""
+"""Basic usage example for biomedical-data-generator."""
+
 from __future__ import annotations
 
-import pandas as pd
-
-from biomedical_data_generator import CorrClusterConfig, DatasetConfig, generate_dataset
+from biomedical_data_generator.config import ClassConfig, CorrClusterConfig, DatasetConfig
+from biomedical_data_generator.generator import generate_dataset
 
 
 def main() -> None:
-    """Generate a small dataset and preview its correlation matrix."""
+    """Basic usage example for biomedical-data-generator."""
+    # Simple config: 2 free informative features, 2 noise features, one correlated cluster
     cfg = DatasetConfig(
-        n_samples=200,
-        n_features=10,  # = informative + pseudo + noise + proxies_from_clusters
-        n_informative=4,
-        n_noise=4,
-        n_classes=2,
-        weights=[0.6, 0.4],
-        effect_size="medium",
-        corr_between=0.1,
+        n_informative=3,
+        n_noise=2,
         corr_clusters=[
             CorrClusterConfig(
                 n_cluster_features=3,
                 rho=0.7,
                 structure="equicorrelated",
                 anchor_role="informative",
-                anchor_effect_size=1.0,
+                anchor_effect_size="medium",
             )
         ],
+        class_configs=[
+            ClassConfig(n_samples=100),  # label → "class_0"
+            ClassConfig(n_samples=50),  # label → "class_1"
+        ],  # two classes
+        class_sep=[1.0],  # separation between class_0 and class_1
         random_state=42,
     )
 
+    # generate_dataset returns (DataFrame, y, meta) by default
     X, y, meta = generate_dataset(cfg)
-    # Ensure we have a DataFrame for correlation preview
-    df = X if isinstance(X, pd.DataFrame) else pd.DataFrame(X)
-    corr = df.corr(numeric_only=True)
-    print(f"X shape: {df.shape} | y length: {len(y)}")
-    print("Top-left of correlation matrix:")
-    print(corr.round(2).iloc[:5, :5])
 
-    out_path = "examples/basic_dataset.csv"
-    df_out = df.copy()
-    df_out["target"] = y  # add labels
+    print(f"X shape: {X.shape}, y length: {len(y)}")
+    print("First 5 rows:")
+    print(X.head())
+    print("\nMeta summary:")
+
+    # Save to CSV
+    out_path = "basic_dataset.csv"
+    df_out = X.copy()
+    df_out["target"] = y
     df_out.to_csv(out_path, index=False)
     print(f"Saved dataset to {out_path}")
 
