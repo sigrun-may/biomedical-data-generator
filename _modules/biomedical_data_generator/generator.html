@@ -143,23 +143,17 @@
 <span class="sd">      ``anchor_idx`` so that proxy indices can be derived later as</span>
 <span class="sd">      ``set(cluster_indices[cid]) - {anchor_idx[cid]}``.</span>
 
-<span class="sd">    Parameters</span>
-<span class="sd">    ----------</span>
-<span class="sd">    cfg:</span>
-<span class="sd">        Resolved :class:`DatasetConfig` used for generation.</span>
-<span class="sd">    n_cluster_cols:</span>
-<span class="sd">        Number of columns in ``x_clusters``.</span>
-<span class="sd">    n_inf_cols:</span>
-<span class="sd">        Number of columns in ``x_informative``.</span>
-<span class="sd">    n_noise_cols:</span>
-<span class="sd">        Number of columns in ``x_noise``.</span>
-<span class="sd">    cluster_meta:</span>
-<span class="sd">        Metadata returned by :func:`sample_correlated_cluster`.</span>
-<span class="sd">        Currently unused here but kept for future extensions.</span>
+<span class="sd">    Args:</span>
+<span class="sd">        cfg: Resolved :class:`DatasetConfig` used for generation.</span>
+<span class="sd">        n_cluster_cols: Number of columns in ``x_clusters``.</span>
+<span class="sd">        n_inf_cols: Number of columns in ``x_informative``.</span>
+<span class="sd">        n_noise_cols: Number of columns in ``x_noise``.</span>
+<span class="sd">        cluster_meta:</span>
+<span class="sd">            Metadata returned by :func:`sample_correlated_cluster`.</span>
+<span class="sd">            Currently unused here but kept for future extensions.</span>
 
 <span class="sd">    Returns:</span>
-<span class="sd">    -------</span>
-<span class="sd">    names, informative_idx, noise_idx, cluster_indices, anchor_idx</span>
+<span class="sd">        names, informative_idx, noise_idx, cluster_indices, anchor_idx</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">names</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
     <span class="n">informative_idx</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
@@ -375,10 +369,10 @@
         <span class="n">corr_between</span><span class="o">=</span><span class="n">cfg</span><span class="o">.</span><span class="n">corr_between</span><span class="p">,</span>
         <span class="n">batch_labels</span><span class="o">=</span><span class="n">batch_labels</span><span class="p">,</span>
         <span class="n">batch_intercepts</span><span class="o">=</span><span class="n">batch_effects</span><span class="p">,</span>
+        <span class="n">batch_config</span><span class="o">=</span><span class="n">cfg</span><span class="o">.</span><span class="n">batch</span><span class="o">.</span><span class="n">model_dump</span><span class="p">()</span> <span class="k">if</span> <span class="n">cfg</span><span class="o">.</span><span class="n">batch</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">random_state</span><span class="o">=</span><span class="n">cfg</span><span class="o">.</span><span class="n">random_state</span><span class="p">,</span>
         <span class="n">resolved_config</span><span class="o">=</span><span class="n">cfg</span><span class="o">.</span><span class="n">model_dump</span><span class="p">(),</span>
     <span class="p">)</span>
-
     <span class="k">if</span> <span class="n">return_dataframe</span><span class="p">:</span>
         <span class="k">return</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">columns</span><span class="o">=</span><span class="n">names</span><span class="p">),</span> <span class="n">y</span><span class="p">,</span> <span class="n">meta</span>
     <span class="k">return</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">meta</span></div>
