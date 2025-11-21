@@ -719,6 +719,38 @@ class DatasetConfig(BaseModel):
          - informative_anchors = 1  → free_informative = 4 − 1 = 3
          - noise_anchors = 1        → free_noise       = 3 − 1 = 2
 
+    Example usage:
+    --------------
+        >>> cfg = DatasetConfig(
+        ...     n_informative=5,
+        ...     n_noise=3,
+        ...     class_configs=[
+        ...         ClassConfig(n_samples=50, label="healthy"),
+        ...         ClassConfig(n_samples=50, label="diseased"),
+        ...     ],
+        ...     corr_clusters=[
+        ...         CorrClusterConfig(
+        ...             n_cluster_features=4,
+        ...             rho=0.8,
+        ...             anchor_role="informative",
+        ...             anchor_effect_size="medium",
+        ...             anchor_class=1,
+        ...             label="Metabolic Pathway A"
+        ...         ),
+        ...         CorrClusterConfig(
+        ...             n_cluster_features=3,
+        ...             rho=0.5,
+        ...             anchor_role="noise",
+        ...             label="Random Noise Cluster"
+        ...         )
+        ...     ],
+        ...     corr_between=0.1,
+        ...     noise_distribution="normal",
+        ...     noise_distribution_params={"loc": 0, "scale": 1},
+        ...     feature_naming="prefixed",
+        ...     random_state=42
+        ... )
+
     See Also:
     --------
     CorrClusterConfig  : Correlated cluster settings (size, rho, anchor role/effect/class)
