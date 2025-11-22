@@ -27,9 +27,9 @@ from biomedical_data_generator.generator import generate_dataset
 def compute_correlation_by_class(X: pd.DataFrame, y: pd.Series, feature_indices: list[int]) -> dict:
     """Compute correlation matrices for specified features, grouped by class."""
     correlations = {}
-    for class_label in y.unique():
+    for class_label in np.unique(y):
         mask = y == class_label
-        X_class = X.iloc[mask, feature_indices]
+        X_class = X[mask].iloc[:, feature_indices]
         correlations[class_label] = X_class.corr()
     return correlations
 
