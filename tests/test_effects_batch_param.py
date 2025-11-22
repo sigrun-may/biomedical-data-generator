@@ -292,7 +292,7 @@ def test_batch_variance_decomposition(n_batches):
     n_reps = 200
     increased = 0
     for _ in range(n_reps):
-        rep_seed = int(base_rng.integers(0, 2 ** 31 - 1))
+        rep_seed = int(base_rng.integers(0, 2**31 - 1))
         rng_effects = np.random.default_rng(rep_seed)
         X_batch, batch_effects = apply_batch_effects(
             X0,

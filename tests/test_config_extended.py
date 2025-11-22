@@ -14,7 +14,6 @@ from biomedical_data_generator.config import (
     validate_distribution_params,
 )
 
-
 # ============================================================================
 # Tests for validate_distribution_params
 # ============================================================================
