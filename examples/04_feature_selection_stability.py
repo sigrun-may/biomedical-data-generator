@@ -58,8 +58,8 @@ def evaluate_feature_selection_stability(
     cv = StratifiedKFold(n_splits=n_splits, shuffle=True, random_state=42)
 
     for fold_idx, (train_idx, test_idx) in enumerate(cv.split(X, y)):
-        X_train = X.iloc[train_idx]
-        y_train = y.iloc[train_idx] if hasattr(y, "iloc") else y[train_idx]
+        X_train = X.iloc[train_idx] if hasattr(X, "iloc") else X[train_idx]
+        y_train = y[train_idx] if isinstance(y, np.ndarray) else y.iloc[train_idx]
 
         # Standardize features
         scaler = StandardScaler()
@@ -233,7 +233,7 @@ def main() -> None:
     X_corr, y_corr, meta_corr = generate_dataset(cfg_corr)
     print(f"✓ Generated dataset: {X_corr.shape}")
     print(f"  - True informative features: {len(meta_corr.informative_idx)}")
-    print(f"  - Correlated cluster size: {len(meta_corr.cluster_indices[0])}")
+    print(f"  - Correlated cluster size: {len(meta_corr.corr_cluster_indices[1])}")  # Cluster IDs are 1-based
     print()
 
     print("Evaluating feature selection stability...")

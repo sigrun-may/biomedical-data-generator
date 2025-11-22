@@ -66,8 +66,8 @@ def main() -> None:
     print("Feature Roles:")
     print(f"  - Informative features: {meta.informative_idx}")
     print(f"  - Noise features: {meta.noise_idx}")
-    print(f"  - Cluster features: {list(meta.cluster_indices.keys())}")
-    for cid, indices in meta.cluster_indices.items():
+    print(f"  - Cluster features: {list(meta.corr_cluster_indices.keys())}")
+    for cid, indices in meta.corr_cluster_indices.items():
         anchor = meta.anchor_idx.get(cid)
         print(f"    Cluster {cid}: anchor={anchor}, all indices={indices}")
     print()

@@ -24,12 +24,16 @@ from biomedical_data_generator.config import ClassConfig, CorrClusterConfig, Dat
 from biomedical_data_generator.generator import generate_dataset
 
 
-def compute_correlation_by_class(X: pd.DataFrame, y: pd.Series, feature_indices: list[int]) -> dict:
+def compute_correlation_by_class(X: pd.DataFrame, y: pd.Series | np.ndarray, feature_indices: list[int]) -> dict:
     """Compute correlation matrices for specified features, grouped by class."""
     correlations = {}
-    for class_label in y.unique():
+    # Get unique class labels (works for both Series and ndarray)
+    unique_labels = np.unique(y)
+
+    for class_label in unique_labels:
         mask = y == class_label
-        X_class = X.iloc[mask, feature_indices]
+        # Use loc with boolean mask for rows, then select columns by position
+        X_class = X.loc[mask].iloc[:, feature_indices]
         correlations[class_label] = X_class.corr()
     return correlations
 
@@ -79,8 +83,8 @@ def main() -> None:
     print()
 
     # Compute correlations per class
-    cluster_id = 0
-    cluster_features = meta1.cluster_indices[cluster_id]
+    cluster_id = 1  # Cluster IDs are 1-based
+    cluster_features = meta1.corr_cluster_indices[cluster_id]
     correlations1 = compute_correlation_by_class(X1, y1, cluster_features)
 
     print("Correlation matrices for cluster features:")
@@ -123,8 +127,8 @@ def main() -> None:
     print()
 
     # Compute correlations per class
-    cluster_id = 0
-    cluster_features2 = meta2.cluster_indices[cluster_id]
+    cluster_id = 1  # Cluster IDs are 1-based
+    cluster_features2 = meta2.corr_cluster_indices[cluster_id]
     correlations2 = compute_correlation_by_class(X2, y2, cluster_features2)
 
     print("Mean pairwise correlations per class:")
@@ -180,11 +184,11 @@ def main() -> None:
     print()
 
     print("Pathway-specific correlations:")
-    for cluster_id in [0, 1]:
-        cluster_features3 = meta3.cluster_indices[cluster_id]
+    for cluster_id in [1, 2]:  # Cluster IDs are 1-based
+        cluster_features3 = meta3.corr_cluster_indices[cluster_id]
         correlations3 = compute_correlation_by_class(X3, y3, cluster_features3)
 
-        print(f"\nCluster {cluster_id} ({cfg3.corr_clusters[cluster_id].label}):")
+        print(f"\nCluster {cluster_id} ({cfg3.corr_clusters[cluster_id - 1].label}):")
         for class_label, corr_matrix in correlations3.items():
             mask = np.triu(np.ones_like(corr_matrix, dtype=bool), k=1)
             mean_corr = corr_matrix.values[mask].mean()
