@@ -204,3 +204,59 @@ def test_corr_between_out_of_range_raises():
             corr_between=1.5,  # invalid
             class_configs=_minimal_class_configs(2, 5),
         )
+
+
+def test_corr_cluster_str_method():
+    """Test CorrClusterConfig __str__ method with different configurations."""
+    from biomedical_data_generator import CorrClusterConfig
+
+    # Test with correlation as dict (class-specific)
+    cluster = CorrClusterConfig(
+        n_cluster_features=3,
+        correlation={0: 0.7, 1: 0.9},
+        anchor_role="informative",
+    )
+    str_repr = str(cluster)
+    assert "n_cluster_features=3" in str_repr
+    assert "correlation=class-specific" in str_repr
+
+    # Test with correlation as scalar and non-default anchor_role
+    cluster2 = CorrClusterConfig(
+        n_cluster_features=5,
+        correlation=0.6,
+        anchor_role="noise",
+    )
+    str_repr2 = str(cluster2)
+    assert "n_cluster_features=5" in str_repr2
+    assert "correlation=0.6" in str_repr2
+    assert "noise" in str_repr2
+
+    # Test with anchor_effect_size and label
+    cluster3 = CorrClusterConfig(
+        n_cluster_features=4,
+        correlation=0.8,
+        anchor_role="informative",
+        anchor_effect_size=1.5,
+        label="test_cluster",
+    )
+    str_repr3 = str(cluster3)
+    assert "effect=1.5" in str_repr3
+    assert "'test_cluster'" in str_repr3
+
+
+def test_corr_cluster_repr_method():
+    """Test CorrClusterConfig __repr__ method."""
+    from biomedical_data_generator import CorrClusterConfig
+
+    cluster = CorrClusterConfig(
+        n_cluster_features=3,
+        correlation=0.7,
+        structure="toeplitz",
+        anchor_role="informative",
+        anchor_class=1,
+        anchor_effect_size=0.8,
+        random_state=42,
+    )
+    repr_str = repr(cluster)
+    # repr should contain the class name
+    assert "CorrClusterConfig" in repr_str
