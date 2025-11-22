@@ -103,3 +103,32 @@ def test_input_validation_errors():
 
     with pytest.raises(ValueError):
         pc1_share(np.ones(10))  # not 2D
+
+
+def test_pc1_share_from_corr_empty_matrix():
+    """Test pc1_share_from_corr with empty matrix."""
+    C = np.zeros((0, 0), dtype=float)
+    result = pc1_share_from_corr(C)
+    assert result == 0.0
+
+
+def test_pc1_share_invalid_method_dataframe():
+    """Test pc1_share with invalid method for DataFrame."""
+    df = pd.DataFrame(np.random.randn(10, 3))
+    with pytest.raises(ValueError, match="method must be"):
+        pc1_share(df, method="invalid_method")
+
+
+def test_pc1_share_spearman_numpy():
+    """Test pc1_share with spearman method on numpy array."""
+    X = np.random.randn(50, 4)
+    result = pc1_share(X, method="spearman", rowvar=False)
+    assert 0.0 <= result <= 1.0
+    assert np.isfinite(result)
+
+
+def test_pc1_share_kendall_numpy():
+    """Test pc1_share with kendall method on numpy array (should raise error)."""
+    X = np.random.randn(50, 4)
+    with pytest.raises(ValueError, match="method must be"):
+        pc1_share(X, method="kendall", rowvar=False)
