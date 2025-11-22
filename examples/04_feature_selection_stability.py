@@ -233,7 +233,7 @@ def main() -> None:
     X_corr, y_corr, meta_corr = generate_dataset(cfg_corr)
     print(f"✓ Generated dataset: {X_corr.shape}")
     print(f"  - True informative features: {len(meta_corr.informative_idx)}")
-    print(f"  - Correlated cluster size: {len(meta_corr.cluster_indices[0])}")
+    print(f"  - Correlated cluster size: {len(meta_corr.corr_cluster_indices[0])}")  # Cluster ID 0 (0-based)
     print()
 
     print("Evaluating feature selection stability...")
