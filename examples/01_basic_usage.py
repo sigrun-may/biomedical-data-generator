@@ -98,7 +98,6 @@ def main() -> None:
     print("  - 'i' prefix: informative features")
     print("  - 'n' prefix: noise features")
     print("  - 'corr' prefix: correlated cluster features")
-    print("    
     print("    (corr1_anchor, corr1_2, ... for cluster ID 0)")
     print("    (corr2_anchor, corr2_2, ... for cluster ID 1, etc.)")
     print("    Note: Cluster IDs are 0-based internally, but display names are 1-based")
