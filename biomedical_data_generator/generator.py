@@ -133,9 +133,10 @@ def _make_names_and_roles(
     # -------------------------------------------------------------
     # 2) Correlated clusters: block [n_inf_cols, n_inf_cols + n_cluster_cols)
     #    One contiguous block per CorrClusterConfig, in config order.
+    #    Cluster IDs are 0-based internally, but display names use 1-based numbering.
     # -------------------------------------------------------------
     current = n_inf_cols
-    for cid, cluster_cfg in enumerate(clusters, start=1):
+    for cid, cluster_cfg in enumerate(clusters):  # 0-based cluster IDs
         k = int(cluster_cfg.n_cluster_features)
         cols = list(range(current, current + k))
         cluster_indices[cid] = cols
@@ -144,13 +145,13 @@ def _make_names_and_roles(
         anchor_col = cols[0]
         anchor_idx[cid] = anchor_col
 
-        # Name anchor
+        # Name anchor (display uses cid+1 for user-friendly naming)
         if cfg.feature_naming == "prefixed":
             if cluster_cfg.anchor_role == "informative":
-                anchor_name = f"{cfg.prefix_corr}{cid}_anchor"
+                anchor_name = f"{cfg.prefix_corr}{cid + 1}_anchor"
             else:
                 # noise anchor → still first in cluster, but not informative
-                anchor_name = f"{cfg.prefix_corr}{cid}_1"
+                anchor_name = f"{cfg.prefix_corr}{cid + 1}_1"
         else:
             anchor_name = f"feature_{len(names) + 1}"
         names.append(anchor_name)
@@ -162,7 +163,7 @@ def _make_names_and_roles(
         # Name proxy features (never added to informative_idx / noise_idx)
         for offset, col in enumerate(cols[1:], start=2):
             if cfg.feature_naming == "prefixed":
-                proxy_name = f"{cfg.prefix_corr}{cid}_{offset}"
+                proxy_name = f"{cfg.prefix_corr}{cid + 1}_{offset}"
             else:
                 proxy_name = f"feature_{len(names) + 1}"
             names.append(proxy_name)

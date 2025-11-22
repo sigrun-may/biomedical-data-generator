@@ -83,7 +83,7 @@ def main() -> None:
     print()
 
     # Compute correlations per class
-    cluster_id = 1  # Cluster IDs are 1-based
+    cluster_id = 0  # First cluster (0-based indexing)
     cluster_features = meta1.corr_cluster_indices[cluster_id]
     correlations1 = compute_correlation_by_class(X1, y1, cluster_features)
 
@@ -127,7 +127,7 @@ def main() -> None:
     print()
 
     # Compute correlations per class
-    cluster_id = 1  # Cluster IDs are 1-based
+    cluster_id = 0  # First cluster (0-based indexing)
     cluster_features2 = meta2.corr_cluster_indices[cluster_id]
     correlations2 = compute_correlation_by_class(X2, y2, cluster_features2)
 
@@ -184,11 +184,11 @@ def main() -> None:
     print()
 
     print("Pathway-specific correlations:")
-    for cluster_id in [1, 2]:  # Cluster IDs are 1-based
+    for cluster_id in [0, 1]:  # 0-based cluster indexing
         cluster_features3 = meta3.corr_cluster_indices[cluster_id]
         correlations3 = compute_correlation_by_class(X3, y3, cluster_features3)
 
-        print(f"\nCluster {cluster_id} ({cfg3.corr_clusters[cluster_id - 1].label}):")
+        print(f"\nCluster {cluster_id} ({cfg3.corr_clusters[cluster_id].label}):")
         for class_label, corr_matrix in correlations3.items():
             mask = np.triu(np.ones_like(corr_matrix, dtype=bool), k=1)
             mean_corr = corr_matrix.values[mask].mean()
