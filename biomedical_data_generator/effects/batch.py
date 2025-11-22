@@ -411,6 +411,7 @@ def apply_batch_effects(
     effect_type: Literal["additive", "multiplicative"] = "additive",
     effect_strength: float = 0.5,
     affected_features: Sequence[int] | Literal["all"] = "all",
+    effect_granularity: Literal["per_feature", "scalar"] = "per_feature",
 ) -> tuple[pd.DataFrame | NDArray[np.float64], NDArray[np.float64]]:
     """Apply batch effects to a feature matrix.
 
@@ -424,11 +425,17 @@ def apply_batch_effects(
         effect_type: "additive" or "multiplicative" batch effects.
         effect_strength: Standard deviation of batch effects.
         affected_features: "all" or list of feature indices to affect.
+        effect_granularity: "per_feature" (default) draws effects of shape
+            (n_batches, n_affected_features) so features within a batch differ,
+            or "scalar" draws a single scalar per batch applied to all affected
+            features (backwards-compatible / cheaper).
 
     Returns:
         Tuple of (X_affected, batch_effects):
             - X_affected: Feature matrix with batch effects applied
-            - batch_effects: Random effects drawn per batch
+            - batch_effects (1-D array length n_batches): Random effects drawn per batch. For
+                "per_feature" the returned batch_effects are the mean effect per batch.
+
     Examples:
         >>> rng = np.random.default_rng(42)
         >>> X = np.random.normal(size=(100, 5))
@@ -484,17 +491,43 @@ def apply_batch_effects(
         if np.any((feature_indices < 0) | (feature_indices >= n_features)):
             raise IndexError("affected_features contains indices out of range")
 
-    # Draw random effects for each batch
-    batch_effects = rng.normal(loc=0.0, scale=float(effect_strength), size=n_batches)
+    # Quick path: no effect
+    if float(effect_strength) == 0.0:
+        batch_effects = np.zeros(n_batches, dtype=float)
+        if is_dataframe and X_df is not None and feature_names is not None:
+            return pd.DataFrame(X_array, columns=feature_names, index=X_df.index), batch_effects
+        return X_array, batch_effects
 
-    # Map per-batch effects to per-sample vector
-    effects_per_sample = batch_effects[batch_assignments]  # shape (n_samples,)
+    m = feature_indices.size
 
-    # Apply effects in a vectorized way
+    if effect_granularity not in ("per_feature", "scalar"):
+        raise ValueError("effect_granularity must be 'per_feature' or 'scalar'")
+
+    # Draw and apply effects according to granularity
     if effect_type == "additive":
-        X_array[:, feature_indices] += effects_per_sample[:, None]
+        if effect_granularity == "per_feature":
+            # shape (n_batches, m)
+            effects = rng.normal(loc=0.0, scale=float(effect_strength), size=(n_batches, m))
+            per_sample_effects = effects[batch_assignments]  # (n_samples, m)
+            X_array[:, feature_indices] += per_sample_effects
+            batch_effects = effects.mean(axis=1).astype(float)
+        else:  # scalar per batch
+            effects = rng.normal(loc=0.0, scale=float(effect_strength), size=n_batches)  # (n_batches,)
+            per_sample = effects[batch_assignments]  # (n_samples,)
+            X_array[:, feature_indices] += per_sample[:, None]  # broadcast across features
+            batch_effects = effects.astype(float)
+
     elif effect_type == "multiplicative":
-        X_array[:, feature_indices] *= (1.0 + effects_per_sample)[:, None]
+        if effect_granularity == "per_feature":
+            factors = 1.0 + rng.normal(loc=0.0, scale=float(effect_strength), size=(n_batches, m))
+            per_sample_factors = factors[batch_assignments]  # (n_samples, m)
+            X_array[:, feature_indices] *= per_sample_factors
+            batch_effects = (factors - 1.0).mean(axis=1).astype(float)
+        else:  # scalar per batch
+            factors = 1.0 + rng.normal(loc=0.0, scale=float(effect_strength), size=n_batches)  # (n_batches,)
+            per_sample = factors[batch_assignments]
+            X_array[:, feature_indices] *= per_sample[:, None]
+            batch_effects = (factors - 1.0).astype(float)
     else:
         raise ValueError(f"Unknown effect_type: {effect_type}")
 
