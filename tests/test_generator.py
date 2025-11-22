@@ -307,10 +307,10 @@ def test_make_names_and_roles_with_informative_anchor():
         n_inf_cols=1,  # With anchor, n_informative_free is 1 (2 total - 1 anchor)
         n_noise_cols=1,
         cluster_meta={
-            "anchor_role": {1: "informative"},
-            "anchor_effect_size": {1: 1.0},
-            "anchor_class": {1: None},
-            "label": {1: None},
+            "anchor_role": {0: "informative"},
+            "anchor_effect_size": {0: 1.0},
+            "anchor_class": {0: None},
+            "label": {0: None},
         },
     )
 
@@ -344,10 +344,10 @@ def test_make_names_and_roles_with_noise_anchor():
         n_inf_cols=2,  # All 2 informative are free (no anchor)
         n_noise_cols=0,  # With noise anchor in cluster, n_noise_free is 0
         cluster_meta={
-            "anchor_role": {1: "noise"},
-            "anchor_effect_size": {1: 1.0},
-            "anchor_class": {1: None},
-            "label": {1: None},
+            "anchor_role": {0: "noise"},
+            "anchor_effect_size": {0: 1.0},
+            "anchor_class": {0: None},
+            "label": {0: None},
         },
     )
 

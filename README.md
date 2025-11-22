@@ -227,6 +227,7 @@ In order to simulate artificial biomarkers in total, all individual classes have
 - **Informative features** (`i*`): truly predictive; include **cluster anchors** if `anchor_role="informative"`.
 - **Noise features** (`n*`): random, uncorrelated with the label; useful to test robustness.
 - **Correlated clusters** (`corr{cid}_k`): within a cluster, one **anchor** + `(n_cluster_features-1)` **proxies**; correlation structure `equicorrelated` or `toeplitz`.
+  - Note: Cluster IDs are **0-based** internally (0, 1, 2, ...), but feature names use **1-based** numbering for readability (corr1, corr2, corr3, ...).
 
 ### Data distribution and effect sizes
 
@@ -308,7 +309,10 @@ X, y, meta = generate_dataset(cfg, return_dataframe=True)
 
   - Informative: `i` → `i1, i2, …`
   - Noise: `n` → `n1, n2, …`
-  - Correlated cluster proxies: `corr{cid}_{k}`
+  - Correlated cluster features: `corr{display_id}_{k}` where display_id is 1-based
+    - Cluster ID 0 → `corr1_anchor`, `corr1_2`, `corr1_3`, ...
+    - Cluster ID 1 → `corr2_anchor`, `corr2_2`, `corr2_3`, ...
+    - (Note: Internal cluster IDs in metadata are 0-based)
 
 Reproducibility via `random_state` (global), plus optional per‑cluster seeds.
 
@@ -326,10 +330,10 @@ ______________________________________________________________________
 
   - `feature_names`
   - `informative_idx`, `noise_idx`
-  - `corr_cluster_indices: dict[int, list[int]]`
-  - `anchor_idx: dict[int, int | None]`
-  - `anchor_role: dict[int, str]`
-  - `anchor_effect_size: dict[int, float]`
+  - `corr_cluster_indices: dict[int, list[int]]` - cluster IDs are 0-based (0, 1, 2, ...)
+  - `anchor_idx: dict[int, int | None]` - cluster IDs are 0-based
+  - `anchor_role: dict[int, str]` - cluster IDs are 0-based
+  - `anchor_effect_size: dict[int, float]` - cluster IDs are 0-based
   - `y_weights: tuple[float, …]`, `y_counts: dict[int, int]`
 
 ______________________________________________________________________
