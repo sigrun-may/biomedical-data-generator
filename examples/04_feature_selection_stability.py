@@ -15,23 +15,20 @@ This example demonstrates:
 
 from __future__ import annotations
 
-from collections import Counter
+from typing import Any
 
 import matplotlib.pyplot as plt
 import numpy as np
-from sklearn.ensemble import RandomForestClassifier
-from sklearn.feature_selection import SelectKBest, f_classif
-from sklearn.linear_model import LogisticRegression
-from sklearn.model_selection import StratifiedKFold
-from sklearn.preprocessing import StandardScaler
+from sklearn.ensemble import RandomForestClassifier  # type: ignore[import-untyped]
+from sklearn.feature_selection import SelectKBest, f_classif  # type: ignore[import-untyped]
+from sklearn.model_selection import StratifiedKFold  # type: ignore[import-untyped]
+from sklearn.preprocessing import StandardScaler  # type: ignore[import-untyped]
 
 from biomedical_data_generator.config import ClassConfig, CorrClusterConfig, DatasetConfig
 from biomedical_data_generator.generator import generate_dataset
 
 
-def evaluate_feature_selection_stability(
-    X, y, meta, n_features: int = 10, n_splits: int = 10
-) -> dict[str, dict]:
+def evaluate_feature_selection_stability(X, y, meta, n_features: int = 10, n_splits: int = 10) -> dict[str, dict]:
     """Evaluate stability of feature selection across multiple CV splits.
 
     Args:
@@ -44,21 +41,23 @@ def evaluate_feature_selection_stability(
     Returns:
         Dictionary with stability metrics for each method
     """
-    methods = {
+    methods_names = {
         "ANOVA F-test": SelectKBest(f_classif, k=n_features),
         "Random Forest": None,  # Will be handled separately
     }
 
-    results = {method_name: {"selected_features": [], "precision": [], "recall": []} for method_name in methods}
+    results_raw: dict[str, dict[str, list[Any]]] = {
+        method_name: {"selected_features": [], "precision": [], "recall": []} for method_name in methods_names
+    }
 
     # True informative features (ground truth)
-    true_informative = set(meta.informative_idx)
+    true_informative: set[int] = set(meta.informative_idx)
 
     # Cross-validation splits
     cv = StratifiedKFold(n_splits=n_splits, shuffle=True, random_state=42)
 
     for fold_idx, (train_idx, test_idx) in enumerate(cv.split(X, y)):
-        X_train = X.iloc[train_idx]
+        X_train = X.iloc[train_idx] if hasattr(X, "iloc") else X[train_idx]
         y_train = y.iloc[train_idx] if hasattr(y, "iloc") else y[train_idx]
 
         # Standardize features
@@ -69,15 +68,15 @@ def evaluate_feature_selection_stability(
         selector = SelectKBest(f_classif, k=n_features)
         selector.fit(X_train_scaled, y_train)
         selected = set(selector.get_support(indices=True))
-        results["ANOVA F-test"]["selected_features"].append(selected)
+        results_raw["ANOVA F-test"]["selected_features"].append(selected)
 
         # Calculate precision and recall
         true_positives = len(selected & true_informative)
         precision = true_positives / len(selected) if len(selected) > 0 else 0
         recall = true_positives / len(true_informative) if len(true_informative) > 0 else 0
 
-        results["ANOVA F-test"]["precision"].append(precision)
-        results["ANOVA F-test"]["recall"].append(recall)
+        results_raw["ANOVA F-test"]["precision"].append(precision)
+        results_raw["ANOVA F-test"]["recall"].append(recall)
 
         # Random Forest feature importance
         rf = RandomForestClassifier(n_estimators=100, random_state=42 + fold_idx, n_jobs=-1)
@@ -85,18 +84,19 @@ def evaluate_feature_selection_stability(
         importances = rf.feature_importances_
         top_k_indices = np.argsort(importances)[-n_features:]
         selected_rf = set(top_k_indices)
-        results["Random Forest"]["selected_features"].append(selected_rf)
+        results_raw["Random Forest"]["selected_features"].append(selected_rf)
 
         # Calculate precision and recall for RF
         true_positives_rf = len(selected_rf & true_informative)
         precision_rf = true_positives_rf / len(selected_rf) if len(selected_rf) > 0 else 0
         recall_rf = true_positives_rf / len(true_informative) if len(true_informative) > 0 else 0
 
-        results["Random Forest"]["precision"].append(precision_rf)
-        results["Random Forest"]["recall"].append(recall_rf)
+        results_raw["Random Forest"]["precision"].append(precision_rf)
+        results_raw["Random Forest"]["recall"].append(recall_rf)
 
     # Calculate stability (Jaccard similarity between splits)
-    for method_name, method_results in results.items():
+    final_results: dict[str, dict[str, float]] = {}
+    for method_name, method_results in results_raw.items():
         selected_sets = method_results["selected_features"]
         jaccard_scores = []
 
@@ -107,11 +107,12 @@ def evaluate_feature_selection_stability(
                 jaccard = intersection / union if union > 0 else 0
                 jaccard_scores.append(jaccard)
 
-        results[method_name]["stability"] = np.mean(jaccard_scores) if jaccard_scores else 0
-        results[method_name]["mean_precision"] = np.mean(method_results["precision"])
-        results[method_name]["mean_recall"] = np.mean(method_results["recall"])
-
-    return results
+        final_results[method_name] = {
+            "stability": float(np.mean(jaccard_scores) if jaccard_scores else 0.0),
+            "mean_precision": float(np.mean(method_results["precision"])) if method_results["precision"] else 0.0,
+            "mean_recall": float(np.mean(method_results["recall"])) if method_results["recall"] else 0.0,
+        }
+    return final_results
 
 
 def main() -> None:
@@ -257,15 +258,15 @@ def main() -> None:
         results_list = [results_high, results_low, results_corr]
 
         fig, axes = plt.subplots(1, 3, figsize=(18, 5))
-        metrics = ["mean_precision", "mean_recall", "stability"]
+        metric_names = ["mean_precision", "mean_recall", "stability"]
         metric_labels = ["Precision", "Recall", "Stability"]
 
-        for ax, metric, label in zip(axes, metrics, metric_labels):
+        for ax, metric, label in zip(axes, metric_names, metric_labels):
             x = np.arange(len(scenarios))
             width = 0.35
 
-            methods = list(results_high.keys())
-            for i, method in enumerate(methods):
+            method_names_list: list[str] = list(results_high.keys())
+            for i, method in enumerate(method_names_list):
                 values = [results[method][metric] for results in results_list]
                 ax.bar(x + i * width, values, width, label=method, alpha=0.8)
 

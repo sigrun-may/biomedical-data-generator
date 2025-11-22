@@ -81,7 +81,7 @@ def main() -> None:
         n_batches=3, confounding=0.0, effect_type="additive", effect_strength=0.5
     )
     print(f"Generated dataset: {X1.shape}")
-    print(f"Batch distribution across classes:")
+    print("Batch distribution across classes:")
     batch_col = meta1.batch_labels if hasattr(meta1, "batch_labels") else None
     if batch_col is not None:
         for class_label in ["control", "treated"]:
@@ -100,7 +100,7 @@ def main() -> None:
         n_batches=2, confounding=0.8, effect_type="additive", effect_strength=0.8
     )
     print(f"Generated dataset: {X2.shape}")
-    print(f"Batch distribution across classes:")
+    print("Batch distribution across classes:")
     batch_col2 = meta2.batch_labels if hasattr(meta2, "batch_labels") else None
     if batch_col2 is not None:
         for class_label in ["control", "treated"]:
@@ -141,11 +141,6 @@ def main() -> None:
         random_state=42,
     )
     X4, y4, meta4 = generate_dataset(cfg4)
-    print(f"Generated dataset: {X4.shape}")
-    print(f"Batch effects applied to: {cfg4.batch.affected_features} features")
-    print(f"  - Informative feature indices: {meta4.informative_idx}")
-    print(f"  - Noise feature indices: {meta4.noise_idx}")
-    print()
 
     # Visualization (optional, requires matplotlib)
     print("Visualization Tips:")

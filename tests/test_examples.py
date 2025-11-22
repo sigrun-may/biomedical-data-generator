@@ -14,7 +14,6 @@ becoming stale as the codebase evolves.
 from __future__ import annotations
 
 import importlib.util
-import os
 import sys
 from pathlib import Path
 from unittest.mock import patch
@@ -190,7 +189,6 @@ def test_03_compute_correlation_by_class():
 
 def test_04_evaluate_feature_selection_stability():
     """Test the feature selection stability evaluation function."""
-    import pandas as pd
 
     from biomedical_data_generator import ClassConfig, DatasetConfig, generate_dataset
 

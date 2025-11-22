@@ -16,9 +16,9 @@ matplotlib.use("Agg")  # Use non-interactive backend for testing
 
 from biomedical_data_generator.utils.visualization import (
     plot_all_correlation_clusters,
+    plot_correlation_matrices_per_cluster,
     plot_correlation_matrix,
     plot_correlation_matrix_for_cluster,
-    plot_correlation_matrices_per_cluster,
 )
 
 
@@ -101,7 +101,12 @@ class TestPlotCorrelationMatrixForCluster:
         """Test plotting correlation matrix for a single cluster."""
         # Create test data
         df = pd.DataFrame(
-            {"corr1_anchor": [1, 2, 3], "corr1_2": [1.1, 2.1, 3.1], "corr1_3": [0.9, 1.9, 2.9], "noise1": [0.5, 0.6, 0.7]}
+            {
+                "corr1_anchor": [1, 2, 3],
+                "corr1_2": [1.1, 2.1, 3.1],
+                "corr1_3": [0.9, 1.9, 2.9],
+                "noise1": [0.5, 0.6, 0.7],
+            }
         )
 
         # Create mock meta object
