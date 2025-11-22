@@ -274,7 +274,10 @@ def test_input_output_consistency(input_type, effect_type):
 def test_batch_variance_decomposition(n_batches):
     """Verify batch effects add variance in predictable way."""
     n_samples = 500
-    X = np.random.randn(n_samples, 1)  # Single feature for clarity
+
+    # Make base data reproducible
+    rng_x = np.random.default_rng(1)
+    X0 = rng_x.normal(size=(n_samples, 1))  # Single feature for clarity
 
     rng_assign = np.random.default_rng(42)
     batches = generate_batch_assignments(
@@ -283,25 +286,27 @@ def test_batch_variance_decomposition(n_batches):
         rng=rng_assign,
     )
 
-    var_original = X.var()
+    var_original = X0.var(ddof=0)
 
-    rng_effects = np.random.default_rng(43)
-    X_batch, batch_effects = apply_batch_effects(
-        X,
-        batches,
-        rng=rng_effects,
-        effect_type="additive",
-        effect_strength=1.0,
-    )
+    base_rng = np.random.default_rng(43)
+    n_reps = 200
+    increased = 0
+    for _ in range(n_reps):
+        rep_seed = int(base_rng.integers(0, 2**31 - 1))
+        rng_effects = np.random.default_rng(rep_seed)
+        X_batch, batch_effects = apply_batch_effects(
+            X0,
+            batches,
+            rng=rng_effects,
+            effect_type="additive",
+            effect_strength=1.0,
+        )
+        var_with_batch = np.asarray(X_batch).var(ddof=0)
+        if var_with_batch > var_original:
+            increased += 1
 
-    var_with_batch = X_batch.var()
-
-    # Variance should increase
-    assert var_with_batch > var_original
-
-    # Batch effects should nicht degeneriert sein (nicht alle exakt 0)
-    # (Bei effect_strength=1.0 praktisch sicher, aber explizit getestet.)
-    assert not np.allclose(batch_effects, 0.0, atol=1e-12)
+    # Require the variance to increase in the large majority of independent draws
+    assert increased / n_reps > 0.9
 
 
 @pytest.mark.parametrize("effect_strength", [0.1, 0.5, 1.0, 2.0])

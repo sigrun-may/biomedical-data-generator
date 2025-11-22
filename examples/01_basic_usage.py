@@ -69,6 +69,7 @@ def main() -> None:
     print(f"  - Cluster features: {list(meta.corr_cluster_indices.keys())}")
     for cid, indices in meta.corr_cluster_indices.items():
         anchor = meta.anchor_idx.get(cid)
+        # Note: cid is 0-based (cluster 0, 1, 2, ...) but feature names use 1-based (corr1, corr2, ...)
         print(f"    Cluster {cid}: anchor={anchor}, all indices={indices}")
     print()
 
@@ -97,7 +98,10 @@ def main() -> None:
     print("  - 'i' prefix: informative features")
     print("  - 'n' prefix: noise features")
     print("  - 'corr' prefix: correlated cluster features")
-    print("    (corr{cluster_id}_anchor, corr{cluster_id}_2, ...)")
+    print("    
+    print("    (corr1_anchor, corr1_2, ... for cluster ID 0)")
+    print("    (corr2_anchor, corr2_2, ... for cluster ID 1, etc.)")
+    print("    Note: Cluster IDs are 0-based internally, but display names are 1-based")
     print()
     print("=" * 70)
 

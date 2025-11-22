@@ -24,16 +24,12 @@ from biomedical_data_generator.config import ClassConfig, CorrClusterConfig, Dat
 from biomedical_data_generator.generator import generate_dataset
 
 
-def compute_correlation_by_class(X: pd.DataFrame, y: pd.Series | np.ndarray, feature_indices: list[int]) -> dict:
+def compute_correlation_by_class(X: pd.DataFrame, y: pd.Series, feature_indices: list[int]) -> dict:
     """Compute correlation matrices for specified features, grouped by class."""
     correlations = {}
-    # Get unique class labels (works for both Series and ndarray)
-    unique_labels = np.unique(y)
-
-    for class_label in unique_labels:
+    for class_label in y.unique():
         mask = y == class_label
-        # Use loc with boolean mask for rows, then select columns by position
-        X_class = X.loc[mask].iloc[:, feature_indices]
+        X_class = X.iloc[mask, feature_indices]
         correlations[class_label] = X_class.corr()
     return correlations
 
@@ -83,7 +79,7 @@ def main() -> None:
     print()
 
     # Compute correlations per class
-    cluster_id = 0  # First cluster (0-based indexing)
+    cluster_id = 0  # Cluster IDs are 0-based (0, 1, 2, ...)
     cluster_features = meta1.corr_cluster_indices[cluster_id]
     correlations1 = compute_correlation_by_class(X1, y1, cluster_features)
 
@@ -184,7 +180,7 @@ def main() -> None:
     print()
 
     print("Pathway-specific correlations:")
-    for cluster_id in [0, 1]:  # 0-based cluster indexing
+    for cluster_id in [0, 1]:  # Cluster IDs are 0-based
         cluster_features3 = meta3.corr_cluster_indices[cluster_id]
         correlations3 = compute_correlation_by_class(X3, y3, cluster_features3)
 

@@ -163,7 +163,7 @@ def _make_names_and_roles(
         # Name proxy features (never added to informative_idx / noise_idx)
         for offset, col in enumerate(cols[1:], start=2):
             if cfg.feature_naming == "prefixed":
-                proxy_name = f"{cfg.prefix_corr}{cid + 1}_{offset}"
+                proxy_name = f"{cfg.prefix_corr}{cid + 1}_{offset}"  # corr1_2, corr1_3, ...
             else:
                 proxy_name = f"feature_{len(names) + 1}"
             names.append(proxy_name)
