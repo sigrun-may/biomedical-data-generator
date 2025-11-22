@@ -305,8 +305,8 @@ def test_batch_variance_decomposition(n_batches):
         if var_with_batch > var_original:
             increased += 1
 
-        # Require the variance to increase in the large majority of independent draws
-        assert increased / n_reps > 0.9
+    # Require the variance to increase in the large majority of independent draws
+    assert increased / n_reps > 0.9
 
 
 @pytest.mark.parametrize("effect_strength", [0.1, 0.5, 1.0, 2.0])
