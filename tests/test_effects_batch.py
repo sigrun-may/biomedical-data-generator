@@ -526,3 +526,135 @@ class TestBatchEffectsIntegration:
 
         # Variance should generally increase (not strictly, but on average)
         assert var_after.mean() > var_before.mean()
+
+
+# ============================================================================
+# Validation and edge case tests
+# ============================================================================
+
+
+class TestBatchEffectsValidation:
+    """Tests for validation and error handling."""
+
+    def test_negative_n_samples_raises(self):
+        """Negative n_samples should raise ValueError."""
+        rng = np.random.default_rng(42)
+        with pytest.raises(ValueError, match="n_samples must be positive"):
+            generate_batch_assignments(
+                n_samples=-10,
+                n_batches=2,
+                rng=rng,
+            )
+
+    def test_zero_n_samples_raises(self):
+        """Zero n_samples should raise ValueError."""
+        rng = np.random.default_rng(42)
+        with pytest.raises(ValueError, match="n_samples must be positive"):
+            generate_batch_assignments(
+                n_samples=0,
+                n_batches=2,
+                rng=rng,
+            )
+
+    def test_zero_n_batches_raises(self):
+        """Zero n_batches should raise ValueError."""
+        rng = np.random.default_rng(42)
+        with pytest.raises(ValueError, match="n_batches must be >= 1"):
+            generate_batch_assignments(
+                n_samples=100,
+                n_batches=0,
+                rng=rng,
+            )
+
+    def test_negative_n_batches_raises(self):
+        """Negative n_batches should raise ValueError."""
+        rng = np.random.default_rng(42)
+        with pytest.raises(ValueError, match="n_batches must be >= 1"):
+            generate_batch_assignments(
+                n_samples=100,
+                n_batches=-2,
+                rng=rng,
+            )
+
+    def test_confounding_below_zero_raises(self):
+        """confounding_with_class below 0 should raise ValueError."""
+        y = np.array([0] * 50 + [1] * 50)
+        rng = np.random.default_rng(42)
+        with pytest.raises(ValueError, match="confounding_with_class must be in"):
+            generate_batch_assignments(
+                n_samples=100,
+                n_batches=2,
+                class_labels=y,
+                confounding_with_class=-0.1,
+                rng=rng,
+            )
+
+    def test_confounding_above_one_raises(self):
+        """confounding_with_class above 1 should raise ValueError."""
+        y = np.array([0] * 50 + [1] * 50)
+        rng = np.random.default_rng(42)
+        with pytest.raises(ValueError, match="confounding_with_class must be in"):
+            generate_batch_assignments(
+                n_samples=100,
+                n_batches=2,
+                class_labels=y,
+                confounding_with_class=1.5,
+                rng=rng,
+            )
+
+    def test_mismatched_class_labels_length_raises(self):
+        """class_labels with wrong length should raise ValueError."""
+        y = np.array([0] * 30 + [1] * 30)  # Only 60 samples
+        rng = np.random.default_rng(42)
+        with pytest.raises(ValueError, match="class_labels must have length n_samples"):
+            generate_batch_assignments(
+                n_samples=100,  # But requesting 100
+                n_batches=2,
+                class_labels=y,
+                confounding_with_class=0.5,
+                rng=rng,
+            )
+
+    def test_single_batch_returns_all_zeros(self):
+        """With n_batches=1, all samples should be in batch 0."""
+        rng = np.random.default_rng(42)
+        batches = generate_batch_assignments(
+            n_samples=50,
+            n_batches=1,
+            rng=rng,
+        )
+        assert len(batches) == 50
+        assert np.all(batches == 0)
+
+    def test_invalid_proportions_length_raises(self):
+        """Proportions with wrong length should raise ValueError."""
+        rng = np.random.default_rng(42)
+        with pytest.raises(ValueError, match="len\\(proportions\\) must equal n_batches"):
+            generate_batch_assignments(
+                n_samples=100,
+                n_batches=3,
+                proportions=[0.5, 0.5],  # Only 2 values for 3 batches
+                rng=rng,
+            )
+
+    def test_negative_proportions_raises(self):
+        """Negative proportions should raise ValueError."""
+        rng = np.random.default_rng(42)
+        with pytest.raises(ValueError, match="proportions must be non-negative"):
+            generate_batch_assignments(
+                n_samples=100,
+                n_batches=2,
+                proportions=[0.7, -0.3],
+                rng=rng,
+            )
+
+    def test_zero_sum_proportions_raises(self):
+        """Proportions summing to zero should raise ValueError."""
+        rng = np.random.default_rng(42)
+        with pytest.raises(ValueError, match="proportions must sum to a positive value"):
+            generate_batch_assignments(
+                n_samples=100,
+                n_batches=2,
+                proportions=[0.0, 0.0],
+                rng=rng,
+            )

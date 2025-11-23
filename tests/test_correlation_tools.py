@@ -166,3 +166,106 @@ class TestGetClusterFrame:
         result = get_cluster_frame(df, meta, cluster_id=1, anchor_first=True)
 
         assert len(result.columns) == 3
+
+
+class TestValidateCorrelation:
+    """Tests for correlation validation in find_seed_for_correlation."""
+
+    def test_equicorrelated_p1_valid(self):
+        """Test validation for equicorrelated with p=1."""
+        from biomedical_data_generator.utils.correlation_tools import _validate_correlation
+
+        # Should not raise for valid correlation
+        _validate_correlation("equicorrelated", p=1, correlation=0.5)
+        _validate_correlation("equicorrelated", p=1, correlation=-0.5)
+
+    def test_equicorrelated_p1_invalid(self):
+        """Test validation for equicorrelated with p=1 and invalid correlation."""
+        from biomedical_data_generator.utils.correlation_tools import _validate_correlation
+
+        # Should raise for correlation >= 1.0 or <= -1.0
+        with pytest.raises(ValueError, match="For p=1 require"):
+            _validate_correlation("equicorrelated", p=1, correlation=1.0)
+        with pytest.raises(ValueError, match="For p=1 require"):
+            _validate_correlation("equicorrelated", p=1, correlation=-1.0)
+
+    def test_equicorrelated_p2_valid(self):
+        """Test validation for equicorrelated with p>=2."""
+        from biomedical_data_generator.utils.correlation_tools import _validate_correlation
+
+        # Should not raise for valid correlation
+        _validate_correlation("equicorrelated", p=3, correlation=0.8)
+        _validate_correlation("equicorrelated", p=3, correlation=-0.4)
+
+    def test_equicorrelated_p2_invalid_lower_bound(self):
+        """Test validation for equicorrelated with correlation below lower bound."""
+        from biomedical_data_generator.utils.correlation_tools import _validate_correlation
+
+        # For p=3, lower bound is -1/(3-1) = -0.5
+        with pytest.raises(ValueError, match="Equicorrelated requires"):
+            _validate_correlation("equicorrelated", p=3, correlation=-0.6)
+
+    def test_equicorrelated_p2_invalid_upper_bound(self):
+        """Test validation for equicorrelated with correlation >= 1.0."""
+        from biomedical_data_generator.utils.correlation_tools import _validate_correlation
+
+        with pytest.raises(ValueError, match="Equicorrelated requires"):
+            _validate_correlation("equicorrelated", p=3, correlation=1.0)
+
+    def test_toeplitz_valid(self):
+        """Test validation for toeplitz structure."""
+        from biomedical_data_generator.utils.correlation_tools import _validate_correlation
+
+        # Should not raise for valid correlation
+        _validate_correlation("toeplitz", p=5, correlation=0.7)
+        _validate_correlation("toeplitz", p=5, correlation=-0.7)
+
+    def test_toeplitz_invalid(self):
+        """Test validation for toeplitz with invalid correlation."""
+        from biomedical_data_generator.utils.correlation_tools import _validate_correlation
+
+        # Should raise for |correlation| >= 1.0
+        with pytest.raises(ValueError, match="Toeplitz requires"):
+            _validate_correlation("toeplitz", p=5, correlation=1.0)
+        with pytest.raises(ValueError, match="Toeplitz requires"):
+            _validate_correlation("toeplitz", p=5, correlation=-1.0)
+
+
+class TestPC1Share:
+    """Tests for PC1 share functionality."""
+
+    def test_pc1_share_with_dataframe(self):
+        """Test pc1_share with DataFrame input."""
+        from biomedical_data_generator.utils.correlation_tools import pc1_share
+
+        df = pd.DataFrame(
+            {
+                "feat1": [1, 2, 3, 4, 5],
+                "feat2": [2, 4, 6, 8, 10],
+                "feat3": [1, 3, 2, 5, 4],
+            }
+        )
+        evr = pc1_share(df, method="pearson")
+        assert 0.0 <= evr <= 1.0
+        assert isinstance(evr, float)
+
+    def test_pc1_share_with_array(self):
+        """Test pc1_share with numpy array."""
+        from biomedical_data_generator.utils.correlation_tools import pc1_share
+
+        X = np.random.randn(50, 5)
+        evr = pc1_share(X, method="pearson")
+        assert 0.0 <= evr <= 1.0
+
+    def test_variance_partition_pc1(self):
+        """Test variance_partition_pc1 function."""
+        from biomedical_data_generator.utils.correlation_tools import variance_partition_pc1
+
+        X = pd.DataFrame(np.random.randn(100, 5))
+        metrics = variance_partition_pc1(X, method="pearson")
+
+        assert "n_features" in metrics
+        assert "pc1_evr" in metrics
+        assert "pc1_var_ratio" in metrics
+        assert metrics["n_features"] == 5
+        assert 0.0 <= metrics["pc1_evr"] <= 1.0
