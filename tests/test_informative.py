@@ -8,6 +8,7 @@
 
 import numpy as np
 import pytest
+from scipy import stats
 
 from biomedical_data_generator import ClassConfig, DatasetConfig
 from biomedical_data_generator.features.informative import (
@@ -17,6 +18,36 @@ from biomedical_data_generator.features.informative import (
     generate_informative_features,
     shift_classes,
 )
+
+
+def _scipy_dist_and_args(dist_name: str, params: dict):
+    """Map generator distribution + params -> (scipy_name, args_tuple)."""
+    if dist_name == "normal":
+        loc = float(params.get("loc", 0.0))
+        scale = float(params.get("scale", 1.0))
+        return "norm", (loc, scale)
+    if dist_name == "uniform":
+        low = float(params["low"])
+        high = float(params["high"])
+        return "uniform", (low, high - low)
+    if dist_name == "laplace":
+        loc = float(params.get("loc", 0.0))
+        scale = float(params.get("scale", 1.0))
+        return "laplace", (loc, scale)
+    if dist_name == "exponential":
+        scale = float(params.get("scale", 1.0))
+        return "expon", (0.0, scale)
+    if dist_name == "lognormal":
+        mean = float(params.get("mean", 0.0))
+        sigma = float(params.get("sigma", 1.0))
+        # scipy.stats.lognorm: shape = sigma, loc, scale = exp(mean)
+        return "lognorm", (sigma, 0.0, float(np.exp(mean)))
+    if dist_name == "exp_normal":
+        loc = float(params.get("loc", 0.0))
+        scale = float(params.get("scale", 1.0))
+        # exp_normal == exp(normal(loc, scale)) -> same mapping as lognormal
+        return "lognorm", (scale, 0.0, float(np.exp(loc)))
+    raise ValueError(f"Unknown distribution: {dist_name}")
 
 
 def test_normalize_class_sep_scalar():
@@ -366,6 +397,96 @@ def test_generate_informative_features_different_distributions():
     # Hard to test exactly due to shifting, but we can check basic properties
 
 
+def test_generate_informative_features_different_distributions_statistical():
+    """Statistical check of per-class sampling using one-sample KS tests.
+
+    Uses large sample sizes and class_sep=0 to avoid mean shifts so the
+    sampled values can be tested directly against the nominal distributions.
+    Requires SciPy; skipped if not available.
+    """
+    # Large sample sizes for good test power
+    n_per_class = 5000
+
+    cfg = DatasetConfig(
+        n_informative=3,
+        n_noise=0,
+        class_configs=[
+            ClassConfig(
+                n_samples=n_per_class,
+                class_distribution="normal",
+                class_distribution_params={"loc": 0.0, "scale": 1.0},
+            ),
+            ClassConfig(
+                n_samples=n_per_class,
+                class_distribution="uniform",
+                class_distribution_params={"low": 5.0, "high": 10.0},
+            ),
+        ],
+        class_sep=0.0,  # disable shifting so we test the raw sampled distributions
+        random_state=42,
+    )
+
+    rng = np.random.default_rng(42)
+    X, y = generate_informative_features(cfg, rng)
+
+    # Pick the first informative column for each class (sampling is iid across cols)
+    x_class0 = X[y == 0, 0]
+    x_class1 = X[y == 1, 0]
+
+    alpha = 0.01
+
+    # KS test for normal(0,1)
+    stat_norm, p_norm = stats.kstest(x_class0, "norm", args=(0.0, 1.0))
+    assert p_norm > alpha, f"Normal KS test failed (p={p_norm:.5g})"
+
+    # KS test for uniform(loc=5, scale=5)
+    stat_unif, p_unif = stats.kstest(x_class1, "uniform", args=(5.0, 5.0))
+    assert p_unif > alpha, f"Uniform KS test failed (p={p_unif:.5g})"
+
+
+def test_generate_informative_features_all_supported_distributions_statistical():
+    """KS tests for all supported distributions (class_sep=0 to avoid shifts)."""
+    n_per_class = 5000
+    alpha = 0.01
+
+    dist_cases = {
+        "normal": {"loc": 0.0, "scale": 1.0},
+        "uniform": {"low": 5.0, "high": 10.0},
+        "laplace": {"loc": 0.0, "scale": 1.0},
+        "exponential": {"scale": 2.0},
+        "lognormal": {"mean": 0.0, "sigma": 0.5},
+        "exp_normal": {"loc": 0.0, "scale": 0.5},
+    }
+
+    for dist_name, params in dist_cases.items():
+        cfg = DatasetConfig(
+            n_informative=1,
+            n_noise=0,
+            class_configs=[
+                ClassConfig(
+                    n_samples=n_per_class,
+                    class_distribution=dist_name,
+                    class_distribution_params=params,
+                ),
+                ClassConfig(
+                    n_samples=n_per_class,
+                    class_distribution="normal",
+                    class_distribution_params={"loc": 0.0, "scale": 1.0},
+                ),
+            ],
+            class_sep=0.0,
+            random_state=42,
+        )
+
+        rng = np.random.default_rng(42)
+        X, y = generate_informative_features(cfg, rng)
+        x_class0 = X[y == 0, 0]
+
+        scipy_name, args = _scipy_dist_and_args(dist_name, params)
+        stat, pval = stats.kstest(x_class0, scipy_name, args=args)
+        assert pval > alpha, f"{dist_name} KS test failed (p={pval:.5g})"
+
+
 def test_shift_classes_anchor_column_mean_preserved():
     """Test that anchor columns preserve global mean."""
     X = np.ones((100, 3)) * 5.0  # Start with mean=5.0
@@ -383,3 +504,38 @@ def test_shift_classes_anchor_column_mean_preserved():
 
     # Global mean of anchor column should be approximately preserved
     assert np.abs(X[:, 0].mean() - 5.0) < 0.1
+
+
+def test_generate_informative_features_shift_preserves_distribution_shape():
+    """Ensure class-wise shifts are pure mean-offsets and do not change distribution shape."""
+    n_per_class = 5000
+    alpha = 0.01
+
+    # Two identical classes sampled from standard normal, apply class_sep to shift means
+    cfg = DatasetConfig(
+        n_informative=1,
+        n_noise=0,
+        class_configs=[
+            ClassConfig(
+                n_samples=n_per_class, class_distribution="normal", class_distribution_params={"loc": 0, "scale": 1}
+            ),
+            ClassConfig(
+                n_samples=n_per_class, class_distribution="normal", class_distribution_params={"loc": 0, "scale": 1}
+            ),
+        ],
+        class_sep=0.8,  # non-zero to trigger shifts
+        random_state=42,
+    )
+
+    rng = np.random.default_rng(42)
+    X, y = generate_informative_features(cfg, rng)  # returns shifted features
+
+    # Recompute the offsets used by shift_classes and remove them to recover base samples
+    sep_vec = _normalize_class_sep(cfg.class_sep, cfg.n_classes)
+    offsets = _class_offsets_from_sep(sep_vec)
+
+    # For each class, subtract the applied offset and KS-test against the original distribution
+    for k in range(cfg.n_classes):
+        xk = X[y == k, 0] - offsets[k]
+        stat, pval = stats.kstest(xk, "norm", args=(0.0, 1.0))
+        assert pval > alpha, f"class {k} distribution altered by shift (KS p={pval:.5g})"
