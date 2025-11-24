@@ -1,12 +1,12 @@
 [tool.poetry]
 name = "biomedical-data-generator"
-version = "v0.1.5rc2"
+version = "1.0.0"
 description = "Generate synthetic data for data science, machine learning, and statistics."
 authors = ["Sigrun May <s.may@ostfalia.de>"]
 license = "MIT"
 readme = "README.md"
 homepage = "https://github.com/sigrun-may/biomedical-data-generator"
-include = ["LICENSE", "Makefile"]
+include = ["LICENSE"]
 keywords = [
     "artificial data", "synthetic data", "data generation", "data simulation", "data science", "machine learning",
     "statistics", "data analysis"
@@ -21,6 +21,7 @@ classifiers = [
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
     "Programming Language :: Python :: 3 :: Only",
     "Topic :: Scientific/Engineering",
     "Topic :: Scientific/Engineering :: Mathematics",
@@ -40,14 +41,13 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.poetry.dependencies]
 python = ">=3.10,<4.0"
+matplotlib = { version = "*", optional = true }
 numpy = "*"
-pyyaml = "*"
 pandas = "*"
 pydantic = "*"
-
-matplotlib = { version = "*", optional = true }
-seaborn    = { version = "*", optional = true }
+pyyaml = "*"
 scikit-learn = { version = "*", optional = true }
+seaborn = { version = "*", optional = true }
 
 [tool.poetry.extras]
 visualization = ["matplotlib", "seaborn"]
@@ -55,32 +55,32 @@ examples = ["scikit-learn"]
 
 [tool.poetry.group.jupyter.dependencies]
 jupyter = "*"
-seaborn = "*"
 matplotlib = "*"
+seaborn = "*"
 
 [tool.poetry.group.lint.dependencies]
-ruff = "^0.13.0"
 black = {extras = ["jupyter"], version = "^25.1.0"}
-mypy = "^1.10.0"
 mdformat = "^0.7.18"
-twine = "^6.2.0"
+mypy = "^1.10.0"
 pandas-stubs = "*"
+ruff = "^0.13.0"
+twine = "^6.2.0"
 types-PyYAML = "*"
 types-seaborn = "*"
 
 [tool.poetry.group.test.dependencies]
+coverage = {version="^7.6.0", extras=["toml"]}
+pyarrow = "*"
 pytest = "^8.0.0"
 pytest-cov = "^5.0.0"
-coverage = {version="^7.6.0", extras=["toml"]}
 scikit-learn = "*"
-pyarrow = "*"
 scipy = "*"
 
 [tool.poetry.group.doc.dependencies]
-sphinx = "*"
-sphinx_rtd_theme = "*"
 myst_parser = "*"
+sphinx = "*"
 sphinx_copybutton = "*"
+sphinx_rtd_theme = "*"
 
 [tool.poetry.scripts]
 bdg = "biomedical_data_generator.__main__:main"
@@ -90,7 +90,7 @@ bdg = "biomedical_data_generator.__main__:main"
 line-length = 120
 target-version = ["py311"]
 
-# ---- Ruff (Lint inkl. Import-Sortierung & Docstring-Regeln) ----
+# ---- Ruff ----
 [tool.ruff]
 line-length = 120
 target-version = "py311"
@@ -98,7 +98,7 @@ target-version = "py311"
 [tool.ruff.lint]
 # E,F: pycodestyle/pyflakes | I: isort | UP: pyupgrade | D: pydocstyle via Ruff
 select = ["E", "F", "I", "UP", "D"]
-ignore = ["D105", "D107"]  # magic methods & __init__ docstrings nicht verpflichtend
+ignore = ["D105", "D107"]  # magic methods & __init__ docstrings not mandatory
 per-file-ignores = { "tests/**" = ["D"] }
 
 [tool.ruff.lint.pydocstyle]
