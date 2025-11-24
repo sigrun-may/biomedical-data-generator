@@ -28,6 +28,7 @@ __all__ = [
     "plot_correlation_matrix",
     "plot_correlation_matrix_for_cluster",
     "plot_correlation_matrices_per_cluster",
+    "plot_all_correlation_clusters",
 ]
 
 
