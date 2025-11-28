@@ -39,7 +39,6 @@
       ~DatasetConfig.parse_raw
       ~DatasetConfig.schema
       ~DatasetConfig.schema_json
-      ~DatasetConfig.summary
       ~DatasetConfig.update_forward_refs
       ~DatasetConfig.validate
    
