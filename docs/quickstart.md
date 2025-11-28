@@ -13,7 +13,7 @@ effect_size: "medium"
 corr_between: 0.2
 corr_clusters:
   - size: 3
-    rho: 0.7
+    correlation: 0.7
     structure: "equicorrelated"
     anchor_role: "informative"
     anchor_beta: 1.0
