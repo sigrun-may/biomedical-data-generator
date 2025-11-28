@@ -69,11 +69,6 @@ def main() -> None:
         class_sep=[1.5],
         random_state=42,
     )
-
-    print("Cluster configuration:")
-    print(cfg1.corr_clusters[0].summary())
-    print()
-
     X1, y1, meta1 = generate_dataset(cfg1)
     print(f"✓ Generated dataset: {X1.shape}")
     print()

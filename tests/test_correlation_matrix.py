@@ -113,17 +113,6 @@ class TestBuildCorrelationMatrix:
     # ==================
     # Edge case tests
     # ==================
-
-    def test_single_feature_returns_scalar_one(self):
-        """Single feature (n=1) returns matrix [[1.0]]."""
-        R_eq = build_correlation_matrix(n_features=1, correlation=0.5, structure="equicorrelated")
-        R_tp = build_correlation_matrix(n_features=1, correlation=0.5, structure="toeplitz")
-
-        assert R_eq.shape == (1, 1)
-        assert R_tp.shape == (1, 1)
-        assert np.allclose(R_eq, [[1.0]])
-        assert np.allclose(R_tp, [[1.0]])
-
     def test_zero_correlation_equicorr(self):
         """Equicorrelated with correlation=0 produces identity matrix."""
         R = build_correlation_matrix(n_features=4, correlation=0.0, structure="equicorrelated")
@@ -190,50 +179,49 @@ class TestBuildCorrelationMatrix:
 
     def test_invalid_n_features_zero_raises(self):
         """Zero features raises ValueError."""
-        with pytest.raises(ValueError, match="n_features must be positive"):
+        with pytest.raises(ValueError, match="Correlation matrix requires at least two features"):
             build_correlation_matrix(n_features=0, correlation=0.5, structure="equicorrelated")
 
     def test_invalid_n_features_negative_raises(self):
         """Negative features raises ValueError."""
-        with pytest.raises(ValueError, match="n_features must be positive"):
+        with pytest.raises(ValueError, match="Correlation matrix requires at least two features"):
             build_correlation_matrix(n_features=-5, correlation=0.5, structure="toeplitz")
 
     def test_equicorr_correlation_equals_one_raises(self):
         """Equicorrelated with correlation=1 raises ValueError (not PD)."""
-        with pytest.raises(ValueError, match="Invalid correlation.*require.*< 1"):
+        with pytest.raises(ValueError, match="For equicorrelated with n_features"):
             build_correlation_matrix(n_features=3, correlation=1.0, structure="equicorrelated")
 
     def test_equicorr_correlation_too_negative_raises(self):
         """Equicorrelated with correlation <= -1/(n-1) raises ValueError."""
         # For n=4, lower bound is -1/3 ≈ -0.333
-        with pytest.raises(ValueError, match="Invalid correlation.*require.*< 1"):
+        with pytest.raises(ValueError, match="For equicorrelated with n_features"):
             build_correlation_matrix(n_features=4, correlation=-0.5, structure="equicorrelated")
 
     def test_toeplitz_correlation_equals_one_raises(self):
         """Toeplitz with |correlation|=1 raises ValueError (not PD)."""
-        with pytest.raises(ValueError, match="Invalid correlation.*require.*< 1"):
+        with pytest.raises(ValueError, match="For toeplitz, correlation "):
             build_correlation_matrix(n_features=5, correlation=1.0, structure="toeplitz")
 
-        with pytest.raises(ValueError, match="Invalid correlation.*require.*< 1"):
+        with pytest.raises(ValueError, match="For toeplitz, correlation "):
             build_correlation_matrix(n_features=5, correlation=-1.0, structure="toeplitz")
 
     def test_toeplitz_correlation_exceeds_one_raises(self):
         """Toeplitz with |correlation| > 1 raises ValueError."""
-        with pytest.raises(ValueError, match="Invalid correlation.*require.*< 1"):
+        with pytest.raises(ValueError, match="For toeplitz, correlation "):
             build_correlation_matrix(n_features=3, correlation=1.5, structure="toeplitz")
 
-        with pytest.raises(ValueError, match="Invalid correlation.*require.*< 1"):
+        with pytest.raises(ValueError, match="For toeplitz, correlation "):
             build_correlation_matrix(n_features=3, correlation=-1.5, structure="toeplitz")
 
     def test_unknown_structure_raises(self):
         """Unknown structure type raises ValueError."""
-        with pytest.raises(ValueError, match="Unknown structure"):
+        with pytest.raises(ValueError, match="Unknown correlation structure"):
             build_correlation_matrix(n_features=3, correlation=0.5, structure="invalid")
 
     # ==================
     # Mathematical property tests
     # ==================
-
     def test_positive_definite_equicorr(self):
         """Equicorrelated matrix is positive definite for valid correlation."""
         R = build_correlation_matrix(n_features=5, correlation=0.7, structure="equicorrelated")

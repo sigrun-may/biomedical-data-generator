@@ -119,9 +119,11 @@ def test_cholesky_with_jitter_handles_near_singular():
 def test_sample_cluster_global_equicorrelated_matches_mean():
     n, p, correlation = 500, 6, 0.6
     rng = np.random.default_rng(0)
-    X = corr.sample_correlated_cluster(n, p, rng, structure="equicorrelated", correlation=correlation)
-    C_emp = np.corrcoef(X, rowvar=False).astype(np.float64)
-    mean_off = correlation_tools.compute_correlation_metrics(C_emp)["mean_offdiag"]
+    x = corr.sample_correlated_data(
+        n_samples=n, n_features=p, rng=rng, structure="equicorrelated", correlation=correlation
+    )
+    c_emp = np.corrcoef(x, rowvar=False).astype(np.float64)
+    mean_off = correlation_tools.compute_correlation_metrics(c_emp)["mean_offdiag"]
     assert np.isfinite(mean_off)
     # Sampling noise: allow small tolerance
     assert abs(mean_off - correlation) <= 0.06
@@ -130,7 +132,7 @@ def test_sample_cluster_global_equicorrelated_matches_mean():
 def test_sample_cluster_global_toeplitz_lag_decay():
     n, p, correlation = 800, 6, 0.35
     rng = np.random.default_rng(1)
-    X = corr.sample_correlated_cluster(n, p, rng, structure="toeplitz", correlation=correlation)
+    X = corr.sample_correlated_data(n_samples=n, n_features=p, rng=rng, structure="toeplitz", correlation=correlation)
     C_emp = np.corrcoef(X, rowvar=False).astype(np.float64)
     # First and second off-diagonals should be close to correlation and correlation**2
     lag1 = np.mean([C_emp[i, i + 1] for i in range(p - 1)])
@@ -139,45 +141,26 @@ def test_sample_cluster_global_toeplitz_lag_decay():
     assert abs(lag2 - correlation**2) <= 0.06
 
 
-def test_sample_cluster_class_specific_means():
-    n, p = 600, 5
-    labels = np.array([0] * (n // 2) + [1] * (n - n // 2), dtype=np.int64)
-    rng = np.random.default_rng(7)
-    X = corr.sample_correlated_cluster(
-        n_samples=n,
-        n_features=p,
-        rng=rng,
-        structure="equicorrelated",
-        correlation={0: 0.7, 1: 0.2},
-    )
-    X0 = X[labels == 0]
-    X1 = X[labels == 1]
-    C0 = np.corrcoef(X0, rowvar=False).astype(np.float64)
-    C1 = np.corrcoef(X1, rowvar=False).astype(np.float64)
-    assert abs(correlation_tools.compute_correlation_metrics(C0)["mean_offdiag"] - 0.7) <= 0.06
-    assert abs(correlation_tools.compute_correlation_metrics(C1)["mean_offdiag"] - 0.2) <= 0.06
-
-
 def test_sample_cluster_errors():
     rng = np.random.default_rng(0)
     # Missing correlation in global mode
     with pytest.raises(TypeError):
-        corr.sample_correlated_cluster(10, 3, rng)
+        corr.sample_correlated_data(n_samples=10, n_features=3, rng=rng)
     # Missing class-specific correlation
     with pytest.raises(TypeError):
-        corr.sample_correlated_cluster(
-            10,
-            3,
-            rng,
+        corr.sample_correlated_data(
+            n_samples=10,
+            n_features=3,
+            rng=rng,
             structure="equicorrelated",
             correlation={0: 0.5},
         )
     # Invalid structure
     with pytest.raises(ValueError):
-        corr.sample_correlated_cluster(
-            10,
-            3,
-            rng,
+        corr.sample_correlated_data(
+            n_samples=10,
+            n_features=3,
+            rng=rng,
             structure="invalid-structure",
             correlation=0.5,
         )
@@ -325,7 +308,7 @@ def test_find_best_seed_for_correlation_returns_best():
 def test_assess_correlation_quality():
     """Quality assessment computes all metrics and checks tolerance."""
     rng = np.random.default_rng(42)
-    X = corr.sample_correlated_cluster(300, 6, rng, structure="equicorrelated", correlation=0.65)
+    X = corr.sample_correlated_data(300, 6, correlation=0.65, rng=rng, structure="equicorrelated")
 
     quality = correlation_tools.assess_correlation_quality(X, correlation_target=0.65, tolerance=0.03)
 

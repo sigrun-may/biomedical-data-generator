@@ -9,7 +9,7 @@
 """Data generator main package."""
 
 from .config import BatchEffectsConfig, ClassConfig, CorrClusterConfig, DatasetConfig
-from .features.correlated import sample_correlated_cluster
+from .features.correlated import sample_correlated_data
 from .generator import (
     generate_dataset,
 )
@@ -21,6 +21,6 @@ __all__ = [
     "BatchEffectsConfig",
     "ClassConfig",
     "generate_dataset",
-    "sample_correlated_cluster",
+    "sample_correlated_data",
     "find_seed_for_correlation",
 ]

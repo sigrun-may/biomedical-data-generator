@@ -365,24 +365,9 @@ def test_corr_cluster_config_anchor_class_negative():
         )
 
 
-def test_corr_cluster_config_summary():
-    """Test summary() method."""
-    cfg = CorrClusterConfig(
-        n_cluster_features=5,
-        correlation=0.7,
-        label="Test Cluster",
-    )
-
-    summary = cfg.summary()
-    assert "Test Cluster" in summary
-    assert "5" in summary  # n_cluster_features
-
-
 # ============================================================================
 # Tests for BatchEffectsConfig
 # ============================================================================
-
-
 def test_batch_effects_config_defaults():
     """Test BatchEffectsConfig default values."""
     cfg = BatchEffectsConfig()
@@ -438,18 +423,6 @@ def test_dataset_config_with_batch_effects():
 
     assert cfg.batch is not None
     assert cfg.batch.n_batches == 2
-
-
-def test_dataset_config_summary():
-    """Test that summary() method works."""
-    cfg = DatasetConfig(
-        n_informative=5,
-        n_noise=3,
-        class_configs=[ClassConfig(n_samples=50), ClassConfig(n_samples=50)],
-    )
-
-    summary = cfg.summary()
-    assert "Dataset Configuration Summary" in summary or len(summary) > 0
 
 
 def test_dataset_config_breakdown():

@@ -48,10 +48,6 @@ def main() -> None:
         random_state=42,
     )
 
-    print("Configuration Summary:")
-    print(cfg.summary(per_cluster=True))
-    print()
-
     # Generate dataset
     print("Generating dataset...")
     X, y, meta = generate_dataset(cfg)

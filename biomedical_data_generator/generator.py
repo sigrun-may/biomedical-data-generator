@@ -214,7 +214,7 @@ def generate_dataset(cfg, /, *, return_dataframe=True, **overrides):
     # ================================================================
     # STEP 2: Generate correlated clusters (with anchor shifts)
     # ================================================================
-    x_clusters, cluster_meta = sample_all_correlated_clusters(cfg, rng_global, y)
+    x_clusters, cluster_meta = sample_all_correlated_clusters(cfg=cfg, y=y, rng=rng_global)
     # Returns clusters with anchor shifts already applied
 
     # ================================================================

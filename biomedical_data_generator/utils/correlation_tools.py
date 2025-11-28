@@ -22,7 +22,7 @@ import pandas as pd
 from numpy.typing import NDArray
 
 # Runtime dependencies
-from biomedical_data_generator.features.correlated import sample_correlated_cluster
+from biomedical_data_generator.features.correlated import sample_correlated_data
 
 # Type alias kept local to avoid circular imports
 CorrelationStructure = Literal["equicorrelated", "toeplitz"]
@@ -287,10 +287,12 @@ def find_seed_for_correlation(
     seed = start_seed
     for try_idx in range(1, max_tries + 1):
         rng = np.random.default_rng(seed)
-        X = sample_correlated_cluster(n_samples, n_cluster_features, rng, structure=structure, correlation=correlation)
-        C: NDArray[np.float64] = np.corrcoef(X, rowvar=False).astype(np.float64, copy=False)
+        x = sample_correlated_data(
+            n_samples=n_samples, n_features=n_cluster_features, rng=rng, structure=structure, correlation=correlation
+        )
+        c: NDArray[np.float64] = np.corrcoef(x, rowvar=False).astype(np.float64, copy=False)
 
-        m = compute_correlation_metrics(C)
+        m = compute_correlation_metrics(c)
         mean_off = m["mean_offdiag"]
         deviation = abs(mean_off - correlation)
         metric_val = float(m[metric])
@@ -335,7 +337,7 @@ def find_seed_for_correlation(
             "p_gt_n_tolerance_warning": bool(p_gt_n_warn),
         }
         if return_matrix:
-            meta["corr_matrix"] = C
+            meta["corr_matrix"] = c
 
         if accepted:
             return seed, meta
@@ -391,9 +393,11 @@ def find_best_seed_for_correlation(
 
     for s in range(start_seed, start_seed + max_tries):
         rng = np.random.default_rng(s)
-        X = sample_correlated_cluster(n_samples, n_cluster_features, rng, structure=structure, correlation=correlation)
-        C = np.corrcoef(X, rowvar=False)
-        m = compute_correlation_metrics(C)
+        x = sample_correlated_data(
+            n_samples=n_samples, n_features=n_cluster_features, rng=rng, structure=structure, correlation=correlation
+        )
+        c = np.corrcoef(x, rowvar=False)
+        m = compute_correlation_metrics(c)
         delta = abs(m["mean_offdiag"] - correlation)
         if delta < best_delta:
             best_seed, best_delta, best_metrics = s, delta, m

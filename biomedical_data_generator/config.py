@@ -26,11 +26,6 @@ DistributionType = Literal[
 ]
 
 
-# ---------------------------------------------------------------------------
-# Shared helpers
-# ---------------------------------------------------------------------------
-
-
 def validate_distribution_params(
     params: dict[str, float],
     distribution: str,
@@ -116,11 +111,6 @@ def validate_distribution_params(
                 raise ValueError(f"'{param_name}' must be numeric, got {params[param_name]}") from e
 
     return params
-
-
-# ---------------------------------------------------------------------------
-# Class configuration
-# ---------------------------------------------------------------------------
 
 
 class ClassConfig(BaseModel):
@@ -315,11 +305,6 @@ class BatchEffectsConfig(BaseModel):
         return [p / total for p in v]
 
 
-# ---------------------------------------------------------------------------
-# Correlated clusters
-# ---------------------------------------------------------------------------
-
-
 class CorrClusterConfig(BaseModel):
     """Correlated feature cluster simulating coordinated biomarker patterns.
 
@@ -428,24 +413,25 @@ class CorrClusterConfig(BaseModel):
             -1/(p-1) < rho < 1   (for p > 1)
         For toeplitz clusters:
             |rho| < 1
+        Where rho is the correlation coefficient between two features.
         """
         n_features = int(info.data.get("n_cluster_features", 0))
         if n_features <= 0:
             return v
         structure = info.data.get("structure", "equicorrelated")
 
-        def check_one(rho: float) -> None:
+        def check_one(correlation: float) -> None:
             if structure == "equicorrelated":
                 lower = -1.0 / (n_features - 1) if n_features > 1 else float("-inf")
-                if not (lower < rho < 1.0):
+                if not (lower < correlation < 1.0):
                     raise ValueError(
-                        f"correlation={rho} invalid for equicorrelated with "
+                        f"correlation={correlation} invalid for equicorrelated with "
                         f"n_cluster_features={n_features}; "
                         f"require {lower:.6f} < correlation < 1."
                     )
             else:  # toeplitz
-                if not (-1.0 < rho < 1.0):
-                    raise ValueError(f"correlation={rho} invalid for toeplitz; require |correlation| < 1.")
+                if not (-1.0 < correlation < 1.0):
+                    raise ValueError(f"correlation={correlation} invalid for toeplitz; require |correlation| < 1.")
 
         if isinstance(v, dict):
             for cls_idx, rho_val in v.items():
@@ -518,68 +504,6 @@ class CorrClusterConfig(BaseModel):
             return effect_map[self.anchor_effect_size]
 
         return float(self.anchor_effect_size)
-
-    def summary(self) -> str:
-        """Return human-readable summary in medical terms."""
-        lines: list[str] = []
-        lines.append(f"{'=' * 60}")
-        lines.append(f"Biomarker Cluster: {self.label or 'Unnamed'}")
-        lines.append("=" * 60)
-        lines.append("")
-
-        # Cluster structure
-        lines.append("Cluster Structure:")
-        lines.append(
-            f"  Number of markers: {self.n_cluster_features} " f"(1 anchor + {self.n_cluster_features - 1} proxies)"
-        )
-        lines.append(f"  Structure: {self.structure}")
-
-        # Correlation interpretation
-        def describe_rho(rho: float) -> str:
-            if abs(rho) < 0.3:
-                return "weak/independent"
-            if abs(rho) < 0.6:
-                return "moderate"
-            if abs(rho) < 0.8:
-                return "strong"
-            return "very strong (pathway-like)"
-
-        if not self.is_class_specific():
-            rho = float(self.correlation)  # type: ignore[arg-type]
-            lines.append(f"  Correlation: rho={rho} ({describe_rho(rho)})")
-        else:
-            lines.append("  Class-specific correlations:")
-            mapping = cast(dict[int, float], self.correlation)
-            for cls_idx, rho in sorted(mapping.items()):
-                lines.append(f"    class {cls_idx}: rho={rho} ({describe_rho(rho)})")
-            lines.append("    other classes: rho=0.0 (independent)")
-
-        lines.append("")
-        # Anchor properties
-        lines.append("Anchor Marker:")
-        lines.append(f"  Role: {self.anchor_role}")
-
-        if self.anchor_role == "informative":
-            effect_value = self.resolve_anchor_effect_size()
-            effect_str = self.anchor_effect_size if self.anchor_effect_size else "medium"
-            lines.append(f"  Effect size: {effect_str} (value={effect_value})")
-
-            if self.anchor_class is not None:
-                lines.append(f"  Predicts: class {self.anchor_class}")
-
-            if effect_value < 0.7:
-                lines.append("  → Subtle signal (large sample needed)")
-            elif effect_value < 1.2:
-                lines.append("  → Moderate signal (typical biomarker)")
-            else:
-                lines.append("  → Strong signal (easy to detect)")
-        else:
-            lines.append("  → Random noise (no signal)")
-
-        lines.append("")
-        lines.append(f"Random seed: {self.random_state if self.random_state else 'from dataset'}")
-
-        return "\n".join(lines)
 
     def __str__(self) -> str:
         """Concise representation for quick reference."""
@@ -683,7 +607,7 @@ class DatasetConfig(BaseModel):
         ...     corr_clusters=[
         ...         CorrClusterConfig(
         ...             n_cluster_features=4,
-        ...             rho=0.8,
+        ...             correlation=0.8,
         ...             anchor_role="informative",
         ...             anchor_effect_size="medium",
         ...             anchor_class=1,
@@ -691,7 +615,7 @@ class DatasetConfig(BaseModel):
         ...         ),
         ...         CorrClusterConfig(
         ...             n_cluster_features=3,
-        ...             rho=0.5,
+        ...             correlation=0.5,
         ...             anchor_role="noise",
         ...             label="Random Noise Cluster"
         ...         )
@@ -702,11 +626,6 @@ class DatasetConfig(BaseModel):
         ...     feature_naming="prefixed",
         ...     random_state=42
         ... )
-
-    See Also:
-    --------
-    CorrClusterConfig  : Correlated cluster settings (size, rho, anchor role/effect/class)
-    DatasetMeta        : Output ground-truth meta (indices for anchors, proxies, cluster layout)
     """
 
     model_config = ConfigDict(extra="forbid", use_enum_values=True)
@@ -743,8 +662,6 @@ class DatasetConfig(BaseModel):
 
     # Global seed
     random_state: int | None = None
-
-    # ------------------------------------------------------------------ helpers
 
     @staticmethod
     def _iter_cluster_dicts(
@@ -897,8 +814,6 @@ class DatasetConfig(BaseModel):
 
         return self
 
-    # ------------------------------------------------------ convenience API
-
     @classmethod
     def from_yaml(cls, path: str) -> DatasetConfig:
         """Load from YAML and validate via the same pipeline."""
@@ -907,8 +822,6 @@ class DatasetConfig(BaseModel):
         with open(path, encoding="utf-8") as f:
             raw_config: dict[str, Any] = yaml.safe_load(f) or {}
         return cls.model_validate(raw_config)
-
-    # ------------------------------ anchor / proxy accounting ----------------
 
     def count_informative_anchors(self) -> int:
         """Count clusters whose anchor contributes as 'informative'.
@@ -987,8 +900,6 @@ class DatasetConfig(BaseModel):
         """Class counts as dict {class_idx: n_samples}."""
         return {idx: c.n_samples for idx, c in enumerate(self.class_configs)}
 
-    # ------------------------------ summary / breakdown ----------------------
-
     def breakdown(self) -> dict[str, int]:
         """Structured feature counts incl. cluster proxies and anchor split.
 
@@ -1016,76 +927,3 @@ class DatasetConfig(BaseModel):
             "proxies_from_clusters": int(proxies),
             "n_features": int(self.n_features),
         }
-
-    def summary(self, *, per_cluster: bool = False, as_markdown: bool = False) -> str:
-        """Return a human-readable summary of the configuration.
-
-        Args:
-            per_cluster: Include one line per cluster (size/role/rho/etc.).
-            as_markdown: Render as a Markdown table-like text.
-
-        Returns:
-            A formatted string summarizing the feature layout and counts.
-        """
-        b = self.breakdown()
-        lines: list[str] = []
-
-        if as_markdown:
-            lines.append("### Feature breakdown")
-            lines.append("")
-            lines.append("| key | value |")
-            lines.append("|-----|-------|")
-            for k in [
-                "n_informative_total",
-                "n_informative_anchors",
-                "n_informative_free",
-                "n_noise_total",
-                "n_noise_anchors",
-                "n_noise_free",
-                "proxies_from_clusters",
-                "n_features",
-            ]:
-                lines.append(f"| {k} | {b[k]} |")
-        else:
-            lines.append("Feature breakdown")
-            lines.append(f"- n_informative_total    : {b['n_informative_total']}")
-            lines.append(f"- n_informative_anchors  : {b['n_informative_anchors']}")
-            lines.append(f"- n_informative_free     : {b['n_informative_free']}")
-            lines.append(f"- n_noise_total          : {b['n_noise_total']}")
-            lines.append(f"- n_noise_anchors        : {b['n_noise_anchors']}")
-            lines.append(f"- n_noise_free           : {b['n_noise_free']}")
-            lines.append(f"- proxies_from_clusters  : {b['proxies_from_clusters']}")
-            lines.append(f"- n_features             : {b['n_features']}")
-
-        if per_cluster and self.corr_clusters:
-            if as_markdown:
-                lines.append("")
-                lines.append("### Clusters")
-                lines.append("")
-                lines.append("| id | size | role | correlation | structure | label | proxies |")
-                lines.append("|----|------|------|-------------|-----------|-------|---------|")
-            else:
-                lines.append("Clusters:")
-
-            for i, c in enumerate(self.corr_clusters, start=1):
-                proxies = max(0, c.n_cluster_features - 1)
-                label = c.label or ""
-
-                if isinstance(c.correlation, dict):
-                    corr_repr = "class-specific"
-                else:
-                    corr_repr = f"{float(c.correlation):.3f}"
-
-                if as_markdown:
-                    lines.append(
-                        f"| {i} | {c.n_cluster_features} | {c.anchor_role} | "
-                        f"{corr_repr} | {c.structure} | {label} | {proxies} |"
-                    )
-                else:
-                    lines.append(
-                        f"- #{i}: n_cluster_features={c.n_cluster_features}, "
-                        f"role={c.anchor_role}, correlation={corr_repr}, "
-                        f"structure={c.structure}, label={label}, proxies={proxies}"
-                    )
-
-        return "\n".join(lines)
