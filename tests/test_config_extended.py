@@ -14,11 +14,10 @@ from biomedical_data_generator.config import (
     validate_distribution_params,
 )
 
+
 # ============================================================================
 # Tests for validate_distribution_params
 # ============================================================================
-
-
 def test_validate_distribution_params_empty():
     """Test validation with empty params dict."""
     result = validate_distribution_params({}, "normal")
@@ -137,9 +136,7 @@ def test_validate_distribution_params_unsupported_distribution():
 
 # ============================================================================
 # Tests for ClassConfig
-# ============================================================================
-
-
+# ===========================================================================
 def test_class_config_default_values():
     """Test ClassConfig with default values."""
     cfg = ClassConfig()
@@ -190,8 +187,6 @@ def test_class_config_str_with_non_default_distribution():
 # ============================================================================
 # Tests for CorrClusterConfig
 # ============================================================================
-
-
 def test_corr_cluster_config_defaults():
     """Test CorrClusterConfig with default values."""
     cfg = CorrClusterConfig(n_cluster_features=5, correlation=0.7)
@@ -376,7 +371,6 @@ def test_batch_effects_config_defaults():
     assert cfg.effect_strength == 0.5  # Default is 0.5, not 1.0
     assert cfg.effect_type == "additive"
     assert cfg.confounding_with_class == 0.0
-    assert cfg.random_state is None
 
 
 def test_batch_effects_config_custom_values():
@@ -386,14 +380,12 @@ def test_batch_effects_config_custom_values():
         effect_strength=2.0,
         effect_type="multiplicative",
         confounding_with_class=0.7,
-        random_state=42,
     )
 
     assert cfg.n_batches == 5
     assert cfg.effect_strength == 2.0
     assert cfg.effect_type == "multiplicative"
     assert cfg.confounding_with_class == 0.7
-    assert cfg.random_state == 42
 
 
 def test_batch_effects_config_proportions():

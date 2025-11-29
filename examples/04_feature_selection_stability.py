@@ -298,7 +298,7 @@ def main() -> None:
         out_path = f"feature_selection_example_{i}_{name}.csv"
         df_out = X.copy()
         df_out["target"] = y
-        df_out.to_csv(out_path, index=False)
+        df_out.to_csv(out_path, index=False)  # type: ignore
         print(f"✓ Saved {name} dataset to {out_path}")
 
     print()

@@ -241,7 +241,6 @@ def make_biomedical_dataset(
             confounding_with_class=confounding_with_class,
             affected_features="all",  # simple wrapper: affect all features
             proportions=None,
-            random_state=None,  # reuse DatasetConfig.random_state (recommended)
         )
     else:
         batch_cfg = None

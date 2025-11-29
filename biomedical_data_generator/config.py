@@ -199,83 +199,83 @@ class BatchEffectsConfig(BaseModel):
     """Configuration for simulating batch effects.
 
     Simulate batch effects by adding random intercepts or scaling factors
-    to specified features. This can be used to mimic:
+    to a subset of features. This can be used to mimic:
       - site-to-site differences (multi-center studies),
       - instrument calibration shifts,
       - cohort / recruitment waves (temporal batches).
-
-    Randomness and reproducibility
-    ------------------------------
-    Batch effects are integrated into the dataset-level RNG in a predictable way:
-
-    - In :func:`generate_dataset`, a single
-      ``rng_global = np.random.default_rng(cfg.random_state)`` is created.
-
-    - If ``BatchEffectsConfig.random_state`` is ``None`` (recommended),
-      **all batch-related draws reuse this global generator**:
-        * batch assignment (random or confounded),
-        * batch effects (additive or multiplicative).
-      In this default mode, ``DatasetConfig.random_state`` is the **single knob**
-      that reproduces the entire dataset, *including* batch effects.
-
-    - If ``BatchEffectsConfig.random_state`` is an integer, a dedicated RNG
-      ``np.random.default_rng(batch.random_state)`` is created and passed to the
-      batch-effect routines. Use this only if you explicitly want to keep batch
-      effects fixed while changing other aspects of the dataset.
 
     Conceptual separation
     ---------------------
     - ``confounding_with_class`` controls **sampling bias**:
       which samples (classes) are recruited into which batch.
 
-    - ``effect_strength`` and ``effect_type`` control **technical variation**:
-      how strongly the measurement shifts between batches.
+    - ``effect_strength``, ``effect_type`` and ``effect_granularity`` control
+      **technical variation**: how strongly, and how coherently across features,
+      the measurements shift between batches.
 
     Args:
         n_batches:
             Number of batches. Values 0 or 1 effectively disable batch effects.
         effect_strength:
-            Scale of batch effects.
-            - For ``effect_type="additive"``: standard deviation of batch intercepts.
-            - For ``effect_type="multipliclicative"``: standard deviation of the
-              multiplicative factor (applied as ``X' = X * (1 + b_batch)``).
+            Scale of batch effects. Must be non-negative.
+            - For ``effect_type="additive"``: standard deviation of the additive
+              batch effects, sampled as ``Normal(0, effect_strength)``.
+            - For ``effect_type="multiplicative"``: standard deviation of the
+              multiplicative deviations around 1.0, sampled as
+              ``1 + Normal(0, effect_strength)``.
         effect_type:
             Type of batch effect.
             - ``"additive"``: Additive intercepts (shifts in feature means).
-            - ``"multiplicative"``: Multiplicative scaling (changes in variance/scale).
-        confounding_with_class: Degree of confounding between batch and class (0.0-1.0).
+            - ``"multiplicative"``: Multiplicative scaling (changes in
+              variance/scale).
+        effect_granularity:
+            Granularity of batch effects across features:
+            - ``"per_feature"``: draw distinct effects per batch and affected
+              feature (shape ``(n_batches, n_affected_features)``).
+            - ``"scalar"``: draw a single effect per batch and apply it
+              uniformly to all affected features (global per-batch shift/scale).
+        confounding_with_class:
+            Degree of confounding between batch and class in ``[0.0, 1.0]``.
             Controls how strongly batch assignment correlates with class labels,
             simulating **recruitment bias** in multi-center studies.
 
-            The parameter determines the probability that samples from the same
-            class are assigned to the same batch:
-            Semantics (for two classes / two batches, equal base proportions):
+            Semantics (for two classes / two batches with equal base proportions):
                 - 0.0 → independent: each batch has ~50/50 class mix.
-                - 0.5 → moderate correlation
-                - 0.8 → strong recruitment bias (most samples of a class go to one batch).
-                - 1.0 → perfect confounding: each class maps to one preferred batch
-                  (if ``n_batches >= n_classes``).
-        affected_features (list[int] | Literal["all", "informative"]):
+                - 0.5 → moderate correlation.
+                - 0.8 → strong recruitment bias (most samples of a class go to
+                  one batch).
+                - 1.0 → perfect confounding: each class maps to one preferred
+                  batch (if ``n_batches >= n_classes``).
+        affected_features:
             Which features should be affected:
             - ``"all"``: apply batch effects to all features.
-            - ``"informative"``: apply only to informative features.
-            - list of ints: explicit 0-based column indices.
+            - list of ints: explicit 0-based column indices of affected features.
         proportions:
             Optional target proportions for batch sizes. Values are normalized
             to sum to 1. If ``None``, batches are (approximately) equal in size.
-        random_state:
-            Optional seed specific to batch effects. ``None`` → reuse dataset RNG.
     """
 
     model_config = ConfigDict(extra="forbid")
 
-    n_batches: int = Field(default=0, ge=0)  # 0 or 1 => no batch effect
-    effect_strength: float = Field(default=0.5, gt=0.0)  # std of batch effects
+    # 0 or 1 => effectively no batch effect
+    n_batches: int = Field(default=0, ge=0)
+
+    # std of batch effects (0.0 allowed => no effect)
+    effect_strength: float = Field(default=0.5, ge=0.0)
+
     effect_type: Literal["additive", "multiplicative"] = "additive"
-    confounding_with_class: float = Field(default=0.0, ge=0.0, le=1.0)  # in [0,1]
-    affected_features: list[int] | Literal["all", "informative"] = "all"  # 0-based column indices; "all" => all
-    proportions: list[float] | None = None  # optional batch proportions
-    random_state: int | None = None
+
+    # how structured across features: per-feature vs scalar per batch
+    effect_granularity: Literal["per_feature", "scalar"] = Field(default="per_feature")
+
+    # in [0, 1], controls recruitment bias / confounding
+    confounding_with_class: float = Field(default=0.0, ge=0.0, le=1.0)
+
+    # 0-based column indices; "all" => all features
+    affected_features: list[int] | Literal["all"] = "all"
+
+    # optional batch size proportions
+    proportions: list[float] | None = None
 
     @field_validator("proportions")
     @classmethod
@@ -294,7 +294,7 @@ class BatchEffectsConfig(BaseModel):
 
         # Check length vs n_batches (if > 0)
         n_batches = info.data.get("n_batches")
-        if isinstance(n_batches, int) and n_batches > 0 and len(v) != n_batches:
+        if isinstance(n_batches, int) and 0 < n_batches != len(v):
             raise ValueError(f"proportions length ({len(v)}) must match n_batches ({n_batches}).")
 
         total = float(sum(v))
@@ -782,6 +782,17 @@ class DatasetConfig(BaseModel):
             if cls_cfg.label is None or cls_cfg.label == "":
                 # ClassConfig is a BaseModel, so we need object.__setattr__
                 object.__setattr__(cls_cfg, "label", f"class_{idx}")
+        return self
+
+    @model_validator(mode="after")
+    def _enforce_nonzero_class_sep(self):
+        if self.n_informative_free > 0:
+            if all(abs(s) < 1e-12 for s in self.class_sep):
+                raise ValueError(
+                    "class_sep must contain at least one non-zero value when "
+                    "n_informative_free > 0; otherwise informative features "
+                    "carry no class signal."
+                )
         return self
 
     @model_validator(mode="after")

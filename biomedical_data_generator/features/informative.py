@@ -19,62 +19,17 @@ anchor effects in correlated clusters).
 
 from __future__ import annotations
 
-from collections.abc import Iterable, Mapping, Sequence
-
 import numpy as np
 
-from biomedical_data_generator.config import AnchorMode, DatasetConfig
-from biomedical_data_generator.utils.sampling import sample_2d_array
+from biomedical_data_generator.config import DatasetConfig
+from biomedical_data_generator.utils.sampling import sample_distribution
 
 __all__ = [
     "generate_informative_features",
-    "shift_classes",
 ]
 
 
-# ---------------------------------------------------------------------------
-# Helpers for class separation
-# ---------------------------------------------------------------------------
-def _normalize_class_sep(
-    class_sep: float | Sequence[float],
-    K: int,
-) -> np.ndarray:
-    """Return a (K-1,) vector of separations between neighbouring classes.
-
-    Args:
-        class_sep: A scalar or sequence controlling separations between
-            neighbouring classes. If scalar, it is broadcast to length K-1.
-        K: Number of classes (must be >= 2).
-
-    Returns:
-        np.ndarray: 1-D array of length K-1 containing finite separations.
-
-    Raises:
-        ValueError: If K < 2, if scalar is not finite, if sequence is not 1-D,
-            if sequence length is not K-1, or if any entry is non-finite.
-    """
-    if K <= 1:
-        raise ValueError(f"_normalize_class_sep: K must be >= 2, got {K}.")
-
-    # Scalar → broadcast
-    if np.isscalar(class_sep):
-        v = float(np.asarray(class_sep).item())
-        if not np.isfinite(v):
-            raise ValueError(f"class_sep must be finite, got {class_sep!r}.")
-        return np.full(K - 1, v, dtype=float)
-
-    # Sequence → numeric vector of length (K-1)
-    sep_vec = np.asarray(class_sep, dtype=float)
-    if sep_vec.ndim != 1:
-        raise ValueError(f"class_sep must be 1D, got shape {sep_vec.shape}.")
-    if sep_vec.shape[0] != K - 1:
-        raise ValueError(f"class_sep length must be K-1 (={K-1}), got {sep_vec.shape[0]}.")
-    if not np.all(np.isfinite(sep_vec)):
-        raise ValueError("class_sep entries must be finite numbers.")
-    return sep_vec
-
-
-def _class_offsets_from_sep(sep_vec: np.ndarray) -> np.ndarray:
+def _class_offsets_from_sep(sep_vec: list[float]) -> np.ndarray:
     """Construct centered class-wise offsets from a (K-1,) separation vector.
 
     The returned offsets have length K where K = len(sep_vec) + 1. Offsets
@@ -118,110 +73,6 @@ def _build_class_labels(cfg: DatasetConfig) -> np.ndarray:
 
 
 # ---------------------------------------------------------------------------
-# Core shifting logic (also reusable by correlated.py for anchors)
-# ---------------------------------------------------------------------------
-
-
-def shift_classes(
-    X: np.ndarray,
-    y: np.ndarray,
-    *,
-    informative_idx: Iterable[int],
-    anchor_contrib: Mapping[int, tuple[float, int]] | None = None,
-    class_sep: list[float],
-    anchor_strength: float = 1.0,
-    anchor_mode: AnchorMode = "equalized",  # "equalized" or "strong"
-    spread_non_anchors: bool = True,
-) -> None:
-    """Apply class-wise mean shifts to informative features and optional anchors.
-
-    This function modifies *X* in place.
-
-    Args:
-        X: Array of shape (n_samples, n_features).
-        y: 1-D integer label array with values in {0, ..., K-1}.
-        informative_idx: Indices of informative (non-anchor) features. Any
-            index present in `anchor_contrib` is skipped and treated as an anchor.
-        anchor_contrib: Optional mapping from column index to (beta, cls_target),
-            where beta is a per-anchor multiplier and cls_target is the target
-            class index for a one-vs-rest shift.
-        class_sep: Controlling multi-class separation. Must have
-            length K-1 describing neighbor separations.
-        anchor_strength: Global multiplicative factor for anchors.
-        anchor_mode: Either `"equalized"` (anchor effect roughly invariant in K)
-            or `"strong"` (anchor effect grows with K).
-        spread_non_anchors: If True, non-anchor informative features receive the
-            multi-class offsets defined by `class_sep`. If False, they are left
-            unchanged and only anchors are shifted.
-
-    Returns:
-        None
-
-    Raises:
-        ValueError: For invalid shapes, unknown anchor_mode, or out-of-range
-            anchor targets.
-    """
-    if X.size == 0:
-        return
-
-    y = np.asarray(y)
-    if y.ndim != 1:
-        raise ValueError(f"y must be a 1D label array, got shape {y.shape}.")
-
-    if y.size == 0:
-        return
-
-    K = int(y.max()) + 1
-    if K <= 1:
-        return
-
-    # 1) Build class-wise offsets from class_sep -----------------------------
-    sep_vec = _normalize_class_sep(class_sep, K)
-    class_offsets = _class_offsets_from_sep(sep_vec)
-
-    # sep_scale: scalar strength representative of the pairwise separations
-    # Use .item() to obtain a native Python float for mypy compatibility.
-    if K > 1:
-        sep_scale = float(np.mean(np.abs(sep_vec)).item())
-    else:
-        sep_scale = float(np.asarray(sep_vec)[0].item())
-
-    anchor_cols = set(anchor_contrib.keys()) if anchor_contrib else set()
-
-    # 2) Spread for non-anchor informative features --------------------------
-    if spread_non_anchors:
-        for idx in informative_idx:
-            if idx in anchor_cols:
-                continue  # handled in anchor loop
-            for k in range(K):
-                X[y == k, idx] += class_offsets[k]
-
-    # 3) Anchors: one-vs-rest pattern with K-invariant / strong scaling ------
-    if anchor_contrib:
-        for col, (beta, cls_target) in anchor_contrib.items():
-            if not (0 <= cls_target < K):
-                raise ValueError(f"anchor_contrib: cls_target={cls_target} out of range for K={K}.")
-
-            beta_val = float(beta)
-
-            if anchor_mode == "equalized":
-                # Δμ(target vs. others) ≈ sep_scale * anchor_strength * beta
-                A = sep_scale * anchor_strength * beta_val * (K - 1) / K
-            elif anchor_mode == "strong":
-                # Stronger growth with K; Δμ grows ~ K
-                A = sep_scale * anchor_strength * beta_val * (K - 1) / 2.0
-            else:
-                raise ValueError(f"Unknown anchor_mode={anchor_mode!r}.")
-
-            # Increase target class, decrease all others so that the global
-            # mean of the column is unchanged.
-            X[y == cls_target, col] += A
-            for k in range(K):
-                if k != cls_target:
-                    X[y == k, col] -= A / (K - 1)
-
-
-# ---------------------------------------------------------------------------
 # Public API: generate_informative_features
 # ---------------------------------------------------------------------------
 def generate_informative_features(
@@ -249,7 +100,7 @@ def generate_informative_features(
     n_samples = cfg.n_samples
     n_inf = int(cfg.n_informative_free)  # excludes informative anchors by design
 
-    # 1) Build numeric class labels
+    # build numeric class labels
     y = _build_class_labels(cfg)
 
     # Corner case: no informative features → return empty matrix
@@ -257,33 +108,24 @@ def generate_informative_features(
         x_empty_empty = np.empty((n_samples, 0), dtype=float)
         return x_empty_empty, y
 
-    # 2) Sample base values per class (before mean shifts)
-    x_informative = np.empty((n_samples, n_inf), dtype=float)
+    # sample base values and apply class-wise shifts
+    offsets = _class_offsets_from_sep(cfg.class_sep)
+    x_informative = np.empty((cfg.n_samples, n_inf), dtype=float)
 
     start = 0
-    for cls_cfg in cfg.class_configs:
+    for cls_cfg, offset in zip(cfg.class_configs, offsets, strict=True):
         n_cls = cls_cfg.n_samples
         stop = start + n_cls
 
-        block = sample_2d_array(
+        class_samples = sample_distribution(
             distribution=cls_cfg.class_distribution,
             params=cls_cfg.class_distribution_params,
             rng=rng,
             size=(n_cls, n_inf),
         )
-        x_informative[start:stop, :] = block
+        # apply mean shifts to all informative columns
+        class_samples += offset
+        x_informative[start:stop, :] = class_samples
         start = stop
-
-    # 3) Apply class-wise mean shifts to all informative columns
-    informative_idx = np.arange(n_inf, dtype=int)
-    shift_classes(
-        x_informative,
-        y,
-        informative_idx=informative_idx,
-        anchor_contrib=None,  # no anchors in this stage
-        class_sep=cfg.class_sep,  # already normalised in DatasetConfig
-        # anchor_strength / anchor_mode defaults are unused here
-        spread_non_anchors=True,
-    )
 
     return x_informative, y

@@ -97,7 +97,6 @@ def test_02_batch_effects_runs(capsys, suppress_matplotlib_show):
         "batch_example_1_random_batches.csv",
         "batch_example_2_confounded_batches.csv",
         "batch_example_3_multiplicative_batches.csv",
-        "batch_example_4_informative_only_batches.csv",
     ]
     for filename in expected_files:
         assert Path(filename).exists(), f"Expected file {filename} not found"

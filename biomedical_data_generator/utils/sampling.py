@@ -14,10 +14,10 @@ import numpy as np
 
 from biomedical_data_generator.config import DistributionType  # uses the validated set of names
 
-__all__ = ["sample_2d_array"]
+__all__ = ["sample_distribution"]
 
 
-def sample_2d_array(
+def sample_distribution(
     distribution: DistributionType,
     params: dict[str, Any],
     rng: np.random.Generator,

@@ -120,28 +120,6 @@ def main() -> None:
     print(f"Generated dataset: {X3.shape}")
     print()
 
-    # Example 4: Affecting only informative features
-    print("Example 4: Batch Effects on Informative Features Only")
-    print("-" * 70)
-    cfg4 = DatasetConfig(
-        n_informative=5,
-        n_noise=5,
-        class_configs=[
-            ClassConfig(n_samples=100, label="control"),
-            ClassConfig(n_samples=100, label="treated"),
-        ],
-        class_sep=[1.5],
-        batch=BatchEffectsConfig(
-            n_batches=3,
-            effect_strength=0.7,
-            effect_type="additive",
-            confounding_with_class=0.0,
-            affected_features="informative",  # Only affect informative features
-        ),
-        random_state=42,
-    )
-    X4, y4, meta4 = generate_dataset(cfg4)
-
     # Visualization (optional, requires matplotlib)
     print("Visualization Tips:")
     print("-" * 70)
@@ -197,7 +175,6 @@ def main() -> None:
             (X1, y1, "random_batches"),
             (X2, y2, "confounded_batches"),
             (X3, y3, "multiplicative_batches"),
-            (X4, y4, "informative_only_batches"),
         ],
         start=1,
     ):

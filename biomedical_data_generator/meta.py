@@ -98,7 +98,10 @@ class DatasetMeta:
     # ---------------- batch effects (optional) ----------------
 
     batch_labels: np.ndarray | None = None  # shape (n_samples,)
-    batch_intercepts: dict[int, np.ndarray] | None = None  # batch_id -> intercepts per affected feature
+    batch_effects: np.ndarray | None = None
+    # If present, raw effects as returned by apply_batch_effects:
+    # - scalar granularity: shape (n_batches,)
+    # - per-feature summary: shape (n_batches, n_affected_features)
     batch_config: dict[str, object] | None = None  # serialized BatchEffectsConfig
 
     # ---------------- generator config snapshot ----------------

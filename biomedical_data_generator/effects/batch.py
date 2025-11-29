@@ -23,7 +23,7 @@ Public API:
 Typical usage (high-level):
     >>> from batch import apply_batch_effects_from_config
     >>> X_batch, batches, batch_effects = apply_batch_effects_from_config(
-    ...     X=X, y=y, batch_config=cfg.batch,
+    ...     x=X, y=y, batch_config=cfg.batch,
     ...     informative_indices=inf_idx, rng=rng
     ... )
 
@@ -100,8 +100,6 @@ def _normalize_proportions(
 # ---------------------------------------------------------------------------
 # Batch assignment
 # ---------------------------------------------------------------------------
-
-
 def generate_batch_assignments(
     n_samples: int,
     n_batches: int,
@@ -421,35 +419,75 @@ def apply_batch_effects(
     Args:
         X: Feature matrix (DataFrame or array).
         batch_assignments: Array of batch assignments per sample.
-        rng: NumPy random generator (for reproducibility).
-        effect_type: "additive" or "multiplicative" batch effects.
-        effect_strength: Standard deviation of batch effects.
-        affected_features: "all" or list of feature indices to affect.
-        effect_granularity: "per_feature" (default) draws effects of shape
-            (n_batches, n_affected_features) so features within a batch differ,
-            or "scalar" draws a single scalar per batch applied to all affected
-            features (backwards-compatible / cheaper).
+        rng:
+            NumPy random number generator used to sample batch effects.
+        effect_type:
+            Type of batch effect to apply:
+            - ``"additive"``: Adds a batch-specific shift to affected features.
+            - ``"multiplicative"``: Multiplies affected features by a batch-specific
+              scaling factor around 1.0.
+        effect_strength:
+            Standard deviation of the batch-effect distribution. Larger values
+            generate stronger perturbations. Must be non-negative.
+        affected_features:
+            Defines which features are affected:
+            - ``"all"``: Apply batch effects to all features.
+            - Sequence[int]: Apply effects only to the listed feature indices.
+        effect_granularity:
+            Controls whether effects vary across features:
+            - ``"per_feature"`` (default): Draws effects with shape
+              ``(n_batches, n_affected_features)``, so features within the same batch
+              differ in their batch-specific effect.
+            - ``"scalar"``: Draws a single scalar per batch and applies it uniformly
+              across all affected features. This corresponds to a global per-batch
+              offset (additive) or global scaling factor (multiplicative).
 
     Returns:
-        Tuple of (X_affected, batch_effects):
-            - X_affected: Feature matrix with batch effects applied
-            - batch_effects (1-D array length n_batches): Random effects drawn per batch. For
-                "per_feature" the returned batch_effects are the mean effect per batch.
+        Tuple[pd.DataFrame | np.ndarray, np.ndarray]:
+            A tuple ``(X_affected, batch_effects)`` where:
+
+            - **X_affected**: The feature matrix with batch effects applied.
+              The output type matches the input type (DataFrame or ndarray).
+
+            - **batch_effects**: An array of length ``n_batches`` summarizing
+              the effect applied in each batch:
+                * For ``effect_granularity="scalar"``, these are the exact additive
+                  shifts (additive mode) or multiplicative factors minus 1.0
+                  (multiplicative mode) drawn for each batch.
+                * For ``"per_feature"``, these values are the mean additive effect
+                  or mean multiplicative deviation from 1.0 across all affected
+                  features in each batch. This provides a compact summary even though
+                  the full per-feature effects vary within batches.
+
+    Raises:
+        ValueError:
+            If ``batch_assignments`` has the wrong shape, contains negative values,
+            or ``effect_granularity`` is not one of the allowed strings.
+        IndexError:
+            If ``affected_features`` contains indices outside the valid feature range.
+
+    Notes:
+        - The generator state ``rng`` is advanced during sampling.
+        - Additive effects are sampled from ``Normal(0, effect_strength)``.
+        - Multiplicative effects are sampled from ``1 + Normal(0, effect_strength)``.
+        - For DataFrame input, column names and index are preserved in the output.
 
     Examples:
         >>> rng = np.random.default_rng(42)
-        >>> X = np.random.normal(size=(100, 5))
+        >>> x = np.random.normal(size=(100, 5))
         >>> batches = np.random.randint(0, 3, size=100)
         >>>
         >>> X_batch, batch_effects = apply_batch_effects(
-        ...     X, batches, rng,
+        ...     x, batches, rng,
         ...     effect_type="additive",
         ...     effect_strength=0.5,
-        ...     affected_features=[0, 2]
+        ...     affected_features=[0, 2],
+        ...     effect_granularity="scalar",
         ... )
-
-    Notes:
-        - Generator state advances during effect sampling.
+        >>> X_batch.shape
+        (100, 5)
+        >>> batch_effects.shape
+        (3,)
     """
     # Convert to DataFrame if needed for consistent handling
     is_dataframe = isinstance(X, pd.DataFrame)
@@ -541,20 +579,18 @@ def apply_batch_effects(
 
 
 def apply_batch_effects_from_config(
-    X: pd.DataFrame | NDArray[np.float64],
+    x: pd.DataFrame | NDArray[np.float64],
     y: NDArray[np.int_] | ArrayLike,
     batch_config: Any,
-    informative_indices: Sequence[int],
     rng: np.random.Generator,
 ) -> tuple[pd.DataFrame | NDArray[np.float64], NDArray[np.int_], NDArray[np.float64]]:
     """Apply batch effects based on a configuration object.
 
     High-level orchestration function that handles batch assignment and
-    effect application in a single call. Simplifies generator code by
-    encapsulating all batch-related logic.
+    effect application in a single call.
 
     Args:
-        X: Feature matrix (DataFrame or array).
+        x: Feature matrix (DataFrame or array).
         y: Class labels (for potential confounding). May be any array-like
            accepted by np.unique (e.g. integers or strings).
         batch_config: Configuration object with attributes:
@@ -564,8 +600,6 @@ def apply_batch_effects_from_config(
             - effect_type: "additive" or "multiplicative"
             - effect_strength: Magnitude of batch effects
             - affected_features: "all", "informative", or list of indices
-        informative_indices: Indices of informative features (used if
-            affected_features="informative").
         rng: NumPy random generator (for reproducibility).
 
     Returns:
@@ -574,26 +608,8 @@ def apply_batch_effects_from_config(
             - batch_labels: Array of batch assignments per sample
             - batch_effects: Random effects drawn per batch
 
-    Examples:
-        >>> from biomedical_data_generator import DatasetConfig, generate_dataset
-        >>> from batch import apply_batch_effects_from_config
-        >>> import numpy as np
-        >>>
-        >>> cfg = DatasetConfig(
-        ...     n_samples=100, n_informative=5, n_noise=3,
-        ...     batch=BatchConfig(n_batches=3, effect_strength=0.5)
-        ... )
-        >>> X, y, meta = generate_dataset(cfg, return_dataframe=True)
-        >>> rng = np.random.default_rng(42)
-        >>> X_batch, batches, batch_effects = apply_batch_effects_from_config(
-        ...     X, y, cfg.batch, meta.informative_idx, rng=rng
-        ... )
-
     Notes:
         - Automatically handles confounding when confounding_with_class > 0.
-        - Maps "informative" to actual feature indices.
-        - Centralizes all batch logic in one place.
-        - Generator state advances through assignment and effect application.
     """
     y_arr = np.asarray(y)
     n_samples = y_arr.shape[0]
@@ -608,23 +624,14 @@ def apply_batch_effects_from_config(
         confounding_with_class=batch_config.confounding_with_class,
     )
 
-    # Resolve affected features based on config
-    if batch_config.affected_features == "informative":
-        affected: Sequence[int] | Literal["all"] = list(informative_indices)
-    elif batch_config.affected_features == "all":
-        affected = "all"
-    else:
-        # Custom list of indices
-        affected = batch_config.affected_features
-
     # Apply batch effects to feature matrix
     X_affected, batch_effects = apply_batch_effects(
-        X=X,
+        X=x,
         batch_assignments=batch_labels,
         rng=rng,
         effect_type=batch_config.effect_type,
         effect_strength=batch_config.effect_strength,
-        affected_features=affected,
+        affected_features=batch_config.affected_features,
     )
 
     return X_affected, batch_labels, batch_effects

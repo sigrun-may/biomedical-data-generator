@@ -8,9 +8,6 @@
 
 from __future__ import annotations
 
-from collections.abc import Mapping
-from typing import Any
-
 import numpy as np
 import pandas as pd
 
@@ -19,7 +16,7 @@ from .effects.batch import apply_batch_effects_from_config
 from .features.correlated import sample_all_correlated_clusters
 from .features.informative import generate_informative_features
 from .meta import DatasetMeta
-from .utils.sampling import sample_2d_array
+from .utils.sampling import sample_distribution
 
 
 def _make_names_and_roles(
@@ -28,7 +25,6 @@ def _make_names_and_roles(
     n_cluster_cols: int,
     n_inf_cols: int,
     n_noise_cols: int,
-    cluster_meta: Mapping[str, Any] | None = None,
 ) -> tuple[
     list[str],  # names
     list[int],  # informative_idx (anchors + free informative)
@@ -67,9 +63,6 @@ def _make_names_and_roles(
         n_cluster_cols: Number of columns in ``x_clusters``.
         n_inf_cols: Number of columns in ``x_informative``.
         n_noise_cols: Number of columns in ``x_noise``.
-        cluster_meta:
-            Metadata returned by :func:`sample_correlated_cluster`.
-            Currently unused here but kept for future extensions.
 
     Returns:
         names, informative_idx, noise_idx, cluster_indices, anchor_idx
@@ -201,8 +194,19 @@ def _make_names_and_roles(
 # =================
 # Public generator
 # =================
-def generate_dataset(cfg, /, *, return_dataframe=True, **overrides):
-    """Generate dataset with clean module boundaries."""
+def generate_dataset(cfg, return_dataframe=True) -> tuple[pd.DataFrame | np.ndarray, np.ndarray, DatasetMeta]:
+    """Generate dataset with clean module boundaries.
+
+    Args:
+        cfg: Resolved :class:`DatasetConfig` for dataset generation.
+        return_dataframe: If ``True``, return features as a :class:`pandas.DataFrame`
+            with named columns. If ``False``, return as a NumPy array.
+
+    Returns:
+        X: Feature matrix (DataFrame or ndarray).
+        y: Class labels (ndarray of integers).
+        meta: :class:`DatasetMeta` with detailed metadata about the dataset.
+    """
     rng_global = np.random.default_rng(cfg.random_state)
 
     # ================================================================
@@ -220,7 +224,7 @@ def generate_dataset(cfg, /, *, return_dataframe=True, **overrides):
     # ================================================================
     # STEP 3: Generate noise features
     # ================================================================
-    x_noise = sample_2d_array(
+    x_noise = sample_distribution(
         distribution=cfg.noise_distribution,
         params=cfg.noise_distribution_params,
         rng=rng_global,
@@ -238,19 +242,11 @@ def generate_dataset(cfg, /, *, return_dataframe=True, **overrides):
     batch_labels = None
     batch_effects = None
     if cfg.batch is not None and cfg.batch.n_batches > 1:
-        batch_rng = np.random.default_rng(cfg.batch.random_state) if cfg.batch.random_state is not None else rng_global
-
-        # Informative indices in concatenated matrix
-        inf_start = x_clusters.shape[1]
-        inf_end = inf_start + x_informative.shape[1]
-        informative_indices = list(range(inf_start, inf_end))
-
         x, batch_labels, batch_effects = apply_batch_effects_from_config(
-            X=x,
+            x=x,
             y=y,
             batch_config=cfg.batch,
-            informative_indices=informative_indices,
-            rng=batch_rng,
+            rng=rng_global,
         )
 
     # ================================================================
@@ -261,7 +257,6 @@ def generate_dataset(cfg, /, *, return_dataframe=True, **overrides):
         n_cluster_cols=x_clusters.shape[1],
         n_inf_cols=x_informative.shape[1],
         n_noise_cols=x_noise.shape[1],
-        cluster_meta=cluster_meta,
     )
 
     # ================================================================
@@ -284,7 +279,7 @@ def generate_dataset(cfg, /, *, return_dataframe=True, **overrides):
         class_sep=cfg.class_sep,
         corr_between=cfg.corr_between,
         batch_labels=batch_labels,
-        batch_intercepts=batch_effects,
+        batch_effects=batch_effects,
         batch_config=cfg.batch.model_dump() if cfg.batch is not None else None,
         random_state=cfg.random_state,
         resolved_config=cfg.model_dump(),

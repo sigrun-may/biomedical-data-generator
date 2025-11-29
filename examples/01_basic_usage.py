@@ -15,6 +15,8 @@ This example demonstrates:
 
 from __future__ import annotations
 
+import pandas as pd
+
 from biomedical_data_generator.config import ClassConfig, CorrClusterConfig, DatasetConfig
 from biomedical_data_generator.generator import generate_dataset
 
@@ -50,11 +52,11 @@ def main() -> None:
 
     # Generate dataset
     print("Generating dataset...")
-    X, y, meta = generate_dataset(cfg)
+    x, y, meta = generate_dataset(cfg, return_dataframe=True)
 
-    print(f"\n✓ Generated dataset with shape: {X.shape}")
-    print(f"  - Samples: {X.shape[0]}")
-    print(f"  - Features: {X.shape[1]}")
+    print(f"\n✓ Generated dataset with shape: {x.shape}")
+    print(f"  - Samples: {x.shape[0]}")
+    print(f"  - Features: {x.shape[1]}")
     print(f"  - Classes: {len(cfg.class_labels)} ({', '.join(cfg.class_labels)})")
     print()
 
@@ -76,14 +78,9 @@ def main() -> None:
         print(f"  - {class_label}: {count} samples")
     print()
 
-    # Show first few rows
-    print("First 5 rows of data:")
-    print(X.head())
-    print()
-
     # Save to CSV
     out_path = "basic_dataset.csv"
-    df_out = X.copy()
+    df_out: pd.DataFrame = x.copy()  # type: ignore
     df_out["target"] = y
     df_out.to_csv(out_path, index=False)
     print(f"✓ Saved dataset to {out_path}")

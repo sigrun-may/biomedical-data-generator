@@ -9,13 +9,13 @@
 import numpy as np
 import pytest
 
-from biomedical_data_generator.utils.sampling import sample_2d_array
+from biomedical_data_generator.utils.sampling import sample_distribution
 
 
 def test_sample_2d_array_normal():
     """Test sampling from normal distribution."""
     rng = np.random.default_rng(42)
-    samples = sample_2d_array(
+    samples = sample_distribution(
         distribution="normal",
         params={"loc": 0.0, "scale": 1.0},
         rng=rng,
@@ -30,7 +30,7 @@ def test_sample_2d_array_normal():
 def test_sample_2d_array_uniform():
     """Test sampling from uniform distribution."""
     rng = np.random.default_rng(42)
-    samples = sample_2d_array(
+    samples = sample_distribution(
         distribution="uniform",
         params={"low": 0.0, "high": 10.0},
         rng=rng,
@@ -46,7 +46,7 @@ def test_sample_2d_array_uniform():
 def test_sample_2d_array_exponential():
     """Test sampling from exponential distribution."""
     rng = np.random.default_rng(42)
-    samples = sample_2d_array(
+    samples = sample_distribution(
         distribution="exponential",
         params={"scale": 2.0},
         rng=rng,
@@ -61,7 +61,7 @@ def test_sample_2d_array_exponential():
 def test_sample_2d_array_laplace():
     """Test sampling from Laplace distribution."""
     rng = np.random.default_rng(42)
-    samples = sample_2d_array(
+    samples = sample_distribution(
         distribution="laplace",
         params={"loc": 5.0, "scale": 1.0},
         rng=rng,
@@ -75,7 +75,7 @@ def test_sample_2d_array_laplace():
 def test_sample_2d_array_lognormal():
     """Test sampling from lognormal distribution."""
     rng = np.random.default_rng(42)
-    samples = sample_2d_array(
+    samples = sample_distribution(
         distribution="lognormal",
         params={"mean": 0.0, "sigma": 1.0},
         rng=rng,
@@ -89,7 +89,7 @@ def test_sample_2d_array_lognormal():
 def test_sample_2d_array_exp_normal():
     """Test sampling from exp_normal distribution."""
     rng = np.random.default_rng(42)
-    samples = sample_2d_array(
+    samples = sample_distribution(
         distribution="exp_normal",
         params={"loc": 0.0, "scale": 1.0},
         rng=rng,
@@ -103,7 +103,7 @@ def test_sample_2d_array_exp_normal():
 def test_sample_2d_array_empty_params():
     """Test sampling with empty params (use defaults)."""
     rng = np.random.default_rng(42)
-    samples = sample_2d_array(
+    samples = sample_distribution(
         distribution="normal",
         params={},
         rng=rng,
@@ -118,7 +118,7 @@ def test_sample_2d_array_unsupported_distribution_raises():
     rng = np.random.default_rng(42)
 
     with pytest.raises(ValueError, match="Unsupported distribution"):
-        sample_2d_array(
+        sample_distribution(
             distribution="nonexistent_distribution",
             params={},
             rng=rng,
@@ -131,25 +131,25 @@ def test_sample_2d_array_different_sizes():
     rng = np.random.default_rng(42)
 
     # Small matrix
-    small = sample_2d_array("normal", {}, rng, size=(5, 2))
+    small = sample_distribution("normal", {}, rng, size=(5, 2))
     assert small.shape == (5, 2)
 
     # Large matrix
-    large = sample_2d_array("normal", {}, rng, size=(1000, 100))
+    large = sample_distribution("normal", {}, rng, size=(1000, 100))
     assert large.shape == (1000, 100)
 
     # Single column
-    single_col = sample_2d_array("normal", {}, rng, size=(10, 1))
+    single_col = sample_distribution("normal", {}, rng, size=(10, 1))
     assert single_col.shape == (10, 1)
 
 
 def test_sample_2d_array_reproducibility():
     """Test that same seed produces same results."""
     rng1 = np.random.default_rng(123)
-    samples1 = sample_2d_array("normal", {}, rng1, size=(10, 5))
+    samples1 = sample_distribution("normal", {}, rng1, size=(10, 5))
 
     rng2 = np.random.default_rng(123)
-    samples2 = sample_2d_array("normal", {}, rng2, size=(10, 5))
+    samples2 = sample_distribution("normal", {}, rng2, size=(10, 5))
 
     np.testing.assert_array_equal(samples1, samples2)
 
@@ -159,7 +159,7 @@ def test_sample_2d_array_exp_normal_is_positive():
     rng = np.random.default_rng(42)
 
     # Even with negative loc, exp should make all values positive
-    samples = sample_2d_array(
+    samples = sample_distribution(
         distribution="exp_normal",
         params={"loc": -10.0, "scale": 1.0},
         rng=rng,

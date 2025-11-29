@@ -100,7 +100,7 @@ def test_generate_dataset_with_batch_effects():
     assert X.shape == (100, 8)
     assert meta.batch_labels is not None
     assert len(meta.batch_labels) == 100
-    assert meta.batch_intercepts is not None
+    assert meta.batch_effects is not None
 
 
 def test_generate_dataset_no_batch_effects_when_n_batches_1():
@@ -274,12 +274,6 @@ def test_make_names_and_roles_total_mismatch_raises():
         n_cluster_cols=0,
         n_inf_cols=2,
         n_noise_cols=1,
-        cluster_meta={
-            "anchor_role": {},
-            "anchor_effect_size": {},
-            "anchor_class": {},
-            "label": {},
-        },
     )
 
     assert len(names) == 3
@@ -306,12 +300,6 @@ def test_make_names_and_roles_with_informative_anchor():
         n_cluster_cols=3,
         n_inf_cols=1,  # With anchor, n_informative_free is 1 (2 total - 1 anchor)
         n_noise_cols=1,
-        cluster_meta={
-            "anchor_role": {0: "informative"},
-            "anchor_effect_size": {0: 1.0},
-            "anchor_class": {0: None},
-            "label": {0: None},
-        },
     )
 
     # Informative should include free informative (1) + anchor (1) = 2
@@ -343,12 +331,6 @@ def test_make_names_and_roles_with_noise_anchor():
         n_cluster_cols=3,
         n_inf_cols=2,  # All 2 informative are free (no anchor)
         n_noise_cols=0,  # With noise anchor in cluster, n_noise_free is 0
-        cluster_meta={
-            "anchor_role": {0: "noise"},
-            "anchor_effect_size": {0: 1.0},
-            "anchor_class": {0: None},
-            "label": {0: None},
-        },
     )
 
     # Informative should only include free informative (2)

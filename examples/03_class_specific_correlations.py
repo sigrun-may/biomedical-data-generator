@@ -24,13 +24,28 @@ from biomedical_data_generator.config import ClassConfig, CorrClusterConfig, Dat
 from biomedical_data_generator.generator import generate_dataset
 
 
-def compute_correlation_by_class(X: pd.DataFrame, y: pd.Series, feature_indices: list[int]) -> dict:
-    """Compute correlation matrices for specified features, grouped by class."""
+def compute_correlation_by_class(
+    x: pd.DataFrame | np.ndarray, y: np.ndarray | pd.Series, feature_indices: list[int]
+) -> dict:
+    """Compute correlation matrices for specified features, grouped by class.
+
+    Args:
+        x: Feature matrix (DataFrame or ndarray) of shape (n_samples, n_features).
+        y: Class labels (1-D array-like) of length n_samples.
+        feature_indices: List of feature indices to include in the correlation computation.
+
+    Returns:
+        dict: Mapping from class label to correlation matrix (DataFrame).
+    """
+    # convert to DataFrame if needed
+    if isinstance(x, np.ndarray):
+        x = pd.DataFrame(x)
+
     correlations = {}
     for class_label in np.unique(y):
         mask = y == class_label
-        X_class = X[mask].iloc[:, feature_indices]
-        correlations[class_label] = X_class.corr()
+        x_class = x[mask].iloc[:, feature_indices]
+        correlations[class_label] = x_class.corr()
     return correlations
 
 
@@ -69,14 +84,14 @@ def main() -> None:
         class_sep=[1.5],
         random_state=42,
     )
-    X1, y1, meta1 = generate_dataset(cfg1)
-    print(f"✓ Generated dataset: {X1.shape}")
+    x1, y1, meta1 = generate_dataset(cfg1)
+    print(f"✓ Generated dataset: {x1.shape}")
     print()
 
     # Compute correlations per class
     cluster_id = 0  # Cluster IDs are 0-based (0, 1, 2, ...)
     cluster_features = meta1.corr_cluster_indices[cluster_id]
-    correlations1 = compute_correlation_by_class(X1, y1, cluster_features)
+    correlations1 = compute_correlation_by_class(x1, y1, cluster_features)
 
     print("Correlation matrices for cluster features:")
     for class_label, corr_matrix in correlations1.items():
@@ -113,14 +128,14 @@ def main() -> None:
         random_state=42,
     )
 
-    X2, y2, meta2 = generate_dataset(cfg2)
-    print(f"✓ Generated dataset: {X2.shape}")
+    x2, y2, meta2 = generate_dataset(cfg2)
+    print(f"✓ Generated dataset: {x2.shape}")
     print()
 
     # Compute correlations per class
     cluster_id = 0  # First cluster (0-based indexing)
     cluster_features2 = meta2.corr_cluster_indices[cluster_id]
-    correlations2 = compute_correlation_by_class(X2, y2, cluster_features2)
+    correlations2 = compute_correlation_by_class(x2, y2, cluster_features2)  # ignore: E1101
 
     print("Mean pairwise correlations per class:")
     for class_label, corr_matrix in correlations2.items():
@@ -243,14 +258,17 @@ def main() -> None:
     # Save datasets
     print()
     datasets = [
-        (X1, y1, "disease_activated_pathway"),
-        (X2, y2, "progressive_correlation"),
+        (x1, y1, "disease_activated_pathway"),
+        (x2, y2, "progressive_correlation"),
         (X3, y3, "multiple_pathways"),
     ]
 
-    for i, (X, y, name) in enumerate(datasets, start=1):
+    for i, (x, y, name) in enumerate(datasets, start=1):
         out_path = f"class_specific_example_{i}_{name}.csv"
-        df_out = X.copy()
+        if isinstance(x, np.ndarray):
+            df_out = pd.DataFrame(x)
+        else:
+            df_out = x.copy()
         df_out["target"] = y
         df_out.to_csv(out_path, index=False)
         print(f"✓ Saved {name} dataset to {out_path}")

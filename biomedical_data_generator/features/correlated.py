@@ -27,7 +27,7 @@ Statistical model
 -----------------
 At the core, each cluster implements a multivariate Gaussian model:
 
-* For a given cluster with ``p`` features and a correlation matrix
+* For a given cluster with n_features (p) and a correlation matrix
   :math:`\Sigma`, we generate samples according to
 
   .. math::
@@ -94,6 +94,8 @@ generative model for complex omics data.
 """
 
 from __future__ import annotations
+
+from typing import Any
 
 import numpy as np
 
@@ -355,7 +357,7 @@ def _sample_class_specific_cluster(
         n_features: Number of features in this cluster.
         cluster_cfg: Cluster configuration with class-specific correlations.
         structure: Correlation structure ('equicorrelated' or 'toeplitz').
-        rng: Random number generator for this cluster.
+        rng: Random number generator.
 
     Returns:
         Feature block of shape (n_samples, n_features) with class-specific
@@ -393,7 +395,7 @@ def sample_all_correlated_clusters(
     cfg: DatasetConfig,
     y: np.ndarray | None = None,
     rng: np.random.Generator | None = None,
-) -> tuple[np.ndarray, dict[str, dict[int, object]]]:
+) -> tuple[np.ndarray, dict[str, dict[int, Any]]]:
     r"""Generate and assemble all correlated feature clusters for a dataset.
 
     This function connects the abstract configuration with the actual data
@@ -479,8 +481,6 @@ def sample_all_correlated_clusters(
     cluster_array_list: list[np.ndarray] = []
 
     for cluster_id, cluster_cfg in enumerate(cluster_cfgs):
-        cluster_seed = int(rng.integers(0, 2**63 - 1))
-        cluster_rng = np.random.default_rng(cluster_seed)
         n_features = cluster_cfg.n_cluster_features
 
         if not cluster_cfg.is_class_specific():
@@ -495,14 +495,14 @@ def sample_all_correlated_clusters(
             corr_global = float(corr_raw)
 
             if abs(corr_global) < CORRELATION_ZERO_THRESHOLD:
-                block = cluster_rng.standard_normal(size=(n_samples, n_features))
+                block = rng.standard_normal(size=(n_samples, n_features))
             else:
                 block = sample_correlated_data(
                     n_samples,
                     n_features,
                     corr_global,
                     structure=cluster_cfg.structure,
-                    rng=cluster_rng,
+                    rng=rng,
                 )
 
         else:
@@ -512,7 +512,7 @@ def sample_all_correlated_clusters(
                 n_features=n_features,
                 cluster_cfg=cluster_cfg,
                 structure=cluster_cfg.structure,
-                rng=cluster_rng,
+                rng=rng,
             )
 
         cluster_array_list.append(block)
