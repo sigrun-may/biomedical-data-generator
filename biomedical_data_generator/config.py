@@ -529,8 +529,6 @@ class CorrClusterConfig(BaseModel):
 class DatasetConfig(BaseModel):
     """Configuration for synthetic dataset generation.
 
-    Overview
-    --------
     This model defines the *input-level* controls for building a synthetic dataset.
     It combines:
       - Base role counts: `n_informative` and `n_noise`
@@ -538,65 +536,79 @@ class DatasetConfig(BaseModel):
       - Class definitions: `class_configs` (with per-class n_samples and labels)
       - Optional batch effects
 
-    Derived quantities
-    ------------------
-    These attributes are **derived** and must not be passed by the user:
+    *Examples (counting)*:
+        1) One cluster k=4 with an informative anchor, plus n_informative=3, n_noise=2
+           proxies_from_clusters = (4−1) = 3
+           n_features_expected   = 3 + 2 + 3 = 8
+           Breakdown:
+             - informative_anchors = 1  → free_informative = 3 − 1 = 2
+             - noise_anchors = 0        → free_noise       = 2 − 0 = 2
 
-    - ``n_samples``  = sum(c.n_samples for c in class_configs)
-    - ``n_classes``  = len(class_configs)
-    - ``n_features`` = n_informative + n_noise + proxies_from_clusters
+        2) Two clusters: k=5 (informative anchor), k=3 ("noise" anchor), base n_informative=4, n_noise=3
+           proxies_from_clusters = (5−1) + (3−1) = 6
+           n_features_expected   = 4 + 3 + 6 = 13
+           Breakdown:
+             - informative_anchors = 1  → free_informative = 4 − 1 = 3
+             - noise_anchors = 1        → free_noise       = 3 − 1 = 2
 
-      where
+    *Derived quantities*:
+        These attributes are **derived** and must not be passed by the user:
 
-        proxies_from_clusters = sum(max(0, k - 1) for each CorrClusterConfig
-                                    with n_cluster_features = k)
+        - ``n_samples``  = sum(c.n_samples for c in class_configs)
+        - ``n_classes``  = len(class_configs)
+        - ``n_features`` = n_informative + n_noise + sum(c.n_cluster_features - 1 for c in corr_clusters)
 
-    Labels
-    ------
-    - If a ClassConfig label is None or "", it is auto-filled as "class_{idx}".
-    - `class_labels` returns the list of resolved labels.
+    Args:
+        n_informative (int): Number of base informative features (not in clusters).
+        n_noise (int): Number of base noise features (not in clusters).
+        class_configs (list[ClassConfig]): List of class definitions.
+        class_sep (float | Sequence[float]): Class separation values (length n_classes - 1); scalar is broadcast.
+        corr_clusters (list[CorrClusterConfig]): List of CorrClusterConfig defining correlated feature clusters.
+        corr_between (float): Correlation between different clusters/roles (0 = independent).
+        noise_distribution: (str): Distribution for noise features. Can be any supported `DistributionType`.
+        noise_distribution_params (dict): Parameters for noise distribution.
+        prefixed_feature_naming (bool):
+            If True, role-based prefixed feature names:
+                * Free informative:  i1, i2, ...
+                * Free noise:        n1, n2, ...
+                * Correlated:        corr{cid}_anchor, corr{cid}_2, ..., corr{cid}_k
+            If False, use generic feature_{i} naming.
+        prefix_informative (str): Prefix for informative features (if prefixed_feature_naming=True). Default: "i".
+        prefix_noise (str): Prefix for noise features (if prefixed_feature_naming=True). Default: "n".
+        prefix_corr (str): Prefix for correlated cluster features (if prefixed_feature_naming=True). Default: "corr".
+        batch (BatchEffectsConfig): Optional BatchEffectsConfig for simulating batch effects.
+        random_state (int | None): Global random seed for dataset generation.
 
-    Validation & normalization
-    --------------------------
-    - A `mode="before"` validator:
-        * forbids manual `n_samples`, `n_classes`, `n_features`
-        * normalizes `class_sep`:
-             - scalar → broadcast to length `n_classes - 1`
-             - sequence → checked for numeric entries and length `n_classes - 1`
-    - A `mode="after"` validator:
-        * checks:
-             - `n_informative >= #informative_anchors`
-             - `n_noise       >= #noise_anchors`
-             - `corr_between` in [-1, 1]
-             - `anchor_class` indices are < `n_classes`
+    Derived quantities:
+        n_samples (int): Total samples (derived from `class_configs`).
+        n_classes (int): Number of classes (derived from `class_configs`).
+        n_features (int): Total number of features of the complete the dataset (derived from n_informative, n_noise,
+            and corr_clusters).
+        n_informative_free (int): Informative features not used as anchors.
+        n_noise_free (int): Noise features not used as anchors.
 
-    Naming policy
-    -------------
-    - If `prefixed_feature_naming=True`, features are named as:
-        * Free informative:  i1, i2, ...
-        * Free noise:        n1, n2, ...
-        * Correlated:        corr{cid}_anchor, corr{cid}_2, ..., corr{cid}_k
-    - If `prefixed_feature_naming=False`: a generic `feature_{i}` scheme is used.
+    Methods:
+        count_informative_anchors(): Return number of informative anchors across all clusters.
+        count_noise_anchors(): Return number of noise anchors across all clusters.
+        breakdown(): Return dict with detailed feature/class counts.
 
+    Validation:
+        Before model construction:
+            - Forbid manual `n_samples`, `n_classes`, `n_features`.
+            - Normalize `class_sep`: broadcast scalar to length `n_classes - 1` or validate sequence length.
+        After model construction:
+            - Ensure `n_informative >= #informative_anchors` and `n_noise >= #noise_anchors`.
+            - Check `corr_between` in [-1, 1].
+            - Ensure `anchor_class` indices < `n_classes`.
+            - Require at least one non-zero `class_sep` if `n_informative_free > 0`.
+            - Auto-generate missing class labels as ``class_{idx}``.
 
-    Examples (counting)
-    -------------------
-    1) One cluster k=4 with an informative anchor, plus n_informative=3, n_noise=2
-       proxies_from_clusters = (4−1) = 3
-       n_features_expected   = 3 + 2 + 3 = 8
-       Breakdown:
-         - informative_anchors = 1  → free_informative = 3 − 1 = 2
-         - noise_anchors = 0        → free_noise       = 2 − 0 = 2
+    Raises:
+        ValueError: On invalid numeric ranges or inconsistent counts.
+        TypeError: For invalid types in `class_configs` or `class_sep`.
 
-    2) Two clusters: k=5 (informative anchor), k=3 ("noise" anchor), base n_informative=4, n_noise=3
-       proxies_from_clusters = (5−1) + (3−1) = 6
-       n_features_expected   = 4 + 3 + 6 = 13
-       Breakdown:
-         - informative_anchors = 1  → free_informative = 4 − 1 = 3
-         - noise_anchors = 1        → free_noise       = 3 − 1 = 2
-
-    Example usage:
-    --------------
+    Examples:
+        >>> # Basic dataset with two classes
         >>> cfg = DatasetConfig(
         ...     n_informative=5,
         ...     n_noise=3,
