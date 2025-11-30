@@ -195,10 +195,14 @@ def _make_names_and_roles(
 # Public generator
 # =================
 def generate_dataset(cfg, return_dataframe=True) -> tuple[pd.DataFrame | np.ndarray, np.ndarray, DatasetMeta]:
-    """Generate dataset with clean module boundaries.
+    """Generate synthetic biomedical dataset with specified feature structure.
+
+    Creates a classification dataset with configurable informative features, noise,
+    correlated feature clusters (e.g., biological pathways), and optional batch effects.
 
     Args:
-        cfg: Resolved :class:`DatasetConfig` for dataset generation.
+        cfg: Configuration object defining dataset the structure. See :class:`~biomedical_data_generator.config /
+            :class:`~biomedical_data_generator.config.DatasetConfig` for details.
         return_dataframe: If ``True``, return features as a :class:`pandas.DataFrame`
             with named columns. If ``False``, return as a NumPy array.
 
@@ -219,6 +223,17 @@ def generate_dataset(cfg, return_dataframe=True) -> tuple[pd.DataFrame | np.ndar
               Metadata object containing feature masks (informative, correlated, noise,
               batch-specific), correlation block specifications, batch assignments,
               and complete generation configuration.
+
+    Examples:
+        >>> from biomedical_data_generator.config import DatasetConfig, ClassConfig
+        >>> data_cfg_1 = DatasetConfig(
+        ...     n_informative=5,
+        ...     n_noise=10,
+        ...     class_configs=[ClassConfig(n_samples=100, label="healthy"),
+        ...                    ClassConfig(n_samples=100, label="diseased")],
+        ...     random_state=42
+        ... )
+        >>> x1, y1, meta_data1 = generate_dataset(data_cfg_1)
     """
     rng_global = np.random.default_rng(cfg.random_state)
 
