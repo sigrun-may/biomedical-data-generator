@@ -665,9 +665,12 @@
 <span class="sd">    *Derived quantities*:</span>
 <span class="sd">        These attributes are **derived** and must not be passed by the user:</span>
 
-<span class="sd">        - ``n_samples``  = sum(c.n_samples for c in class_configs)</span>
-<span class="sd">        - ``n_classes``  = len(class_configs)</span>
-<span class="sd">        - ``n_features`` = n_informative + n_noise + sum(c.n_cluster_features - 1 for c in corr_clusters)</span>
+<span class="sd">        - ``n_samples`` (int): Total samples (derived from `class_configs`).</span>
+<span class="sd">        - ``n_features`` (int): Total number of features of the complete the dataset</span>
+<span class="sd">                (derived from n_informative, n_noise, and corr_clusters).</span>
+<span class="sd">        - ``n_classes`` (int): Number of classes (derived from `class_configs`).</span>
+<span class="sd">        - ``n_informative_free`` (int): Informative features not used as anchors.</span>
+<span class="sd">        - ``n_noise_free`` (int): Noise features not used as anchors.</span>
 
 <span class="sd">    Args:</span>
 <span class="sd">        n_informative (int): Number of base informative features (not in clusters).</span>
@@ -689,14 +692,6 @@
 <span class="sd">        prefix_corr (str): Prefix for correlated cluster features (if prefixed_feature_naming=True). Default: &quot;corr&quot;.</span>
 <span class="sd">        batch (BatchEffectsConfig): Optional BatchEffectsConfig for simulating batch effects.</span>
 <span class="sd">        random_state (int | None): Global random seed for dataset generation.</span>
-
-<span class="sd">    Derived quantities:</span>
-<span class="sd">        n_samples (int): Total samples (derived from `class_configs`).</span>
-<span class="sd">        n_classes (int): Number of classes (derived from `class_configs`).</span>
-<span class="sd">        n_features (int): Total number of features of the complete the dataset (derived from n_informative, n_noise,</span>
-<span class="sd">            and corr_clusters).</span>
-<span class="sd">        n_informative_free (int): Informative features not used as anchors.</span>
-<span class="sd">        n_noise_free (int): Noise features not used as anchors.</span>
 
 <span class="sd">    Methods:</span>
 <span class="sd">        count_informative_anchors(): Return number of informative anchors across all clusters.</span>

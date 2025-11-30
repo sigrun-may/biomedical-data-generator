@@ -154,9 +154,15 @@ Breakdown:</p>
 </dd>
 <dt><em>Derived quantities</em>:</dt><dd><p>These attributes are <strong>derived</strong> and must not be passed by the user:</p>
 <ul class="simple">
-<li><p><code class="docutils literal notranslate"><span class="pre">n_samples</span></code>  = sum(c.n_samples for c in class_configs)</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">n_classes</span></code>  = len(class_configs)</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">n_features</span></code> = n_informative + n_noise + sum(c.n_cluster_features - 1 for c in corr_clusters)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">n_samples</span></code> (int): Total samples (derived from <cite>class_configs</cite>).</p></li>
+<li><dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">n_features</span></code> (int): Total number of features of the complete the dataset</dt><dd><p>(derived from n_informative, n_noise, and corr_clusters).</p>
+</dd>
+</dl>
+</li>
+<li><p><code class="docutils literal notranslate"><span class="pre">n_classes</span></code> (int): Number of classes (derived from <cite>class_configs</cite>).</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">n_informative_free</span></code> (int): Informative features not used as anchors.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">n_noise_free</span></code> (int): Noise features not used as anchors.</p></li>
 </ul>
 </dd>
 </dl>
@@ -187,17 +193,6 @@ Breakdown:</p>
 <li><p><strong>batch</strong> (<a class="reference internal" href="biomedical_data_generator.BatchEffectsConfig.html#biomedical_data_generator.BatchEffectsConfig" title="biomedical_data_generator.BatchEffectsConfig"><code class="xref py py-class docutils literal notranslate"><span class="pre">BatchEffectsConfig</span></code></a>) – Optional BatchEffectsConfig for simulating batch effects.</p></li>
 <li><p><strong>random_state</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">int</span> <span class="pre">|</span> <span class="pre">None</span></code>) – Global random seed for dataset generation.</p></li>
 </ul>
-</dd>
-</dl>
-<dl>
-<dt>Derived quantities:</dt><dd><p>n_samples (int): Total samples (derived from <cite>class_configs</cite>).
-n_classes (int): Number of classes (derived from <cite>class_configs</cite>).
-n_features (int): Total number of features of the complete the dataset (derived from n_informative, n_noise,</p>
-<blockquote>
-<div><p>and corr_clusters).</p>
-</div></blockquote>
-<p>n_informative_free (int): Informative features not used as anchors.
-n_noise_free (int): Noise features not used as anchors.</p>
 </dd>
 </dl>
 <dl class="py method">
