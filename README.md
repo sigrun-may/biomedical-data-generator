@@ -3,7 +3,7 @@
 [![PyPI version](https://badge.fury.io/py/biomedical-data-generator.svg)](https://badge.fury.io/py/biomedical-data-generator)
 [![Python Version](https://img.shields.io/pypi/pyversions/biomedical-data-generator.svg)](https://pypi.org/project/biomedical-data-generator/)
 [![Documentation](https://img.shields.io/badge/docs-sphinx-blue.svg)](https://sigrun-may.github.io/biomedical-data-generator/)
-[![Tests](https://github.com/sigrun-may/biomedical-data-generator/actions/workflows/tests.yml/badge.svg)](https://github.com/sigrun-may/biomedical-data-generator/actions)
+[![Tests](https://github.com/sigrun-may/biomedical-data-generator/actions/workflows/test.yml/badge.svg)](https://github.com/sigrun-may/biomedical-data-generator/actions)
 [![codecov](https://codecov.io/gh/sigrun-may/biomedical-data-generator/branch/main/graph/badge.svg)](https://codecov.io/gh/sigrun-may/biomedical-data-generator)
 
 Generate reproducible synthetic biomedical datasets with known ground truth for teaching, benchmarking, and method development in high-dimensional machine learning settings.
