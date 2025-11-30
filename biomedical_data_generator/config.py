@@ -554,9 +554,12 @@ class DatasetConfig(BaseModel):
     *Derived quantities*:
         These attributes are **derived** and must not be passed by the user:
 
-        - ``n_samples``  = sum(c.n_samples for c in class_configs)
-        - ``n_classes``  = len(class_configs)
-        - ``n_features`` = n_informative + n_noise + sum(c.n_cluster_features - 1 for c in corr_clusters)
+        - ``n_samples`` (int): Total samples (derived from `class_configs`).
+        - ``n_features`` (int): Total number of features of the complete the dataset
+                (derived from n_informative, n_noise, and corr_clusters).
+        - ``n_classes`` (int): Number of classes (derived from `class_configs`).
+        - ``n_informative_free`` (int): Informative features not used as anchors.
+        - ``n_noise_free`` (int): Noise features not used as anchors.
 
     Args:
         n_informative (int): Number of base informative features (not in clusters).
@@ -578,14 +581,6 @@ class DatasetConfig(BaseModel):
         prefix_corr (str): Prefix for correlated cluster features (if prefixed_feature_naming=True). Default: "corr".
         batch (BatchEffectsConfig): Optional BatchEffectsConfig for simulating batch effects.
         random_state (int | None): Global random seed for dataset generation.
-
-    Derived quantities:
-        n_samples (int): Total samples (derived from `class_configs`).
-        n_classes (int): Number of classes (derived from `class_configs`).
-        n_features (int): Total number of features of the complete the dataset (derived from n_informative, n_noise,
-            and corr_clusters).
-        n_informative_free (int): Informative features not used as anchors.
-        n_noise_free (int): Noise features not used as anchors.
 
     Methods:
         count_informative_anchors(): Return number of informative anchors across all clusters.
