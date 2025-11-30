@@ -74,7 +74,7 @@
       ~DatasetConfig.prefix_corr
       ~DatasetConfig.corr_clusters
       ~DatasetConfig.corr_between
-      ~DatasetConfig.batch
+      ~DatasetConfig.batch_effects
       ~DatasetConfig.random_state
    
    

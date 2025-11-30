@@ -124,7 +124,7 @@ generated datasets.</p>
 </dd>
 <dt>Typical usage (high-level):</dt><dd><div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">batch</span><span class="w"> </span><span class="kn">import</span> <span class="n">apply_batch_effects_from_config</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">X_batch</span><span class="p">,</span> <span class="n">batches</span><span class="p">,</span> <span class="n">batch_effects</span> <span class="o">=</span> <span class="n">apply_batch_effects_from_config</span><span class="p">(</span>
-<span class="gp">... </span>    <span class="n">x</span><span class="o">=</span><span class="n">X</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="n">y</span><span class="p">,</span> <span class="n">batch_config</span><span class="o">=</span><span class="n">cfg</span><span class="o">.</span><span class="n">batch</span><span class="p">,</span>
+<span class="gp">... </span>    <span class="n">x</span><span class="o">=</span><span class="n">X</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="n">y</span><span class="p">,</span> <span class="n">batch_config</span><span class="o">=</span><span class="n">cfg</span><span class="o">.</span><span class="n">batch_effects</span><span class="p">,</span>
 <span class="gp">... </span>    <span class="n">informative_indices</span><span class="o">=</span><span class="n">inf_idx</span><span class="p">,</span> <span class="n">rng</span><span class="o">=</span><span class="n">rng</span>
 <span class="gp">... </span><span class="p">)</span>
 </pre></div>

@@ -371,7 +371,7 @@
         <span class="n">cfg_kwargs</span><span class="p">[</span><span class="s2">&quot;noise_distribution_params&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">noise_distribution_params</span>
 
     <span class="k">if</span> <span class="n">batch_cfg</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="n">cfg_kwargs</span><span class="p">[</span><span class="s2">&quot;batch&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">batch_cfg</span>
+        <span class="n">cfg_kwargs</span><span class="p">[</span><span class="s2">&quot;batch_effects&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">batch_cfg</span>
 
     <span class="c1"># First apply user kwargs (advanced mode); then we may append our cluster.</span>
     <span class="n">cfg_kwargs</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">kwargs</span><span class="p">)</span>
