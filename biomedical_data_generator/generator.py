@@ -269,11 +269,11 @@ def generate_dataset(cfg, return_dataframe=True) -> tuple[pd.DataFrame | np.ndar
     # ================================================================
     batch_labels = None
     batch_effects = None
-    if cfg.batch is not None and cfg.batch.n_batches > 1:
+    if cfg.batch_effects is not None and cfg.batch_effects.n_batches > 1:
         x, batch_labels, batch_effects = apply_batch_effects_from_config(
             x=x,
             y=y,
-            batch_config=cfg.batch,
+            batch_config=cfg.batch_effects,
             rng=rng_global,
         )
 
@@ -308,7 +308,7 @@ def generate_dataset(cfg, return_dataframe=True) -> tuple[pd.DataFrame | np.ndar
         corr_between=cfg.corr_between,
         batch_labels=batch_labels,
         batch_effects=batch_effects,
-        batch_config=cfg.batch.model_dump() if cfg.batch is not None else None,
+        batch_config=cfg.batch_effects.model_dump() if cfg.batch_effects is not None else None,
         random_state=cfg.random_state,
         resolved_config=cfg.model_dump(),
     )

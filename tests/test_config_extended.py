@@ -410,11 +410,11 @@ def test_dataset_config_with_batch_effects():
         n_informative=5,
         n_noise=3,
         class_configs=[ClassConfig(n_samples=50), ClassConfig(n_samples=50)],
-        batch=BatchEffectsConfig(n_batches=2),
+        batch_effects=BatchEffectsConfig(n_batches=2),
     )
 
-    assert cfg.batch is not None
-    assert cfg.batch.n_batches == 2
+    assert cfg.batch_effects is not None
+    assert cfg.batch_effects.n_batches == 2
 
 
 def test_dataset_config_breakdown():

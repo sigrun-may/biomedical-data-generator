@@ -579,7 +579,7 @@ class DatasetConfig(BaseModel):
         prefix_informative (str): Prefix for informative features (if prefixed_feature_naming=True). Default: "i".
         prefix_noise (str): Prefix for noise features (if prefixed_feature_naming=True). Default: "n".
         prefix_corr (str): Prefix for correlated cluster features (if prefixed_feature_naming=True). Default: "corr".
-        batch (BatchEffectsConfig): Optional BatchEffectsConfig for simulating batch effects.
+        batch_effects (BatchEffectsConfig): Optional BatchEffectsConfig for simulating batch effects.
         random_state (int | None): Global random seed for dataset generation.
 
     Methods:
@@ -666,7 +666,7 @@ class DatasetConfig(BaseModel):
     corr_between: float = 0.0  # correlation between different clusters/roles (0 = independent)
 
     # Batch effects
-    batch: BatchEffectsConfig | None = None
+    batch_effects: BatchEffectsConfig | None = None
 
     # Global seed
     random_state: int | None = None

@@ -23,7 +23,7 @@ Public API:
 Typical usage (high-level):
     >>> from batch import apply_batch_effects_from_config
     >>> X_batch, batches, batch_effects = apply_batch_effects_from_config(
-    ...     x=X, y=y, batch_config=cfg.batch,
+    ...     x=X, y=y, batch_config=cfg.batch_effects,
     ...     informative_indices=inf_idx, rng=rng
     ... )
 

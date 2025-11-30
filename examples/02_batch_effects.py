@@ -53,7 +53,7 @@ def create_dataset_with_batches(
             ClassConfig(n_samples=100, label="treated"),
         ],
         class_sep=[1.5],
-        batch=BatchEffectsConfig(
+        batch_effects=BatchEffectsConfig(
             n_batches=n_batches,
             effect_strength=effect_strength,
             effect_type=effect_type,

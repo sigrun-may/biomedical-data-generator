@@ -162,9 +162,9 @@ def test_02_batch_effects_create_dataset_with_batches():
     # Check basic properties
     assert X.shape[0] == 200  # 100 + 100 samples
     assert len(y) == 200
-    assert cfg.batch is not None
-    assert cfg.batch.n_batches == 2
-    assert cfg.batch.effect_strength == 0.3
+    assert cfg.batch_effects is not None
+    assert cfg.batch_effects.n_batches == 2
+    assert cfg.batch_effects.effect_strength == 0.3
 
 
 def test_03_compute_correlation_by_class():

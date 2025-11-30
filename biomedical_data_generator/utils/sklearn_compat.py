@@ -287,7 +287,7 @@ def make_biomedical_dataset(
         cfg_kwargs["noise_distribution_params"] = noise_distribution_params
 
     if batch_cfg is not None:
-        cfg_kwargs["batch"] = batch_cfg
+        cfg_kwargs["batch_effects"] = batch_cfg
 
     # First apply user kwargs (advanced mode); then we may append our cluster.
     cfg_kwargs.update(kwargs)

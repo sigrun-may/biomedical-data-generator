@@ -183,7 +183,7 @@ Batch effects can be added by specifying a `BatchEffectsConfig`:
 ```python
 from biomedical_data_generator import BatchEffectsConfig
 
-cfg.batch = BatchEffectsConfig(
+cfg.batch_effects = BatchEffectsConfig(
     n_batches=3,
     effect_strength=0.5,
     effect_type="additive",

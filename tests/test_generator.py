@@ -91,7 +91,7 @@ def test_generate_dataset_with_batch_effects():
             ClassConfig(n_samples=50),
             ClassConfig(n_samples=50),
         ],
-        batch=BatchEffectsConfig(n_batches=2),
+        batch_effects=BatchEffectsConfig(n_batches=2),
         random_state=42,
     )
 
@@ -112,7 +112,7 @@ def test_generate_dataset_no_batch_effects_when_n_batches_1():
             ClassConfig(n_samples=50),
             ClassConfig(n_samples=50),
         ],
-        batch=BatchEffectsConfig(n_batches=1),
+        batch_effects=BatchEffectsConfig(n_batches=1),
         random_state=42,
     )
 
