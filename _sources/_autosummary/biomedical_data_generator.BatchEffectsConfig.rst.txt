@@ -1,0 +1,63 @@
+﻿biomedical\_data\_generator.BatchEffectsConfig
+==============================================
+
+.. currentmodule:: biomedical_data_generator
+
+.. autoclass:: BatchEffectsConfig
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~BatchEffectsConfig.__init__
+      ~BatchEffectsConfig.construct
+      ~BatchEffectsConfig.copy
+      ~BatchEffectsConfig.dict
+      ~BatchEffectsConfig.from_orm
+      ~BatchEffectsConfig.json
+      ~BatchEffectsConfig.model_construct
+      ~BatchEffectsConfig.model_copy
+      ~BatchEffectsConfig.model_dump
+      ~BatchEffectsConfig.model_dump_json
+      ~BatchEffectsConfig.model_json_schema
+      ~BatchEffectsConfig.model_parametrized_name
+      ~BatchEffectsConfig.model_post_init
+      ~BatchEffectsConfig.model_rebuild
+      ~BatchEffectsConfig.model_validate
+      ~BatchEffectsConfig.model_validate_json
+      ~BatchEffectsConfig.model_validate_strings
+      ~BatchEffectsConfig.parse_file
+      ~BatchEffectsConfig.parse_obj
+      ~BatchEffectsConfig.parse_raw
+      ~BatchEffectsConfig.schema
+      ~BatchEffectsConfig.schema_json
+      ~BatchEffectsConfig.update_forward_refs
+      ~BatchEffectsConfig.validate
+      ~BatchEffectsConfig.validate_proportions
+   
+   
+
+   
+   
+   .. rubric:: Attributes
+
+   .. autosummary::
+   
+      ~BatchEffectsConfig.model_computed_fields
+      ~BatchEffectsConfig.model_config
+      ~BatchEffectsConfig.model_extra
+      ~BatchEffectsConfig.model_fields
+      ~BatchEffectsConfig.model_fields_set
+      ~BatchEffectsConfig.n_batches
+      ~BatchEffectsConfig.effect_strength
+      ~BatchEffectsConfig.effect_type
+      ~BatchEffectsConfig.effect_granularity
+      ~BatchEffectsConfig.confounding_with_class
+      ~BatchEffectsConfig.affected_features
+      ~BatchEffectsConfig.proportions
+   
+   

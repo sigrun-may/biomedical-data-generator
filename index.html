@@ -45,15 +45,22 @@
   </form>
 </div>
         </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
-              <ul>
+              <p class="caption" role="heading"><span class="caption-text">Reference</span></p>
+<ul>
 <li class="toctree-l1"><a class="reference internal" href="code-doc.html">Code Documentation</a></li>
-<li class="toctree-l1"><a class="reference external" href="https://github.com/sigrun-may/biomedical-data-generator/blob/main/LICENSE">License</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">External Links</span></p>
+<ul>
 <li class="toctree-l1"><a class="reference external" href="https://github.com/sigrun-may/biomedical-data-generator">GitHub Repository</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://pypi.org/project/biomedical-data-generator/">PyPI Package</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://github.com/sigrun-may/biomedical-data-generator/blob/main/LICENSE">License</a></li>
 </ul>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="_autosummary/biomedical_data_generator.generate_dataset.html">biomedical_data_generator.generate_dataset</a></li>
-<li class="toctree-l1"><a class="reference internal" href="_autosummary/biomedical_data_generator.find_seed_for_correlation.html">biomedical_data_generator.find_seed_for_correlation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="_autosummary/biomedical_data_generator.DatasetConfig.html">biomedical_data_generator.DatasetConfig</a></li>
+<li class="toctree-l1"><a class="reference internal" href="_autosummary/biomedical_data_generator.ClassConfig.html">biomedical_data_generator.ClassConfig</a></li>
+<li class="toctree-l1"><a class="reference internal" href="_autosummary/biomedical_data_generator.CorrClusterConfig.html">biomedical_data_generator.CorrClusterConfig</a></li>
+<li class="toctree-l1"><a class="reference internal" href="_autosummary/biomedical_data_generator.BatchEffectsConfig.html">biomedical_data_generator.BatchEffectsConfig</a></li>
 </ul>
 
         </div>
@@ -82,18 +89,140 @@
              
   <section id="biomedical-data-generator">
 <h1>Biomedical Data Generator<a class="headerlink" href="#biomedical-data-generator" title="Link to this heading"></a></h1>
-<p>A small library to generate synthetic classification datasets with correlated feature clusters.</p>
-<section id="content">
-<h2>Content<a class="headerlink" href="#content" title="Link to this heading"></a></h2>
+<p>Generate reproducible, labeled synthetic datasets for machine learning with a focus on biomedical applications.</p>
+<a class="reference external image-reference" href="https://pypi.org/project/biomedical-data-generator/"><img alt="PyPI version" src="https://badge.fury.io/py/biomedical-data-generator.svg" />
+</a>
+<a class="reference external image-reference" href="https://pypi.org/project/biomedical-data-generator/"><img alt="Python versions" src="https://img.shields.io/pypi/pyversions/biomedical-data-generator.svg" />
+</a>
+<a class="reference external image-reference" href="https://github.com/sigrun-may/biomedical-data-generator/actions"><img alt="Tests" src="https://github.com/sigrun-may/biomedical-data-generator/actions/workflows/tests.yml/badge.svg" />
+</a>
+<a class="reference external image-reference" href="https://codecov.io/gh/sigrun-may/biomedical-data-generator"><img alt="Coverage" src="https://codecov.io/gh/sigrun-may/biomedical-data-generator/branch/main/graph/badge.svg" />
+</a>
+<section id="key-features">
+<h2>Key Features<a class="headerlink" href="#key-features" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p><strong>Correlated feature clusters</strong> with equicorrelated and Toeplitz structures</p></li>
+<li><p><strong>Class-specific correlation patterns</strong> (e.g., pathways active only in diseased class)</p></li>
+<li><p><strong>Batch effects simulation</strong> with controllable confounding</p></li>
+<li><p><strong>Ground-truth metadata</strong> capturing complete generative process</p></li>
+<li><p><strong>Scikit-learn compatible</strong> output for seamless integration</p></li>
+<li><p><strong>Configurable feature roles</strong> (informative, noise, proxy)</p></li>
+</ul>
+</section>
+<section id="quick-example">
+<h2>Quick Example<a class="headerlink" href="#quick-example" title="Link to this heading"></a></h2>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">biomedical_data_generator</span><span class="w"> </span><span class="kn">import</span> <span class="n">DatasetConfig</span><span class="p">,</span> <span class="n">ClassConfig</span><span class="p">,</span> <span class="n">generate_dataset</span>
+
+<span class="n">cfg</span> <span class="o">=</span> <span class="n">DatasetConfig</span><span class="p">(</span>
+    <span class="n">n_informative</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span>
+    <span class="n">n_noise</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span>
+    <span class="n">class_configs</span><span class="o">=</span><span class="p">[</span>
+        <span class="n">ClassConfig</span><span class="p">(</span><span class="n">n_samples</span><span class="o">=</span><span class="mi">50</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;healthy&quot;</span><span class="p">),</span>
+        <span class="n">ClassConfig</span><span class="p">(</span><span class="n">n_samples</span><span class="o">=</span><span class="mi">50</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;diseased&quot;</span><span class="p">),</span>
+    <span class="p">],</span>
+    <span class="n">class_sep</span><span class="o">=</span><span class="mf">1.5</span><span class="p">,</span>
+    <span class="n">random_state</span><span class="o">=</span><span class="mi">42</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="n">X</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">meta</span> <span class="o">=</span> <span class="n">generate_dataset</span><span class="p">(</span><span class="n">cfg</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="installation">
+<h2>Installation<a class="headerlink" href="#installation" title="Link to this heading"></a></h2>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pip<span class="w"> </span>install<span class="w"> </span>biomedical-data-generator
+</pre></div>
+</div>
+<p><strong>Requirements:</strong> Python 3.11+</p>
+</section>
+<section id="documentation-contents">
+<h2>Documentation Contents<a class="headerlink" href="#documentation-contents" title="Link to this heading"></a></h2>
 <div class="toctree-wrapper compound">
+</div>
+<div class="toctree-wrapper compound">
+<p class="caption" role="heading"><span class="caption-text">Reference</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="code-doc.html">Code Documentation</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="code-doc.html#biomedical-data-generator"><code class="xref py py-mod docutils literal notranslate"><span class="pre">biomedical_data_generator</span></code></a></li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference external" href="https://github.com/sigrun-may/biomedical-data-generator/blob/main/LICENSE">License</a></li>
-<li class="toctree-l1"><a class="reference external" href="https://github.com/sigrun-may/biomedical-data-generator">GitHub Repository</a></li>
 </ul>
+</div>
+<div class="toctree-wrapper compound">
+<p class="caption" role="heading"><span class="caption-text">External Links</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference external" href="https://github.com/sigrun-may/biomedical-data-generator">GitHub Repository</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://pypi.org/project/biomedical-data-generator/">PyPI Package</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://github.com/sigrun-may/biomedical-data-generator/blob/main/LICENSE">License</a></li>
+</ul>
+</div>
+</section>
+<section id="use-cases">
+<h2>Use Cases<a class="headerlink" href="#use-cases" title="Link to this heading"></a></h2>
+<p>This package is designed for:</p>
+<ul class="simple">
+<li><p>Generating reproducible datasets</p></li>
+<li><p>Simulating high-dimensional data with known ground truth feature roles</p></li>
+<li><p>Simulating multi-class problems with class-specific correlation structures</p></li>
+<li><p>Creating datasets with controlled signal-to-noise ratios</p></li>
+<li><p>Benchmarking feature selection and classification methods</p></li>
+<li><p>Evaluating methods for handling small sample sizes in high dimensions</p></li>
+<li><p>Testing robustness under correlation and non-causal variation</p></li>
+<li><p>Validating feature importance metrics against known ground truth</p></li>
+<li><p>Studying stability of selected features across resamples</p></li>
+<li><p>Exploring effects of batch confounding on model performance</p></li>
+<li><p>Illustrating impact of correlated features on model interpretability</p></li>
+<li><p>Prototyping new algorithms for biomedical data</p></li>
+<li><p>Generating data for domain adaptation experiments with batch effects</p></li>
+<li><p>Teaching machine learning concepts with transparent ground truth</p></li>
+<li><p>Demonstrating cross-validation pitfalls in high-dimensional settings</p></li>
+</ul>
+</section>
+<section id="scientific-context">
+<h2>Scientific Context<a class="headerlink" href="#scientific-context" title="Link to this heading"></a></h2>
+<p>Many biomedical machine learning problems operate in <strong>p &gt;&gt; n</strong> settings: thousands of variables but only dozens of samples. In these regimes, model performance and feature selection stability are heavily influenced by:</p>
+<ul class="simple">
+<li><p>Correlated feature clusters (e.g., pathways or co-expressed genes)</p></li>
+<li><p>Non-causal variation (batch effects, site differences)</p></li>
+<li><p>Noise features appearing discriminative by chance</p></li>
+<li><p>Small changes in class balance or effect size</p></li>
+</ul>
+<p>This generator provides a configurable, transparent way to simulate such scenarios with complete ground truth for validation.</p>
+</section>
+<section id="architecture">
+<h2>Architecture<a class="headerlink" href="#architecture" title="Link to this heading"></a></h2>
+<p>The generator follows a clean 6-phase pipeline:</p>
+<ol class="arabic simple">
+<li><p><strong>Label generation</strong>: Create class labels with exact counts</p></li>
+<li><p><strong>Informative features</strong>: Generate features with class separation</p></li>
+<li><p><strong>Correlated clusters</strong>: Create feature blocks with within-cluster correlations</p></li>
+<li><p><strong>Noise features</strong>: Generate independent uninformative features</p></li>
+<li><p><strong>Assembly</strong>: Concatenate all feature blocks in defined order</p></li>
+<li><p><strong>Batch effects</strong> (optional): Apply technical overlays</p></li>
+</ol>
+<p>Each module has single responsibility:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">features/informative.py</span></code>: Labels and class separation</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">features/correlated.py</span></code>: Cluster generation with class-specific correlations</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">features/noise.py</span></code>: Pure noise generation</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">effects/batch.py</span></code>: Technical overlays (batch effects)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">generator.py</span></code>: Pipeline orchestration</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">config.py</span></code>: Configuration models with validation</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">meta.py</span></code>: Ground truth capture</p></li>
+</ul>
+</section>
+<section id="citation">
+<h2>Citation<a class="headerlink" href="#citation" title="Link to this heading"></a></h2>
+<p>If you use this package in a scientific publication, please cite:</p>
+<div class="highlight-bibtex notranslate"><div class="highlight"><pre><span></span><span class="nc">@software</span><span class="p">{</span><span class="nl">biomedical_data_generator</span><span class="p">,</span>
+<span class="w">  </span><span class="na">author</span><span class="w">       </span><span class="p">=</span><span class="w"> </span><span class="s">{May, Sigrun}</span><span class="p">,</span>
+<span class="w">  </span><span class="na">title</span><span class="w">        </span><span class="p">=</span><span class="w"> </span><span class="s">{biomedical-data-generator: Synthetic biomedical data</span>
+<span class="s">                  generator for benchmarking and teaching}</span><span class="p">,</span>
+<span class="w">  </span><span class="na">year</span><span class="w">         </span><span class="p">=</span><span class="w"> </span><span class="s">{2025}</span><span class="p">,</span>
+<span class="w">  </span><span class="na">url</span><span class="w">          </span><span class="p">=</span><span class="w"> </span><span class="s">{https://github.com/sigrun-may/biomedical-data-generator}</span><span class="p">,</span>
+<span class="w">  </span><span class="na">version</span><span class="w">      </span><span class="p">=</span><span class="w"> </span><span class="s">{1.0.0}</span>
+<span class="p">}</span>
+</pre></div>
 </div>
 </section>
 <section id="indices-and-tables">
@@ -101,9 +230,9 @@
 <ul class="simple">
 <li><p><a class="reference internal" href="genindex.html"><span class="std std-ref">Index</span></a></p></li>
 <li><p><a class="reference internal" href="py-modindex.html"><span class="std std-ref">Module Index</span></a></p></li>
+<li><p><a class="reference internal" href="search.html"><span class="std std-ref">Search Page</span></a></p></li>
 </ul>
-<p><strong>`docs/api.rst`</strong>
-<a href="#id1"><span class="problematic" id="id2">``</span></a><a href="#id3"><span class="problematic" id="id4">`</span></a>rst
+<p><a href="#id1"><span class="problematic" id="id2">``</span></a><a href="#id3"><span class="problematic" id="id4">`</span></a>rst
 API Reference
 =============</p>
 <table class="autosummary longtable docutils align-default">
@@ -111,11 +240,17 @@ API Reference
 <tr class="row-odd"><td><p><a class="reference internal" href="_autosummary/biomedical_data_generator.generate_dataset.html#biomedical_data_generator.generate_dataset" title="biomedical_data_generator.generate_dataset"><code class="xref py py-obj docutils literal notranslate"><span class="pre">biomedical_data_generator.generate_dataset</span></code></a></p></td>
 <td><p>Generate synthetic biomedical dataset with specified feature structure.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="_autosummary/biomedical_data_generator.find_seed_for_correlation.html#biomedical_data_generator.find_seed_for_correlation" title="biomedical_data_generator.find_seed_for_correlation"><code class="xref py py-obj docutils literal notranslate"><span class="pre">biomedical_data_generator.find_seed_for_correlation</span></code></a></p></td>
-<td><p>Find a random seed that yields a cluster with desired correlation properties.</p></td>
-</tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="_autosummary/biomedical_data_generator.DatasetConfig.html#biomedical_data_generator.DatasetConfig" title="biomedical_data_generator.DatasetConfig"><code class="xref py py-obj docutils literal notranslate"><span class="pre">biomedical_data_generator.DatasetConfig</span></code></a></p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="_autosummary/biomedical_data_generator.DatasetConfig.html#biomedical_data_generator.DatasetConfig" title="biomedical_data_generator.DatasetConfig"><code class="xref py py-obj docutils literal notranslate"><span class="pre">biomedical_data_generator.DatasetConfig</span></code></a></p></td>
 <td><p>Configuration for synthetic dataset generation.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="_autosummary/biomedical_data_generator.ClassConfig.html#biomedical_data_generator.ClassConfig" title="biomedical_data_generator.ClassConfig"><code class="xref py py-obj docutils literal notranslate"><span class="pre">biomedical_data_generator.ClassConfig</span></code></a></p></td>
+<td><p>Configuration for a single class in the dataset.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="_autosummary/biomedical_data_generator.CorrClusterConfig.html#biomedical_data_generator.CorrClusterConfig" title="biomedical_data_generator.CorrClusterConfig"><code class="xref py py-obj docutils literal notranslate"><span class="pre">biomedical_data_generator.CorrClusterConfig</span></code></a></p></td>
+<td><p>Correlated feature cluster simulating coordinated biomarker patterns.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="_autosummary/biomedical_data_generator.BatchEffectsConfig.html#biomedical_data_generator.BatchEffectsConfig" title="biomedical_data_generator.BatchEffectsConfig"><code class="xref py py-obj docutils literal notranslate"><span class="pre">biomedical_data_generator.BatchEffectsConfig</span></code></a></p></td>
+<td><p>Configuration for simulating batch effects.</p></td>
 </tr>
 </tbody>
 </table>

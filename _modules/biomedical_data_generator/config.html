@@ -43,15 +43,22 @@
   </form>
 </div>
         </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
-              <ul>
+              <p class="caption" role="heading"><span class="caption-text">Reference</span></p>
+<ul>
 <li class="toctree-l1"><a class="reference internal" href="../../code-doc.html">Code Documentation</a></li>
-<li class="toctree-l1"><a class="reference external" href="https://github.com/sigrun-may/biomedical-data-generator/blob/main/LICENSE">License</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">External Links</span></p>
+<ul>
 <li class="toctree-l1"><a class="reference external" href="https://github.com/sigrun-may/biomedical-data-generator">GitHub Repository</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://pypi.org/project/biomedical-data-generator/">PyPI Package</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://github.com/sigrun-may/biomedical-data-generator/blob/main/LICENSE">License</a></li>
 </ul>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../_autosummary/biomedical_data_generator.generate_dataset.html">biomedical_data_generator.generate_dataset</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../_autosummary/biomedical_data_generator.find_seed_for_correlation.html">biomedical_data_generator.find_seed_for_correlation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../_autosummary/biomedical_data_generator.DatasetConfig.html">biomedical_data_generator.DatasetConfig</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../_autosummary/biomedical_data_generator.ClassConfig.html">biomedical_data_generator.ClassConfig</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../_autosummary/biomedical_data_generator.CorrClusterConfig.html">biomedical_data_generator.CorrClusterConfig</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../_autosummary/biomedical_data_generator.BatchEffectsConfig.html">biomedical_data_generator.BatchEffectsConfig</a></li>
 </ul>
 
         </div>
@@ -194,6 +201,8 @@
     <span class="k">return</span> <span class="n">params</span>
 
 
+<div class="viewcode-block" id="ClassConfig">
+<a class="viewcode-back" href="../../_autosummary/biomedical_data_generator.ClassConfig.html#biomedical_data_generator.ClassConfig">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">ClassConfig</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Configuration for a single class in the dataset.</span>
 
@@ -273,9 +282,12 @@
             <span class="n">parts</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;label=&#39;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">label</span><span class="si">}</span><span class="s2">&#39;&quot;</span><span class="p">)</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">class_distribution</span> <span class="o">!=</span> <span class="s2">&quot;normal&quot;</span><span class="p">:</span>
             <span class="n">parts</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;dist=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">class_distribution</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;ClassConfig(</span><span class="si">{</span><span class="s1">&#39;, &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">parts</span><span class="p">)</span><span class="si">}</span><span class="s2">)&quot;</span>
+        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;ClassConfig(</span><span class="si">{</span><span class="s1">&#39;, &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">parts</span><span class="p">)</span><span class="si">}</span><span class="s2">)&quot;</span></div>
 
 
+
+<div class="viewcode-block" id="BatchEffectsConfig">
+<a class="viewcode-back" href="../../_autosummary/biomedical_data_generator.BatchEffectsConfig.html#biomedical_data_generator.BatchEffectsConfig">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">BatchEffectsConfig</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Configuration for simulating batch effects.</span>
 
@@ -358,6 +370,8 @@
     <span class="c1"># optional batch size proportions</span>
     <span class="n">proportions</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
 
+<div class="viewcode-block" id="BatchEffectsConfig.validate_proportions">
+<a class="viewcode-back" href="../../_autosummary/biomedical_data_generator.BatchEffectsConfig.html#biomedical_data_generator.BatchEffectsConfig.validate_proportions">[docs]</a>
     <span class="nd">@field_validator</span><span class="p">(</span><span class="s2">&quot;proportions&quot;</span><span class="p">)</span>
     <span class="nd">@classmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">validate_proportions</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">v</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span><span class="p">,</span> <span class="n">info</span><span class="p">):</span>
@@ -383,9 +397,13 @@
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Sum of proportions must be &gt; 0, got </span><span class="si">{</span><span class="n">total</span><span class="si">}</span><span class="s2">.&quot;</span><span class="p">)</span>
 
         <span class="c1"># Normalize to sum to 1.0</span>
-        <span class="k">return</span> <span class="p">[</span><span class="n">p</span> <span class="o">/</span> <span class="n">total</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">v</span><span class="p">]</span>
+        <span class="k">return</span> <span class="p">[</span><span class="n">p</span> <span class="o">/</span> <span class="n">total</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">v</span><span class="p">]</span></div>
+</div>
 
 
+
+<div class="viewcode-block" id="CorrClusterConfig">
+<a class="viewcode-back" href="../../_autosummary/biomedical_data_generator.CorrClusterConfig.html#biomedical_data_generator.CorrClusterConfig">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">CorrClusterConfig</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Correlated feature cluster simulating coordinated biomarker patterns.</span>
 
@@ -555,10 +573,15 @@
 
     <span class="c1"># Convenience methods -----------------------------------------------------</span>
 
+<div class="viewcode-block" id="CorrClusterConfig.is_class_specific">
+<a class="viewcode-back" href="../../_autosummary/biomedical_data_generator.CorrClusterConfig.html#biomedical_data_generator.CorrClusterConfig.is_class_specific">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">is_class_specific</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Return True if this cluster uses class-specific correlations.&quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">correlation</span><span class="p">,</span> <span class="nb">dict</span><span class="p">)</span>
+        <span class="k">return</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">correlation</span><span class="p">,</span> <span class="nb">dict</span><span class="p">)</span></div>
 
+
+<div class="viewcode-block" id="CorrClusterConfig.get_correlation_for_class">
+<a class="viewcode-back" href="../../_autosummary/biomedical_data_generator.CorrClusterConfig.html#biomedical_data_generator.CorrClusterConfig.get_correlation_for_class">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">get_correlation_for_class</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">class_idx</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Resolve correlation for a specific class.</span>
 
@@ -569,8 +592,11 @@
             <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">correlation</span><span class="p">)</span>  <span class="c1"># type: ignore[arg-type]</span>
 
         <span class="n">mapping</span> <span class="o">=</span> <span class="n">cast</span><span class="p">(</span><span class="nb">dict</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">correlation</span><span class="p">)</span>
-        <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="n">mapping</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">class_idx</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">))</span>
+        <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="n">mapping</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">class_idx</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">))</span></div>
 
+
+<div class="viewcode-block" id="CorrClusterConfig.resolve_anchor_effect_size">
+<a class="viewcode-back" href="../../_autosummary/biomedical_data_generator.CorrClusterConfig.html#biomedical_data_generator.CorrClusterConfig.resolve_anchor_effect_size">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">resolve_anchor_effect_size</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Convert anchor_effect_size to a numeric effect size.&quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">anchor_effect_size</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
@@ -584,7 +610,8 @@
             <span class="p">}</span>
             <span class="k">return</span> <span class="n">effect_map</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">anchor_effect_size</span><span class="p">]</span>
 
-        <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">anchor_effect_size</span><span class="p">)</span>
+        <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">anchor_effect_size</span><span class="p">)</span></div>
+
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Concise representation for quick reference.&quot;&quot;&quot;</span>
@@ -601,7 +628,8 @@
             <span class="n">parts</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;effect=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">anchor_effect_size</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">label</span><span class="p">:</span>
             <span class="n">parts</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;&#39;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">label</span><span class="si">}</span><span class="s2">&#39;&quot;</span><span class="p">)</span>
-        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;CorrCluster(</span><span class="si">{</span><span class="s1">&#39;, &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">parts</span><span class="p">)</span><span class="si">}</span><span class="s2">)&quot;</span>
+        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;CorrCluster(</span><span class="si">{</span><span class="s1">&#39;, &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">parts</span><span class="p">)</span><span class="si">}</span><span class="s2">)&quot;</span></div>
+
 
 
 <span class="c1"># ---------------------------------------------------------------------------</span>

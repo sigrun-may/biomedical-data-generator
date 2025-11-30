@@ -1,0 +1,59 @@
+﻿biomedical\_data\_generator.ClassConfig
+=======================================
+
+.. currentmodule:: biomedical_data_generator
+
+.. autoclass:: ClassConfig
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~ClassConfig.__init__
+      ~ClassConfig.construct
+      ~ClassConfig.copy
+      ~ClassConfig.dict
+      ~ClassConfig.from_orm
+      ~ClassConfig.json
+      ~ClassConfig.model_construct
+      ~ClassConfig.model_copy
+      ~ClassConfig.model_dump
+      ~ClassConfig.model_dump_json
+      ~ClassConfig.model_json_schema
+      ~ClassConfig.model_parametrized_name
+      ~ClassConfig.model_post_init
+      ~ClassConfig.model_rebuild
+      ~ClassConfig.model_validate
+      ~ClassConfig.model_validate_json
+      ~ClassConfig.model_validate_strings
+      ~ClassConfig.parse_file
+      ~ClassConfig.parse_obj
+      ~ClassConfig.parse_raw
+      ~ClassConfig.schema
+      ~ClassConfig.schema_json
+      ~ClassConfig.update_forward_refs
+      ~ClassConfig.validate
+   
+   
+
+   
+   
+   .. rubric:: Attributes
+
+   .. autosummary::
+   
+      ~ClassConfig.model_computed_fields
+      ~ClassConfig.model_config
+      ~ClassConfig.model_extra
+      ~ClassConfig.model_fields
+      ~ClassConfig.model_fields_set
+      ~ClassConfig.n_samples
+      ~ClassConfig.class_distribution
+      ~ClassConfig.class_distribution_params
+      ~ClassConfig.label
+   
+   
