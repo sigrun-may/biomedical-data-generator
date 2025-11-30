@@ -278,10 +278,14 @@
 <div class="viewcode-block" id="generate_dataset">
 <a class="viewcode-back" href="../../_autosummary/biomedical_data_generator.generate_dataset.html#biomedical_data_generator.generate_dataset">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">generate_dataset</span><span class="p">(</span><span class="n">cfg</span><span class="p">,</span> <span class="n">return_dataframe</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span> <span class="o">|</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">DatasetMeta</span><span class="p">]:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Generate dataset with clean module boundaries.</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Generate synthetic biomedical dataset with specified feature structure.</span>
+
+<span class="sd">    Creates a classification dataset with configurable informative features, noise,</span>
+<span class="sd">    correlated feature clusters (e.g., biological pathways), and optional batch effects.</span>
 
 <span class="sd">    Args:</span>
-<span class="sd">        cfg: Resolved :class:`DatasetConfig` for dataset generation.</span>
+<span class="sd">        cfg: Configuration object defining dataset the structure. See :class:`~biomedical_data_generator.config /</span>
+<span class="sd">            :class:`~biomedical_data_generator.config.DatasetConfig` for details.</span>
 <span class="sd">        return_dataframe: If ``True``, return features as a :class:`pandas.DataFrame`</span>
 <span class="sd">            with named columns. If ``False``, return as a NumPy array.</span>
 
@@ -302,6 +306,17 @@
 <span class="sd">              Metadata object containing feature masks (informative, correlated, noise,</span>
 <span class="sd">              batch-specific), correlation block specifications, batch assignments,</span>
 <span class="sd">              and complete generation configuration.</span>
+
+<span class="sd">    Examples:</span>
+<span class="sd">        &gt;&gt;&gt; from biomedical_data_generator.config import DatasetConfig, ClassConfig</span>
+<span class="sd">        &gt;&gt;&gt; data_cfg_1 = DatasetConfig(</span>
+<span class="sd">        ...     n_informative=5,</span>
+<span class="sd">        ...     n_noise=10,</span>
+<span class="sd">        ...     class_configs=[ClassConfig(n_samples=100, label=&quot;healthy&quot;),</span>
+<span class="sd">        ...                    ClassConfig(n_samples=100, label=&quot;diseased&quot;)],</span>
+<span class="sd">        ...     random_state=42</span>
+<span class="sd">        ... )</span>
+<span class="sd">        &gt;&gt;&gt; x1, y1, meta_data1 = generate_dataset(data_cfg_1)</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">rng_global</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">default_rng</span><span class="p">(</span><span class="n">cfg</span><span class="o">.</span><span class="n">random_state</span><span class="p">)</span>
 

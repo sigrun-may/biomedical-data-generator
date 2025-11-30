@@ -89,11 +89,13 @@
 <dl class="py function">
 <dt class="sig sig-object py" id="biomedical_data_generator.generate_dataset">
 <span class="sig-prename descclassname"><span class="pre">biomedical_data_generator.</span></span><span class="sig-name descname"><span class="pre">generate_dataset</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cfg</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">return_dataframe</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/biomedical_data_generator/generator.html#generate_dataset"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#biomedical_data_generator.generate_dataset" title="Link to this definition"></a></dt>
-<dd><p>Generate dataset with clean module boundaries.</p>
+<dd><p>Generate synthetic biomedical dataset with specified feature structure.</p>
+<p>Creates a classification dataset with configurable informative features, noise,
+correlated feature clusters (e.g., biological pathways), and optional batch effects.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>cfg</strong> – Resolved <a class="reference internal" href="biomedical_data_generator.DatasetConfig.html#biomedical_data_generator.DatasetConfig" title="biomedical_data_generator.DatasetConfig"><code class="xref py py-class docutils literal notranslate"><span class="pre">DatasetConfig</span></code></a> for dataset generation.</p></li>
+<li><p><strong>cfg</strong> – Configuration object defining dataset the structure. See <code class="xref py py-class docutils literal notranslate"><span class="pre">DatasetConfig</span></code> for details.</p></li>
 <li><p><strong>return_dataframe</strong> – If <code class="docutils literal notranslate"><span class="pre">True</span></code>, return features as a <code class="xref py py-class docutils literal notranslate"><span class="pre">pandas.DataFrame</span></code>
 with named columns. If <code class="docutils literal notranslate"><span class="pre">False</span></code>, return as a NumPy array.</p></li>
 </ul>
@@ -124,6 +126,18 @@ and complete generation configuration.</p></li>
 <dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.14)">tuple</a></p>
 </dd>
 </dl>
+<p class="rubric">Examples</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">biomedical_data_generator.config</span><span class="w"> </span><span class="kn">import</span> <span class="n">DatasetConfig</span><span class="p">,</span> <span class="n">ClassConfig</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">data_cfg_1</span> <span class="o">=</span> <span class="n">DatasetConfig</span><span class="p">(</span>
+<span class="gp">... </span>    <span class="n">n_informative</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span>
+<span class="gp">... </span>    <span class="n">n_noise</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span>
+<span class="gp">... </span>    <span class="n">class_configs</span><span class="o">=</span><span class="p">[</span><span class="n">ClassConfig</span><span class="p">(</span><span class="n">n_samples</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;healthy&quot;</span><span class="p">),</span>
+<span class="gp">... </span>                   <span class="n">ClassConfig</span><span class="p">(</span><span class="n">n_samples</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;diseased&quot;</span><span class="p">)],</span>
+<span class="gp">... </span>    <span class="n">random_state</span><span class="o">=</span><span class="mi">42</span>
+<span class="gp">... </span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">x1</span><span class="p">,</span> <span class="n">y1</span><span class="p">,</span> <span class="n">meta_data1</span> <span class="o">=</span> <span class="n">generate_dataset</span><span class="p">(</span><span class="n">data_cfg_1</span><span class="p">)</span>
+</pre></div>
+</div>
 </dd></dl>
 
 </section>
