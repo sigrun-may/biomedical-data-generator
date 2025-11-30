@@ -116,7 +116,7 @@ def _make_names_and_roles(
     # -------------------------------------------------------------
     for j in range(n_inf_cols):
         col = j
-        if cfg.feature_naming == "prefixed":
+        if cfg.prefixed_feature_naming:
             names.append(f"{cfg.prefix_informative}{j + 1}")
         else:
             names.append(f"feature_{len(names) + 1}")
@@ -138,7 +138,7 @@ def _make_names_and_roles(
         anchor_idx[cid] = anchor_col
 
         # Name anchor (display: 1-based with cid+1)
-        if cfg.feature_naming == "prefixed":
+        if cfg.prefixed_feature_naming:
             if cluster_cfg.anchor_role == "informative":
                 anchor_name = f"{cfg.prefix_corr}{cid + 1}_anchor"  # corr1_anchor, corr2_anchor, ...
             else:
@@ -153,7 +153,7 @@ def _make_names_and_roles(
 
         # Name proxy features (never added to informative_idx / noise_idx)
         for offset, col in enumerate(cols[1:], start=2):
-            if cfg.feature_naming == "prefixed":
+            if cfg.prefixed_feature_naming:
                 proxy_name = f"{cfg.prefix_corr}{cid + 1}_{offset}"  # corr1_2, corr1_3, ...
             else:
                 proxy_name = f"feature_{len(names) + 1}"
@@ -167,7 +167,7 @@ def _make_names_and_roles(
     noise_start = n_inf_cols + n_cluster_cols
     for j in range(n_noise_cols):
         col = noise_start + j
-        if cfg.feature_naming == "prefixed":
+        if cfg.prefixed_feature_naming:
             names.append(f"{cfg.prefix_noise}{j + 1}")
         else:
             names.append(f"feature_{len(names) + 1}")

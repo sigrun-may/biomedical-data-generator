@@ -572,11 +572,11 @@ class DatasetConfig(BaseModel):
 
     Naming policy
     -------------
-    - If `feature_naming="prefixed"`:
+    - If `prefixed_feature_naming=True`, features are named as:
         * Free informative:  i1, i2, ...
         * Free noise:        n1, n2, ...
         * Correlated:        corr{cid}_anchor, corr{cid}_2, ..., corr{cid}_k
-    - If `feature_naming="simple"`, a generic `feature_{i}` scheme is used.
+    - If `prefixed_feature_naming=False`: a generic `feature_{i}` scheme is used.
 
 
     Examples (counting)
@@ -623,7 +623,7 @@ class DatasetConfig(BaseModel):
         ...     corr_between=0.1,
         ...     noise_distribution="normal",
         ...     noise_distribution_params={"loc": 0, "scale": 1},
-        ...     feature_naming="prefixed",
+        ...     prefixed_feature_naming=True,
         ...     random_state=42
         ... )
     """
@@ -648,9 +648,10 @@ class DatasetConfig(BaseModel):
     noise_distribution_params: dict[str, Any] = Field(default_factory=lambda: {"loc": 0, "scale": 1})
 
     # Naming
-    feature_naming: Literal["prefixed", "simple"] = "prefixed"
+    prefixed_feature_naming: bool = True
     prefix_informative: str = "i"
     prefix_noise: str = "n"
+
     prefix_corr: str = "corr"
 
     # Correlated structure
