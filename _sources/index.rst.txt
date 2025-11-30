@@ -11,7 +11,7 @@ Generate reproducible, labeled synthetic datasets for machine learning with a fo
    :target: https://pypi.org/project/biomedical-data-generator/
    :alt: Python versions
 
-.. image:: https://github.com/sigrun-may/biomedical-data-generator/actions/workflows/tests.yml/badge.svg
+.. image:: https://github.com/sigrun-may/biomedical-data-generator/actions/workflows/test.yml/badge.svg
    :target: https://github.com/sigrun-may/biomedical-data-generator/actions
    :alt: Tests
 
