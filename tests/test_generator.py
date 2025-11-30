@@ -131,7 +131,7 @@ def test_generate_dataset_feature_naming_prefixed():
             ClassConfig(n_samples=50),
             ClassConfig(n_samples=50),
         ],
-        feature_naming="prefixed",
+        prefixed_feature_naming=True,
         prefix_informative="inf_",
         prefix_noise="noise_",
         random_state=42,
@@ -292,7 +292,7 @@ def test_make_names_and_roles_with_informative_anchor():
             ),
         ],
         class_configs=[ClassConfig(n_samples=50), ClassConfig(n_samples=50)],  # Need 2 classes
-        feature_naming="prefixed",
+        prefixed_feature_naming=True,
     )
 
     names, inf_idx, noi_idx, cluster_idx, anchor_idx = _make_names_and_roles(
@@ -323,7 +323,7 @@ def test_make_names_and_roles_with_noise_anchor():
             ),
         ],
         class_configs=[ClassConfig(n_samples=50), ClassConfig(n_samples=50)],  # Need 2 classes
-        feature_naming="prefixed",
+        prefixed_feature_naming=True,
     )
 
     names, inf_idx, noi_idx, cluster_idx, anchor_idx = _make_names_and_roles(
