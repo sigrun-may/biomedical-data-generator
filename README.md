@@ -1,445 +1,314 @@
-# Data generator for synthetic data including artificial classes, intraclass correlations and random data - [Sphinx Doc](https://sigrun-may.github.io/biomedical-data-generator/)
-
-Generate synthetic classification datasets with correlated feature clusters, controllable class balance, effect sizes, and realistic distractors.
-
-## Highlights
-
-- **Correlated clusters** (equicorrelated or Toeplitz) with one **anchor** feature per cluster
-- **Class-specific correlations** via `class_rho` (e.g., biomarkers only correlate in diseased patients)
-- **Roles**: informative / noise
-- **Effect size** control via `effect_size` (small/medium/large) and per-cluster `anchor_effect_size`
-- **Exact class counts** generation via required `class_counts` parameter
-- **Feature naming**: tidy prefixes (`i*`, `corr{cid}_k`, `p*`, `n*`) or simple `feature_1..p`
-- Returns **(X, y, meta)** with rich `DatasetMeta` (indices, cluster map, class counts, etc.)
-- **CLI**: generate from YAML and write CSV in one line
-
-______________________________________________________________________
+# Biomedical Data Generator
 
 [![PyPI version](https://badge.fury.io/py/biomedical-data-generator.svg)](https://badge.fury.io/py/biomedical-data-generator)
 [![Python Version](https://img.shields.io/pypi/pyversions/biomedical-data-generator.svg)](https://pypi.org/project/biomedical-data-generator/)
+[![Documentation](https://img.shields.io/badge/docs-sphinx-blue.svg)](https://sigrun-may.github.io/biomedical-data-generator/)
+[![Tests](https://github.com/sigrun-may/biomedical-data-generator/actions/workflows/tests.yml/badge.svg)](https://github.com/sigrun-may/biomedical-data-generator/actions)
+[![codecov](https://codecov.io/gh/sigrun-may/biomedical-data-generator/branch/main/graph/badge.svg)](https://codecov.io/gh/sigrun-may/biomedical-data-generator)
 
-## Table of Contents
+Generate reproducible synthetic biomedical datasets with known ground truth for teaching, benchmarking, and method development in high-dimensional machine learning settings.
 
-- [Purpose](#purpose)
-- [Installation](#installation)
-- [Quickstart (Python API)](#quickstart-python-api)
-- [Correlated clusters and roles](#correlated-clusters-and-roles)
-- [Class-specific correlations (class_rho)](#class-specific-correlations-class_rho)
-- [Class balance and separability](#class-balance-and-separability)
-- [Data structure](#data-structure)
-  - [Different parts of the data set](#different-parts-of-the-data-set)
-  - [Data distribution and effect sizes](#data-distribution-and-effect-sizes)
-  - [Correlations](#correlations)
-- [Random Features](#random-features)
-- [Naming and convenience](#naming-and-convenience)
-- [Return values](#return-values)
-- [Command-line usage](#command-line-usage)
-- [API reference (essentials)](#api-reference-essentials)
-- [Tips](#tips)
-- [Licensing](#licensing)
+---
 
-## Purpose
+## Why This Package?
 
-In order to develop new methods or to compare existing methods for feature selection, reference data with known dependencies and importance of the individual features are needed. This data generator can be used to simulate biological data for example artificial high throughput data including artificial biomarkers. Since commonly not all true biomarkers and internal dependencies of high-dimensional biological datasets are known with
-certainty, artificial data **enables to know the expected outcome in advance**. In synthetic data, the feature importances and the distribution of each class are known. Irrelevant features can be purely random or come from a batch effect. Such data can be used, for example, to make random effects observable.
+Biomedical machine learning operates in challenging **p >> n** regimes (thousands of features, dozens of samples). This generator creates synthetic datasets that mimic real-world complexity while providing complete ground truth:
 
-- **clear ground truth** (which features truly matter, which are proxies, which are distractors),
-- **controllable separability** via `class_sep` and effect sizes,
-- **correlated structure** that mimics real omics/tabular data,
-- and **reproducible** sampling.
+- **Teaching**: Demonstrate cross-validation pitfalls, feature selection stability, and batch effect impacts  
+- **Benchmarking**: Compare feature selection methods with known informative features  
+- **Research**: Develop and validate new algorithms with controlled data properties  
+- **Reproducibility**: Deterministic generation for consistent educational materials
 
-______________________________________________________________________
+Compared to generic ML generators such as `sklearn.datasets.make_classification`, this package adds biomedical-specific structure: **class-specific correlations**, **explicit batch effects**, and **rich metadata** that records the full generative process (informative features, noise, correlated clusters, batch labels, configuration).
+
+---
+
+## Key Features
+
+✅ **Class-specific correlations** – Simulate pathway activation only in disease states  
+✅ **Batch effects** – Model technical variation with controllable confounding  
+✅ **Correlated feature clusters** – Equicorrelated and Toeplitz structures  
+✅ **Flexible class balance** – Exact sample counts per class  
+✅ **Ground-truth metadata** – Complete generative process documentation  
+✅ **scikit-learn compatible** – Seamless integration with ML pipelines
+
+---
 
 ## Installation
 
-The biomedical-data-generator is available at [the Python Package Index (PyPI)](https://pypi.org/project/biomedical-data-generator/).
-It can be installed with pip:
-
 ```bash
-$ pip install biomedical-data-generator
+pip install biomedical-data-generator
 ```
 
-> Tested with Python **3.11+**.
+**Minimum Requirements:** Python 3.11+
 
-______________________________________________________________________
+---
 
-## Quickstart (Python API)
+## Quick Start
+
+### Basic Dataset
 
 ```python
-from biomedical_data_generator import DatasetConfig, generate_dataset
+from biomedical_data_generator import DatasetConfig, ClassConfig, generate_dataset
 
 cfg = DatasetConfig(
-    n_samples=30,
     n_informative=5,
-    n_noise=0,
-    n_classes=2,
-    class_counts={0: 15, 1: 15},  # Required: exact class counts
+    n_noise=10,
+    class_configs=[
+        ClassConfig(n_samples=50, label="healthy"),
+        ClassConfig(n_samples=50, label="diseased"),
+    ],
     class_sep=1.5,
-    feature_naming="prefixed",
     random_state=42,
 )
 
-X, y, meta = generate_dataset(cfg, return_dataframe=True)
-print(X.shape, y.shape)        # (30, 5), (30,)
-print(meta.y_counts)           # {0: 15, 1: 15} (exact match!)
-print(meta.feature_names[:5])  # ['i1', 'i2', 'i3', 'i4', 'i5']
+X, y, meta = generate_dataset(cfg)
+print(f"Dataset shape: {X.shape}")
+print(f"True informative features: {len(meta.informative_idx)}")
 ```
 
-**Note on `n_features`:** You typically **omit** it. The generator derives and validates the total as
+Here, `y` contains integer-encoded class labels (`0, 1, ...`).  
+If you provide human-readable labels via `ClassConfig(label=...)`, these are stored in the metadata for later interpretation.
 
-```
-# total feature columns =
-# n_informative + n_noise + (proxies contributed by clusters)
-```
+### Class-Specific Correlations
 
-If you set `n_features` manually, it must equal that exact sum.
-
-______________________________________________________________________
-
-## Correlated clusters and roles
+Simulate biomarkers that only correlate in diseased patients:
 
 ```python
-from biomedical_data_generator import DatasetConfig, CorrClusterConfig, generate_dataset
+from biomedical_data_generator import DatasetConfig, ClassConfig, CorrClusterConfig, generate_dataset
 
 cfg = DatasetConfig(
-    n_samples=200,
-    n_informative=4,
-    n_noise=3,
-    n_classes=3,
-    class_counts={0: 50, 1: 80, 2: 70},  # Required: exact class counts
-    class_sep=1.2,
-    corr_clusters=[
-        CorrClusterConfig(
-            n_cluster_features=3,
-            rho=0.7,
-            structure="equicorrelated",
-            anchor_role="informative",
-            anchor_effect_size=1.0
-        ),
-        CorrClusterConfig(
-            n_cluster_features=2,
-            rho=0.6,
-            structure="toeplitz",
-            anchor_role="informative"
-        ),
-    ],
-    random_state=0,
-)
-
-X, y, meta = generate_dataset(cfg, return_dataframe=True)
-```
-
-**How it works (overview):**
-
-- Each cluster contributes `n_cluster_features` columns: **1 anchor** + `(n_cluster_features-1)` **proxies**.
-
-- `anchor_role` controls the anchor's contribution to the label:
-
-  - `informative`: contributes to a target class (via `anchor_effect_size`).
-  - `noise`: uninformative and uncorrelated with the label
-
-- `structure` ∈ {`equicorrelated`, `toeplitz`} defines within‑cluster correlations.
-
-- Global `effect_size` = {`small`, `medium`, `large`} sets sensible defaults for `anchor_effect_size`.
-
-- `anchor_mode` = {`equalized`, `strong`} tunes how anchors are distributed/weighted across classes.
-
-**Feature ordering** in `X`:
-
-1. Cluster features (anchors first **within** each cluster)
-1. Free informative features (`i*`)
-1. Noise features (`n*`)
-
-______________________________________________________________________
-
-## Class-specific correlations (class_rho)
-
-Use `class_rho` to create **different correlation patterns per class**. This is useful for simulating biomarkers that only correlate in diseased patients:
-
-```python
-from biomedical_data_generator import DatasetConfig, CorrClusterConfig, generate_dataset
-
-cfg = DatasetConfig(
-    n_samples=200,
     n_informative=3,
-    n_noise=2,
-    n_classes=2,
-    class_counts={0: 100, 1: 100},  # 0=healthy, 1=diseased
-    class_sep=1.5,
+    n_noise=5,
+    class_configs=[
+        ClassConfig(n_samples=100, label="healthy"),
+        ClassConfig(n_samples=100, label="diseased"),
+    ],
     corr_clusters=[
         CorrClusterConfig(
-            n_cluster_features=4,
-            rho=0.2,  # baseline correlation (for class 0)
-            class_rho={1: 0.9},  # strong correlation in class 1 (diseased)
-            rho_baseline=0.2,  # explicitly set baseline
+            n_cluster_features=6,
+            correlation=0.2,            # baseline correlation
+            class_correlation={1: 0.9}, # strong correlation in diseased class
             structure="equicorrelated",
             anchor_role="informative",
-            anchor_effect_size=1.2
-        ),
+            anchor_effect_size="medium",
+        )
     ],
     random_state=42,
 )
 
-X, y, meta = generate_dataset(cfg, return_dataframe=True)
-
-# Result: Cluster features highly correlated in diseased patients (class 1),
-# but nearly uncorrelated in healthy individuals (class 0)
+X, y, meta = generate_dataset(cfg)
 ```
 
-**Key parameters:**
+### Batch Effects
 
-- `class_rho`: dict mapping class labels to correlation coefficients (e.g., `{1: 0.9}`)
-- `rho_baseline`: correlation for classes not in `class_rho` (defaults to `rho`)
-- `rho`: default correlation when `class_rho` is not specified
+Model recruitment bias and technical variation:
 
-**Use case:** Simulates coordinated biomarker responses (e.g., pathway activation) that only occur in disease states.
-
-______________________________________________________________________
-
-## Class balance and separability
-
-- `n_classes`: number of classes (≥ 2)
-- `class_counts`: **exact** per‑class sizes (required parameter, e.g., `{0: 50, 1: 50}`)
-- `class_sep`: scales logits → higher means easier separation
-
-Labels are generated deterministically from `class_counts`. Cluster anchors contribute to their target class; free informative features contribute in a round‑robin fashion. Noise features have no effect on class separation.
-
-______________________________________________________________________
-
-## Data structure
-
-### Distributions & effect sizes
-
-- **Effect size** presets (`effect_size ∈ {small, medium, large}`) choose sensible defaults for anchor strengths; you can override per cluster via `anchor_effect_size`.
-- **Class separability** (`class_sep`) scales logits globally; larger → easier classification.
-- **Noise controls**: `noise_distribution` (`normal`/`uniform`/`laplace`) and `noise_scale`.
-
-### Different parts of the data set
-
-The biomedical-data-generator produces data sets consisting of up to three main parts:
-
-1. **Relevant/ informative features** belonging to an artificial class (for example artificial biomarkers)
-1. [optional] **Random data** representing the features (for example biomarker candidates) that are not associated with any class. This can be used to simulate random effects that occur in small sample sizes with a very large number of features. Or noise that occurs in real data.
-
-The number of artificial classes is not limited. Each class is generated individually and then combined with the others.
-In order to simulate artificial biomarkers in total, all individual classes have the same number of features in total.
-
-- **Informative features** (`i*`): truly predictive; include **cluster anchors** if `anchor_role="informative"`.
-- **Noise features** (`n*`): random, uncorrelated with the label; useful to test robustness.
-- **Correlated clusters** (`corr{cid}_k`): within a cluster, one **anchor** + `(n_cluster_features-1)` **proxies**; correlation structure `equicorrelated` or `toeplitz`.
-  - Note: Cluster IDs are **0-based** internally (0, 1, 2, ...), but feature names use **1-based** numbering for readability (corr1, corr2, corr3, ...).
-
-### Data distribution and effect sizes
-
-For each class, either the **normal distribution or the log normal distribution** can be selected. The different **classes can be shifted** to regulate the effect sizes and to influence the difficulty of data analysis.
-
-The normally distributed data could, for example, represent the range of values of healthy individuals.
-In the case of a disease, biological systems are in some way out of balance.
-Extreme changes in values as well as outliers can then be observed ([Concordet et al., 2009](https://doi.org/10.1016/j.cca.2009.03.057)).
-Therefore, the values of a diseased individual could be simulated with a lognormal distribution.
-
-Example of log-normal and normal distributed classes:
-
-![Different distributions of the classes.](docs/source/imgs/distributions.png)
-
-### Correlations
-
-**Intra-class correlation can be generated for each artificial class**. Any number of groups
-containing correlated features can be combined with any given number of uncorrelated features.
-
-However, a high correlation within a group does not necessarily lead to
-a high correlation to other groups or features of the same class. An example of a class with three
-highly correlated groups but without high correlations between all groups:
-
-![Different distributions of the classes.](docs/source/imgs/corr_3_groups.png)
-
-It is probably likely that biomarkers of healthy individuals usually have a relatively low correlation. On average,
-their values are within a usual "normal" range. In this case, one biomarker tends to be in the upper normal range and another biomarker in the lower normal range. However, individually it can also be exactly the opposite, so that the correlation between healthy individuals would be rather low. Therefore, the **values of healthy people
-could be simulated without any special artificially generated correlations**.
-
-In the case of a disease, however, a biological system is brought out of balance in a certain way and must react to it.
-For example, this reaction can then happen in a coordinated manner involving several biomarkers,
-or corresponding cascades (e.g. pathways) can be activated or blocked. This can result in a **rather stronger
-correlation of biomarkers in patients suffering from a disease**. To simulate these intra-class correlations,
-a class is divided into a given number of groups with high internal correlation
-(the respective strength can be defined).
-
-- **Equicorrelated**: roughly constant pairwise correlation within a cluster.
-- **Toeplitz (AR‑like)**: correlation decays with feature distance (`rho**|i−j|`).
-
-______________________________________________________________________
-
-## Random Features
-
-The artificial biomarkers can be combined with any number
-of random features. Varying the number of random features can be used, for example, to analyze random effects
-that occur in small sample sizes with a very large number of features.
-
-______________________________________________________________________
-
-## Batch effects
-
-Simulate technical variation (batch effects) that affects subsets of samples:
-
-````python
-from biomedical_data_generator import DatasetConfig, BatchEffectsConfig, generate_dataset
+```python
+from biomedical_data_generator import DatasetConfig, ClassConfig, BatchEffectsConfig, generate_dataset
 
 cfg = DatasetConfig(
-    n_samples=200,
     n_informative=5,
-    n_classes=2,
-    class_counts={0: 100, 1: 100},
+    n_noise=10,
+    class_configs=[
+        ClassConfig(n_samples=100, label="control"),
+        ClassConfig(n_samples=100, label="disease"),
+    ],
     batch_effects=BatchEffectsConfig(
         n_batches=3,
-        effect_type="additive",  # or "multiplicative"
+        effect_type="additive",
         effect_strength=0.5,
-        affected_features="all"  # or list of indices
+        confounding_with_class=0.7,  # recruitment bias
     ),
     random_state=42,
 )
 
-X, y, meta = generate_dataset(cfg, return_dataframe=True)
-# meta.batch_assignments contains per-sample batch IDs_____________________________________________________________________
-
-## Naming and convenience
-
-- `feature_naming`: `"prefixed"` (default) or `"simple"`
-
-- Prefixes (when `prefixed`):
-
-  - Informative: `i` → `i1, i2, …`
-  - Noise: `n` → `n1, n2, …`
-  - Correlated cluster features: `corr{display_id}_{k}` where display_id is 1-based
-    - Cluster ID 0 → `corr1_anchor`, `corr1_2`, `corr1_3`, ...
-    - Cluster ID 1 → `corr2_anchor`, `corr2_2`, `corr2_3`, ...
-    - (Note: Internal cluster IDs in metadata are 0-based)
-
-Reproducibility via `random_state` (global), plus optional per‑cluster seeds.
-
-______________________________________________________________________
-
-## Return values
-
-`generate_dataset(cfg, return_dataframe=True)` → `(X, y, meta)`
-
-- **X**: `pandas.DataFrame` (or `np.ndarray` if `return_dataframe=False`)
-
-- **y**: `np.ndarray[int]` labels
-
-- **meta**: `DatasetMeta` with (selected):
-
-  - `feature_names`
-  - `informative_idx`, `noise_idx`
-  - `corr_cluster_indices: dict[int, list[int]]` - cluster IDs are 0-based (0, 1, 2, ...)
-  - `anchor_idx: dict[int, int | None]` - cluster IDs are 0-based
-  - `anchor_role: dict[int, str]` - cluster IDs are 0-based
-  - `anchor_effect_size: dict[int, float]` - cluster IDs are 0-based
-  - `y_weights: tuple[float, …]`, `y_counts: dict[int, int]`
-
-______________________________________________________________________
-
-## Command‑line usage
-
-The package ships a small CLI named **`bdg`**.
-
-```bash
-# Generate from YAML and write a single CSV with features + class
-bdg --config config.yaml --out dataset.csv
-
-# Print only metadata (JSON) to stdout
-bdg --config config.yaml
-````
-
-**Minimal YAML example**
-
-```yaml
-n_samples: 200
-n_classes: 3
-class_counts:
-  0: 50
-  1: 80
-  2: 70
-class_sep: 1.2
-n_informative: 4
-n_noise: 3
-feature_naming: prefixed
-corr_clusters:
-  - n_cluster_features: 3
-    rho: 0.7
-    structure: equicorrelated
-    anchor_role: informative
-    anchor_effect_size: 1.0
-  - n_cluster_features: 2
-    rho: 0.6
-    structure: toeplitz
-    anchor_role: informative
-random_state: 0
+X, y, meta = generate_dataset(cfg)
+print(f"Batch labels: {meta.batch_labels}")
 ```
 
-**YAML example with class-specific correlations**
+---
+
+## Documentation
+
+**📖 Full documentation:** <https://sigrun-may.github.io/biomedical-data-generator/>
+
+- [Quickstart Guide](https://sigrun-may.github.io/biomedical-data-generator/quickstart.html)  
+- [API Reference](https://sigrun-may.github.io/biomedical-data-generator/api.html)  
+- [Code Documentation](https://sigrun-may.github.io/biomedical-data-generator/code-doc.html)
+
+---
+
+## Use Cases
+
+### Educational Applications
+
+Ideal for teaching machine learning in biomedical contexts:
+
+- Feature selection stability across resampling splits  
+- Cross-validation pitfalls in p >> n settings  
+- Batch effect impacts on model generalization  
+- Correlated features and interpretability challenges  
+
+The package is complemented by Jupyter-based teaching materials (OER) that guide learners through dataset generation, visualization, and evaluation.
+
+### Research & Benchmarking
+
+Systematic method comparison with known ground truth:
+
+- Feature selection algorithm evaluation  
+- Model performance under varying signal-to-noise ratios  
+- Robustness testing with correlated features  
+- Batch correction method validation  
+
+---
+
+## Scientific Context
+
+Biomedical datasets present unique challenges:
+
+- **High dimensionality**: p >> n creates overfitting risks  
+- **Correlated features**: Biological pathways create feature clusters  
+- **Batch effects**: Multi-site and multi-batch studies introduce technical variation  
+- **Class imbalance**: Disease prevalence varies widely  
+
+This generator provides realistic synthetic data that captures these properties while maintaining complete ground truth for validation. This is particularly useful when real datasets are too small, protected, or lack clear ground truth about causal vs. non-causal structure.
+
+---
+
+## Architecture
+
+The generator is implemented as a six-phase pipeline with single-responsibility modules:
+
+1. **Label generation** → Exact class counts (`DatasetConfig.class_configs`)  
+2. **Informative features** → Class-separated signals  
+3. **Correlated clusters** → Pathway-like structures with configurable correlation patterns  
+4. **Noise features** → Independent distractors  
+5. **Assembly** → Concatenation of all feature blocks into a single matrix  
+6. **Batch effects (optional)** → Additive or multiplicative technical overlays, optionally confounded with class
+
+Internally, the code is organized into dedicated modules for configuration, feature generation (informative, correlated, noise), batch effects, and metadata. A single random number generator drives the complete pipeline to ensure reproducibility.
+
+The returned `DatasetMeta` object provides:
+
+- Indices of informative features (e.g. `meta.informative_idx`)  
+- Indices of pure-noise features  
+- Indices or groupings of correlated feature clusters  
+- Class and batch labels  
+- A structured record of the configuration and random seeds used  
+
+This enables precise validation of feature selection and model behavior.
+
+---
+
+## Examples
+
+The `examples/` directory contains complete demonstrations:
+
+- **01_basic_usage.py** – Simple dataset generation  
+- **02_batch_effects.py** – Technical variation simulation  
+- **03_class_specific_correlations.py** – Disease-specific pathway activation  
+- **04_feature_selection_stability.py** – Benchmarking feature selection methods  
+
+Run any example:
+
+```bash
+python examples/01_basic_usage.py
+```
+
+---
+
+## Command-Line Interface
+
+Generate datasets from YAML configuration:
+
+```bash
+bdg --config my_config.yaml --out dataset.csv
+```
+
+Example `my_config.yaml`:
 
 ```yaml
-n_samples: 200
-n_classes: 2
-class_counts:
-  0: 100
-  1: 100
+n_informative: 5
+n_noise: 10
+class_configs:
+  - n_samples: 50
+    label: "control"
+  - n_samples: 50
+    label: "disease"
 class_sep: 1.5
-n_informative: 3
-n_noise: 2
-corr_clusters:
-  - n_cluster_features: 4
-    rho: 0.2
-    class_rho:
-      1: 0.9  # High correlation in class 1 only
-    rho_baseline: 0.2
-    structure: equicorrelated
-    anchor_role: informative
-    anchor_effect_size: 1.2
 random_state: 42
 ```
 
-The CLI prints `DatasetMeta` as JSON to stdout. When `--out` is given, it also writes `dataset.csv`
-with one row per sample and a final `class` column.
+Run `bdg --help` to see all available options.
 
-______________________________________________________________________
+---
 
-## API reference (essentials)
+## Testing & Quality
 
-```python
-from biomedical_data_generator import (
-    DatasetConfig, CorrClusterConfig, NoiseDistribution,
-    generate_dataset, sample_cluster,
-    find_seed_for_correlation, DatasetMeta,
-)
+The project includes a pytest-based test suite that covers:
+
+- Informative feature generation  
+- Correlated feature clusters and target correlation structures  
+- Batch effect configurations and label generation  
+- The scikit-learn compatible interface  
+
+Tests are designed to ensure numerical stability, reproducibility, and consistency of the public API across releases.
+
+---
+
+## Citation
+
+If you use this package in scientific work, please cite:
+
+```bibtex
+@software{biomedical_data_generator,
+  author       = {May, Sigrun},
+  title        = {biomedical-data-generator: Synthetic biomedical data
+                  generator for benchmarking and teaching},
+  year         = {2025},
+  url          = {https://github.com/sigrun-may/biomedical-data-generator},
+  version      = {1.0.0}
+}
 ```
 
-- `generate_dataset(cfg, return_dataframe=True, **overrides)` → `(X, y, meta)`
-- `sample_cluster(n_samples, n_features, rng, structure, rho, class_labels=None, class_rho=None, baseline_rho=None)` → `np.ndarray`
-- `find_seed_for_correlation(cfg, target_rho, kind="pearson", mode="min|max", max_tries=1000, threshold=None)` → best seed and dataset tuple
+---
 
-______________________________________________________________________
+## Contributing
 
-## Tips
+Contributions are welcome! Please:
 
-- **`class_counts` is required**: Always specify exact per-class sample counts as a dict (e.g., `{0: 50, 1: 50}`).
-- Prefer **omitting `n_features`**; let the config derive a consistent total.
-- Start with `effect_size="medium"` and `class_sep≈1.2–1.5`; then tune for your lesson/demo.
-- Keep `feature_naming="prefixed"` for didactics — it makes plots and tables easier to read.
-- Use `class_rho` to simulate disease-specific biomarker patterns (e.g., pathway activation only in diseased patients).
+1. Fork the repository  
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)  
+3. Add tests for new functionality  
+4. Ensure all tests pass (`pytest`)  
+5. Submit a pull request  
 
-______________________________________________________________________
+See [CONTRIBUTING.md](CONTRIBUTING.md) for detailed guidelines.
 
-## Licensing
+---
 
-Copyright (c) 2025 Sigrun May, Ostfalia Hochschule für angewandte Wissenschaften
+## License
 
-Licensed under the **MIT License** (the "License"); you may not use this file except in compliance with the License.
-You may obtain a copy of the License by reviewing the file
-[LICENSE](https://github.com/sigrun-may/biomedical-data-generator/blob/main/LICENSE) in the repository.
+This project is licensed under the MIT License – see [LICENSE](LICENSE) for details.
 
-______________________________________________________________________
+---
 
 ## Acknowledgments
 
-Developed for teaching synthetic biomedical data generation and ML workflows.
+Developed at TU Braunschweig, TU Clausthal, and Ostfalia University with support from BMBF and the State of Lower Saxony.
+
+The project fills gaps in existing synthetic data generators by providing:
+
+- A unified framework for class-specific correlations  
+- Integrated batch effect simulation  
+- An educational focus with extensive documentation  
+- Complete ground truth metadata for validation  
+
+---
+
+## Links
+
+- **Documentation**: <https://sigrun-may.github.io/biomedical-data-generator/>  
+- **PyPI Package**: <https://pypi.org/project/biomedical-data-generator/>  
+- **Issue Tracker**: <https://github.com/sigrun-may/biomedical-data-generator/issues>
