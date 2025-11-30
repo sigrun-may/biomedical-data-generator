@@ -68,7 +68,7 @@
       ~DatasetConfig.class_sep
       ~DatasetConfig.noise_distribution
       ~DatasetConfig.noise_distribution_params
-      ~DatasetConfig.feature_naming
+      ~DatasetConfig.prefixed_feature_naming
       ~DatasetConfig.prefix_informative
       ~DatasetConfig.prefix_noise
       ~DatasetConfig.prefix_corr
