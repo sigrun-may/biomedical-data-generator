@@ -156,9 +156,8 @@ If you use this package in a scientific publication, please cite:
      version      = {1.0.0}
    }
 
-Indices and Tables
-------------------
+Indices
+-------
 
 * :ref:`genindex`
 * :ref:`modindex`
-* :ref:`search`
