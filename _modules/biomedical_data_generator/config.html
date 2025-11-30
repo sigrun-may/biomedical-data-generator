@@ -612,8 +612,6 @@
 <span class="k">class</span><span class="w"> </span><span class="nc">DatasetConfig</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Configuration for synthetic dataset generation.</span>
 
-<span class="sd">    Overview</span>
-<span class="sd">    --------</span>
 <span class="sd">    This model defines the *input-level* controls for building a synthetic dataset.</span>
 <span class="sd">    It combines:</span>
 <span class="sd">      - Base role counts: `n_informative` and `n_noise`</span>
@@ -621,65 +619,79 @@
 <span class="sd">      - Class definitions: `class_configs` (with per-class n_samples and labels)</span>
 <span class="sd">      - Optional batch effects</span>
 
-<span class="sd">    Derived quantities</span>
-<span class="sd">    ------------------</span>
-<span class="sd">    These attributes are **derived** and must not be passed by the user:</span>
+<span class="sd">    *Examples (counting)*:</span>
+<span class="sd">        1) One cluster k=4 with an informative anchor, plus n_informative=3, n_noise=2</span>
+<span class="sd">           proxies_from_clusters = (4−1) = 3</span>
+<span class="sd">           n_features_expected   = 3 + 2 + 3 = 8</span>
+<span class="sd">           Breakdown:</span>
+<span class="sd">             - informative_anchors = 1  → free_informative = 3 − 1 = 2</span>
+<span class="sd">             - noise_anchors = 0        → free_noise       = 2 − 0 = 2</span>
 
-<span class="sd">    - ``n_samples``  = sum(c.n_samples for c in class_configs)</span>
-<span class="sd">    - ``n_classes``  = len(class_configs)</span>
-<span class="sd">    - ``n_features`` = n_informative + n_noise + proxies_from_clusters</span>
+<span class="sd">        2) Two clusters: k=5 (informative anchor), k=3 (&quot;noise&quot; anchor), base n_informative=4, n_noise=3</span>
+<span class="sd">           proxies_from_clusters = (5−1) + (3−1) = 6</span>
+<span class="sd">           n_features_expected   = 4 + 3 + 6 = 13</span>
+<span class="sd">           Breakdown:</span>
+<span class="sd">             - informative_anchors = 1  → free_informative = 4 − 1 = 3</span>
+<span class="sd">             - noise_anchors = 1        → free_noise       = 3 − 1 = 2</span>
 
-<span class="sd">      where</span>
+<span class="sd">    *Derived quantities*:</span>
+<span class="sd">        These attributes are **derived** and must not be passed by the user:</span>
 
-<span class="sd">        proxies_from_clusters = sum(max(0, k - 1) for each CorrClusterConfig</span>
-<span class="sd">                                    with n_cluster_features = k)</span>
+<span class="sd">        - ``n_samples``  = sum(c.n_samples for c in class_configs)</span>
+<span class="sd">        - ``n_classes``  = len(class_configs)</span>
+<span class="sd">        - ``n_features`` = n_informative + n_noise + sum(c.n_cluster_features - 1 for c in corr_clusters)</span>
 
-<span class="sd">    Labels</span>
-<span class="sd">    ------</span>
-<span class="sd">    - If a ClassConfig label is None or &quot;&quot;, it is auto-filled as &quot;class_{idx}&quot;.</span>
-<span class="sd">    - `class_labels` returns the list of resolved labels.</span>
+<span class="sd">    Args:</span>
+<span class="sd">        n_informative (int): Number of base informative features (not in clusters).</span>
+<span class="sd">        n_noise (int): Number of base noise features (not in clusters).</span>
+<span class="sd">        class_configs (list[ClassConfig]): List of class definitions.</span>
+<span class="sd">        class_sep (float | Sequence[float]): Class separation values (length n_classes - 1); scalar is broadcast.</span>
+<span class="sd">        corr_clusters (list[CorrClusterConfig]): List of CorrClusterConfig defining correlated feature clusters.</span>
+<span class="sd">        corr_between (float): Correlation between different clusters/roles (0 = independent).</span>
+<span class="sd">        noise_distribution: (str): Distribution for noise features. Can be any supported `DistributionType`.</span>
+<span class="sd">        noise_distribution_params (dict): Parameters for noise distribution.</span>
+<span class="sd">        prefixed_feature_naming (bool):</span>
+<span class="sd">            If True, role-based prefixed feature names:</span>
+<span class="sd">                * Free informative:  i1, i2, ...</span>
+<span class="sd">                * Free noise:        n1, n2, ...</span>
+<span class="sd">                * Correlated:        corr{cid}_anchor, corr{cid}_2, ..., corr{cid}_k</span>
+<span class="sd">            If False, use generic feature_{i} naming.</span>
+<span class="sd">        prefix_informative (str): Prefix for informative features (if prefixed_feature_naming=True). Default: &quot;i&quot;.</span>
+<span class="sd">        prefix_noise (str): Prefix for noise features (if prefixed_feature_naming=True). Default: &quot;n&quot;.</span>
+<span class="sd">        prefix_corr (str): Prefix for correlated cluster features (if prefixed_feature_naming=True). Default: &quot;corr&quot;.</span>
+<span class="sd">        batch (BatchEffectsConfig): Optional BatchEffectsConfig for simulating batch effects.</span>
+<span class="sd">        random_state (int | None): Global random seed for dataset generation.</span>
 
-<span class="sd">    Validation &amp; normalization</span>
-<span class="sd">    --------------------------</span>
-<span class="sd">    - A `mode=&quot;before&quot;` validator:</span>
-<span class="sd">        * forbids manual `n_samples`, `n_classes`, `n_features`</span>
-<span class="sd">        * normalizes `class_sep`:</span>
-<span class="sd">             - scalar → broadcast to length `n_classes - 1`</span>
-<span class="sd">             - sequence → checked for numeric entries and length `n_classes - 1`</span>
-<span class="sd">    - A `mode=&quot;after&quot;` validator:</span>
-<span class="sd">        * checks:</span>
-<span class="sd">             - `n_informative &gt;= #informative_anchors`</span>
-<span class="sd">             - `n_noise       &gt;= #noise_anchors`</span>
-<span class="sd">             - `corr_between` in [-1, 1]</span>
-<span class="sd">             - `anchor_class` indices are &lt; `n_classes`</span>
+<span class="sd">    Derived quantities:</span>
+<span class="sd">        n_samples (int): Total samples (derived from `class_configs`).</span>
+<span class="sd">        n_classes (int): Number of classes (derived from `class_configs`).</span>
+<span class="sd">        n_features (int): Total number of features of the complete the dataset (derived from n_informative, n_noise,</span>
+<span class="sd">            and corr_clusters).</span>
+<span class="sd">        n_informative_free (int): Informative features not used as anchors.</span>
+<span class="sd">        n_noise_free (int): Noise features not used as anchors.</span>
 
-<span class="sd">    Naming policy</span>
-<span class="sd">    -------------</span>
-<span class="sd">    - If `prefixed_feature_naming=True`, features are named as:</span>
-<span class="sd">        * Free informative:  i1, i2, ...</span>
-<span class="sd">        * Free noise:        n1, n2, ...</span>
-<span class="sd">        * Correlated:        corr{cid}_anchor, corr{cid}_2, ..., corr{cid}_k</span>
-<span class="sd">    - If `prefixed_feature_naming=False`: a generic `feature_{i}` scheme is used.</span>
+<span class="sd">    Methods:</span>
+<span class="sd">        count_informative_anchors(): Return number of informative anchors across all clusters.</span>
+<span class="sd">        count_noise_anchors(): Return number of noise anchors across all clusters.</span>
+<span class="sd">        breakdown(): Return dict with detailed feature/class counts.</span>
 
+<span class="sd">    Validation:</span>
+<span class="sd">        Before model construction:</span>
+<span class="sd">            - Forbid manual `n_samples`, `n_classes`, `n_features`.</span>
+<span class="sd">            - Normalize `class_sep`: broadcast scalar to length `n_classes - 1` or validate sequence length.</span>
+<span class="sd">        After model construction:</span>
+<span class="sd">            - Ensure `n_informative &gt;= #informative_anchors` and `n_noise &gt;= #noise_anchors`.</span>
+<span class="sd">            - Check `corr_between` in [-1, 1].</span>
+<span class="sd">            - Ensure `anchor_class` indices &lt; `n_classes`.</span>
+<span class="sd">            - Require at least one non-zero `class_sep` if `n_informative_free &gt; 0`.</span>
+<span class="sd">            - Auto-generate missing class labels as ``class_{idx}``.</span>
 
-<span class="sd">    Examples (counting)</span>
-<span class="sd">    -------------------</span>
-<span class="sd">    1) One cluster k=4 with an informative anchor, plus n_informative=3, n_noise=2</span>
-<span class="sd">       proxies_from_clusters = (4−1) = 3</span>
-<span class="sd">       n_features_expected   = 3 + 2 + 3 = 8</span>
-<span class="sd">       Breakdown:</span>
-<span class="sd">         - informative_anchors = 1  → free_informative = 3 − 1 = 2</span>
-<span class="sd">         - noise_anchors = 0        → free_noise       = 2 − 0 = 2</span>
+<span class="sd">    Raises:</span>
+<span class="sd">        ValueError: On invalid numeric ranges or inconsistent counts.</span>
+<span class="sd">        TypeError: For invalid types in `class_configs` or `class_sep`.</span>
 
-<span class="sd">    2) Two clusters: k=5 (informative anchor), k=3 (&quot;noise&quot; anchor), base n_informative=4, n_noise=3</span>
-<span class="sd">       proxies_from_clusters = (5−1) + (3−1) = 6</span>
-<span class="sd">       n_features_expected   = 4 + 3 + 6 = 13</span>
-<span class="sd">       Breakdown:</span>
-<span class="sd">         - informative_anchors = 1  → free_informative = 4 − 1 = 3</span>
-<span class="sd">         - noise_anchors = 1        → free_noise       = 3 − 1 = 2</span>
-
-<span class="sd">    Example usage:</span>
-<span class="sd">    --------------</span>
+<span class="sd">    Examples:</span>
+<span class="sd">        &gt;&gt;&gt; # Basic dataset with two classes</span>
 <span class="sd">        &gt;&gt;&gt; cfg = DatasetConfig(</span>
 <span class="sd">        ...     n_informative=5,</span>
 <span class="sd">        ...     n_noise=3,</span>

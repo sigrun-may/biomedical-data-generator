@@ -55,12 +55,15 @@
 <li class="toctree-l1"><a class="reference internal" href="biomedical_data_generator.find_seed_for_correlation.html">biomedical_data_generator.find_seed_for_correlation</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">biomedical_data_generator.DatasetConfig</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#biomedical_data_generator.DatasetConfig"><code class="docutils literal notranslate"><span class="pre">DatasetConfig</span></code></a><ul>
-<li class="toctree-l3"><a class="reference internal" href="#biomedical_data_generator.DatasetConfig.__init__"><code class="docutils literal notranslate"><span class="pre">DatasetConfig.__init__()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="#biomedical_data_generator.DatasetConfig.breakdown"><code class="docutils literal notranslate"><span class="pre">DatasetConfig.breakdown()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="#biomedical_data_generator.DatasetConfig.class_counts"><code class="docutils literal notranslate"><span class="pre">DatasetConfig.class_counts</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="#biomedical_data_generator.DatasetConfig.class_labels"><code class="docutils literal notranslate"><span class="pre">DatasetConfig.class_labels</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#biomedical_data_generator.DatasetConfig.count_informative_anchors"><code class="docutils literal notranslate"><span class="pre">DatasetConfig.count_informative_anchors()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#biomedical_data_generator.DatasetConfig.count_noise_anchors"><code class="docutils literal notranslate"><span class="pre">DatasetConfig.count_noise_anchors()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#biomedical_data_generator.DatasetConfig.breakdown"><code class="docutils literal notranslate"><span class="pre">DatasetConfig.breakdown()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#biomedical_data_generator.DatasetConfig.__init__"><code class="docutils literal notranslate"><span class="pre">DatasetConfig.__init__()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#id0"><code class="docutils literal notranslate"><span class="pre">DatasetConfig.breakdown()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#biomedical_data_generator.DatasetConfig.class_counts"><code class="docutils literal notranslate"><span class="pre">DatasetConfig.class_counts</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#biomedical_data_generator.DatasetConfig.class_labels"><code class="docutils literal notranslate"><span class="pre">DatasetConfig.class_labels</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#id1"><code class="docutils literal notranslate"><span class="pre">DatasetConfig.count_informative_anchors()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#id2"><code class="docutils literal notranslate"><span class="pre">DatasetConfig.count_noise_anchors()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#biomedical_data_generator.DatasetConfig.from_yaml"><code class="docutils literal notranslate"><span class="pre">DatasetConfig.from_yaml()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#biomedical_data_generator.DatasetConfig.model_config"><code class="docutils literal notranslate"><span class="pre">DatasetConfig.model_config</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#biomedical_data_generator.DatasetConfig.n_classes"><code class="docutils literal notranslate"><span class="pre">DatasetConfig.n_classes</span></code></a></li>
@@ -105,8 +108,6 @@
 <em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">biomedical_data_generator.</span></span><span class="sig-name descname"><span class="pre">DatasetConfig</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="pre">*,</span> <span class="pre">n_informative=2,</span> <span class="pre">n_noise=0,</span> <span class="pre">class_configs=[ClassConfig(n_samples=30,</span> <span class="pre">class_distribution='normal',</span> <span class="pre">class_distribution_params={'loc':</span> <span class="pre">0,</span> <span class="pre">'scale':</span> <span class="pre">1},</span> <span class="pre">label='healthy'),</span> <span class="pre">ClassConfig(n_samples=30,</span> <span class="pre">class_distribution='normal',</span> <span class="pre">class_distribution_params={'loc':</span> <span class="pre">0,</span> <span class="pre">'scale':</span> <span class="pre">1},</span> <span class="pre">label='diseased')],</span> <span class="pre">class_sep=&lt;factory&gt;,</span> <span class="pre">noise_distribution='normal',</span> <span class="pre">noise_distribution_params=&lt;factory&gt;,</span> <span class="pre">prefixed_feature_naming=True,</span> <span class="pre">prefix_informative='i',</span> <span class="pre">prefix_noise='n',</span> <span class="pre">prefix_corr='corr',</span> <span class="pre">corr_clusters=&lt;factory&gt;,</span> <span class="pre">corr_between=0.0,</span> <span class="pre">batch=None,</span> <span class="pre">random_state=None</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/biomedical_data_generator/config.html#DatasetConfig"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#biomedical_data_generator.DatasetConfig" title="Link to this definition"></a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">BaseModel</span></code></p>
 <p>Configuration for synthetic dataset generation.</p>
-<section id="overview">
-<h2>Overview<a class="headerlink" href="#overview" title="Link to this heading"></a></h2>
 <p>This model defines the <em>input-level</em> controls for building a synthetic dataset.
 It combines:</p>
 <blockquote>
@@ -117,85 +118,8 @@ It combines:</p>
 <li><p>Optional batch effects</p></li>
 </ul>
 </div></blockquote>
-</section>
-<section id="derived-quantities">
-<h2>Derived quantities<a class="headerlink" href="#derived-quantities" title="Link to this heading"></a></h2>
-<p>These attributes are <strong>derived</strong> and must not be passed by the user:</p>
-<ul>
-<li><p><code class="docutils literal notranslate"><span class="pre">n_samples</span></code>  = sum(c.n_samples for c in class_configs)</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">n_classes</span></code>  = len(class_configs)</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">n_features</span></code> = n_informative + n_noise + proxies_from_clusters</p>
-<p>where</p>
-<blockquote>
-<div><dl class="simple">
-<dt>proxies_from_clusters = sum(max(0, k - 1) for each CorrClusterConfig</dt><dd><p>with n_cluster_features = k)</p>
-</dd>
-</dl>
-</div></blockquote>
-</li>
-</ul>
-</section>
-<section id="labels">
-<h2>Labels<a class="headerlink" href="#labels" title="Link to this heading"></a></h2>
-<ul class="simple">
-<li><p>If a ClassConfig label is None or “”, it is auto-filled as “class_{idx}”.</p></li>
-<li><p><cite>class_labels</cite> returns the list of resolved labels.</p></li>
-</ul>
-</section>
-<section id="validation-normalization">
-<h2>Validation &amp; normalization<a class="headerlink" href="#validation-normalization" title="Link to this heading"></a></h2>
-<ul class="simple">
-<li><dl class="simple">
-<dt>A <cite>mode=”before”</cite> validator:</dt><dd><ul>
-<li><p>forbids manual <cite>n_samples</cite>, <cite>n_classes</cite>, <cite>n_features</cite></p></li>
-<li><dl class="simple">
-<dt>normalizes <cite>class_sep</cite>:</dt><dd><ul>
-<li><p>scalar → broadcast to length <cite>n_classes - 1</cite></p></li>
-<li><p>sequence → checked for numeric entries and length <cite>n_classes - 1</cite></p></li>
-</ul>
-</dd>
-</dl>
-</li>
-</ul>
-</dd>
-</dl>
-</li>
-<li><dl class="simple">
-<dt>A <cite>mode=”after”</cite> validator:</dt><dd><ul>
-<li><dl class="simple">
-<dt>checks:</dt><dd><ul>
-<li><p><cite>n_informative &gt;= #informative_anchors</cite></p></li>
-<li><p><cite>n_noise       &gt;= #noise_anchors</cite></p></li>
-<li><p><cite>corr_between</cite> in [-1, 1]</p></li>
-<li><p><cite>anchor_class</cite> indices are &lt; <cite>n_classes</cite></p></li>
-</ul>
-</dd>
-</dl>
-</li>
-</ul>
-</dd>
-</dl>
-</li>
-</ul>
-</section>
-<section id="naming-policy">
-<h2>Naming policy<a class="headerlink" href="#naming-policy" title="Link to this heading"></a></h2>
-<ul class="simple">
-<li><dl class="simple">
-<dt>If <cite>prefixed_feature_naming=True</cite>, features are named as:</dt><dd><ul>
-<li><p>Free informative:  i1, i2, …</p></li>
-<li><p>Free noise:        n1, n2, …</p></li>
-<li><p>Correlated:        corr{cid}_anchor, corr{cid}_2, …, corr{cid}_k</p></li>
-</ul>
-</dd>
-</dl>
-</li>
-<li><p>If <cite>prefixed_feature_naming=False</cite>: a generic <cite>feature_{i}</cite> scheme is used.</p></li>
-</ul>
-</section>
-<section id="examples-counting">
-<h2>Examples (counting)<a class="headerlink" href="#examples-counting" title="Link to this heading"></a></h2>
-<ol class="arabic">
+<dl>
+<dt><em>Examples (counting)</em>:</dt><dd><ol class="arabic">
 <li><p>One cluster k=4 with an informative anchor, plus n_informative=3, n_noise=2
 proxies_from_clusters = (4−1) = 3
 n_features_expected   = 3 + 2 + 3 = 8
@@ -219,10 +143,135 @@ Breakdown:</p>
 </div></blockquote>
 </li>
 </ol>
-</section>
-<section id="example-usage">
-<h2>Example usage:<a class="headerlink" href="#example-usage" title="Link to this heading"></a></h2>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">cfg</span> <span class="o">=</span> <span class="n">DatasetConfig</span><span class="p">(</span>
+</dd>
+<dt><em>Derived quantities</em>:</dt><dd><p>These attributes are <strong>derived</strong> and must not be passed by the user:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">n_samples</span></code>  = sum(c.n_samples for c in class_configs)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">n_classes</span></code>  = len(class_configs)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">n_features</span></code> = n_informative + n_noise + sum(c.n_cluster_features - 1 for c in corr_clusters)</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>n_informative</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code></a>) – Number of base informative features (not in clusters).</p></li>
+<li><p><strong>n_noise</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code></a>) – Number of base noise features (not in clusters).</p></li>
+<li><p><strong>class_configs</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">list[ClassConfig]</span></code>) – List of class definitions.</p></li>
+<li><p><strong>class_sep</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">float</span> <span class="pre">|</span> <span class="pre">Sequence[float]</span></code>) – Class separation values (length n_classes - 1); scalar is broadcast.</p></li>
+<li><p><strong>corr_clusters</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">list[CorrClusterConfig]</span></code>) – List of CorrClusterConfig defining correlated feature clusters.</p></li>
+<li><p><strong>corr_between</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code></a>) – Correlation between different clusters/roles (0 = independent).</p></li>
+<li><p><strong>noise_distribution</strong> (<a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Literal" title="(in Python v3.14)"><em>Literal</em></a><em>[</em><em>'normal'</em><em>, </em><em>'lognormal'</em><em>, </em><em>'exp_normal'</em><em>, </em><em>'uniform'</em><em>, </em><em>'exponential'</em><em>, </em><em>'laplace'</em><em>]</em>) – (str): Distribution for noise features. Can be any supported <cite>DistributionType</cite>.</p></li>
+<li><p><strong>noise_distribution_params</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">dict</span></code></a>) – Parameters for noise distribution.</p></li>
+<li><p><strong>prefixed_feature_naming</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code></a>) – <dl class="simple">
+<dt>If True, role-based prefixed feature names:</dt><dd><ul>
+<li><p>Free informative:  i1, i2, …</p></li>
+<li><p>Free noise:        n1, n2, …</p></li>
+<li><p>Correlated:        corr{cid}_anchor, corr{cid}_2, …, corr{cid}_k</p></li>
+</ul>
+</dd>
+</dl>
+<p>If False, use generic feature_{i} naming.</p>
+</p></li>
+<li><p><strong>prefix_informative</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a>) – Prefix for informative features (if prefixed_feature_naming=True). Default: “i”.</p></li>
+<li><p><strong>prefix_noise</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a>) – Prefix for noise features (if prefixed_feature_naming=True). Default: “n”.</p></li>
+<li><p><strong>prefix_corr</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a>) – Prefix for correlated cluster features (if prefixed_feature_naming=True). Default: “corr”.</p></li>
+<li><p><strong>batch</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">BatchEffectsConfig</span></code>) – Optional BatchEffectsConfig for simulating batch effects.</p></li>
+<li><p><strong>random_state</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">int</span> <span class="pre">|</span> <span class="pre">None</span></code>) – Global random seed for dataset generation.</p></li>
+</ul>
+</dd>
+</dl>
+<dl>
+<dt>Derived quantities:</dt><dd><p>n_samples (int): Total samples (derived from <cite>class_configs</cite>).
+n_classes (int): Number of classes (derived from <cite>class_configs</cite>).
+n_features (int): Total number of features of the complete the dataset (derived from n_informative, n_noise,</p>
+<blockquote>
+<div><p>and corr_clusters).</p>
+</div></blockquote>
+<p>n_informative_free (int): Informative features not used as anchors.
+n_noise_free (int): Noise features not used as anchors.</p>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="biomedical_data_generator.DatasetConfig.count_informative_anchors">
+<span class="sig-name descname"><span class="pre">count_informative_anchors</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/biomedical_data_generator/config.html#DatasetConfig.count_informative_anchors"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#biomedical_data_generator.DatasetConfig.count_informative_anchors" title="Link to this definition"></a></dt>
+<dd><p>Return number of informative anchors across all clusters.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)">int</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="biomedical_data_generator.DatasetConfig.count_noise_anchors">
+<span class="sig-name descname"><span class="pre">count_noise_anchors</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/biomedical_data_generator/config.html#DatasetConfig.count_noise_anchors"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#biomedical_data_generator.DatasetConfig.count_noise_anchors" title="Link to this definition"></a></dt>
+<dd><p>Return number of noise anchors across all clusters.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)">int</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="biomedical_data_generator.DatasetConfig.breakdown">
+<span class="sig-name descname"><span class="pre">breakdown</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/biomedical_data_generator/config.html#DatasetConfig.breakdown"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#biomedical_data_generator.DatasetConfig.breakdown" title="Link to this definition"></a></dt>
+<dd><p>Return dict with detailed feature/class counts.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)">dict</a>[<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)">str</a>, <a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)">int</a>]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="simple">
+<dt>Validation:</dt><dd><dl class="simple">
+<dt>Before model construction:</dt><dd><ul class="simple">
+<li><p>Forbid manual <cite>n_samples</cite>, <cite>n_classes</cite>, <cite>n_features</cite>.</p></li>
+<li><p>Normalize <cite>class_sep</cite>: broadcast scalar to length <cite>n_classes - 1</cite> or validate sequence length.</p></li>
+</ul>
+</dd>
+<dt>After model construction:</dt><dd><ul class="simple">
+<li><p>Ensure <cite>n_informative &gt;= #informative_anchors</cite> and <cite>n_noise &gt;= #noise_anchors</cite>.</p></li>
+<li><p>Check <cite>corr_between</cite> in [-1, 1].</p></li>
+<li><p>Ensure <cite>anchor_class</cite> indices &lt; <cite>n_classes</cite>.</p></li>
+<li><p>Require at least one non-zero <cite>class_sep</cite> if <cite>n_informative_free &gt; 0</cite>.</p></li>
+<li><p>Auto-generate missing class labels as <code class="docutils literal notranslate"><span class="pre">class_{idx}</span></code>.</p></li>
+</ul>
+</dd>
+</dl>
+</dd>
+</dl>
+<dl class="field-list simple">
+<dt class="field-odd">Raises<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#ValueError" title="(in Python v3.14)"><strong>ValueError</strong></a> – On invalid numeric ranges or inconsistent counts.</p></li>
+<li><p><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#TypeError" title="(in Python v3.14)"><strong>TypeError</strong></a> – For invalid types in <cite>class_configs</cite> or <cite>class_sep</cite>.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Parameters<span class="colon">:</span></dt>
+<dd class="field-even"><ul class="simple">
+<li><p><strong>n_informative</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a>)</p></li>
+<li><p><strong>n_noise</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a>)</p></li>
+<li><p><strong>class_configs</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.14)"><em>list</em></a><em>[</em><em>ClassConfig</em><em>]</em>)</p></li>
+<li><p><strong>class_sep</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.14)"><em>list</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a><em>]</em>)</p></li>
+<li><p><strong>noise_distribution</strong> (<a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Literal" title="(in Python v3.14)"><em>Literal</em></a><em>[</em><em>'normal'</em><em>, </em><em>'lognormal'</em><em>, </em><em>'exp_normal'</em><em>, </em><em>'uniform'</em><em>, </em><em>'exponential'</em><em>, </em><em>'laplace'</em><em>]</em>)</p></li>
+<li><p><strong>noise_distribution_params</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><em>dict</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a><em>, </em><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.14)"><em>Any</em></a><em>]</em>)</p></li>
+<li><p><strong>prefixed_feature_naming</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a>)</p></li>
+<li><p><strong>prefix_informative</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>)</p></li>
+<li><p><strong>prefix_noise</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>)</p></li>
+<li><p><strong>prefix_corr</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>)</p></li>
+<li><p><strong>corr_clusters</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.14)"><em>list</em></a><em>[</em><em>CorrClusterConfig</em><em>]</em>)</p></li>
+<li><p><strong>corr_between</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>)</p></li>
+<li><p><strong>batch</strong> (<em>BatchEffectsConfig</em><em> | </em><em>None</em>)</p></li>
+<li><p><strong>random_state</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a><em> | </em><em>None</em>)</p></li>
+</ul>
+</dd>
+</dl>
+<p class="rubric">Examples</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="c1"># Basic dataset with two classes</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">cfg</span> <span class="o">=</span> <span class="n">DatasetConfig</span><span class="p">(</span>
 <span class="gp">... </span>    <span class="n">n_informative</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span>
 <span class="gp">... </span>    <span class="n">n_noise</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span>
 <span class="gp">... </span>    <span class="n">class_configs</span><span class="o">=</span><span class="p">[</span>
@@ -280,7 +329,7 @@ validated to form a valid model.</p>
 <tr class="row-odd"><td><p><a class="reference internal" href="#biomedical_data_generator.DatasetConfig.__init__" title="biomedical_data_generator.DatasetConfig.__init__"><code class="xref py py-obj docutils literal notranslate"><span class="pre">__init__</span></code></a>(**data)</p></td>
 <td><p>Create a new model by parsing and validating input data from keyword arguments.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#biomedical_data_generator.DatasetConfig.breakdown" title="biomedical_data_generator.DatasetConfig.breakdown"><code class="xref py py-obj docutils literal notranslate"><span class="pre">breakdown</span></code></a>()</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#id0" title="biomedical_data_generator.DatasetConfig.breakdown"><code class="xref py py-obj docutils literal notranslate"><span class="pre">breakdown</span></code></a>()</p></td>
 <td><p>Structured feature counts incl.</p></td>
 </tr>
 <tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">construct</span></code>([_fields_set])</p></td>
@@ -289,10 +338,10 @@ validated to form a valid model.</p>
 <tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">copy</span></code>(*[, include, exclude, update, deep])</p></td>
 <td><p>Returns a copy of the model.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#biomedical_data_generator.DatasetConfig.count_informative_anchors" title="biomedical_data_generator.DatasetConfig.count_informative_anchors"><code class="xref py py-obj docutils literal notranslate"><span class="pre">count_informative_anchors</span></code></a>()</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#id1" title="biomedical_data_generator.DatasetConfig.count_informative_anchors"><code class="xref py py-obj docutils literal notranslate"><span class="pre">count_informative_anchors</span></code></a>()</p></td>
 <td><p>Count clusters whose anchor contributes as 'informative'.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#biomedical_data_generator.DatasetConfig.count_noise_anchors" title="biomedical_data_generator.DatasetConfig.count_noise_anchors"><code class="xref py py-obj docutils literal notranslate"><span class="pre">count_noise_anchors</span></code></a>()</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#id2" title="biomedical_data_generator.DatasetConfig.count_noise_anchors"><code class="xref py py-obj docutils literal notranslate"><span class="pre">count_noise_anchors</span></code></a>()</p></td>
 <td><p>Count clusters whose anchor is 'noise' (non-informative anchor).</p></td>
 </tr>
 <tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">dict</span></code>(*[, include, exclude, by_alias, ...])</p></td>
@@ -447,8 +496,8 @@ validated to form a valid model.</p>
 </tbody>
 </table>
 <dl class="py method">
-<dt class="sig sig-object py" id="biomedical_data_generator.DatasetConfig.breakdown">
-<span class="sig-name descname"><span class="pre">breakdown</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/biomedical_data_generator/config.html#DatasetConfig.breakdown"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#biomedical_data_generator.DatasetConfig.breakdown" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="id0">
+<span class="sig-name descname"><span class="pre">breakdown</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/biomedical_data_generator/config.html#DatasetConfig.breakdown"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id0" title="Link to this definition"></a></dt>
 <dd><p>Structured feature counts incl. cluster proxies and anchor split.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Returns<span class="colon">:</span></dt>
@@ -488,8 +537,8 @@ validated to form a valid model.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="biomedical_data_generator.DatasetConfig.count_informative_anchors">
-<span class="sig-name descname"><span class="pre">count_informative_anchors</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/biomedical_data_generator/config.html#DatasetConfig.count_informative_anchors"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#biomedical_data_generator.DatasetConfig.count_informative_anchors" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="id1">
+<span class="sig-name descname"><span class="pre">count_informative_anchors</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/biomedical_data_generator/config.html#DatasetConfig.count_informative_anchors"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id1" title="Link to this definition"></a></dt>
 <dd><p>Count clusters whose anchor contributes as ‘informative’.</p>
 <p>Note: This is a subset of n_informative, not a separate count.</p>
 <dl class="field-list simple">
@@ -508,8 +557,8 @@ use <cite>self._proxies_from_clusters(self.corr_clusters)</cite>.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="biomedical_data_generator.DatasetConfig.count_noise_anchors">
-<span class="sig-name descname"><span class="pre">count_noise_anchors</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/biomedical_data_generator/config.html#DatasetConfig.count_noise_anchors"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#biomedical_data_generator.DatasetConfig.count_noise_anchors" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="id2">
+<span class="sig-name descname"><span class="pre">count_noise_anchors</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/biomedical_data_generator/config.html#DatasetConfig.count_noise_anchors"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id2" title="Link to this definition"></a></dt>
 <dd><p>Count clusters whose anchor is ‘noise’ (non-informative anchor).</p>
 <dl class="field-list simple">
 <dt class="field-odd">Returns<span class="colon">:</span></dt>
@@ -571,27 +620,6 @@ use <cite>self._proxies_from_clusters(self.corr_clusters)</cite>.</p>
 <dd><p>Total samples (derived from class_configs).</p>
 </dd></dl>
 
-</section>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>n_informative</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a>)</p></li>
-<li><p><strong>n_noise</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a>)</p></li>
-<li><p><strong>class_configs</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.14)"><em>list</em></a><em>[</em><em>ClassConfig</em><em>]</em>)</p></li>
-<li><p><strong>class_sep</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.14)"><em>list</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a><em>]</em>)</p></li>
-<li><p><strong>noise_distribution</strong> (<a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Literal" title="(in Python v3.14)"><em>Literal</em></a><em>[</em><em>'normal'</em><em>, </em><em>'lognormal'</em><em>, </em><em>'exp_normal'</em><em>, </em><em>'uniform'</em><em>, </em><em>'exponential'</em><em>, </em><em>'laplace'</em><em>]</em>)</p></li>
-<li><p><strong>noise_distribution_params</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><em>dict</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a><em>, </em><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.14)"><em>Any</em></a><em>]</em>)</p></li>
-<li><p><strong>prefixed_feature_naming</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a>)</p></li>
-<li><p><strong>prefix_informative</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>)</p></li>
-<li><p><strong>prefix_noise</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>)</p></li>
-<li><p><strong>prefix_corr</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>)</p></li>
-<li><p><strong>corr_clusters</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.14)"><em>list</em></a><em>[</em><em>CorrClusterConfig</em><em>]</em>)</p></li>
-<li><p><strong>corr_between</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>)</p></li>
-<li><p><strong>batch</strong> (<em>BatchEffectsConfig</em><em> | </em><em>None</em>)</p></li>
-<li><p><strong>random_state</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a><em> | </em><em>None</em>)</p></li>
-</ul>
-</dd>
-</dl>
 </dd></dl>
 
 </section>
