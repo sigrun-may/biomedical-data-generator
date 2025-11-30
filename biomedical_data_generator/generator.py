@@ -35,9 +35,9 @@ def _make_names_and_roles(
     """Build feature names and role indices for the final concatenated matrix.
 
     We assume that :func:`generate_dataset` has constructed the feature
-    matrix ``X`` by horizontal concatenation in the following order::
+    matrix ``x`` by horizontal concatenation in the following order::
 
-        X = [x_informative | x_clusters | x_noise]
+        x = [x_informative | x_clusters | x_noise]
 
     where
 
@@ -203,9 +203,22 @@ def generate_dataset(cfg, return_dataframe=True) -> tuple[pd.DataFrame | np.ndar
             with named columns. If ``False``, return as a NumPy array.
 
     Returns:
-        X: Feature matrix (DataFrame or ndarray).
-        y: Class labels (ndarray of integers).
-        meta: :class:`DatasetMeta` with detailed metadata about the dataset.
+        tuple: A 3-tuple containing:
+
+            - **x** (:class:`pandas.DataFrame` or :class:`numpy.ndarray`):
+              Feature matrix of shape ``(n_samples, n_features)``. Each row represents one sample (e.g., patient),
+              each column represents one feature (e.g., biomarker, gene expression value). When returned
+              as DataFrame, column names depend on ``cfg.feature_naming``: "prefixed" (default)
+              uses type-based prefixes (``i`` for informative, ``corr`` for correlated
+              clusters, ``n`` for noise), yielding names like ``i1, corr1_anchor, n1``.
+              "sequential" uses sequential numbering ``feature_1, feature_2, ...``.
+            - **y** (:class:`numpy.ndarray`):
+              Class labels of shape ``(n_samples,)`` with integer values
+              ``0, 1, ..., n_classes-1``.
+            - **meta** (:class:`DatasetMeta`):
+              Metadata object containing feature masks (informative, correlated, noise,
+              batch-specific), correlation block specifications, batch assignments,
+              and complete generation configuration.
     """
     rng_global = np.random.default_rng(cfg.random_state)
 
