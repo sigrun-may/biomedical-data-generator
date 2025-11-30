@@ -99,12 +99,29 @@ with named columns. If <code class="docutils literal notranslate"><span class="p
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>Feature matrix (DataFrame or ndarray).
-y: Class labels (ndarray of integers).
-meta: <code class="xref py py-class docutils literal notranslate"><span class="pre">DatasetMeta</span></code> with detailed metadata about the dataset.</p>
+<dd class="field-even"><p><p>A 3-tuple containing:</p>
+<blockquote>
+<div><ul class="simple">
+<li><p><strong>x</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">pandas.DataFrame</span></code> or <a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.3)"><code class="xref py py-class docutils literal notranslate"><span class="pre">numpy.ndarray</span></code></a>):
+Feature matrix of shape <code class="docutils literal notranslate"><span class="pre">(n_samples,</span> <span class="pre">n_features)</span></code>. Each row represents one sample (e.g., patient),
+each column represents one feature (e.g., biomarker, gene expression value). When returned
+as DataFrame, column names depend on <code class="docutils literal notranslate"><span class="pre">cfg.feature_naming</span></code>: “prefixed” (default)
+uses type-based prefixes (<code class="docutils literal notranslate"><span class="pre">i</span></code> for informative, <code class="docutils literal notranslate"><span class="pre">corr</span></code> for correlated
+clusters, <code class="docutils literal notranslate"><span class="pre">n</span></code> for noise), yielding names like <code class="docutils literal notranslate"><span class="pre">i1,</span> <span class="pre">corr1_anchor,</span> <span class="pre">n1</span></code>.
+“sequential” uses sequential numbering <code class="docutils literal notranslate"><span class="pre">feature_1,</span> <span class="pre">feature_2,</span> <span class="pre">...</span></code>.</p></li>
+<li><p><strong>y</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.3)"><code class="xref py py-class docutils literal notranslate"><span class="pre">numpy.ndarray</span></code></a>):
+Class labels of shape <code class="docutils literal notranslate"><span class="pre">(n_samples,)</span></code> with integer values
+<code class="docutils literal notranslate"><span class="pre">0,</span> <span class="pre">1,</span> <span class="pre">...,</span> <span class="pre">n_classes-1</span></code>.</p></li>
+<li><p><strong>meta</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">DatasetMeta</span></code>):
+Metadata object containing feature masks (informative, correlated, noise,
+batch-specific), correlation block specifications, batch assignments,
+and complete generation configuration.</p></li>
+</ul>
+</div></blockquote>
+</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>X</p>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.14)">tuple</a></p>
 </dd>
 </dl>
 </dd></dl>

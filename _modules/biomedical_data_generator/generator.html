@@ -116,9 +116,9 @@
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Build feature names and role indices for the final concatenated matrix.</span>
 
 <span class="sd">    We assume that :func:`generate_dataset` has constructed the feature</span>
-<span class="sd">    matrix ``X`` by horizontal concatenation in the following order::</span>
+<span class="sd">    matrix ``x`` by horizontal concatenation in the following order::</span>
 
-<span class="sd">        X = [x_informative | x_clusters | x_noise]</span>
+<span class="sd">        x = [x_informative | x_clusters | x_noise]</span>
 
 <span class="sd">    where</span>
 
@@ -286,9 +286,22 @@
 <span class="sd">            with named columns. If ``False``, return as a NumPy array.</span>
 
 <span class="sd">    Returns:</span>
-<span class="sd">        X: Feature matrix (DataFrame or ndarray).</span>
-<span class="sd">        y: Class labels (ndarray of integers).</span>
-<span class="sd">        meta: :class:`DatasetMeta` with detailed metadata about the dataset.</span>
+<span class="sd">        tuple: A 3-tuple containing:</span>
+
+<span class="sd">            - **x** (:class:`pandas.DataFrame` or :class:`numpy.ndarray`):</span>
+<span class="sd">              Feature matrix of shape ``(n_samples, n_features)``. Each row represents one sample (e.g., patient),</span>
+<span class="sd">              each column represents one feature (e.g., biomarker, gene expression value). When returned</span>
+<span class="sd">              as DataFrame, column names depend on ``cfg.feature_naming``: &quot;prefixed&quot; (default)</span>
+<span class="sd">              uses type-based prefixes (``i`` for informative, ``corr`` for correlated</span>
+<span class="sd">              clusters, ``n`` for noise), yielding names like ``i1, corr1_anchor, n1``.</span>
+<span class="sd">              &quot;sequential&quot; uses sequential numbering ``feature_1, feature_2, ...``.</span>
+<span class="sd">            - **y** (:class:`numpy.ndarray`):</span>
+<span class="sd">              Class labels of shape ``(n_samples,)`` with integer values</span>
+<span class="sd">              ``0, 1, ..., n_classes-1``.</span>
+<span class="sd">            - **meta** (:class:`DatasetMeta`):</span>
+<span class="sd">              Metadata object containing feature masks (informative, correlated, noise,</span>
+<span class="sd">              batch-specific), correlation block specifications, batch assignments,</span>
+<span class="sd">              and complete generation configuration.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">rng_global</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">default_rng</span><span class="p">(</span><span class="n">cfg</span><span class="o">.</span><span class="n">random_state</span><span class="p">)</span>
 
