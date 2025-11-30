@@ -1,0 +1,12 @@
+﻿biomedical\_data\_generator.utils.sklearn\_compat
+=================================================
+
+.. automodule:: biomedical_data_generator.utils.sklearn_compat
+
+   
+   .. rubric:: Functions
+
+   .. autosummary::
+   
+      make_biomedical_dataset
+   

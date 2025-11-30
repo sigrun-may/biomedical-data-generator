@@ -1,0 +1,80 @@
+﻿biomedical\_data\_generator.config.DatasetConfig
+================================================
+
+.. currentmodule:: biomedical_data_generator.config
+
+.. autoclass:: DatasetConfig
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~DatasetConfig.__init__
+      ~DatasetConfig.breakdown
+      ~DatasetConfig.construct
+      ~DatasetConfig.copy
+      ~DatasetConfig.count_informative_anchors
+      ~DatasetConfig.count_noise_anchors
+      ~DatasetConfig.dict
+      ~DatasetConfig.from_orm
+      ~DatasetConfig.from_yaml
+      ~DatasetConfig.json
+      ~DatasetConfig.model_construct
+      ~DatasetConfig.model_copy
+      ~DatasetConfig.model_dump
+      ~DatasetConfig.model_dump_json
+      ~DatasetConfig.model_json_schema
+      ~DatasetConfig.model_parametrized_name
+      ~DatasetConfig.model_post_init
+      ~DatasetConfig.model_rebuild
+      ~DatasetConfig.model_validate
+      ~DatasetConfig.model_validate_json
+      ~DatasetConfig.model_validate_strings
+      ~DatasetConfig.parse_file
+      ~DatasetConfig.parse_obj
+      ~DatasetConfig.parse_raw
+      ~DatasetConfig.schema
+      ~DatasetConfig.schema_json
+      ~DatasetConfig.update_forward_refs
+      ~DatasetConfig.validate
+   
+   
+
+   
+   
+   .. rubric:: Attributes
+
+   .. autosummary::
+   
+      ~DatasetConfig.class_counts
+      ~DatasetConfig.class_labels
+      ~DatasetConfig.model_computed_fields
+      ~DatasetConfig.model_config
+      ~DatasetConfig.model_extra
+      ~DatasetConfig.model_fields
+      ~DatasetConfig.model_fields_set
+      ~DatasetConfig.n_classes
+      ~DatasetConfig.n_features
+      ~DatasetConfig.n_informative_free
+      ~DatasetConfig.n_noise_free
+      ~DatasetConfig.n_samples
+      ~DatasetConfig.n_informative
+      ~DatasetConfig.n_noise
+      ~DatasetConfig.class_configs
+      ~DatasetConfig.class_sep
+      ~DatasetConfig.noise_distribution
+      ~DatasetConfig.noise_distribution_params
+      ~DatasetConfig.prefixed_feature_naming
+      ~DatasetConfig.prefix_informative
+      ~DatasetConfig.prefix_noise
+      ~DatasetConfig.prefix_corr
+      ~DatasetConfig.corr_clusters
+      ~DatasetConfig.corr_between
+      ~DatasetConfig.batch
+      ~DatasetConfig.random_state
+   
+   

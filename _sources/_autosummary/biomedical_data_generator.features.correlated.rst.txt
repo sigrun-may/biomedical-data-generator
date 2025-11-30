@@ -1,0 +1,15 @@
+﻿biomedical\_data\_generator.features.correlated
+===============================================
+
+.. automodule:: biomedical_data_generator.features.correlated
+
+   
+   .. rubric:: Functions
+
+   .. autosummary::
+   
+      apply_anchor_effects
+      build_correlation_matrix
+      sample_all_correlated_clusters
+      sample_correlated_data
+   

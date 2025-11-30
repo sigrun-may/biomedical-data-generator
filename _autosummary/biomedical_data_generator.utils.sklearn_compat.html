@@ -1,0 +1,227 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>biomedical_data_generator.utils.sklearn_compat &mdash; Biomedical Data Generator 1.0.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="../_static/copybutton.css?v=76b2166b" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/custom.css?v=7f485136" />
+
+  
+      <script src="../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../_static/documentation_options.js?v=8d563738"></script>
+      <script src="../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../_static/clipboard.min.js?v=a7894cd8"></script>
+      <script src="../_static/copybutton.js?v=f281be69"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="prev" title="biomedical_data_generator.utils.visualization" href="biomedical_data_generator.utils.visualization.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            Biomedical Data Generator
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Reference</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../api.html">API Reference</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../code-doc.html">Code Documentation</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../code-doc.html#configuration-models">Configuration Models</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../code-doc.html#dataset-generator">Dataset Generator</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../code-doc.html#feature-generators">Feature Generators</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../code-doc.html#batch-effects">Batch Effects</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../code-doc.html#metadata">Metadata</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="../code-doc.html#utility-modules-optional">Utility Modules (Optional)</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="biomedical_data_generator.utils.correlation_tools.html">biomedical_data_generator.utils.correlation_tools</a></li>
+<li class="toctree-l3"><a class="reference internal" href="biomedical_data_generator.utils.export_utils.html">biomedical_data_generator.utils.export_utils</a></li>
+<li class="toctree-l3"><a class="reference internal" href="biomedical_data_generator.utils.visualization.html">biomedical_data_generator.utils.visualization</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">biomedical_data_generator.utils.sklearn_compat</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#biomedical_data_generator.utils.sklearn_compat.make_biomedical_dataset"><code class="docutils literal notranslate"><span class="pre">make_biomedical_dataset()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">External Links</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference external" href="https://github.com/sigrun-may/biomedical-data-generator">GitHub Repository</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://pypi.org/project/biomedical-data-generator/">PyPI Package</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://github.com/sigrun-may/biomedical-data-generator/blob/main/LICENSE">License</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">Biomedical Data Generator</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../code-doc.html">Code Documentation</a></li>
+      <li class="breadcrumb-item active">biomedical_data_generator.utils.sklearn_compat</li>
+      <li class="wy-breadcrumbs-aside">
+              <a href="https://github.com/sigrun-may/biomedical-data-generator/blob/main/docs/_autosummary/biomedical_data_generator.utils.sklearn_compat.rst" class="fa fa-github"> Edit on GitHub</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="module-biomedical_data_generator.utils.sklearn_compat">
+<span id="biomedical-data-generator-utils-sklearn-compat"></span><h1>biomedical_data_generator.utils.sklearn_compat<a class="headerlink" href="#module-biomedical_data_generator.utils.sklearn_compat" title="Link to this heading"></a></h1>
+<p>Sklearn-like convenience wrapper around biomedical-data-generator.</p>
+<p>This module provides a single entry point <a class="reference internal" href="#biomedical_data_generator.utils.sklearn_compat.make_biomedical_dataset" title="biomedical_data_generator.utils.sklearn_compat.make_biomedical_dataset"><code class="xref py py-func docutils literal notranslate"><span class="pre">make_biomedical_dataset()</span></code></a>
+that mimics <code class="xref py py-func docutils literal notranslate"><span class="pre">sklearn.datasets.make_classification()</span></code> while mapping
+cleanly to the new <code class="xref py py-class docutils literal notranslate"><span class="pre">DatasetConfig</span></code> / <code class="xref py py-func docutils literal notranslate"><span class="pre">generate_dataset()</span></code>
+API of <code class="xref py py-mod docutils literal notranslate"><span class="pre">biomedical_data_generator</span></code>.</p>
+<p>The goals are:</p>
+<ul class="simple">
+<li><p>Familiar, scikit-learn-style signature for quick experimentation.</p></li>
+<li><p>A <em>thin</em> translation layer to <code class="xref py py-class docutils literal notranslate"><span class="pre">DatasetConfig</span></code>, so that users
+can “graduate” to the full configuration model once they need more
+control.</p></li>
+<li><p>Numpy / pandas outputs that plug directly into scikit-learn pipelines.</p></li>
+</ul>
+<p class="rubric">Functions</p>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#biomedical_data_generator.utils.sklearn_compat.make_biomedical_dataset" title="biomedical_data_generator.utils.sklearn_compat.make_biomedical_dataset"><code class="xref py py-obj docutils literal notranslate"><span class="pre">make_biomedical_dataset</span></code></a>([n_samples, ...])</p></td>
+<td><p>Sklearn-like convenience wrapper around the biomedical-data-generator.</p></td>
+</tr>
+</tbody>
+</table>
+<dl class="py function">
+<dt class="sig sig-object py" id="biomedical_data_generator.utils.sklearn_compat.make_biomedical_dataset">
+<span class="sig-prename descclassname"><span class="pre">biomedical_data_generator.utils.sklearn_compat.</span></span><span class="sig-name descname"><span class="pre">make_biomedical_dataset</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">n_samples</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">30</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_features</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">200</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_informative</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_redundant</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_classes</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">class_sep</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">weights</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">random_state</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">42</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_noise</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">noise_distribution</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'normal'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">noise_distribution_params</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">batch_effect</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_batches</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">batch_effect_strength</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">confounding_with_class</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">return_meta</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">return_pandas</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/biomedical_data_generator/utils/sklearn_compat.html#make_biomedical_dataset"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#biomedical_data_generator.utils.sklearn_compat.make_biomedical_dataset" title="Link to this definition"></a></dt>
+<dd><p>Sklearn-like convenience wrapper around the biomedical-data-generator.</p>
+<p>Parameters broadly mirror <code class="xref py py-func docutils literal notranslate"><span class="pre">sklearn.datasets.make_classification()</span></code>
+where sensible, but are translated to the new <code class="xref py py-class docutils literal notranslate"><span class="pre">DatasetConfig</span></code> /
+<code class="xref py py-func docutils literal notranslate"><span class="pre">generate_dataset()</span></code> design.</p>
+<section id="redundant-features">
+<h2>Redundant features<a class="headerlink" href="#redundant-features" title="Link to this heading"></a></h2>
+<p><code class="docutils literal notranslate"><span class="pre">n_redundant</span></code> is implemented via a single correlated feature cluster:</p>
+<ul class="simple">
+<li><p>One <strong>informative anchor</strong> (shared signal)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">n_redundant</span></code> <strong>proxy</strong> features that are strongly correlated
+(equicorrelated with a high <code class="docutils literal notranslate"><span class="pre">correlation</span></code>)</p></li>
+</ul>
+<p>In terms of <code class="xref py py-class docutils literal notranslate"><span class="pre">DatasetConfig</span></code>, this means:</p>
+<blockquote>
+<div><p>n_features = n_informative + n_noise + proxies_from_clusters</p>
+</div></blockquote>
+<p>and the proxies contributed by this wrapper are exactly <code class="docutils literal notranslate"><span class="pre">n_redundant</span></code>.</p>
+</section>
+<section id="notes">
+<h2>Notes:<a class="headerlink" href="#notes" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">n_features</span></code> must equal <code class="docutils literal notranslate"><span class="pre">n_informative</span> <span class="pre">+</span> <span class="pre">n_redundant</span> <span class="pre">+</span> <span class="pre">n_noise</span></code>
+in this wrapper (no repeated features). If <code class="docutils literal notranslate"><span class="pre">n_noise</span> <span class="pre">==</span> <span class="pre">0</span></code>, it is
+inferred as <code class="docutils literal notranslate"><span class="pre">n_features</span> <span class="pre">-</span> <span class="pre">n_informative</span> <span class="pre">-</span> <span class="pre">n_redundant</span></code>.</p></li>
+<li><p>If you pass <code class="docutils literal notranslate"><span class="pre">corr_clusters</span></code> explicitly via <code class="docutils literal notranslate"><span class="pre">**kwargs</span></code>, then
+<code class="docutils literal notranslate"><span class="pre">n_redundant</span></code> <strong>must be 0</strong>; you are responsible for defining the
+cluster layout yourself in that advanced mode.</p></li>
+</ul>
+<p>By default the function returns <code class="docutils literal notranslate"><span class="pre">(X,</span> <span class="pre">y)</span></code> using NumPy arrays for
+broad compatibility with scikit-learn. Set <code class="docutils literal notranslate"><span class="pre">return_pandas=True</span></code> to
+obtain a <code class="docutils literal notranslate"><span class="pre">DataFrame</span></code> and <code class="docutils literal notranslate"><span class="pre">Series</span></code> instead. Set <code class="docutils literal notranslate"><span class="pre">return_meta=True</span></code>
+to additionally return the <code class="xref py py-class docutils literal notranslate"><span class="pre">DatasetMeta</span></code> object.</p>
+</section>
+<section id="returns">
+<h2>Returns:<a class="headerlink" href="#returns" title="Link to this heading"></a></h2>
+<dl class="simple">
+<dt>(X, y) or (X, y, meta)</dt><dd><p>Depending on <code class="docutils literal notranslate"><span class="pre">return_meta</span></code>. <code class="docutils literal notranslate"><span class="pre">X</span></code> is a NumPy array or
+pandas <code class="docutils literal notranslate"><span class="pre">DataFrame</span></code>; <code class="docutils literal notranslate"><span class="pre">y</span></code> is a NumPy array or pandas <code class="docutils literal notranslate"><span class="pre">Series</span></code>.</p>
+</dd>
+</dl>
+</section>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>n_samples</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a>)</p></li>
+<li><p><strong>n_features</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a>)</p></li>
+<li><p><strong>n_informative</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a>)</p></li>
+<li><p><strong>n_redundant</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a>)</p></li>
+<li><p><strong>n_classes</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a>)</p></li>
+<li><p><strong>class_sep</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>)</p></li>
+<li><p><strong>weights</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.14)"><em>tuple</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a><em>, </em><em>...</em><em>] </em><em>| </em><em>None</em>)</p></li>
+<li><p><strong>random_state</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a><em> | </em><em>None</em>)</p></li>
+<li><p><strong>n_noise</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a>)</p></li>
+<li><p><strong>noise_distribution</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>)</p></li>
+<li><p><strong>noise_distribution_params</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><em>dict</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a><em>, </em><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.14)"><em>Any</em></a><em>] </em><em>| </em><em>None</em>)</p></li>
+<li><p><strong>batch_effect</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a>)</p></li>
+<li><p><strong>n_batches</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a>)</p></li>
+<li><p><strong>batch_effect_strength</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>)</p></li>
+<li><p><strong>confounding_with_class</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>)</p></li>
+<li><p><strong>return_meta</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a>)</p></li>
+<li><p><strong>return_pandas</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a>)</p></li>
+<li><p><strong>kwargs</strong> (<a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.14)"><em>Any</em></a>)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.14)">tuple</a>[<a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.14)"><em>Any</em></a>, <a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.14)"><em>Any</em></a>] | <a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.14)">tuple</a>[<a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.14)"><em>Any</em></a>, <a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.14)"><em>Any</em></a>, <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.14)">object</a>]</p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="biomedical_data_generator.utils.visualization.html" class="btn btn-neutral float-left" title="biomedical_data_generator.utils.visualization" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, Sigrun May.</p>
+  </div>
+
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

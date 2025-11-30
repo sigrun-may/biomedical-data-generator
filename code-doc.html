@@ -23,6 +23,7 @@
     <script src="_static/js/theme.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="biomedical_data_generator.config.ClassConfig" href="_autosummary/biomedical_data_generator.config.ClassConfig.html" />
     <link rel="prev" title="biomedical_data_generator.BatchEffectsConfig" href="_autosummary/biomedical_data_generator.BatchEffectsConfig.html" /> 
 </head>
 
@@ -49,7 +50,44 @@
 <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="api.html">API Reference</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Code Documentation</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="#biomedical-data-generator"><code class="xref py py-mod docutils literal notranslate"><span class="pre">biomedical_data_generator</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#configuration-models">Configuration Models</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/biomedical_data_generator.config.ClassConfig.html">biomedical_data_generator.config.ClassConfig</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/biomedical_data_generator.config.BatchEffectsConfig.html">biomedical_data_generator.config.BatchEffectsConfig</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/biomedical_data_generator.config.CorrClusterConfig.html">biomedical_data_generator.config.CorrClusterConfig</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/biomedical_data_generator.config.DatasetConfig.html">biomedical_data_generator.config.DatasetConfig</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#dataset-generator">Dataset Generator</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/biomedical_data_generator.generate_dataset.html">biomedical_data_generator.generate_dataset</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#feature-generators">Feature Generators</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#informative-features">Informative features</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="_autosummary/biomedical_data_generator.features.informative.html">biomedical_data_generator.features.informative</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#correlated-feature-clusters">Correlated feature clusters</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="_autosummary/biomedical_data_generator.features.correlated.html">biomedical_data_generator.features.correlated</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#independent-noise-features">Independent noise features</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#batch-effects">Batch Effects</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/biomedical_data_generator.effects.batch.html">biomedical_data_generator.effects.batch</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#metadata">Metadata</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/biomedical_data_generator.meta.DatasetMeta.html">biomedical_data_generator.meta.DatasetMeta</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#utility-modules-optional">Utility Modules (Optional)</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/biomedical_data_generator.utils.correlation_tools.html">biomedical_data_generator.utils.correlation_tools</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/biomedical_data_generator.utils.export_utils.html">biomedical_data_generator.utils.export_utils</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/biomedical_data_generator.utils.visualization.html">biomedical_data_generator.utils.visualization</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/biomedical_data_generator.utils.sklearn_compat.html">biomedical_data_generator.utils.sklearn_compat</a></li>
+</ul>
+</li>
 </ul>
 </li>
 </ul>
@@ -86,8 +124,130 @@
              
   <section id="code-documentation">
 <h1>Code Documentation<a class="headerlink" href="#code-documentation" title="Link to this heading"></a></h1>
-<section id="biomedical-data-generator">
-<h2><code class="xref py py-mod docutils literal notranslate"><span class="pre">biomedical_data_generator</span></code><a class="headerlink" href="#biomedical-data-generator" title="Link to this heading"></a></h2>
+<p>This section provides a complete overview of the internal modules of
+<code class="docutils literal notranslate"><span class="pre">biomedical-data-generator</span></code>.
+It is intended for developers, contributors, and advanced users who want
+to understand or extend the code base.</p>
+<p>The API documentation is automatically generated using Sphinx
+<code class="docutils literal notranslate"><span class="pre">autodoc</span></code> and <code class="docutils literal notranslate"><span class="pre">autosummary</span></code>.
+Each module listed below expands into a separate page in the
+<code class="docutils literal notranslate"><span class="pre">_autosummary</span></code> directory.</p>
+<p>—</p>
+<section id="configuration-models">
+<h2>Configuration Models<a class="headerlink" href="#configuration-models" title="Link to this heading"></a></h2>
+<p>These classes define the full dataset configuration, including
+class structure, correlated clusters, noise distribution, and optional
+batch effects.</p>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="_autosummary/biomedical_data_generator.config.ClassConfig.html#biomedical_data_generator.config.ClassConfig" title="biomedical_data_generator.config.ClassConfig"><code class="xref py py-obj docutils literal notranslate"><span class="pre">biomedical_data_generator.config.ClassConfig</span></code></a></p></td>
+<td><p>Configuration for a single class in the dataset.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="_autosummary/biomedical_data_generator.config.BatchEffectsConfig.html#biomedical_data_generator.config.BatchEffectsConfig" title="biomedical_data_generator.config.BatchEffectsConfig"><code class="xref py py-obj docutils literal notranslate"><span class="pre">biomedical_data_generator.config.BatchEffectsConfig</span></code></a></p></td>
+<td><p>Configuration for simulating batch effects.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="_autosummary/biomedical_data_generator.config.CorrClusterConfig.html#biomedical_data_generator.config.CorrClusterConfig" title="biomedical_data_generator.config.CorrClusterConfig"><code class="xref py py-obj docutils literal notranslate"><span class="pre">biomedical_data_generator.config.CorrClusterConfig</span></code></a></p></td>
+<td><p>Correlated feature cluster simulating coordinated biomarker patterns.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="_autosummary/biomedical_data_generator.config.DatasetConfig.html#biomedical_data_generator.config.DatasetConfig" title="biomedical_data_generator.config.DatasetConfig"><code class="xref py py-obj docutils literal notranslate"><span class="pre">biomedical_data_generator.config.DatasetConfig</span></code></a></p></td>
+<td><p>Configuration for synthetic dataset generation.</p></td>
+</tr>
+</tbody>
+</table>
+<p>—</p>
+</section>
+<section id="dataset-generator">
+<h2>Dataset Generator<a class="headerlink" href="#dataset-generator" title="Link to this heading"></a></h2>
+<p>The central entry point for creating synthetic datasets.</p>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="_autosummary/biomedical_data_generator.generate_dataset.html#biomedical_data_generator.generate_dataset" title="biomedical_data_generator.generate_dataset"><code class="xref py py-obj docutils literal notranslate"><span class="pre">biomedical_data_generator.generate_dataset</span></code></a></p></td>
+<td><p>Generate synthetic biomedical dataset with specified feature structure.</p></td>
+</tr>
+</tbody>
+</table>
+<p>—</p>
+</section>
+<section id="feature-generators">
+<h2>Feature Generators<a class="headerlink" href="#feature-generators" title="Link to this heading"></a></h2>
+<p>Functions responsible for generating informative features,
+noise features, and correlated feature clusters.</p>
+<section id="informative-features">
+<h3>Informative features<a class="headerlink" href="#informative-features" title="Link to this heading"></a></h3>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="_autosummary/biomedical_data_generator.features.informative.html#module-biomedical_data_generator.features.informative" title="biomedical_data_generator.features.informative"><code class="xref py py-obj docutils literal notranslate"><span class="pre">biomedical_data_generator.features.informative</span></code></a></p></td>
+<td><p>Generation of free informative features and class separation.</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="correlated-feature-clusters">
+<h3>Correlated feature clusters<a class="headerlink" href="#correlated-feature-clusters" title="Link to this heading"></a></h3>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="_autosummary/biomedical_data_generator.features.correlated.html#module-biomedical_data_generator.features.correlated" title="biomedical_data_generator.features.correlated"><code class="xref py py-obj docutils literal notranslate"><span class="pre">biomedical_data_generator.features.correlated</span></code></a></p></td>
+<td><p>Generation of correlated feature clusters simulating pathway-like modules.</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="independent-noise-features">
+<h3>Independent noise features<a class="headerlink" href="#independent-noise-features" title="Link to this heading"></a></h3>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+</tbody>
+</table>
+<p>—</p>
+</section>
+</section>
+<section id="batch-effects">
+<h2>Batch Effects<a class="headerlink" href="#batch-effects" title="Link to this heading"></a></h2>
+<p>Simulation of site effects, instrument variation, temporal drift,
+and confounding with class labels.</p>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="_autosummary/biomedical_data_generator.effects.batch.html#module-biomedical_data_generator.effects.batch" title="biomedical_data_generator.effects.batch"><code class="xref py py-obj docutils literal notranslate"><span class="pre">biomedical_data_generator.effects.batch</span></code></a></p></td>
+<td><p>Batch effect simulation for synthetic biomedical datasets.</p></td>
+</tr>
+</tbody>
+</table>
+<p>—</p>
+</section>
+<section id="metadata">
+<h2>Metadata<a class="headerlink" href="#metadata" title="Link to this heading"></a></h2>
+<p>Structured metadata describing the full generative process, including
+feature roles, class labels, correlated clusters, batch labels,
+and derived dataset properties.</p>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="_autosummary/biomedical_data_generator.meta.DatasetMeta.html#biomedical_data_generator.meta.DatasetMeta" title="biomedical_data_generator.meta.DatasetMeta"><code class="xref py py-obj docutils literal notranslate"><span class="pre">biomedical_data_generator.meta.DatasetMeta</span></code></a></p></td>
+<td><p>Metadata about the generated dataset.</p></td>
+</tr>
+</tbody>
+</table>
+<p>—</p>
+</section>
+<section id="utility-modules-optional">
+<h2>Utility Modules (Optional)<a class="headerlink" href="#utility-modules-optional" title="Link to this heading"></a></h2>
+<p>Helper functions for data manipulation, visualization, and
+integration with scikit-learn.</p>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="_autosummary/biomedical_data_generator.utils.correlation_tools.html#module-biomedical_data_generator.utils.correlation_tools" title="biomedical_data_generator.utils.correlation_tools"><code class="xref py py-obj docutils literal notranslate"><span class="pre">biomedical_data_generator.utils.correlation_tools</span></code></a></p></td>
+<td><p>Correlation analysis and seed search utilities (no plotting).</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="_autosummary/biomedical_data_generator.utils.export_utils.html#module-biomedical_data_generator.utils.export_utils" title="biomedical_data_generator.utils.export_utils"><code class="xref py py-obj docutils literal notranslate"><span class="pre">biomedical_data_generator.utils.export_utils</span></code></a></p></td>
+<td><p>Export utilities for saving generated datasets to various formats.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="_autosummary/biomedical_data_generator.utils.visualization.html#module-biomedical_data_generator.utils.visualization" title="biomedical_data_generator.utils.visualization"><code class="xref py py-obj docutils literal notranslate"><span class="pre">biomedical_data_generator.utils.visualization</span></code></a></p></td>
+<td><p>Plot utilities for correlation analysis.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="_autosummary/biomedical_data_generator.utils.sklearn_compat.html#module-biomedical_data_generator.utils.sklearn_compat" title="biomedical_data_generator.utils.sklearn_compat"><code class="xref py py-obj docutils literal notranslate"><span class="pre">biomedical_data_generator.utils.sklearn_compat</span></code></a></p></td>
+<td><p>Sklearn-like convenience wrapper around biomedical-data-generator.</p></td>
+</tr>
+</tbody>
+</table>
 </section>
 </section>
 
@@ -96,6 +256,7 @@
           </div>
           <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
         <a href="_autosummary/biomedical_data_generator.BatchEffectsConfig.html" class="btn btn-neutral float-left" title="biomedical_data_generator.BatchEffectsConfig" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="_autosummary/biomedical_data_generator.config.ClassConfig.html" class="btn btn-neutral float-right" title="biomedical_data_generator.config.ClassConfig" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
 
   <hr/>

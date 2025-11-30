@@ -1,0 +1,12 @@
+﻿biomedical\_data\_generator.features.informative
+================================================
+
+.. automodule:: biomedical_data_generator.features.informative
+
+   
+   .. rubric:: Functions
+
+   .. autosummary::
+   
+      generate_informative_features
+   

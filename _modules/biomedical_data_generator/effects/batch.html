@@ -1,0 +1,761 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>biomedical_data_generator.effects.batch &mdash; Biomedical Data Generator 1.0.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/copybutton.css?v=76b2166b" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/custom.css?v=7f485136" />
+
+  
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=8d563738"></script>
+      <script src="../../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../../../_static/clipboard.min.js?v=a7894cd8"></script>
+      <script src="../../../_static/copybutton.js?v=f281be69"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            Biomedical Data Generator
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../api.html">API Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../code-doc.html">Code Documentation</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">External Links</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference external" href="https://github.com/sigrun-may/biomedical-data-generator">GitHub Repository</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://pypi.org/project/biomedical-data-generator/">PyPI Package</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://github.com/sigrun-may/biomedical-data-generator/blob/main/LICENSE">License</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">Biomedical Data Generator</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">biomedical_data_generator.effects.batch</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for biomedical_data_generator.effects.batch</h1><div class="highlight"><pre>
+<span></span><span class="c1"># Copyright (c) 2025 Sigrun May,</span>
+<span class="c1"># Ostfalia Hochschule für angewandte Wissenschaften</span>
+<span class="c1">#</span>
+<span class="c1"># This software is distributed under the terms of the MIT license</span>
+<span class="c1"># which is available at https://opensource.org/licenses/MIT</span>
+
+<span class="sd">&quot;&quot;&quot;Batch effect simulation for synthetic biomedical datasets.</span>
+
+<span class="sd">This module provides functionality to add realistic batch effects</span>
+<span class="sd">(site differences, instrument variations, recruitment cohorts) to</span>
+<span class="sd">generated datasets.</span>
+
+<span class="sd">Public API:</span>
+<span class="sd">    High-level (recommended):</span>
+<span class="sd">        - apply_batch_effects_from_config: Orchestrate assignment + effects</span>
+<span class="sd">        - generate_batch_assignments: Unified batch assignment (random or confounded)</span>
+<span class="sd">        - apply_batch_effects: Apply systematic feature differences</span>
+
+<span class="sd">    Low-level (for experimentation):</span>
+<span class="sd">        - random_batch_assignment: Create independent batch labels</span>
+<span class="sd">        - confounded_batch_assignment: Create class-correlated batch labels</span>
+
+<span class="sd">Typical usage (high-level):</span>
+<span class="sd">    &gt;&gt;&gt; from batch import apply_batch_effects_from_config</span>
+<span class="sd">    &gt;&gt;&gt; X_batch, batches, batch_effects = apply_batch_effects_from_config(</span>
+<span class="sd">    ...     x=X, y=y, batch_config=cfg.batch,</span>
+<span class="sd">    ...     informative_indices=inf_idx, rng=rng</span>
+<span class="sd">    ... )</span>
+
+<span class="sd">Educational usage (low-level):</span>
+<span class="sd">    &gt;&gt;&gt; # Experiment with random vs. confounded assignments</span>
+<span class="sd">    &gt;&gt;&gt; rng = np.random.default_rng(42)</span>
+<span class="sd">    &gt;&gt;&gt; random_batches = random_batch_assignment(100, n_batches=3, rng=rng)</span>
+<span class="sd">    &gt;&gt;&gt; confounded_batches = confounded_batch_assignment(</span>
+<span class="sd">    ...     y, n_batches=3, confounding_with_class=0.8, rng=rng</span>
+<span class="sd">    ... )</span>
+
+<span class="sd">Reproducibility:</span>
+<span class="sd">    All functions accept np.random.Generator objects to ensure proper</span>
+<span class="sd">    state propagation. The top-level code (generator.py) creates ONE</span>
+<span class="sd">    generator and passes it through the call chain. This ensures:</span>
+<span class="sd">    - No duplicate random sequences</span>
+<span class="sd">    - Perfect reproducibility from config.random_state</span>
+<span class="sd">    - Proper state evolution across all operations</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">annotations</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">collections.abc</span><span class="w"> </span><span class="kn">import</span> <span class="n">Sequence</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">TYPE_CHECKING</span><span class="p">,</span> <span class="n">Literal</span><span class="p">,</span> <span class="n">cast</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">numpy.typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">NDArray</span>
+
+<span class="k">if</span> <span class="n">TYPE_CHECKING</span><span class="p">:</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span>
+
+    <span class="kn">from</span><span class="w"> </span><span class="nn">numpy.typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">ArrayLike</span>
+
+
+<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="s2">&quot;generate_batch_assignments&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;random_batch_assignment&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;confounded_batch_assignment&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;apply_batch_effects&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;apply_batch_effects_from_config&quot;</span><span class="p">,</span>
+<span class="p">]</span>
+
+
+<span class="c1"># ---------------------------------------------------------------------------</span>
+<span class="c1"># Internal helpers</span>
+<span class="c1"># ---------------------------------------------------------------------------</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_normalize_proportions</span><span class="p">(</span>
+    <span class="n">proportions</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">float</span><span class="p">],</span>
+    <span class="n">n_batches</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">NDArray</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Normalize a proportions vector to length-n_batches and sum 1.</span>
+
+<span class="sd">    Raises:</span>
+<span class="sd">        ValueError: if length mismatch, negative entries, or non-positive sum.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">proportions_arr</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">proportions</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">proportions_arr</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">!=</span> <span class="n">n_batches</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;len(proportions) must equal n_batches&quot;</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">proportions_arr</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;proportions must be non-negative&quot;</span><span class="p">)</span>
+
+    <span class="n">total</span> <span class="o">=</span> <span class="n">proportions_arr</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+    <span class="k">if</span> <span class="n">total</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;proportions must sum to a positive value&quot;</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">proportions_arr</span> <span class="o">/</span> <span class="n">total</span>
+
+
+<span class="c1"># ---------------------------------------------------------------------------</span>
+<span class="c1"># Batch assignment</span>
+<span class="c1"># ---------------------------------------------------------------------------</span>
+<div class="viewcode-block" id="generate_batch_assignments">
+<a class="viewcode-back" href="../../../_autosummary/biomedical_data_generator.effects.batch.html#biomedical_data_generator.effects.batch.generate_batch_assignments">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">generate_batch_assignments</span><span class="p">(</span>
+    <span class="n">n_samples</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+    <span class="n">n_batches</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+    <span class="n">rng</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">Generator</span><span class="p">,</span>
+    <span class="n">proportions</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">class_labels</span><span class="p">:</span> <span class="n">ArrayLike</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">confounding_with_class</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.0</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">NDArray</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">int_</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Generate batch assignments for samples.</span>
+
+<span class="sd">    Unified entry point for creating batch labels. Automatically handles</span>
+<span class="sd">    both random and confounded assignments based on the confounding_with_class</span>
+<span class="sd">    parameter.</span>
+
+<span class="sd">    This is the recommended function for batch assignment. For direct access</span>
+<span class="sd">    to the underlying implementations, see:</span>
+<span class="sd">        - random_batch_assignment() for independent assignments</span>
+<span class="sd">        - confounded_batch_assignment() for class-correlated assignments</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        n_samples: Number of samples.</span>
+<span class="sd">        n_batches: Number of batches (must be &gt;= 1).</span>
+<span class="sd">        rng: NumPy random generator (for reproducibility).</span>
+<span class="sd">        proportions: Relative batch sizes (None = equal split).</span>
+<span class="sd">        class_labels: Optional class labels for confounding. May be any</span>
+<span class="sd">            array-like of shape (n_samples,) with labels that np.unique can</span>
+<span class="sd">            handle (e.g. integers, strings). Only used if</span>
+<span class="sd">            confounding_with_class &gt; 0.</span>
+<span class="sd">        confounding_with_class: Correlation with class</span>
+<span class="sd">            (0.0 = random, 1.0 = strong preference), must be in [0, 1].</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Array of batch assignments (integers 0 to n_batches-1).</span>
+
+<span class="sd">    Examples:</span>
+<span class="sd">        &gt;&gt;&gt; rng = np.random.default_rng(42)</span>
+<span class="sd">        &gt;&gt;&gt;</span>
+<span class="sd">        &gt;&gt;&gt; # Random assignment</span>
+<span class="sd">        &gt;&gt;&gt; batches = generate_batch_assignments(100, n_batches=3, rng=rng)</span>
+<span class="sd">        &gt;&gt;&gt; np.bincount(batches)</span>
+<span class="sd">        array([33, 33, 34])</span>
+<span class="sd">        &gt;&gt;&gt;</span>
+<span class="sd">        &gt;&gt;&gt; # Confounded with class (simulate recruitment bias)</span>
+<span class="sd">        &gt;&gt;&gt; y = np.array([0]*50 + [1]*50)</span>
+<span class="sd">        &gt;&gt;&gt; batches = generate_batch_assignments(</span>
+<span class="sd">        ...     n_samples=100,</span>
+<span class="sd">        ...     n_batches=2,</span>
+<span class="sd">        ...     rng=rng,</span>
+<span class="sd">        ...     class_labels=y,</span>
+<span class="sd">        ...     confounding_with_class=0.8,</span>
+<span class="sd">        ... )</span>
+
+<span class="sd">    Notes:</span>
+<span class="sd">        - confounding_with_class=0.0: Random assignment (no bias)</span>
+<span class="sd">        - confounding_with_class=1.0: Strong preference (each class → preferred batch)</span>
+<span class="sd">        - For 2 equal-sized batches, confounding_with_class=0.5 yields</span>
+<span class="sd">          approx. a 75/25 class split towards the preferred batch.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">n_samples</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;n_samples must be positive&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">n_batches</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;n_batches must be &gt;= 1&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="mf">0.0</span> <span class="o">&lt;=</span> <span class="n">confounding_with_class</span> <span class="o">&lt;=</span> <span class="mf">1.0</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;confounding_with_class must be in [0, 1]&quot;</span><span class="p">)</span>
+
+    <span class="c1"># Trivial case: only one batch → all zeros (no confounding possible)</span>
+    <span class="k">if</span> <span class="n">n_batches</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">n_samples</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">class_labels</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">labels_arr</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">class_labels</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">labels_arr</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">!=</span> <span class="n">n_samples</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;class_labels must have length n_samples&quot;</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">labels_arr</span> <span class="o">=</span> <span class="kc">None</span>
+
+    <span class="k">if</span> <span class="n">confounding_with_class</span> <span class="o">==</span> <span class="mf">0.0</span> <span class="ow">or</span> <span class="n">labels_arr</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">random_batch_assignment</span><span class="p">(</span>
+            <span class="n">n_samples</span><span class="o">=</span><span class="n">n_samples</span><span class="p">,</span>
+            <span class="n">n_batches</span><span class="o">=</span><span class="n">n_batches</span><span class="p">,</span>
+            <span class="n">rng</span><span class="o">=</span><span class="n">rng</span><span class="p">,</span>
+            <span class="n">proportions</span><span class="o">=</span><span class="n">proportions</span><span class="p">,</span>
+        <span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">confounded_batch_assignment</span><span class="p">(</span>
+            <span class="n">class_labels</span><span class="o">=</span><span class="n">labels_arr</span><span class="p">,</span>
+            <span class="n">n_batches</span><span class="o">=</span><span class="n">n_batches</span><span class="p">,</span>
+            <span class="n">confounding_with_class</span><span class="o">=</span><span class="n">confounding_with_class</span><span class="p">,</span>
+            <span class="n">rng</span><span class="o">=</span><span class="n">rng</span><span class="p">,</span>
+            <span class="n">proportions</span><span class="o">=</span><span class="n">proportions</span><span class="p">,</span>
+        <span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="random_batch_assignment">
+<a class="viewcode-back" href="../../../_autosummary/biomedical_data_generator.effects.batch.html#biomedical_data_generator.effects.batch.random_batch_assignment">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">random_batch_assignment</span><span class="p">(</span>
+    <span class="n">n_samples</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+    <span class="n">n_batches</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+    <span class="n">rng</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">Generator</span><span class="p">,</span>
+    <span class="n">proportions</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">NDArray</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">int_</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Create random batch assignments without confounding.</span>
+
+<span class="sd">    Direct function for creating batch labels with specified proportions</span>
+<span class="sd">    but no correlation with class labels.</span>
+
+<span class="sd">    For most use cases, prefer generate_batch_assignments() which provides</span>
+<span class="sd">    a unified interface for both random and confounded assignments.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        n_samples: Number of samples to assign.</span>
+<span class="sd">        n_batches: Number of distinct batches (must be &gt;= 1).</span>
+<span class="sd">        rng: NumPy random generator (for reproducibility).</span>
+<span class="sd">        proportions: Relative batch sizes (None = equal split).</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Array of batch assignments (integers 0 to n_batches-1).</span>
+
+<span class="sd">    Examples:</span>
+<span class="sd">        &gt;&gt;&gt; rng = np.random.default_rng(42)</span>
+<span class="sd">        &gt;&gt;&gt; batches = random_batch_assignment(100, n_batches=3, rng=rng)</span>
+<span class="sd">        &gt;&gt;&gt; np.bincount(batches)</span>
+<span class="sd">        array([33, 33, 34])</span>
+<span class="sd">        &gt;&gt;&gt;</span>
+<span class="sd">        &gt;&gt;&gt; # Unequal proportions</span>
+<span class="sd">        &gt;&gt;&gt; batches = random_batch_assignment(</span>
+<span class="sd">        ...     100, n_batches=3, rng=rng, proportions=[0.5, 0.3, 0.2]</span>
+<span class="sd">        ... )</span>
+
+<span class="sd">    Notes:</span>
+<span class="sd">        - Generator state advances during shuffling.</span>
+<span class="sd">        - Multiple calls with the same generator produce different results.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">n_samples</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;n_samples must be positive&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">n_batches</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;n_batches must be &gt;= 1&quot;</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">proportions</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="c1"># Even split (integer counts with remainder distributed over first batches)</span>
+        <span class="n">base</span> <span class="o">=</span> <span class="n">n_samples</span> <span class="o">//</span> <span class="n">n_batches</span>
+        <span class="n">remainder</span> <span class="o">=</span> <span class="n">n_samples</span> <span class="o">%</span> <span class="n">n_batches</span>
+        <span class="n">counts</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span>
+            <span class="p">[</span><span class="n">base</span> <span class="o">+</span> <span class="p">(</span><span class="mi">1</span> <span class="k">if</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="n">remainder</span> <span class="k">else</span> <span class="mi">0</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_batches</span><span class="p">)],</span>
+            <span class="n">dtype</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span>
+        <span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">proportions_arr</span> <span class="o">=</span> <span class="n">_normalize_proportions</span><span class="p">(</span><span class="n">proportions</span><span class="p">,</span> <span class="n">n_batches</span><span class="p">)</span>
+        <span class="n">counts</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="n">proportions_arr</span> <span class="o">*</span> <span class="n">n_samples</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">int</span><span class="p">)</span>
+
+        <span class="c1"># Fix rounding to match n_samples exactly</span>
+        <span class="n">diff</span> <span class="o">=</span> <span class="n">n_samples</span> <span class="o">-</span> <span class="nb">int</span><span class="p">(</span><span class="n">counts</span><span class="o">.</span><span class="n">sum</span><span class="p">())</span>
+        <span class="k">if</span> <span class="n">diff</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="c1"># Adjust the batches with largest target proportions first</span>
+            <span class="n">idx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">argsort</span><span class="p">(</span><span class="o">-</span><span class="n">proportions_arr</span><span class="p">)[:</span> <span class="nb">abs</span><span class="p">(</span><span class="n">diff</span><span class="p">)]</span>
+            <span class="n">counts</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span> <span class="o">+=</span> <span class="nb">int</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sign</span><span class="p">(</span><span class="n">diff</span><span class="p">))</span>
+
+    <span class="c1"># Create labels and shuffle</span>
+    <span class="n">labels</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">([</span><span class="n">np</span><span class="o">.</span><span class="n">full</span><span class="p">(</span><span class="n">c</span><span class="p">,</span> <span class="n">i</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">c</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">counts</span><span class="p">)</span> <span class="k">if</span> <span class="n">c</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">])</span>
+    <span class="c1"># In pathological rounding cases we might end up slightly short/long; guard here</span>
+    <span class="k">if</span> <span class="n">labels</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">!=</span> <span class="n">n_samples</span><span class="p">:</span>
+        <span class="c1"># Simple fallback: sample with replacement from batches according to proportions</span>
+        <span class="k">if</span> <span class="n">proportions</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">p</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">full</span><span class="p">(</span><span class="n">n_batches</span><span class="p">,</span> <span class="mf">1.0</span> <span class="o">/</span> <span class="n">n_batches</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">p</span> <span class="o">=</span> <span class="n">_normalize_proportions</span><span class="p">(</span><span class="n">proportions</span><span class="p">,</span> <span class="n">n_batches</span><span class="p">)</span>
+        <span class="n">labels</span> <span class="o">=</span> <span class="n">rng</span><span class="o">.</span><span class="n">choice</span><span class="p">(</span><span class="n">n_batches</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="n">n_samples</span><span class="p">,</span> <span class="n">p</span><span class="o">=</span><span class="n">p</span><span class="p">)</span>
+
+    <span class="n">rng</span><span class="o">.</span><span class="n">shuffle</span><span class="p">(</span><span class="n">labels</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">labels</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">int</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="confounded_batch_assignment">
+<a class="viewcode-back" href="../../../_autosummary/biomedical_data_generator.effects.batch.html#biomedical_data_generator.effects.batch.confounded_batch_assignment">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">confounded_batch_assignment</span><span class="p">(</span>
+    <span class="n">class_labels</span><span class="p">:</span> <span class="n">ArrayLike</span><span class="p">,</span>
+    <span class="n">n_batches</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+    <span class="n">confounding_with_class</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+    <span class="n">rng</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">Generator</span><span class="p">,</span>
+    <span class="n">proportions</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">NDArray</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">int_</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Create batch assignments confounded with class labels.</span>
+
+<span class="sd">    Direct function for creating batch labels that are correlated with</span>
+<span class="sd">    class membership, simulating recruitment bias or site selection effects.</span>
+
+<span class="sd">    For most use cases, prefer generate_batch_assignments() which provides</span>
+<span class="sd">    a unified interface for both random and confounded assignments.</span>
+
+<span class="sd">    Strategy:</span>
+<span class="sd">        - Use np.unique to derive K distinct classes (works for int and str).</span>
+<span class="sd">        - For each class index k (0..K-1), preferentially assign to a</span>
+<span class="sd">          &quot;preferred&quot; batch (k % n_batches).</span>
+<span class="sd">        - Higher confounding_with_class = stronger preference for the</span>
+<span class="sd">          preferred batch.</span>
+<span class="sd">        - Uses redistribution: probability mass is moved from other batches</span>
+<span class="sd">          to the preferred batch.</span>
+<span class="sd">        - At confounding_with_class=1.0: strong preference (all samples of a</span>
+<span class="sd">          class tend to fall into its preferred batch, subject to randomness).</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        class_labels: Class membership for each sample. May be integer or</span>
+<span class="sd">            string labels; only relative grouping matters.</span>
+<span class="sd">        n_batches: Number of distinct batches (must be &gt;= 2).</span>
+<span class="sd">        confounding_with_class: Degree of correlation (0.0 = random assignment,</span>
+<span class="sd">            1.0 = strong preference), must be in [0, 1].</span>
+<span class="sd">        rng: NumPy random generator (for reproducibility).</span>
+<span class="sd">        proportions: Relative batch sizes (None = equal split).</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Array of batch assignments (integers 0 to n_batches-1).</span>
+
+<span class="sd">    Examples:</span>
+<span class="sd">        &gt;&gt;&gt; rng = np.random.default_rng(42)</span>
+<span class="sd">        &gt;&gt;&gt; y = np.array([&quot;control&quot;] * 50 + [&quot;case&quot;] * 50)</span>
+<span class="sd">        &gt;&gt;&gt; batches = confounded_batch_assignment(</span>
+<span class="sd">        ...     y, n_batches=2, confounding_with_class=0.8, rng=rng</span>
+<span class="sd">        ... )</span>
+<span class="sd">        &gt;&gt;&gt; # Most &quot;control&quot; samples will be in batch 0,</span>
+<span class="sd">        &gt;&gt;&gt; # most &quot;case&quot; samples will be in batch 1.</span>
+
+<span class="sd">    Notes:</span>
+<span class="sd">        - confounding_with_class=0.0 would reduce to random assignment;</span>
+<span class="sd">          use generate_batch_assignments for that branch.</span>
+<span class="sd">        - For 2 equal-sized batches, confounding_with_class=0.5 yields</span>
+<span class="sd">          approx. a 75/25 preference towards the class&#39;s preferred batch.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">labels</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">class_labels</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">labels</span><span class="o">.</span><span class="n">ndim</span> <span class="o">!=</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="n">labels</span> <span class="o">=</span> <span class="n">labels</span><span class="o">.</span><span class="n">ravel</span><span class="p">()</span>
+
+    <span class="n">n_samples</span> <span class="o">=</span> <span class="n">labels</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="k">if</span> <span class="n">n_samples</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;class_labels must contain at least one sample&quot;</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">n_batches</span> <span class="o">&lt;=</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;confounded_batch_assignment requires n_batches &gt;= 2&quot;</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="mf">0.0</span> <span class="o">&lt;=</span> <span class="n">confounding_with_class</span> <span class="o">&lt;=</span> <span class="mf">1.0</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;confounding_with_class must be in [0, 1]&quot;</span><span class="p">)</span>
+
+    <span class="c1"># Map arbitrary labels → integer class indices 0..K-1</span>
+    <span class="n">unique_classes</span><span class="p">,</span> <span class="n">class_indices</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="n">labels</span><span class="p">,</span> <span class="n">return_inverse</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">n_classes</span> <span class="o">=</span> <span class="n">unique_classes</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+    <span class="c1"># Base probabilities for each (class, batch) combination</span>
+    <span class="k">if</span> <span class="n">proportions</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">base_probs</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">full</span><span class="p">((</span><span class="n">n_classes</span><span class="p">,</span> <span class="n">n_batches</span><span class="p">),</span> <span class="mf">1.0</span> <span class="o">/</span> <span class="n">n_batches</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
+        <span class="n">base_proportions</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">full</span><span class="p">(</span><span class="n">n_batches</span><span class="p">,</span> <span class="mf">1.0</span> <span class="o">/</span> <span class="n">n_batches</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">base_proportions</span> <span class="o">=</span> <span class="n">_normalize_proportions</span><span class="p">(</span><span class="n">proportions</span><span class="p">,</span> <span class="n">n_batches</span><span class="p">)</span>
+        <span class="n">base_probs</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">tile</span><span class="p">(</span><span class="n">base_proportions</span><span class="p">,</span> <span class="p">(</span><span class="n">n_classes</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
+
+    <span class="c1"># Apply confounding via redistribution</span>
+    <span class="n">confounded_probs</span> <span class="o">=</span> <span class="n">base_probs</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+
+    <span class="k">for</span> <span class="n">cls_idx</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_classes</span><span class="p">):</span>
+        <span class="n">preferred_batch</span> <span class="o">=</span> <span class="n">cls_idx</span> <span class="o">%</span> <span class="n">n_batches</span>
+        <span class="n">base_pref</span> <span class="o">=</span> <span class="n">base_probs</span><span class="p">[</span><span class="n">cls_idx</span><span class="p">,</span> <span class="n">preferred_batch</span><span class="p">]</span>
+
+        <span class="c1"># Amount of probability mass to add to preferred batch</span>
+        <span class="n">boost</span> <span class="o">=</span> <span class="n">confounding_with_class</span> <span class="o">*</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">-</span> <span class="n">base_pref</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">boost</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="c1"># Nothing to do for this class (e.g., confounding_with_class == 0)</span>
+            <span class="k">continue</span>
+
+        <span class="c1"># How much to subtract from each other batch (redistribute)</span>
+        <span class="n">reduction_per_batch</span> <span class="o">=</span> <span class="n">boost</span> <span class="o">/</span> <span class="p">(</span><span class="n">n_batches</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
+
+        <span class="c1"># Apply changes: add to preferred, subtract from others</span>
+        <span class="n">confounded_probs</span><span class="p">[</span><span class="n">cls_idx</span><span class="p">,</span> <span class="n">preferred_batch</span><span class="p">]</span> <span class="o">+=</span> <span class="n">boost</span>
+        <span class="k">for</span> <span class="n">batch_id</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_batches</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">batch_id</span> <span class="o">!=</span> <span class="n">preferred_batch</span><span class="p">:</span>
+                <span class="n">confounded_probs</span><span class="p">[</span><span class="n">cls_idx</span><span class="p">,</span> <span class="n">batch_id</span><span class="p">]</span> <span class="o">-=</span> <span class="n">reduction_per_batch</span>
+
+        <span class="c1"># Clip to ensure non-negative (handle floating point precision)</span>
+        <span class="n">confounded_probs</span><span class="p">[</span><span class="n">cls_idx</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="n">confounded_probs</span><span class="p">[</span><span class="n">cls_idx</span><span class="p">],</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">)</span>
+
+        <span class="c1"># Renormalize to exactly 1.0 (handle any clipping effects)</span>
+        <span class="n">row_sum</span> <span class="o">=</span> <span class="n">confounded_probs</span><span class="p">[</span><span class="n">cls_idx</span><span class="p">]</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">row_sum</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="c1"># Fallback: revert to base probabilities for this class</span>
+            <span class="n">confounded_probs</span><span class="p">[</span><span class="n">cls_idx</span><span class="p">]</span> <span class="o">=</span> <span class="n">base_probs</span><span class="p">[</span><span class="n">cls_idx</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">confounded_probs</span><span class="p">[</span><span class="n">cls_idx</span><span class="p">]</span> <span class="o">/=</span> <span class="n">row_sum</span>
+
+    <span class="c1"># Assign batches per class index (0..K-1)</span>
+    <span class="n">batch_assignments</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">(</span><span class="n">n_samples</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">cls_idx</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_classes</span><span class="p">):</span>
+        <span class="n">mask</span> <span class="o">=</span> <span class="n">class_indices</span> <span class="o">==</span> <span class="n">cls_idx</span>
+        <span class="n">n_in_class</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">mask</span><span class="o">.</span><span class="n">sum</span><span class="p">())</span>
+        <span class="k">if</span> <span class="n">n_in_class</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">continue</span>
+        <span class="n">batch_assignments</span><span class="p">[</span><span class="n">mask</span><span class="p">]</span> <span class="o">=</span> <span class="n">rng</span><span class="o">.</span><span class="n">choice</span><span class="p">(</span>
+            <span class="n">n_batches</span><span class="p">,</span>
+            <span class="n">size</span><span class="o">=</span><span class="n">n_in_class</span><span class="p">,</span>
+            <span class="n">p</span><span class="o">=</span><span class="n">confounded_probs</span><span class="p">[</span><span class="n">cls_idx</span><span class="p">],</span>
+        <span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">batch_assignments</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">int</span><span class="p">)</span></div>
+
+
+
+<span class="c1"># ---------------------------------------------------------------------------</span>
+<span class="c1"># Applying batch effects to feature matrices</span>
+<span class="c1"># ---------------------------------------------------------------------------</span>
+<div class="viewcode-block" id="apply_batch_effects">
+<a class="viewcode-back" href="../../../_autosummary/biomedical_data_generator.effects.batch.html#biomedical_data_generator.effects.batch.apply_batch_effects">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">apply_batch_effects</span><span class="p">(</span>
+    <span class="n">X</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span> <span class="o">|</span> <span class="n">NDArray</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">],</span>
+    <span class="n">batch_assignments</span><span class="p">:</span> <span class="n">NDArray</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">int_</span><span class="p">],</span>
+    <span class="n">rng</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">Generator</span><span class="p">,</span>
+    <span class="n">effect_type</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;additive&quot;</span><span class="p">,</span> <span class="s2">&quot;multiplicative&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;additive&quot;</span><span class="p">,</span>
+    <span class="n">effect_strength</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.5</span><span class="p">,</span>
+    <span class="n">affected_features</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">|</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;all&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;all&quot;</span><span class="p">,</span>
+    <span class="n">effect_granularity</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;per_feature&quot;</span><span class="p">,</span> <span class="s2">&quot;scalar&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;per_feature&quot;</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span> <span class="o">|</span> <span class="n">NDArray</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">],</span> <span class="n">NDArray</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">]]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Apply batch effects to a feature matrix.</span>
+
+<span class="sd">    Apply systematic batch effects to specified features in the dataset,</span>
+<span class="sd">    simulating site differences or instrument variations.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        X: Feature matrix (DataFrame or array).</span>
+<span class="sd">        batch_assignments: Array of batch assignments per sample.</span>
+<span class="sd">        rng:</span>
+<span class="sd">            NumPy random number generator used to sample batch effects.</span>
+<span class="sd">        effect_type:</span>
+<span class="sd">            Type of batch effect to apply:</span>
+<span class="sd">            - ``&quot;additive&quot;``: Adds a batch-specific shift to affected features.</span>
+<span class="sd">            - ``&quot;multiplicative&quot;``: Multiplies affected features by a batch-specific</span>
+<span class="sd">              scaling factor around 1.0.</span>
+<span class="sd">        effect_strength:</span>
+<span class="sd">            Standard deviation of the batch-effect distribution. Larger values</span>
+<span class="sd">            generate stronger perturbations. Must be non-negative.</span>
+<span class="sd">        affected_features:</span>
+<span class="sd">            Defines which features are affected:</span>
+<span class="sd">            - ``&quot;all&quot;``: Apply batch effects to all features.</span>
+<span class="sd">            - Sequence[int]: Apply effects only to the listed feature indices.</span>
+<span class="sd">        effect_granularity:</span>
+<span class="sd">            Controls whether effects vary across features:</span>
+<span class="sd">            - ``&quot;per_feature&quot;`` (default): Draws effects with shape</span>
+<span class="sd">              ``(n_batches, n_affected_features)``, so features within the same batch</span>
+<span class="sd">              differ in their batch-specific effect.</span>
+<span class="sd">            - ``&quot;scalar&quot;``: Draws a single scalar per batch and applies it uniformly</span>
+<span class="sd">              across all affected features. This corresponds to a global per-batch</span>
+<span class="sd">              offset (additive) or global scaling factor (multiplicative).</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Tuple[pd.DataFrame | np.ndarray, np.ndarray]:</span>
+<span class="sd">            A tuple ``(X_affected, batch_effects)`` where:</span>
+
+<span class="sd">            - **X_affected**: The feature matrix with batch effects applied.</span>
+<span class="sd">              The output type matches the input type (DataFrame or ndarray).</span>
+
+<span class="sd">            - **batch_effects**: An array of length ``n_batches`` summarizing</span>
+<span class="sd">              the effect applied in each batch:</span>
+<span class="sd">                * For ``effect_granularity=&quot;scalar&quot;``, these are the exact additive</span>
+<span class="sd">                  shifts (additive mode) or multiplicative factors minus 1.0</span>
+<span class="sd">                  (multiplicative mode) drawn for each batch.</span>
+<span class="sd">                * For ``&quot;per_feature&quot;``, these values are the mean additive effect</span>
+<span class="sd">                  or mean multiplicative deviation from 1.0 across all affected</span>
+<span class="sd">                  features in each batch. This provides a compact summary even though</span>
+<span class="sd">                  the full per-feature effects vary within batches.</span>
+
+<span class="sd">    Raises:</span>
+<span class="sd">        ValueError:</span>
+<span class="sd">            If ``batch_assignments`` has the wrong shape, contains negative values,</span>
+<span class="sd">            or ``effect_granularity`` is not one of the allowed strings.</span>
+<span class="sd">        IndexError:</span>
+<span class="sd">            If ``affected_features`` contains indices outside the valid feature range.</span>
+
+<span class="sd">    Notes:</span>
+<span class="sd">        - The generator state ``rng`` is advanced during sampling.</span>
+<span class="sd">        - Additive effects are sampled from ``Normal(0, effect_strength)``.</span>
+<span class="sd">        - Multiplicative effects are sampled from ``1 + Normal(0, effect_strength)``.</span>
+<span class="sd">        - For DataFrame input, column names and index are preserved in the output.</span>
+
+<span class="sd">    Examples:</span>
+<span class="sd">        &gt;&gt;&gt; rng = np.random.default_rng(42)</span>
+<span class="sd">        &gt;&gt;&gt; x = np.random.normal(size=(100, 5))</span>
+<span class="sd">        &gt;&gt;&gt; batches = np.random.randint(0, 3, size=100)</span>
+<span class="sd">        &gt;&gt;&gt;</span>
+<span class="sd">        &gt;&gt;&gt; X_batch, batch_effects = apply_batch_effects(</span>
+<span class="sd">        ...     x, batches, rng,</span>
+<span class="sd">        ...     effect_type=&quot;additive&quot;,</span>
+<span class="sd">        ...     effect_strength=0.5,</span>
+<span class="sd">        ...     affected_features=[0, 2],</span>
+<span class="sd">        ...     effect_granularity=&quot;scalar&quot;,</span>
+<span class="sd">        ... )</span>
+<span class="sd">        &gt;&gt;&gt; X_batch.shape</span>
+<span class="sd">        (100, 5)</span>
+<span class="sd">        &gt;&gt;&gt; batch_effects.shape</span>
+<span class="sd">        (3,)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Convert to DataFrame if needed for consistent handling</span>
+    <span class="n">is_dataframe</span> <span class="o">=</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">)</span>
+    <span class="n">X_df</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">feature_names</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+
+    <span class="k">if</span> <span class="n">is_dataframe</span><span class="p">:</span>
+        <span class="n">X_df</span> <span class="o">=</span> <span class="n">cast</span><span class="p">(</span><span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">X</span><span class="p">)</span>
+        <span class="n">X_array</span> <span class="o">=</span> <span class="n">X_df</span><span class="o">.</span><span class="n">to_numpy</span><span class="p">(</span><span class="n">copy</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
+        <span class="n">feature_names</span> <span class="o">=</span> <span class="n">X_df</span><span class="o">.</span><span class="n">columns</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">X_array</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+
+    <span class="n">n_samples</span><span class="p">,</span> <span class="n">n_features</span> <span class="o">=</span> <span class="n">X_array</span><span class="o">.</span><span class="n">shape</span>
+
+    <span class="n">batch_assignments</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">batch_assignments</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">batch_assignments</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">!=</span> <span class="n">n_samples</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;batch_assignments must have length n_samples&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">batch_assignments</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;batch_assignments must be non-negative integers&quot;</span><span class="p">)</span>
+
+    <span class="n">n_batches</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">batch_assignments</span><span class="o">.</span><span class="n">max</span><span class="p">())</span> <span class="o">+</span> <span class="mi">1</span>
+
+    <span class="c1"># Determine which features to affect</span>
+    <span class="k">if</span> <span class="n">affected_features</span> <span class="o">==</span> <span class="s2">&quot;all&quot;</span><span class="p">:</span>
+        <span class="n">feature_indices</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">n_features</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">feature_indices</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">affected_features</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">feature_indices</span><span class="o">.</span><span class="n">ndim</span> <span class="o">!=</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="n">feature_indices</span> <span class="o">=</span> <span class="n">feature_indices</span><span class="o">.</span><span class="n">ravel</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">feature_indices</span><span class="o">.</span><span class="n">size</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="c1"># Nothing to do; return copy of X and an empty effects array</span>
+            <span class="n">batch_effects</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">n_batches</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">is_dataframe</span> <span class="ow">and</span> <span class="n">X_df</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">feature_names</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">X_array</span><span class="p">,</span> <span class="n">columns</span><span class="o">=</span><span class="n">feature_names</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="n">X_df</span><span class="o">.</span><span class="n">index</span><span class="p">),</span> <span class="n">batch_effects</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">X_array</span><span class="p">,</span> <span class="n">batch_effects</span>
+
+        <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">((</span><span class="n">feature_indices</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">)</span> <span class="o">|</span> <span class="p">(</span><span class="n">feature_indices</span> <span class="o">&gt;=</span> <span class="n">n_features</span><span class="p">)):</span>
+            <span class="k">raise</span> <span class="ne">IndexError</span><span class="p">(</span><span class="s2">&quot;affected_features contains indices out of range&quot;</span><span class="p">)</span>
+
+    <span class="c1"># Quick path: no effect</span>
+    <span class="k">if</span> <span class="nb">float</span><span class="p">(</span><span class="n">effect_strength</span><span class="p">)</span> <span class="o">==</span> <span class="mf">0.0</span><span class="p">:</span>
+        <span class="n">batch_effects</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">n_batches</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">is_dataframe</span> <span class="ow">and</span> <span class="n">X_df</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">feature_names</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">X_array</span><span class="p">,</span> <span class="n">columns</span><span class="o">=</span><span class="n">feature_names</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="n">X_df</span><span class="o">.</span><span class="n">index</span><span class="p">),</span> <span class="n">batch_effects</span>
+        <span class="k">return</span> <span class="n">X_array</span><span class="p">,</span> <span class="n">batch_effects</span>
+
+    <span class="n">m</span> <span class="o">=</span> <span class="n">feature_indices</span><span class="o">.</span><span class="n">size</span>
+
+    <span class="k">if</span> <span class="n">effect_granularity</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;per_feature&quot;</span><span class="p">,</span> <span class="s2">&quot;scalar&quot;</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;effect_granularity must be &#39;per_feature&#39; or &#39;scalar&#39;&quot;</span><span class="p">)</span>
+
+    <span class="c1"># Draw and apply effects according to granularity</span>
+    <span class="k">if</span> <span class="n">effect_type</span> <span class="o">==</span> <span class="s2">&quot;additive&quot;</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">effect_granularity</span> <span class="o">==</span> <span class="s2">&quot;per_feature&quot;</span><span class="p">:</span>
+            <span class="c1"># shape (n_batches, m)</span>
+            <span class="n">effects</span> <span class="o">=</span> <span class="n">rng</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span><span class="n">loc</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">scale</span><span class="o">=</span><span class="nb">float</span><span class="p">(</span><span class="n">effect_strength</span><span class="p">),</span> <span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="n">n_batches</span><span class="p">,</span> <span class="n">m</span><span class="p">))</span>
+            <span class="n">per_sample_effects</span> <span class="o">=</span> <span class="n">effects</span><span class="p">[</span><span class="n">batch_assignments</span><span class="p">]</span>  <span class="c1"># (n_samples, m)</span>
+            <span class="n">X_array</span><span class="p">[:,</span> <span class="n">feature_indices</span><span class="p">]</span> <span class="o">+=</span> <span class="n">per_sample_effects</span>
+            <span class="n">batch_effects</span> <span class="o">=</span> <span class="n">effects</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">float</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>  <span class="c1"># scalar per batch</span>
+            <span class="n">effects</span> <span class="o">=</span> <span class="n">rng</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span><span class="n">loc</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">scale</span><span class="o">=</span><span class="nb">float</span><span class="p">(</span><span class="n">effect_strength</span><span class="p">),</span> <span class="n">size</span><span class="o">=</span><span class="n">n_batches</span><span class="p">)</span>  <span class="c1"># (n_batches,)</span>
+            <span class="n">per_sample</span> <span class="o">=</span> <span class="n">effects</span><span class="p">[</span><span class="n">batch_assignments</span><span class="p">]</span>  <span class="c1"># (n_samples,)</span>
+            <span class="n">X_array</span><span class="p">[:,</span> <span class="n">feature_indices</span><span class="p">]</span> <span class="o">+=</span> <span class="n">per_sample</span><span class="p">[:,</span> <span class="kc">None</span><span class="p">]</span>  <span class="c1"># broadcast across features</span>
+            <span class="n">batch_effects</span> <span class="o">=</span> <span class="n">effects</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">float</span><span class="p">)</span>
+
+    <span class="k">elif</span> <span class="n">effect_type</span> <span class="o">==</span> <span class="s2">&quot;multiplicative&quot;</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">effect_granularity</span> <span class="o">==</span> <span class="s2">&quot;per_feature&quot;</span><span class="p">:</span>
+            <span class="n">factors</span> <span class="o">=</span> <span class="mf">1.0</span> <span class="o">+</span> <span class="n">rng</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span><span class="n">loc</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">scale</span><span class="o">=</span><span class="nb">float</span><span class="p">(</span><span class="n">effect_strength</span><span class="p">),</span> <span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="n">n_batches</span><span class="p">,</span> <span class="n">m</span><span class="p">))</span>
+            <span class="n">per_sample_factors</span> <span class="o">=</span> <span class="n">factors</span><span class="p">[</span><span class="n">batch_assignments</span><span class="p">]</span>  <span class="c1"># (n_samples, m)</span>
+            <span class="n">X_array</span><span class="p">[:,</span> <span class="n">feature_indices</span><span class="p">]</span> <span class="o">*=</span> <span class="n">per_sample_factors</span>
+            <span class="n">batch_effects</span> <span class="o">=</span> <span class="p">(</span><span class="n">factors</span> <span class="o">-</span> <span class="mf">1.0</span><span class="p">)</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">float</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>  <span class="c1"># scalar per batch</span>
+            <span class="n">factors</span> <span class="o">=</span> <span class="mf">1.0</span> <span class="o">+</span> <span class="n">rng</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span><span class="n">loc</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">scale</span><span class="o">=</span><span class="nb">float</span><span class="p">(</span><span class="n">effect_strength</span><span class="p">),</span> <span class="n">size</span><span class="o">=</span><span class="n">n_batches</span><span class="p">)</span>  <span class="c1"># (n_batches,)</span>
+            <span class="n">per_sample</span> <span class="o">=</span> <span class="n">factors</span><span class="p">[</span><span class="n">batch_assignments</span><span class="p">]</span>
+            <span class="n">X_array</span><span class="p">[:,</span> <span class="n">feature_indices</span><span class="p">]</span> <span class="o">*=</span> <span class="n">per_sample</span><span class="p">[:,</span> <span class="kc">None</span><span class="p">]</span>
+            <span class="n">batch_effects</span> <span class="o">=</span> <span class="p">(</span><span class="n">factors</span> <span class="o">-</span> <span class="mf">1.0</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">float</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Unknown effect_type: </span><span class="si">{</span><span class="n">effect_type</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="c1"># Convert back to DataFrame if needed</span>
+    <span class="k">if</span> <span class="n">is_dataframe</span> <span class="ow">and</span> <span class="n">X_df</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">feature_names</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">X_result</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span> <span class="o">|</span> <span class="n">NDArray</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">]</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">X_array</span><span class="p">,</span> <span class="n">columns</span><span class="o">=</span><span class="n">feature_names</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="n">X_df</span><span class="o">.</span><span class="n">index</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">X_result</span> <span class="o">=</span> <span class="n">X_array</span>
+
+    <span class="k">return</span> <span class="n">X_result</span><span class="p">,</span> <span class="n">batch_effects</span></div>
+
+
+
+<div class="viewcode-block" id="apply_batch_effects_from_config">
+<a class="viewcode-back" href="../../../_autosummary/biomedical_data_generator.effects.batch.html#biomedical_data_generator.effects.batch.apply_batch_effects_from_config">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">apply_batch_effects_from_config</span><span class="p">(</span>
+    <span class="n">x</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span> <span class="o">|</span> <span class="n">NDArray</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">],</span>
+    <span class="n">y</span><span class="p">:</span> <span class="n">NDArray</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">int_</span><span class="p">]</span> <span class="o">|</span> <span class="n">ArrayLike</span><span class="p">,</span>
+    <span class="n">batch_config</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
+    <span class="n">rng</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">Generator</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span> <span class="o">|</span> <span class="n">NDArray</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">],</span> <span class="n">NDArray</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">int_</span><span class="p">],</span> <span class="n">NDArray</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">]]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Apply batch effects based on a configuration object.</span>
+
+<span class="sd">    High-level orchestration function that handles batch assignment and</span>
+<span class="sd">    effect application in a single call.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        x: Feature matrix (DataFrame or array).</span>
+<span class="sd">        y: Class labels (for potential confounding). May be any array-like</span>
+<span class="sd">           accepted by np.unique (e.g. integers or strings).</span>
+<span class="sd">        batch_config: Configuration object with attributes:</span>
+<span class="sd">            - n_batches: Number of batches (&gt;= 1)</span>
+<span class="sd">            - proportions: Optional batch size proportions</span>
+<span class="sd">            - confounding_with_class: Degree of class-batch correlation in [0, 1]</span>
+<span class="sd">            - effect_type: &quot;additive&quot; or &quot;multiplicative&quot;</span>
+<span class="sd">            - effect_strength: Magnitude of batch effects</span>
+<span class="sd">            - affected_features: &quot;all&quot;, &quot;informative&quot;, or list of indices</span>
+<span class="sd">        rng: NumPy random generator (for reproducibility).</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Tuple of (X_affected, batch_labels, batch_effects):</span>
+<span class="sd">            - X_affected: Feature matrix with batch effects applied</span>
+<span class="sd">            - batch_labels: Array of batch assignments per sample</span>
+<span class="sd">            - batch_effects: Random effects drawn per batch</span>
+
+<span class="sd">    Notes:</span>
+<span class="sd">        - Automatically handles confounding when confounding_with_class &gt; 0.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">y_arr</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">y</span><span class="p">)</span>
+    <span class="n">n_samples</span> <span class="o">=</span> <span class="n">y_arr</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+    <span class="c1"># Generate batch assignments (handles confounding internally)</span>
+    <span class="n">batch_labels</span> <span class="o">=</span> <span class="n">generate_batch_assignments</span><span class="p">(</span>
+        <span class="n">n_samples</span><span class="o">=</span><span class="n">n_samples</span><span class="p">,</span>
+        <span class="n">n_batches</span><span class="o">=</span><span class="n">batch_config</span><span class="o">.</span><span class="n">n_batches</span><span class="p">,</span>
+        <span class="n">rng</span><span class="o">=</span><span class="n">rng</span><span class="p">,</span>
+        <span class="n">proportions</span><span class="o">=</span><span class="n">batch_config</span><span class="o">.</span><span class="n">proportions</span><span class="p">,</span>
+        <span class="n">class_labels</span><span class="o">=</span><span class="n">y_arr</span> <span class="k">if</span> <span class="n">batch_config</span><span class="o">.</span><span class="n">confounding_with_class</span> <span class="o">&gt;</span> <span class="mf">0.0</span> <span class="k">else</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">confounding_with_class</span><span class="o">=</span><span class="n">batch_config</span><span class="o">.</span><span class="n">confounding_with_class</span><span class="p">,</span>
+    <span class="p">)</span>
+
+    <span class="c1"># Apply batch effects to feature matrix</span>
+    <span class="n">X_affected</span><span class="p">,</span> <span class="n">batch_effects</span> <span class="o">=</span> <span class="n">apply_batch_effects</span><span class="p">(</span>
+        <span class="n">X</span><span class="o">=</span><span class="n">x</span><span class="p">,</span>
+        <span class="n">batch_assignments</span><span class="o">=</span><span class="n">batch_labels</span><span class="p">,</span>
+        <span class="n">rng</span><span class="o">=</span><span class="n">rng</span><span class="p">,</span>
+        <span class="n">effect_type</span><span class="o">=</span><span class="n">batch_config</span><span class="o">.</span><span class="n">effect_type</span><span class="p">,</span>
+        <span class="n">effect_strength</span><span class="o">=</span><span class="n">batch_config</span><span class="o">.</span><span class="n">effect_strength</span><span class="p">,</span>
+        <span class="n">affected_features</span><span class="o">=</span><span class="n">batch_config</span><span class="o">.</span><span class="n">affected_features</span><span class="p">,</span>
+    <span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">X_affected</span><span class="p">,</span> <span class="n">batch_labels</span><span class="p">,</span> <span class="n">batch_effects</span></div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, Sigrun May.</p>
+  </div>
+
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

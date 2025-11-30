@@ -1,0 +1,15 @@
+﻿biomedical\_data\_generator.utils.visualization
+===============================================
+
+.. automodule:: biomedical_data_generator.utils.visualization
+
+   
+   .. rubric:: Functions
+
+   .. autosummary::
+   
+      plot_all_correlation_clusters
+      plot_correlation_matrices_per_cluster
+      plot_correlation_matrix
+      plot_correlation_matrix_for_cluster
+   

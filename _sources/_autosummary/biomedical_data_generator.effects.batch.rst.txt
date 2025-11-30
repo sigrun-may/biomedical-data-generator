@@ -1,0 +1,16 @@
+﻿biomedical\_data\_generator.effects.batch
+=========================================
+
+.. automodule:: biomedical_data_generator.effects.batch
+
+   
+   .. rubric:: Functions
+
+   .. autosummary::
+   
+      apply_batch_effects
+      apply_batch_effects_from_config
+      confounded_batch_assignment
+      generate_batch_assignments
+      random_batch_assignment
+   

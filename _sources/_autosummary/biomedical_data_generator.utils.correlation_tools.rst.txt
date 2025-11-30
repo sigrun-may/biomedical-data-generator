@@ -1,0 +1,23 @@
+﻿biomedical\_data\_generator.utils.correlation\_tools
+====================================================
+
+.. automodule:: biomedical_data_generator.utils.correlation_tools
+
+   
+   .. rubric:: Functions
+
+   .. autosummary::
+   
+      assess_correlation_quality
+      compute_correlation_matrix
+      compute_correlation_matrix_for_cluster
+      compute_correlation_metrics
+      find_best_seed_for_correlation
+      find_seed_for_correlation
+      get_cluster_column_names
+      get_cluster_frame
+      parse_cluster_id
+      pc1_share
+      pc1_share_from_corr
+      variance_partition_pc1
+   

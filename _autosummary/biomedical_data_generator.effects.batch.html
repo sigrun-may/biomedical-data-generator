@@ -1,0 +1,506 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>biomedical_data_generator.effects.batch &mdash; Biomedical Data Generator 1.0.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="../_static/copybutton.css?v=76b2166b" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/custom.css?v=7f485136" />
+
+  
+      <script src="../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../_static/documentation_options.js?v=8d563738"></script>
+      <script src="../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../_static/clipboard.min.js?v=a7894cd8"></script>
+      <script src="../_static/copybutton.js?v=f281be69"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="biomedical_data_generator.meta.DatasetMeta" href="biomedical_data_generator.meta.DatasetMeta.html" />
+    <link rel="prev" title="biomedical_data_generator.features.correlated" href="biomedical_data_generator.features.correlated.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            Biomedical Data Generator
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Reference</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../api.html">API Reference</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../code-doc.html">Code Documentation</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../code-doc.html#configuration-models">Configuration Models</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../code-doc.html#dataset-generator">Dataset Generator</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../code-doc.html#feature-generators">Feature Generators</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="../code-doc.html#batch-effects">Batch Effects</a><ul class="current">
+<li class="toctree-l3 current"><a class="current reference internal" href="#">biomedical_data_generator.effects.batch</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#biomedical_data_generator.effects.batch.apply_batch_effects"><code class="docutils literal notranslate"><span class="pre">apply_batch_effects()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#biomedical_data_generator.effects.batch.apply_batch_effects_from_config"><code class="docutils literal notranslate"><span class="pre">apply_batch_effects_from_config()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#biomedical_data_generator.effects.batch.confounded_batch_assignment"><code class="docutils literal notranslate"><span class="pre">confounded_batch_assignment()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#biomedical_data_generator.effects.batch.generate_batch_assignments"><code class="docutils literal notranslate"><span class="pre">generate_batch_assignments()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#biomedical_data_generator.effects.batch.random_batch_assignment"><code class="docutils literal notranslate"><span class="pre">random_batch_assignment()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../code-doc.html#metadata">Metadata</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../code-doc.html#utility-modules-optional">Utility Modules (Optional)</a></li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">External Links</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference external" href="https://github.com/sigrun-may/biomedical-data-generator">GitHub Repository</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://pypi.org/project/biomedical-data-generator/">PyPI Package</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://github.com/sigrun-may/biomedical-data-generator/blob/main/LICENSE">License</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">Biomedical Data Generator</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../code-doc.html">Code Documentation</a></li>
+      <li class="breadcrumb-item active">biomedical_data_generator.effects.batch</li>
+      <li class="wy-breadcrumbs-aside">
+              <a href="https://github.com/sigrun-may/biomedical-data-generator/blob/main/docs/_autosummary/biomedical_data_generator.effects.batch.rst" class="fa fa-github"> Edit on GitHub</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="module-biomedical_data_generator.effects.batch">
+<span id="biomedical-data-generator-effects-batch"></span><h1>biomedical_data_generator.effects.batch<a class="headerlink" href="#module-biomedical_data_generator.effects.batch" title="Link to this heading"></a></h1>
+<p>Batch effect simulation for synthetic biomedical datasets.</p>
+<p>This module provides functionality to add realistic batch effects
+(site differences, instrument variations, recruitment cohorts) to
+generated datasets.</p>
+<dl>
+<dt>Public API:</dt><dd><dl class="simple">
+<dt>High-level (recommended):</dt><dd><ul class="simple">
+<li><p>apply_batch_effects_from_config: Orchestrate assignment + effects</p></li>
+<li><p>generate_batch_assignments: Unified batch assignment (random or confounded)</p></li>
+<li><p>apply_batch_effects: Apply systematic feature differences</p></li>
+</ul>
+</dd>
+<dt>Low-level (for experimentation):</dt><dd><ul class="simple">
+<li><p>random_batch_assignment: Create independent batch labels</p></li>
+<li><p>confounded_batch_assignment: Create class-correlated batch labels</p></li>
+</ul>
+</dd>
+</dl>
+</dd>
+<dt>Typical usage (high-level):</dt><dd><div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">batch</span><span class="w"> </span><span class="kn">import</span> <span class="n">apply_batch_effects_from_config</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">X_batch</span><span class="p">,</span> <span class="n">batches</span><span class="p">,</span> <span class="n">batch_effects</span> <span class="o">=</span> <span class="n">apply_batch_effects_from_config</span><span class="p">(</span>
+<span class="gp">... </span>    <span class="n">x</span><span class="o">=</span><span class="n">X</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="n">y</span><span class="p">,</span> <span class="n">batch_config</span><span class="o">=</span><span class="n">cfg</span><span class="o">.</span><span class="n">batch</span><span class="p">,</span>
+<span class="gp">... </span>    <span class="n">informative_indices</span><span class="o">=</span><span class="n">inf_idx</span><span class="p">,</span> <span class="n">rng</span><span class="o">=</span><span class="n">rng</span>
+<span class="gp">... </span><span class="p">)</span>
+</pre></div>
+</div>
+</dd>
+<dt>Educational usage (low-level):</dt><dd><div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="c1"># Experiment with random vs. confounded assignments</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">rng</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">default_rng</span><span class="p">(</span><span class="mi">42</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">random_batches</span> <span class="o">=</span> <span class="n">random_batch_assignment</span><span class="p">(</span><span class="mi">100</span><span class="p">,</span> <span class="n">n_batches</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">rng</span><span class="o">=</span><span class="n">rng</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">confounded_batches</span> <span class="o">=</span> <span class="n">confounded_batch_assignment</span><span class="p">(</span>
+<span class="gp">... </span>    <span class="n">y</span><span class="p">,</span> <span class="n">n_batches</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">confounding_with_class</span><span class="o">=</span><span class="mf">0.8</span><span class="p">,</span> <span class="n">rng</span><span class="o">=</span><span class="n">rng</span>
+<span class="gp">... </span><span class="p">)</span>
+</pre></div>
+</div>
+</dd>
+<dt>Reproducibility:</dt><dd><p>All functions accept np.random.Generator objects to ensure proper
+state propagation. The top-level code (generator.py) creates ONE
+generator and passes it through the call chain. This ensures:
+- No duplicate random sequences
+- Perfect reproducibility from config.random_state
+- Proper state evolution across all operations</p>
+</dd>
+</dl>
+<p class="rubric">Functions</p>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#biomedical_data_generator.effects.batch.apply_batch_effects" title="biomedical_data_generator.effects.batch.apply_batch_effects"><code class="xref py py-obj docutils literal notranslate"><span class="pre">apply_batch_effects</span></code></a>(X, batch_assignments, rng)</p></td>
+<td><p>Apply batch effects to a feature matrix.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#biomedical_data_generator.effects.batch.apply_batch_effects_from_config" title="biomedical_data_generator.effects.batch.apply_batch_effects_from_config"><code class="xref py py-obj docutils literal notranslate"><span class="pre">apply_batch_effects_from_config</span></code></a>(x, y, ...)</p></td>
+<td><p>Apply batch effects based on a configuration object.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#biomedical_data_generator.effects.batch.confounded_batch_assignment" title="biomedical_data_generator.effects.batch.confounded_batch_assignment"><code class="xref py py-obj docutils literal notranslate"><span class="pre">confounded_batch_assignment</span></code></a>(class_labels, ...)</p></td>
+<td><p>Create batch assignments confounded with class labels.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#biomedical_data_generator.effects.batch.generate_batch_assignments" title="biomedical_data_generator.effects.batch.generate_batch_assignments"><code class="xref py py-obj docutils literal notranslate"><span class="pre">generate_batch_assignments</span></code></a>(n_samples, ...[, ...])</p></td>
+<td><p>Generate batch assignments for samples.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#biomedical_data_generator.effects.batch.random_batch_assignment" title="biomedical_data_generator.effects.batch.random_batch_assignment"><code class="xref py py-obj docutils literal notranslate"><span class="pre">random_batch_assignment</span></code></a>(n_samples, ...[, ...])</p></td>
+<td><p>Create random batch assignments without confounding.</p></td>
+</tr>
+</tbody>
+</table>
+<dl class="py function">
+<dt class="sig sig-object py" id="biomedical_data_generator.effects.batch.apply_batch_effects">
+<span class="sig-prename descclassname"><span class="pre">biomedical_data_generator.effects.batch.</span></span><span class="sig-name descname"><span class="pre">apply_batch_effects</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">X</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">batch_assignments</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rng</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">effect_type</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'additive'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">effect_strength</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">affected_features</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'all'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">effect_granularity</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'per_feature'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/biomedical_data_generator/effects/batch.html#apply_batch_effects"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#biomedical_data_generator.effects.batch.apply_batch_effects" title="Link to this definition"></a></dt>
+<dd><p>Apply batch effects to a feature matrix.</p>
+<p>Apply systematic batch effects to specified features in the dataset,
+simulating site differences or instrument variations.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>X</strong> (<em>DataFrame</em><em> | </em><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.3)"><em>ndarray</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.14)"><em>tuple</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.14)"><em>Any</em></a><em>, </em><em>...</em><em>]</em><em>, </em><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.dtype.html#numpy.dtype" title="(in NumPy v2.3)"><em>dtype</em></a><em>[</em><em>float64</em><em>]</em><em>]</em>) – Feature matrix (DataFrame or array).</p></li>
+<li><p><strong>batch_assignments</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.3)"><em>ndarray</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.14)"><em>tuple</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.14)"><em>Any</em></a><em>, </em><em>...</em><em>]</em><em>, </em><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.dtype.html#numpy.dtype" title="(in NumPy v2.3)"><em>dtype</em></a><em>[</em><em>int64</em><em>]</em><em>]</em>) – Array of batch assignments per sample.</p></li>
+<li><p><strong>rng</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/random/generator.html#numpy.random.Generator" title="(in NumPy v2.3)"><em>Generator</em></a>) – NumPy random number generator used to sample batch effects.</p></li>
+<li><p><strong>effect_type</strong> (<a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Literal" title="(in Python v3.14)"><em>Literal</em></a><em>[</em><em>'additive'</em><em>, </em><em>'multiplicative'</em><em>]</em>) – <p>Type of batch effect to apply:
+- <code class="docutils literal notranslate"><span class="pre">&quot;additive&quot;</span></code>: Adds a batch-specific shift to affected features.
+- <code class="docutils literal notranslate"><span class="pre">&quot;multiplicative&quot;</span></code>: Multiplies affected features by a batch-specific</p>
+<blockquote>
+<div><p>scaling factor around 1.0.</p>
+</div></blockquote>
+</p></li>
+<li><p><strong>effect_strength</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>) – Standard deviation of the batch-effect distribution. Larger values
+generate stronger perturbations. Must be non-negative.</p></li>
+<li><p><strong>affected_features</strong> (<a class="reference external" href="https://docs.python.org/3/library/collections.abc.html#collections.abc.Sequence" title="(in Python v3.14)"><em>Sequence</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a><em>] </em><em>| </em><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Literal" title="(in Python v3.14)"><em>Literal</em></a><em>[</em><em>'all'</em><em>]</em>) – Defines which features are affected:
+- <code class="docutils literal notranslate"><span class="pre">&quot;all&quot;</span></code>: Apply batch effects to all features.
+- Sequence[int]: Apply effects only to the listed feature indices.</p></li>
+<li><p><strong>effect_granularity</strong> (<a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Literal" title="(in Python v3.14)"><em>Literal</em></a><em>[</em><em>'per_feature'</em><em>, </em><em>'scalar'</em><em>]</em>) – <p>Controls whether effects vary across features:
+- <code class="docutils literal notranslate"><span class="pre">&quot;per_feature&quot;</span></code> (default): Draws effects with shape</p>
+<blockquote>
+<div><p><code class="docutils literal notranslate"><span class="pre">(n_batches,</span> <span class="pre">n_affected_features)</span></code>, so features within the same batch
+differ in their batch-specific effect.</p>
+</div></blockquote>
+<ul>
+<li><p><code class="docutils literal notranslate"><span class="pre">&quot;scalar&quot;</span></code>: Draws a single scalar per batch and applies it uniformly
+across all affected features. This corresponds to a global per-batch
+offset (additive) or global scaling factor (multiplicative).</p></li>
+</ul>
+</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><p>A tuple <code class="docutils literal notranslate"><span class="pre">(X_affected,</span> <span class="pre">batch_effects)</span></code> where:</p>
+<ul>
+<li><p><strong>X_affected</strong>: The feature matrix with batch effects applied.
+The output type matches the input type (DataFrame or ndarray).</p></li>
+<li><p><strong>batch_effects</strong>: An array of length <code class="docutils literal notranslate"><span class="pre">n_batches</span></code> summarizing
+the effect applied in each batch:</p>
+<blockquote>
+<div><ul class="simple">
+<li><p>For <code class="docutils literal notranslate"><span class="pre">effect_granularity=&quot;scalar&quot;</span></code>, these are the exact additive
+shifts (additive mode) or multiplicative factors minus 1.0
+(multiplicative mode) drawn for each batch.</p></li>
+<li><p>For <code class="docutils literal notranslate"><span class="pre">&quot;per_feature&quot;</span></code>, these values are the mean additive effect
+or mean multiplicative deviation from 1.0 across all affected
+features in each batch. This provides a compact summary even though
+the full per-feature effects vary within batches.</p></li>
+</ul>
+</div></blockquote>
+</li>
+</ul>
+</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Tuple[pd.DataFrame | np.ndarray, np.ndarray]</p>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><ul class="simple">
+<li><p><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#ValueError" title="(in Python v3.14)"><strong>ValueError</strong></a> – If <code class="docutils literal notranslate"><span class="pre">batch_assignments</span></code> has the wrong shape, contains negative values,
+    or <code class="docutils literal notranslate"><span class="pre">effect_granularity</span></code> is not one of the allowed strings.</p></li>
+<li><p><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#IndexError" title="(in Python v3.14)"><strong>IndexError</strong></a> – If <code class="docutils literal notranslate"><span class="pre">affected_features</span></code> contains indices outside the valid feature range.</p></li>
+</ul>
+</dd>
+</dl>
+<p class="rubric">Notes</p>
+<ul class="simple">
+<li><p>The generator state <code class="docutils literal notranslate"><span class="pre">rng</span></code> is advanced during sampling.</p></li>
+<li><p>Additive effects are sampled from <code class="docutils literal notranslate"><span class="pre">Normal(0,</span> <span class="pre">effect_strength)</span></code>.</p></li>
+<li><p>Multiplicative effects are sampled from <code class="docutils literal notranslate"><span class="pre">1</span> <span class="pre">+</span> <span class="pre">Normal(0,</span> <span class="pre">effect_strength)</span></code>.</p></li>
+<li><p>For DataFrame input, column names and index are preserved in the output.</p></li>
+</ul>
+<p class="rubric">Examples</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">rng</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">default_rng</span><span class="p">(</span><span class="mi">42</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">x</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="mi">100</span><span class="p">,</span> <span class="mi">5</span><span class="p">))</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">batches</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="mi">100</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">X_batch</span><span class="p">,</span> <span class="n">batch_effects</span> <span class="o">=</span> <span class="n">apply_batch_effects</span><span class="p">(</span>
+<span class="gp">... </span>    <span class="n">x</span><span class="p">,</span> <span class="n">batches</span><span class="p">,</span> <span class="n">rng</span><span class="p">,</span>
+<span class="gp">... </span>    <span class="n">effect_type</span><span class="o">=</span><span class="s2">&quot;additive&quot;</span><span class="p">,</span>
+<span class="gp">... </span>    <span class="n">effect_strength</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span>
+<span class="gp">... </span>    <span class="n">affected_features</span><span class="o">=</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">],</span>
+<span class="gp">... </span>    <span class="n">effect_granularity</span><span class="o">=</span><span class="s2">&quot;scalar&quot;</span><span class="p">,</span>
+<span class="gp">... </span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">X_batch</span><span class="o">.</span><span class="n">shape</span>
+<span class="go">(100, 5)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">batch_effects</span><span class="o">.</span><span class="n">shape</span>
+<span class="go">(3,)</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="biomedical_data_generator.effects.batch.apply_batch_effects_from_config">
+<span class="sig-prename descclassname"><span class="pre">biomedical_data_generator.effects.batch.</span></span><span class="sig-name descname"><span class="pre">apply_batch_effects_from_config</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">batch_config</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rng</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/biomedical_data_generator/effects/batch.html#apply_batch_effects_from_config"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#biomedical_data_generator.effects.batch.apply_batch_effects_from_config" title="Link to this definition"></a></dt>
+<dd><p>Apply batch effects based on a configuration object.</p>
+<p>High-level orchestration function that handles batch assignment and
+effect application in a single call.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>x</strong> (<em>pd.DataFrame</em><em> | </em><em>NDArray</em><em>[</em><em>np.float64</em><em>]</em>) – Feature matrix (DataFrame or array).</p></li>
+<li><p><strong>y</strong> (<em>NDArray</em><em>[</em><em>np.int_</em><em>] </em><em>| </em><em>ArrayLike</em>) – Class labels (for potential confounding). May be any array-like
+accepted by np.unique (e.g. integers or strings).</p></li>
+<li><p><strong>batch_config</strong> (<em>Any</em>) – Configuration object with attributes:
+- n_batches: Number of batches (&gt;= 1)
+- proportions: Optional batch size proportions
+- confounding_with_class: Degree of class-batch correlation in [0, 1]
+- effect_type: “additive” or “multiplicative”
+- effect_strength: Magnitude of batch effects
+- affected_features: “all”, “informative”, or list of indices</p></li>
+<li><p><strong>rng</strong> (<em>np.random.Generator</em>) – NumPy random generator (for reproducibility).</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p>X_affected: Feature matrix with batch effects applied</p></li>
+<li><p>batch_labels: Array of batch assignments per sample</p></li>
+<li><p>batch_effects: Random effects drawn per batch</p></li>
+</ul>
+</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Tuple of (X_affected, batch_labels, batch_effects)</p>
+</dd>
+</dl>
+<p class="rubric">Notes</p>
+<ul class="simple">
+<li><p>Automatically handles confounding when confounding_with_class &gt; 0.</p></li>
+</ul>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="biomedical_data_generator.effects.batch.confounded_batch_assignment">
+<span class="sig-prename descclassname"><span class="pre">biomedical_data_generator.effects.batch.</span></span><span class="sig-name descname"><span class="pre">confounded_batch_assignment</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">class_labels</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_batches</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">confounding_with_class</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rng</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">proportions</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/biomedical_data_generator/effects/batch.html#confounded_batch_assignment"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#biomedical_data_generator.effects.batch.confounded_batch_assignment" title="Link to this definition"></a></dt>
+<dd><p>Create batch assignments confounded with class labels.</p>
+<p>Direct function for creating batch labels that are correlated with
+class membership, simulating recruitment bias or site selection effects.</p>
+<p>For most use cases, prefer generate_batch_assignments() which provides
+a unified interface for both random and confounded assignments.</p>
+<dl class="simple">
+<dt>Strategy:</dt><dd><ul class="simple">
+<li><p>Use np.unique to derive K distinct classes (works for int and str).</p></li>
+<li><p>For each class index k (0..K-1), preferentially assign to a
+“preferred” batch (k % n_batches).</p></li>
+<li><p>Higher confounding_with_class = stronger preference for the
+preferred batch.</p></li>
+<li><p>Uses redistribution: probability mass is moved from other batches
+to the preferred batch.</p></li>
+<li><p>At confounding_with_class=1.0: strong preference (all samples of a
+class tend to fall into its preferred batch, subject to randomness).</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>class_labels</strong> (<em>ArrayLike</em>) – Class membership for each sample. May be integer or
+string labels; only relative grouping matters.</p></li>
+<li><p><strong>n_batches</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a>) – Number of distinct batches (must be &gt;= 2).</p></li>
+<li><p><strong>confounding_with_class</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>) – Degree of correlation (0.0 = random assignment,
+1.0 = strong preference), must be in [0, 1].</p></li>
+<li><p><strong>rng</strong> (<em>np.random.Generator</em>) – NumPy random generator (for reproducibility).</p></li>
+<li><p><strong>proportions</strong> (<em>Sequence</em><em>[</em><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a><em>] </em><em>| </em><em>None</em>) – Relative batch sizes (None = equal split).</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Array of batch assignments (integers 0 to n_batches-1).</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>NDArray[np.int_]</p>
+</dd>
+</dl>
+<p class="rubric">Examples</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">rng</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">default_rng</span><span class="p">(</span><span class="mi">42</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">y</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="s2">&quot;control&quot;</span><span class="p">]</span> <span class="o">*</span> <span class="mi">50</span> <span class="o">+</span> <span class="p">[</span><span class="s2">&quot;case&quot;</span><span class="p">]</span> <span class="o">*</span> <span class="mi">50</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">batches</span> <span class="o">=</span> <span class="n">confounded_batch_assignment</span><span class="p">(</span>
+<span class="gp">... </span>    <span class="n">y</span><span class="p">,</span> <span class="n">n_batches</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">confounding_with_class</span><span class="o">=</span><span class="mf">0.8</span><span class="p">,</span> <span class="n">rng</span><span class="o">=</span><span class="n">rng</span>
+<span class="gp">... </span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># Most &quot;control&quot; samples will be in batch 0,</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># most &quot;case&quot; samples will be in batch 1.</span>
+</pre></div>
+</div>
+<p class="rubric">Notes</p>
+<ul class="simple">
+<li><p>confounding_with_class=0.0 would reduce to random assignment;
+use generate_batch_assignments for that branch.</p></li>
+<li><p>For 2 equal-sized batches, confounding_with_class=0.5 yields
+approx. a 75/25 preference towards the class’s preferred batch.</p></li>
+</ul>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="biomedical_data_generator.effects.batch.generate_batch_assignments">
+<span class="sig-prename descclassname"><span class="pre">biomedical_data_generator.effects.batch.</span></span><span class="sig-name descname"><span class="pre">generate_batch_assignments</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">n_samples</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_batches</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rng</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">proportions</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">class_labels</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">confounding_with_class</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/biomedical_data_generator/effects/batch.html#generate_batch_assignments"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#biomedical_data_generator.effects.batch.generate_batch_assignments" title="Link to this definition"></a></dt>
+<dd><p>Generate batch assignments for samples.</p>
+<p>Unified entry point for creating batch labels. Automatically handles
+both random and confounded assignments based on the confounding_with_class
+parameter.</p>
+<p>This is the recommended function for batch assignment. For direct access
+to the underlying implementations, see:</p>
+<blockquote>
+<div><ul class="simple">
+<li><p>random_batch_assignment() for independent assignments</p></li>
+<li><p>confounded_batch_assignment() for class-correlated assignments</p></li>
+</ul>
+</div></blockquote>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>n_samples</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a>) – Number of samples.</p></li>
+<li><p><strong>n_batches</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a>) – Number of batches (must be &gt;= 1).</p></li>
+<li><p><strong>rng</strong> (<em>np.random.Generator</em>) – NumPy random generator (for reproducibility).</p></li>
+<li><p><strong>proportions</strong> (<em>Sequence</em><em>[</em><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a><em>] </em><em>| </em><em>None</em>) – Relative batch sizes (None = equal split).</p></li>
+<li><p><strong>class_labels</strong> (<em>ArrayLike</em><em> | </em><em>None</em>) – Optional class labels for confounding. May be any
+array-like of shape (n_samples,) with labels that np.unique can
+handle (e.g. integers, strings). Only used if
+confounding_with_class &gt; 0.</p></li>
+<li><p><strong>confounding_with_class</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>) – Correlation with class
+(0.0 = random, 1.0 = strong preference), must be in [0, 1].</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Array of batch assignments (integers 0 to n_batches-1).</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>NDArray[np.int_]</p>
+</dd>
+</dl>
+<p class="rubric">Examples</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">rng</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">default_rng</span><span class="p">(</span><span class="mi">42</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># Random assignment</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">batches</span> <span class="o">=</span> <span class="n">generate_batch_assignments</span><span class="p">(</span><span class="mi">100</span><span class="p">,</span> <span class="n">n_batches</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">rng</span><span class="o">=</span><span class="n">rng</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">np</span><span class="o">.</span><span class="n">bincount</span><span class="p">(</span><span class="n">batches</span><span class="p">)</span>
+<span class="go">array([33, 33, 34])</span>
+<span class="gp">&gt;&gt;&gt;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># Confounded with class (simulate recruitment bias)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">y</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">0</span><span class="p">]</span><span class="o">*</span><span class="mi">50</span> <span class="o">+</span> <span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">*</span><span class="mi">50</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">batches</span> <span class="o">=</span> <span class="n">generate_batch_assignments</span><span class="p">(</span>
+<span class="gp">... </span>    <span class="n">n_samples</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span>
+<span class="gp">... </span>    <span class="n">n_batches</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>
+<span class="gp">... </span>    <span class="n">rng</span><span class="o">=</span><span class="n">rng</span><span class="p">,</span>
+<span class="gp">... </span>    <span class="n">class_labels</span><span class="o">=</span><span class="n">y</span><span class="p">,</span>
+<span class="gp">... </span>    <span class="n">confounding_with_class</span><span class="o">=</span><span class="mf">0.8</span><span class="p">,</span>
+<span class="gp">... </span><span class="p">)</span>
+</pre></div>
+</div>
+<p class="rubric">Notes</p>
+<ul class="simple">
+<li><p>confounding_with_class=0.0: Random assignment (no bias)</p></li>
+<li><p>confounding_with_class=1.0: Strong preference (each class → preferred batch)</p></li>
+<li><p>For 2 equal-sized batches, confounding_with_class=0.5 yields
+approx. a 75/25 class split towards the preferred batch.</p></li>
+</ul>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="biomedical_data_generator.effects.batch.random_batch_assignment">
+<span class="sig-prename descclassname"><span class="pre">biomedical_data_generator.effects.batch.</span></span><span class="sig-name descname"><span class="pre">random_batch_assignment</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">n_samples</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_batches</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rng</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">proportions</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/biomedical_data_generator/effects/batch.html#random_batch_assignment"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#biomedical_data_generator.effects.batch.random_batch_assignment" title="Link to this definition"></a></dt>
+<dd><p>Create random batch assignments without confounding.</p>
+<p>Direct function for creating batch labels with specified proportions
+but no correlation with class labels.</p>
+<p>For most use cases, prefer generate_batch_assignments() which provides
+a unified interface for both random and confounded assignments.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>n_samples</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a>) – Number of samples to assign.</p></li>
+<li><p><strong>n_batches</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a>) – Number of distinct batches (must be &gt;= 1).</p></li>
+<li><p><strong>rng</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/random/generator.html#numpy.random.Generator" title="(in NumPy v2.3)"><em>Generator</em></a>) – NumPy random generator (for reproducibility).</p></li>
+<li><p><strong>proportions</strong> (<a class="reference external" href="https://docs.python.org/3/library/collections.abc.html#collections.abc.Sequence" title="(in Python v3.14)"><em>Sequence</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a><em>] </em><em>| </em><em>None</em>) – Relative batch sizes (None = equal split).</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Array of batch assignments (integers 0 to n_batches-1).</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.3)"><em>ndarray</em></a>[<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.14)">tuple</a>[<a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.14)"><em>Any</em></a>, …], <a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.dtype.html#numpy.dtype" title="(in NumPy v2.3)"><em>dtype</em></a>[<em>int64</em>]]</p>
+</dd>
+</dl>
+<p class="rubric">Examples</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">rng</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">default_rng</span><span class="p">(</span><span class="mi">42</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">batches</span> <span class="o">=</span> <span class="n">random_batch_assignment</span><span class="p">(</span><span class="mi">100</span><span class="p">,</span> <span class="n">n_batches</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">rng</span><span class="o">=</span><span class="n">rng</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">np</span><span class="o">.</span><span class="n">bincount</span><span class="p">(</span><span class="n">batches</span><span class="p">)</span>
+<span class="go">array([33, 33, 34])</span>
+<span class="gp">&gt;&gt;&gt;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># Unequal proportions</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">batches</span> <span class="o">=</span> <span class="n">random_batch_assignment</span><span class="p">(</span>
+<span class="gp">... </span>    <span class="mi">100</span><span class="p">,</span> <span class="n">n_batches</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">rng</span><span class="o">=</span><span class="n">rng</span><span class="p">,</span> <span class="n">proportions</span><span class="o">=</span><span class="p">[</span><span class="mf">0.5</span><span class="p">,</span> <span class="mf">0.3</span><span class="p">,</span> <span class="mf">0.2</span><span class="p">]</span>
+<span class="gp">... </span><span class="p">)</span>
+</pre></div>
+</div>
+<p class="rubric">Notes</p>
+<ul class="simple">
+<li><p>Generator state advances during shuffling.</p></li>
+<li><p>Multiple calls with the same generator produce different results.</p></li>
+</ul>
+</dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="biomedical_data_generator.features.correlated.html" class="btn btn-neutral float-left" title="biomedical_data_generator.features.correlated" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="biomedical_data_generator.meta.DatasetMeta.html" class="btn btn-neutral float-right" title="biomedical_data_generator.meta.DatasetMeta" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, Sigrun May.</p>
+  </div>
+
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

@@ -1,0 +1,405 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>biomedical_data_generator.features.correlated &mdash; Biomedical Data Generator 1.0.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="../_static/copybutton.css?v=76b2166b" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/custom.css?v=7f485136" />
+
+  
+      <script src="../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../_static/documentation_options.js?v=8d563738"></script>
+      <script src="../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../_static/clipboard.min.js?v=a7894cd8"></script>
+      <script src="../_static/copybutton.js?v=f281be69"></script>
+      <script async="async" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="biomedical_data_generator.effects.batch" href="biomedical_data_generator.effects.batch.html" />
+    <link rel="prev" title="biomedical_data_generator.features.informative" href="biomedical_data_generator.features.informative.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            Biomedical Data Generator
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Reference</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../api.html">API Reference</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../code-doc.html">Code Documentation</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../code-doc.html#configuration-models">Configuration Models</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../code-doc.html#dataset-generator">Dataset Generator</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="../code-doc.html#feature-generators">Feature Generators</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="../code-doc.html#informative-features">Informative features</a></li>
+<li class="toctree-l3 current"><a class="reference internal" href="../code-doc.html#correlated-feature-clusters">Correlated feature clusters</a><ul class="current">
+<li class="toctree-l4 current"><a class="current reference internal" href="#">biomedical_data_generator.features.correlated</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../code-doc.html#independent-noise-features">Independent noise features</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../code-doc.html#batch-effects">Batch Effects</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../code-doc.html#metadata">Metadata</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../code-doc.html#utility-modules-optional">Utility Modules (Optional)</a></li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">External Links</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference external" href="https://github.com/sigrun-may/biomedical-data-generator">GitHub Repository</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://pypi.org/project/biomedical-data-generator/">PyPI Package</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://github.com/sigrun-may/biomedical-data-generator/blob/main/LICENSE">License</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">Biomedical Data Generator</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../code-doc.html">Code Documentation</a></li>
+      <li class="breadcrumb-item active">biomedical_data_generator.features.correlated</li>
+      <li class="wy-breadcrumbs-aside">
+              <a href="https://github.com/sigrun-may/biomedical-data-generator/blob/main/docs/_autosummary/biomedical_data_generator.features.correlated.rst" class="fa fa-github"> Edit on GitHub</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="module-biomedical_data_generator.features.correlated">
+<span id="biomedical-data-generator-features-correlated"></span><h1>biomedical_data_generator.features.correlated<a class="headerlink" href="#module-biomedical_data_generator.features.correlated" title="Link to this heading"></a></h1>
+<p>Generation of correlated feature clusters simulating pathway-like modules.</p>
+<section id="overview">
+<h2>Overview<a class="headerlink" href="#overview" title="Link to this heading"></a></h2>
+<p>This module generates <em>correlated Gaussian feature clusters</em> that can be
+interpreted as simplified “pathway-like” modules (e.g., sets of co-expressed
+genes or co-regulated proteins).</p>
+<p>Each cluster is defined by:</p>
+<ul class="simple">
+<li><p>A correlation structure (equicorrelated or Toeplitz/AR(1)).</p></li>
+<li><p>A correlation strength parameter <code class="docutils literal notranslate"><span class="pre">correlation</span></code>.</p></li>
+<li><p>Optionally class-specific correlation strengths to mimic activation in
+specific biological conditions (e.g., tumors vs controls).</p></li>
+<li><p>An anchor feature with class-specific mean shifts representing diagnostic
+strength (e.g., biomarker concentration changes).</p></li>
+</ul>
+<p>The resulting clusters are concatenated horizontally.</p>
+</section>
+<section id="statistical-model">
+<h2>Statistical model<a class="headerlink" href="#statistical-model" title="Link to this heading"></a></h2>
+<p>At the core, each cluster implements a multivariate Gaussian model:</p>
+<ul>
+<li><p>For a given cluster with n_features (p) and a correlation matrix
+<span class="math notranslate nohighlight">\(\Sigma\)</span>, we generate samples according to</p>
+<div class="math notranslate nohighlight">
+\[x \sim \mathcal{N}_p(\mu_c, \Sigma_c),\]</div>
+<p>where <span class="math notranslate nohighlight">\(\mu_c\)</span> and <span class="math notranslate nohighlight">\(\Sigma_c\)</span> depend on class <span class="math notranslate nohighlight">\(c\)</span>.</p>
+</li>
+<li><p>Two correlation structures are supported:</p>
+<ul>
+<li><p><strong>Equicorrelated</strong>:
+All off-diagonal entries are equal to the correlation parameter:</p>
+<div class="math notranslate nohighlight">
+\[\begin{split}\Sigma_{ij} =
+\begin{cases}
+    1        &amp; i = j, \\
+    \rho    &amp; i \neq j.
+\end{cases}\end{split}\]</div>
+<p>where <span class="math notranslate nohighlight">\(\rho\)</span> is the correlation parameter.</p>
+</li>
+<li><p><strong>Toeplitz / AR(1)</strong>:
+Correlation decays with distance:</p>
+<div class="math notranslate nohighlight">
+\[\Sigma_{ij} = \rho^{\lvert i - j \rvert}.\]</div>
+<p>where <span class="math notranslate nohighlight">\(\rho\)</span> is the correlation parameter.</p>
+</li>
+</ul>
+</li>
+</ul>
+</section>
+<section id="anchor-effects-mean-shifts">
+<h2>Anchor effects (mean shifts)<a class="headerlink" href="#anchor-effects-mean-shifts" title="Link to this heading"></a></h2>
+<p>When <code class="docutils literal notranslate"><span class="pre">anchor_role=&quot;informative&quot;</span></code> and <code class="docutils literal notranslate"><span class="pre">anchor_effect_size</span></code> is specified,
+the anchor feature receives a class-specific mean shift:</p>
+<div class="math notranslate nohighlight">
+\[\mu_{anchor, c} = \text{anchor_effect_size} \cdot \mathbb{1}_{c = anchor\_class}.\]</div>
+<p>Proxy features inherit this shift through correlation but with attenuated
+magnitude proportional to their correlation with the anchor.</p>
+<dl class="simple">
+<dt><strong>Configuration semantics</strong> (enforced by CorrClusterConfig validation):</dt><dd><ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">anchor_role=&quot;noise&quot;</span></code> → no mean shift (effect_size ignored if present)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">anchor_role=&quot;informative&quot;</span></code> → MUST have anchor_effect_size &gt; 0</p></li>
+</ul>
+</dd>
+</dl>
+</section>
+<section id="limitations-and-biological-realism">
+<h2>Limitations and biological realism<a class="headerlink" href="#limitations-and-biological-realism" title="Link to this heading"></a></h2>
+<p>See module docstring for detailed discussion of simplifications.
+Key points:</p>
+<ol class="arabic simple">
+<li><p>Gaussian marginals (real data is often skewed, zero-inflated)</p></li>
+<li><p>Linear dependence only (no thresholds, saturation)</p></li>
+<li><p>Independent clusters (no pathway crosstalk)</p></li>
+<li><p>Blockwise effects (partial activation not modeled)</p></li>
+<li><p>No sample-level heterogeneity (no subtypes)</p></li>
+</ol>
+</section>
+<section id="intended-use">
+<h2>Intended use<a class="headerlink" href="#intended-use" title="Link to this heading"></a></h2>
+<p>Realistic enough for teaching and benchmarking, but not a fully realistic
+generative model for complex omics data.</p>
+</section>
+<p class="rubric">Functions</p>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#biomedical_data_generator.features.correlated.apply_anchor_effects" title="biomedical_data_generator.features.correlated.apply_anchor_effects"><code class="xref py py-obj docutils literal notranslate"><span class="pre">apply_anchor_effects</span></code></a>(x, y, cluster_configs)</p></td>
+<td><p>Apply class-specific mean shifts to anchor features.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#biomedical_data_generator.features.correlated.build_correlation_matrix" title="biomedical_data_generator.features.correlated.build_correlation_matrix"><code class="xref py py-obj docutils literal notranslate"><span class="pre">build_correlation_matrix</span></code></a>(n_features, correlation)</p></td>
+<td><p>Build a correlation matrix with specified structure.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#biomedical_data_generator.features.correlated.sample_all_correlated_clusters" title="biomedical_data_generator.features.correlated.sample_all_correlated_clusters"><code class="xref py py-obj docutils literal notranslate"><span class="pre">sample_all_correlated_clusters</span></code></a>(cfg[, y, rng])</p></td>
+<td><p>Generate and assemble all correlated feature clusters for a dataset.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#biomedical_data_generator.features.correlated.sample_correlated_data" title="biomedical_data_generator.features.correlated.sample_correlated_data"><code class="xref py py-obj docutils literal notranslate"><span class="pre">sample_correlated_data</span></code></a>(n_samples, ...[, ...])</p></td>
+<td><p>Sample correlated Gaussian data with zero mean and unit variance.</p></td>
+</tr>
+</tbody>
+</table>
+<dl class="py function">
+<dt class="sig sig-object py" id="biomedical_data_generator.features.correlated.apply_anchor_effects">
+<span class="sig-prename descclassname"><span class="pre">biomedical_data_generator.features.correlated.</span></span><span class="sig-name descname"><span class="pre">apply_anchor_effects</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cluster_configs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/biomedical_data_generator/features/correlated.html#apply_anchor_effects"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#biomedical_data_generator.features.correlated.apply_anchor_effects" title="Link to this definition"></a></dt>
+<dd><p>Apply class-specific mean shifts to anchor features.</p>
+<p>This function modifies the data matrix in-place by adding mean shifts to
+anchor features based on their configured effect sizes and target classes.</p>
+<p>The anchor feature (typically the first feature in each cluster) receives
+the full effect size, while correlated proxy features receive attenuated
+shifts proportional to their empirical correlation with the anchor.</p>
+<dl class="simple">
+<dt><strong>Effect application logic</strong>:</dt><dd><ul class="simple">
+<li><p>anchor_role=”noise” → no shift (effect_size ignored)</p></li>
+<li><p>anchor_role=”informative” + anchor_effect_size &gt; 0 → apply shift</p></li>
+<li><p>Due to CorrClusterConfig validation, informative anchors always have
+anchor_effect_size != None</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>x</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.3)"><em>ndarray</em></a>) – Feature matrix of shape (n_samples, n_features). Modified in-place.</p></li>
+<li><p><strong>y</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.3)"><em>ndarray</em></a>) – Class labels of shape (n_samples,).</p></li>
+<li><p><strong>cluster_configs</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.14)"><em>list</em></a><em>[</em><a class="reference internal" href="biomedical_data_generator.config.CorrClusterConfig.html#biomedical_data_generator.config.CorrClusterConfig" title="biomedical_data_generator.config.CorrClusterConfig"><em>CorrClusterConfig</em></a><em>]</em>) – List of cluster configurations with anchor metadata.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The modified feature matrix (same object as input x).</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.3)"><em>ndarray</em></a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="biomedical_data_generator.features.correlated.build_correlation_matrix">
+<span class="sig-prename descclassname"><span class="pre">biomedical_data_generator.features.correlated.</span></span><span class="sig-name descname"><span class="pre">build_correlation_matrix</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">n_features</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">correlation</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">structure</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'equicorrelated'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/biomedical_data_generator/features/correlated.html#build_correlation_matrix"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#biomedical_data_generator.features.correlated.build_correlation_matrix" title="Link to this definition"></a></dt>
+<dd><p>Build a correlation matrix with specified structure.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>n_features</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a>) – Number of features (matrix dimension).</p></li>
+<li><p><strong>correlation</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>) – Correlation parameter.</p></li>
+<li><p><strong>structure</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) – Either ‘equicorrelated’ or ‘toeplitz’.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Correlation matrix of shape (n_features, n_features).</p>
+</dd>
+<dt class="field-odd">Raises<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#ValueError" title="(in Python v3.14)"><strong>ValueError</strong></a> – If structure is unknown or correlation is out of bounds.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.3)"><em>ndarray</em></a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="biomedical_data_generator.features.correlated.sample_all_correlated_clusters">
+<span class="sig-prename descclassname"><span class="pre">biomedical_data_generator.features.correlated.</span></span><span class="sig-name descname"><span class="pre">sample_all_correlated_clusters</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cfg</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rng</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/biomedical_data_generator/features/correlated.html#sample_all_correlated_clusters"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#biomedical_data_generator.features.correlated.sample_all_correlated_clusters" title="Link to this definition"></a></dt>
+<dd><p>Generate and assemble all correlated feature clusters for a dataset.</p>
+<p>This function connects the abstract configuration with the actual data
+matrix and cluster-level metadata. It supports both global and class-specific
+correlation modes, and automatically applies anchor effects based on
+cluster configuration.</p>
+<dl>
+<dt><strong>Anchor effect application</strong>:</dt><dd><p>Anchor effects are applied automatically based on cluster configuration:
+- If anchor_role=”noise” → no mean shift
+- If anchor_role=”informative” → mean shift applied (effect_size validated to be != None)</p>
+<p>No separate parameter is needed because the semantics are enforced by
+CorrClusterConfig validation.</p>
+</dd>
+</dl>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>cfg</strong> (<a class="reference internal" href="biomedical_data_generator.config.DatasetConfig.html#biomedical_data_generator.config.DatasetConfig" title="biomedical_data_generator.config.DatasetConfig"><em>DatasetConfig</em></a>) – Dataset configuration with corr_clusters field.</p></li>
+<li><p><strong>y</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.3)"><em>ndarray</em></a><em> | </em><em>None</em>) – Class labels as a 1D NumPy array of length n_samples.
+If None, generates labels from cfg.class_configs in sequential order.</p></li>
+<li><p><strong>rng</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/random/generator.html#numpy.random.Generator" title="(in NumPy v2.3)"><em>Generator</em></a><em> | </em><em>None</em>) – Optional random number generator. If None, creates a new one.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p>x_clusters: Array of shape (n_samples, n_corr_features) with
+correlated clusters including anchor effects where configured.</p></li>
+<li><dl class="simple">
+<dt>cluster_meta: Dictionary with cluster-level metadata:</dt><dd><ul>
+<li><p>”anchor_role”: cluster_id -&gt; anchor_role</p></li>
+<li><p>”anchor_effect_size”: cluster_id -&gt; effect_size</p></li>
+<li><p>”anchor_class”: cluster_id -&gt; target_class</p></li>
+<li><p>”label”: cluster_id -&gt; human-readable label</p></li>
+</ul>
+</dd>
+</dl>
+</li>
+</ul>
+</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>A tuple (x_clusters, cluster_meta) where</p>
+</dd>
+</dl>
+<p class="rubric">Examples</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="c1"># Pure correlation (noise anchor, no mean shift)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">cfg</span> <span class="o">=</span> <span class="n">DatasetConfig</span><span class="p">(</span>
+<span class="gp">... </span>    <span class="n">class_configs</span><span class="o">=</span><span class="p">[</span><span class="n">ClassConfig</span><span class="p">(</span><span class="mi">50</span><span class="p">),</span> <span class="n">ClassConfig</span><span class="p">(</span><span class="mi">50</span><span class="p">)],</span>
+<span class="gp">... </span>    <span class="n">corr_clusters</span><span class="o">=</span><span class="p">[</span>
+<span class="gp">... </span>        <span class="n">CorrClusterConfig</span><span class="p">(</span>
+<span class="gp">... </span>            <span class="n">n_cluster_features</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span>
+<span class="gp">... </span>            <span class="n">correlation</span><span class="o">=</span><span class="mf">0.8</span><span class="p">,</span>
+<span class="gp">... </span>            <span class="n">anchor_role</span><span class="o">=</span><span class="s2">&quot;noise&quot;</span>  <span class="c1"># No shift</span>
+<span class="gp">... </span>        <span class="p">)</span>
+<span class="gp">... </span>    <span class="p">]</span>
+<span class="gp">... </span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">x</span><span class="p">,</span> <span class="n">meta</span> <span class="o">=</span> <span class="n">sample_all_correlated_clusters</span><span class="p">(</span><span class="n">cfg</span><span class="p">,</span> <span class="n">rng</span><span class="p">)</span> <span class="c1"># y auto-generated</span>
+</pre></div>
+</div>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="c1"># Correlation + diagnostic signal (informative anchor with shift)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">cfg</span> <span class="o">=</span> <span class="n">DatasetConfig</span><span class="p">(</span>
+<span class="gp">... </span>    <span class="n">class_configs</span><span class="o">=</span><span class="p">[</span><span class="n">ClassConfig</span><span class="p">(</span><span class="mi">50</span><span class="p">),</span> <span class="n">ClassConfig</span><span class="p">(</span><span class="mi">50</span><span class="p">)],</span>
+<span class="gp">... </span>    <span class="n">corr_clusters</span><span class="o">=</span><span class="p">[</span>
+<span class="gp">... </span>        <span class="n">CorrClusterConfig</span><span class="p">(</span>
+<span class="gp">... </span>            <span class="n">n_cluster_features</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span>
+<span class="gp">... </span>            <span class="n">correlation</span><span class="o">=</span><span class="mf">0.8</span><span class="p">,</span>
+<span class="gp">... </span>            <span class="n">anchor_role</span><span class="o">=</span><span class="s2">&quot;informative&quot;</span><span class="p">,</span>
+<span class="gp">... </span>            <span class="n">anchor_effect_size</span><span class="o">=</span><span class="s2">&quot;medium&quot;</span><span class="p">,</span>  <span class="c1"># Required for informative</span>
+<span class="gp">... </span>            <span class="n">anchor_class</span><span class="o">=</span><span class="mi">1</span>
+<span class="gp">... </span>        <span class="p">)</span>
+<span class="gp">... </span>    <span class="p">]</span>
+<span class="gp">... </span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">x</span><span class="p">,</span> <span class="n">meta</span> <span class="o">=</span> <span class="n">sample_all_correlated_clusters</span><span class="p">(</span><span class="n">cfg</span><span class="p">,</span> <span class="n">rng</span><span class="o">=</span><span class="n">rng</span><span class="p">)</span> <span class="c1"># y auto-generated</span>
+</pre></div>
+</div>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="c1"># Advanced: provide custom labels</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">y_custom</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="o">...</span><span class="p">])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">x</span><span class="p">,</span> <span class="n">meta</span> <span class="o">=</span> <span class="n">sample_all_correlated_clusters</span><span class="p">(</span><span class="n">cfg</span><span class="p">,</span> <span class="n">y_custom</span><span class="p">,</span> <span class="n">rng</span><span class="p">)</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="biomedical_data_generator.features.correlated.sample_correlated_data">
+<span class="sig-prename descclassname"><span class="pre">biomedical_data_generator.features.correlated.</span></span><span class="sig-name descname"><span class="pre">sample_correlated_data</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">n_samples</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_features</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">correlation</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">structure</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'equicorrelated'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rng</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/biomedical_data_generator/features/correlated.html#sample_correlated_data"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#biomedical_data_generator.features.correlated.sample_correlated_data" title="Link to this definition"></a></dt>
+<dd><p>Sample correlated Gaussian data with zero mean and unit variance.</p>
+<p>This function generates the Gaussian core for correlated feature clusters.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>n_samples</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a>) – Number of samples to generate.</p></li>
+<li><p><strong>n_features</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a>) – Number of features.</p></li>
+<li><p><strong>correlation</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>) – Correlation parameter.</p></li>
+<li><p><strong>structure</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) – Correlation structure (‘equicorrelated’ or ‘toeplitz’).</p></li>
+<li><p><strong>rng</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/random/generator.html#numpy.random.Generator" title="(in NumPy v2.3)"><em>Generator</em></a><em> | </em><em>None</em>) – Random number generator. If None, creates a new one.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Array of shape (n_samples, n_features) with standard normal marginals
+and specified correlation structure.</p>
+</dd>
+<dt class="field-odd">Raises<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#ValueError" title="(in Python v3.14)"><strong>ValueError</strong></a> – If structure is invalid or correlation out of bounds.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.3)"><em>ndarray</em></a></p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="biomedical_data_generator.features.informative.html" class="btn btn-neutral float-left" title="biomedical_data_generator.features.informative" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="biomedical_data_generator.effects.batch.html" class="btn btn-neutral float-right" title="biomedical_data_generator.effects.batch" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, Sigrun May.</p>
+  </div>
+
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

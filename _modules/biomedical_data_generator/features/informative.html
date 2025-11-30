@@ -1,0 +1,243 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>biomedical_data_generator.features.informative &mdash; Biomedical Data Generator 1.0.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/copybutton.css?v=76b2166b" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/custom.css?v=7f485136" />
+
+  
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=8d563738"></script>
+      <script src="../../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../../../_static/clipboard.min.js?v=a7894cd8"></script>
+      <script src="../../../_static/copybutton.js?v=f281be69"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            Biomedical Data Generator
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../api.html">API Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../code-doc.html">Code Documentation</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">External Links</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference external" href="https://github.com/sigrun-may/biomedical-data-generator">GitHub Repository</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://pypi.org/project/biomedical-data-generator/">PyPI Package</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://github.com/sigrun-may/biomedical-data-generator/blob/main/LICENSE">License</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">Biomedical Data Generator</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">biomedical_data_generator.features.informative</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for biomedical_data_generator.features.informative</h1><div class="highlight"><pre>
+<span></span><span class="c1"># Copyright (c) 2025 Sigrun May,</span>
+<span class="c1"># Ostfalia Hochschule für angewandte Wissenschaften</span>
+<span class="c1">#</span>
+<span class="c1"># This software is distributed under the terms of the MIT license</span>
+<span class="c1"># which is available at https://opensource.org/licenses/MIT</span>
+
+<span class="sd">&quot;&quot;&quot;Generation of free informative features and class separation.</span>
+
+<span class="sd">This module builds numeric class labels from DatasetConfig.class_configs,</span>
+<span class="sd">samples base values for free informative features according to per-class</span>
+<span class="sd">distributions, and applies class-wise mean shifts controlled by</span>
+<span class="sd">DatasetConfig.class_sep.</span>
+
+<span class="sd">Correlated clusters (including anchors) are handled in `correlated.py`.</span>
+<span class="sd">Noise features are handled in `noise.py`. The shifting logic is implemented</span>
+<span class="sd">in `shift_classes` and can be reused by other modules (for example, for</span>
+<span class="sd">anchor effects in correlated clusters).</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">annotations</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">biomedical_data_generator.config</span><span class="w"> </span><span class="kn">import</span> <span class="n">DatasetConfig</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">biomedical_data_generator.utils.sampling</span><span class="w"> </span><span class="kn">import</span> <span class="n">sample_distribution</span>
+
+<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="s2">&quot;generate_informative_features&quot;</span><span class="p">,</span>
+<span class="p">]</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_class_offsets_from_sep</span><span class="p">(</span><span class="n">sep_vec</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">float</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Construct centered class-wise offsets from a (K-1,) separation vector.</span>
+
+<span class="sd">    The returned offsets have length K where K = len(sep_vec) + 1. Offsets</span>
+<span class="sd">    are cumulative sums of the separation entries and are mean-centered.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        sep_vec: 1-D array of length K-1 representing pairwise separations.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        np.ndarray: 1-D array of length K with class offsets whose mean is zero.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">sep</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">sep_vec</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span><span class="o">.</span><span class="n">ravel</span><span class="p">()</span>
+    <span class="n">offsets</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">(([</span><span class="mf">0.0</span><span class="p">],</span> <span class="n">np</span><span class="o">.</span><span class="n">cumsum</span><span class="p">(</span><span class="n">sep</span><span class="p">)))</span>
+    <span class="n">offsets</span> <span class="o">-=</span> <span class="n">offsets</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span>
+    <span class="k">return</span> <span class="n">offsets</span>
+
+
+<span class="c1"># ---------------------------------------------------------------------------</span>
+<span class="c1"># Label construction</span>
+<span class="c1"># ---------------------------------------------------------------------------</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_build_class_labels</span><span class="p">(</span><span class="n">cfg</span><span class="p">:</span> <span class="n">DatasetConfig</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Build numeric class labels 0..K-1 from DatasetConfig.class_configs.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        cfg: DatasetConfig containing class_configs with per-class n_samples.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        np.ndarray: 1-D integer array of length cfg.n_samples with labels in</span>
+<span class="sd">            {0, ..., K-1}.</span>
+
+<span class="sd">    Raises:</span>
+<span class="sd">        RuntimeError: If the concatenated label length does not match cfg.n_samples.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">labels</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">idx</span><span class="p">,</span> <span class="n">cls_cfg</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">cfg</span><span class="o">.</span><span class="n">class_configs</span><span class="p">):</span>
+        <span class="n">labels</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">full</span><span class="p">(</span><span class="n">cls_cfg</span><span class="o">.</span><span class="n">n_samples</span><span class="p">,</span> <span class="n">idx</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">int</span><span class="p">))</span>
+    <span class="n">y</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">(</span><span class="n">labels</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">y</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">!=</span> <span class="n">cfg</span><span class="o">.</span><span class="n">n_samples</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Inconsistent label construction: got </span><span class="si">{</span><span class="n">y</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s2"> labels, expected </span><span class="si">{</span><span class="n">cfg</span><span class="o">.</span><span class="n">n_samples</span><span class="si">}</span><span class="s2">.&quot;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">y</span>
+
+
+<span class="c1"># ---------------------------------------------------------------------------</span>
+<span class="c1"># Public API: generate_informative_features</span>
+<span class="c1"># ---------------------------------------------------------------------------</span>
+<div class="viewcode-block" id="generate_informative_features">
+<a class="viewcode-back" href="../../../_autosummary/biomedical_data_generator.features.informative.html#biomedical_data_generator.features.informative.generate_informative_features">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">generate_informative_features</span><span class="p">(</span>
+    <span class="n">cfg</span><span class="p">:</span> <span class="n">DatasetConfig</span><span class="p">,</span>
+    <span class="n">rng</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">Generator</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Generate all free informative features (no anchors, no clusters).</span>
+
+<span class="sd">    The function performs:</span>
+<span class="sd">    1. Build numeric labels `y` from `cfg.class_configs`.</span>
+<span class="sd">    2. Allocate a matrix `x_informative` of shape (n_samples, n_informative_free).</span>
+<span class="sd">    3. Sample base values for each class via `sample_2d_array`.</span>
+<span class="sd">    4. Apply class-wise mean shifts (multi-class offsets only).</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        cfg: DatasetConfig with validated fields and derived quantities.</span>
+<span class="sd">        rng: NumPy random Generator.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        tuple:</span>
+<span class="sd">            x_informative: Array of shape (n_samples, n_informative_free) with</span>
+<span class="sd">                free informative features.</span>
+<span class="sd">            y: Array of shape (n_samples,) with class labels in {0, ..., K-1}.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">n_samples</span> <span class="o">=</span> <span class="n">cfg</span><span class="o">.</span><span class="n">n_samples</span>
+    <span class="n">n_inf</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">cfg</span><span class="o">.</span><span class="n">n_informative_free</span><span class="p">)</span>  <span class="c1"># excludes informative anchors by design</span>
+
+    <span class="c1"># build numeric class labels</span>
+    <span class="n">y</span> <span class="o">=</span> <span class="n">_build_class_labels</span><span class="p">(</span><span class="n">cfg</span><span class="p">)</span>
+
+    <span class="c1"># Corner case: no informative features → return empty matrix</span>
+    <span class="k">if</span> <span class="n">n_inf</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">x_empty_empty</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">((</span><span class="n">n_samples</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">x_empty_empty</span><span class="p">,</span> <span class="n">y</span>
+
+    <span class="c1"># sample base values and apply class-wise shifts</span>
+    <span class="n">offsets</span> <span class="o">=</span> <span class="n">_class_offsets_from_sep</span><span class="p">(</span><span class="n">cfg</span><span class="o">.</span><span class="n">class_sep</span><span class="p">)</span>
+    <span class="n">x_informative</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">((</span><span class="n">cfg</span><span class="o">.</span><span class="n">n_samples</span><span class="p">,</span> <span class="n">n_inf</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
+
+    <span class="n">start</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="k">for</span> <span class="n">cls_cfg</span><span class="p">,</span> <span class="n">offset</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">cfg</span><span class="o">.</span><span class="n">class_configs</span><span class="p">,</span> <span class="n">offsets</span><span class="p">,</span> <span class="n">strict</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+        <span class="n">n_cls</span> <span class="o">=</span> <span class="n">cls_cfg</span><span class="o">.</span><span class="n">n_samples</span>
+        <span class="n">stop</span> <span class="o">=</span> <span class="n">start</span> <span class="o">+</span> <span class="n">n_cls</span>
+
+        <span class="n">class_samples</span> <span class="o">=</span> <span class="n">sample_distribution</span><span class="p">(</span>
+            <span class="n">distribution</span><span class="o">=</span><span class="n">cls_cfg</span><span class="o">.</span><span class="n">class_distribution</span><span class="p">,</span>
+            <span class="n">params</span><span class="o">=</span><span class="n">cls_cfg</span><span class="o">.</span><span class="n">class_distribution_params</span><span class="p">,</span>
+            <span class="n">rng</span><span class="o">=</span><span class="n">rng</span><span class="p">,</span>
+            <span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="n">n_cls</span><span class="p">,</span> <span class="n">n_inf</span><span class="p">),</span>
+        <span class="p">)</span>
+        <span class="c1"># apply mean shifts to all informative columns</span>
+        <span class="n">class_samples</span> <span class="o">+=</span> <span class="n">offset</span>
+        <span class="n">x_informative</span><span class="p">[</span><span class="n">start</span><span class="p">:</span><span class="n">stop</span><span class="p">,</span> <span class="p">:]</span> <span class="o">=</span> <span class="n">class_samples</span>
+        <span class="n">start</span> <span class="o">=</span> <span class="n">stop</span>
+
+    <span class="k">return</span> <span class="n">x_informative</span><span class="p">,</span> <span class="n">y</span></div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, Sigrun May.</p>
+  </div>
+
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

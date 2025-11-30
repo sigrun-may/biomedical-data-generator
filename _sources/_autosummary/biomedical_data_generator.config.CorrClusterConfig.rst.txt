@@ -1,0 +1,66 @@
+﻿biomedical\_data\_generator.config.CorrClusterConfig
+====================================================
+
+.. currentmodule:: biomedical_data_generator.config
+
+.. autoclass:: CorrClusterConfig
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~CorrClusterConfig.__init__
+      ~CorrClusterConfig.construct
+      ~CorrClusterConfig.copy
+      ~CorrClusterConfig.dict
+      ~CorrClusterConfig.from_orm
+      ~CorrClusterConfig.get_correlation_for_class
+      ~CorrClusterConfig.is_class_specific
+      ~CorrClusterConfig.json
+      ~CorrClusterConfig.model_construct
+      ~CorrClusterConfig.model_copy
+      ~CorrClusterConfig.model_dump
+      ~CorrClusterConfig.model_dump_json
+      ~CorrClusterConfig.model_json_schema
+      ~CorrClusterConfig.model_parametrized_name
+      ~CorrClusterConfig.model_post_init
+      ~CorrClusterConfig.model_rebuild
+      ~CorrClusterConfig.model_validate
+      ~CorrClusterConfig.model_validate_json
+      ~CorrClusterConfig.model_validate_strings
+      ~CorrClusterConfig.parse_file
+      ~CorrClusterConfig.parse_obj
+      ~CorrClusterConfig.parse_raw
+      ~CorrClusterConfig.resolve_anchor_effect_size
+      ~CorrClusterConfig.schema
+      ~CorrClusterConfig.schema_json
+      ~CorrClusterConfig.update_forward_refs
+      ~CorrClusterConfig.validate
+   
+   
+
+   
+   
+   .. rubric:: Attributes
+
+   .. autosummary::
+   
+      ~CorrClusterConfig.model_computed_fields
+      ~CorrClusterConfig.model_config
+      ~CorrClusterConfig.model_extra
+      ~CorrClusterConfig.model_fields
+      ~CorrClusterConfig.model_fields_set
+      ~CorrClusterConfig.n_cluster_features
+      ~CorrClusterConfig.structure
+      ~CorrClusterConfig.correlation
+      ~CorrClusterConfig.anchor_role
+      ~CorrClusterConfig.anchor_effect_size
+      ~CorrClusterConfig.anchor_class
+      ~CorrClusterConfig.random_state
+      ~CorrClusterConfig.label
+   
+   

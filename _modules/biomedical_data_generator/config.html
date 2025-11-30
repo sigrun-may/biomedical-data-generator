@@ -196,7 +196,7 @@
 
 
 <div class="viewcode-block" id="ClassConfig">
-<a class="viewcode-back" href="../../_autosummary/biomedical_data_generator.ClassConfig.html#biomedical_data_generator.ClassConfig">[docs]</a>
+<a class="viewcode-back" href="../../_autosummary/biomedical_data_generator.config.ClassConfig.html#biomedical_data_generator.ClassConfig">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">ClassConfig</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Configuration for a single class in the dataset.</span>
 
@@ -281,7 +281,7 @@
 
 
 <div class="viewcode-block" id="BatchEffectsConfig">
-<a class="viewcode-back" href="../../_autosummary/biomedical_data_generator.BatchEffectsConfig.html#biomedical_data_generator.BatchEffectsConfig">[docs]</a>
+<a class="viewcode-back" href="../../_autosummary/biomedical_data_generator.config.BatchEffectsConfig.html#biomedical_data_generator.BatchEffectsConfig">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">BatchEffectsConfig</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Configuration for simulating batch effects.</span>
 
@@ -365,7 +365,7 @@
     <span class="n">proportions</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
 
 <div class="viewcode-block" id="BatchEffectsConfig.validate_proportions">
-<a class="viewcode-back" href="../../_autosummary/biomedical_data_generator.BatchEffectsConfig.html#biomedical_data_generator.BatchEffectsConfig.validate_proportions">[docs]</a>
+<a class="viewcode-back" href="../../_autosummary/biomedical_data_generator.config.BatchEffectsConfig.html#biomedical_data_generator.BatchEffectsConfig.validate_proportions">[docs]</a>
     <span class="nd">@field_validator</span><span class="p">(</span><span class="s2">&quot;proportions&quot;</span><span class="p">)</span>
     <span class="nd">@classmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">validate_proportions</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">v</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span><span class="p">,</span> <span class="n">info</span><span class="p">):</span>
@@ -397,7 +397,7 @@
 
 
 <div class="viewcode-block" id="CorrClusterConfig">
-<a class="viewcode-back" href="../../_autosummary/biomedical_data_generator.CorrClusterConfig.html#biomedical_data_generator.CorrClusterConfig">[docs]</a>
+<a class="viewcode-back" href="../../_autosummary/biomedical_data_generator.config.CorrClusterConfig.html#biomedical_data_generator.CorrClusterConfig">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">CorrClusterConfig</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Correlated feature cluster simulating coordinated biomarker patterns.</span>
 
@@ -568,14 +568,14 @@
     <span class="c1"># Convenience methods -----------------------------------------------------</span>
 
 <div class="viewcode-block" id="CorrClusterConfig.is_class_specific">
-<a class="viewcode-back" href="../../_autosummary/biomedical_data_generator.CorrClusterConfig.html#biomedical_data_generator.CorrClusterConfig.is_class_specific">[docs]</a>
+<a class="viewcode-back" href="../../_autosummary/biomedical_data_generator.config.CorrClusterConfig.html#biomedical_data_generator.CorrClusterConfig.is_class_specific">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">is_class_specific</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Return True if this cluster uses class-specific correlations.&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">correlation</span><span class="p">,</span> <span class="nb">dict</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="CorrClusterConfig.get_correlation_for_class">
-<a class="viewcode-back" href="../../_autosummary/biomedical_data_generator.CorrClusterConfig.html#biomedical_data_generator.CorrClusterConfig.get_correlation_for_class">[docs]</a>
+<a class="viewcode-back" href="../../_autosummary/biomedical_data_generator.config.CorrClusterConfig.html#biomedical_data_generator.CorrClusterConfig.get_correlation_for_class">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">get_correlation_for_class</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">class_idx</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Resolve correlation for a specific class.</span>
 
@@ -590,7 +590,7 @@
 
 
 <div class="viewcode-block" id="CorrClusterConfig.resolve_anchor_effect_size">
-<a class="viewcode-back" href="../../_autosummary/biomedical_data_generator.CorrClusterConfig.html#biomedical_data_generator.CorrClusterConfig.resolve_anchor_effect_size">[docs]</a>
+<a class="viewcode-back" href="../../_autosummary/biomedical_data_generator.config.CorrClusterConfig.html#biomedical_data_generator.CorrClusterConfig.resolve_anchor_effect_size">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">resolve_anchor_effect_size</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Convert anchor_effect_size to a numeric effect size.&quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">anchor_effect_size</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
@@ -630,7 +630,7 @@
 <span class="c1"># Dataset configuration</span>
 <span class="c1"># ---------------------------------------------------------------------------</span>
 <div class="viewcode-block" id="DatasetConfig">
-<a class="viewcode-back" href="../../_autosummary/biomedical_data_generator.DatasetConfig.html#biomedical_data_generator.DatasetConfig">[docs]</a>
+<a class="viewcode-back" href="../../_autosummary/biomedical_data_generator.config.DatasetConfig.html#biomedical_data_generator.DatasetConfig">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">DatasetConfig</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Configuration for synthetic dataset generation.</span>
 
@@ -939,7 +939,7 @@
         <span class="k">return</span> <span class="bp">self</span>
 
 <div class="viewcode-block" id="DatasetConfig.from_yaml">
-<a class="viewcode-back" href="../../_autosummary/biomedical_data_generator.DatasetConfig.html#biomedical_data_generator.DatasetConfig.from_yaml">[docs]</a>
+<a class="viewcode-back" href="../../_autosummary/biomedical_data_generator.config.DatasetConfig.html#biomedical_data_generator.DatasetConfig.from_yaml">[docs]</a>
     <span class="nd">@classmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">from_yaml</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">path</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">DatasetConfig</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Load from YAML and validate via the same pipeline.&quot;&quot;&quot;</span>
@@ -951,7 +951,7 @@
 
 
 <div class="viewcode-block" id="DatasetConfig.count_informative_anchors">
-<a class="viewcode-back" href="../../_autosummary/biomedical_data_generator.DatasetConfig.html#biomedical_data_generator.DatasetConfig.count_informative_anchors">[docs]</a>
+<a class="viewcode-back" href="../../_autosummary/biomedical_data_generator.config.DatasetConfig.html#biomedical_data_generator.DatasetConfig.count_informative_anchors">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">count_informative_anchors</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Count clusters whose anchor contributes as &#39;informative&#39;.</span>
 
@@ -968,7 +968,7 @@
 
 
 <div class="viewcode-block" id="DatasetConfig.count_noise_anchors">
-<a class="viewcode-back" href="../../_autosummary/biomedical_data_generator.DatasetConfig.html#biomedical_data_generator.DatasetConfig.count_noise_anchors">[docs]</a>
+<a class="viewcode-back" href="../../_autosummary/biomedical_data_generator.config.DatasetConfig.html#biomedical_data_generator.DatasetConfig.count_noise_anchors">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">count_noise_anchors</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Count clusters whose anchor is &#39;noise&#39; (non-informative anchor).</span>
 
@@ -1034,7 +1034,7 @@
         <span class="k">return</span> <span class="p">{</span><span class="n">idx</span><span class="p">:</span> <span class="n">c</span><span class="o">.</span><span class="n">n_samples</span> <span class="k">for</span> <span class="n">idx</span><span class="p">,</span> <span class="n">c</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">class_configs</span><span class="p">)}</span>
 
 <div class="viewcode-block" id="DatasetConfig.breakdown">
-<a class="viewcode-back" href="../../_autosummary/biomedical_data_generator.DatasetConfig.html#biomedical_data_generator.DatasetConfig.breakdown">[docs]</a>
+<a class="viewcode-back" href="../../_autosummary/biomedical_data_generator.config.DatasetConfig.html#biomedical_data_generator.DatasetConfig.breakdown">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">breakdown</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">int</span><span class="p">]:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Structured feature counts incl. cluster proxies and anchor split.</span>
 
