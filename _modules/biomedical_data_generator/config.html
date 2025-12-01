@@ -303,25 +303,21 @@
 <span class="sd">    Args:</span>
 <span class="sd">        n_batches:</span>
 <span class="sd">            Number of batches. Value 0 effectively disables batch effects.</span>
-<span class="sd">        effect_strength:</span>
-<span class="sd">            Scale of batch effects. Must be non-negative.</span>
-<span class="sd">                - For ``effect_type=&quot;additive&quot;``: standard deviation of the additive</span>
-<span class="sd">                    batch effects, sampled as ``Normal(0, effect_strength)``.</span>
-<span class="sd">                - For ``effect_type=&quot;multiplicative&quot;``: standard deviation of the</span>
-<span class="sd">                      multiplicative deviations around 1.0, sampled as</span>
-<span class="sd">                      ``1 + Normal(0, effect_strength)``.</span>
-<span class="sd">        effect_type:</span>
-<span class="sd">            Type of batch effect.</span>
-<span class="sd">                - ``&quot;additive&quot;``: Additive intercepts (shifts in feature means).</span>
-<span class="sd">                - ``&quot;multiplicative&quot;``: Multiplicative scaling (changes in variance/scale).</span>
-<span class="sd">        effect_granularity:</span>
-<span class="sd">            Granularity of batch effects across features:</span>
-<span class="sd">                - ``&quot;per_feature&quot;``: draw distinct effects per batch and affected</span>
-<span class="sd">              feature (shape ``(n_batches, n_affected_features)``).</span>
-<span class="sd">                - ``&quot;scalar&quot;``: draw a single effect per batch and apply it</span>
-<span class="sd">                    uniformly to all affected features (global per-batch shift/scale).</span>
-<span class="sd">        confounding_with_class:</span>
-<span class="sd">            Degree of confounding between batch and class in ``[0.0, 1.0]``.</span>
+<span class="sd">        effect_strength: Scale of batch effects. Must be non-negative.</span>
+<span class="sd">            - For ``effect_type=&quot;additive&quot;``: standard deviation of the additive</span>
+<span class="sd">                batch effects, sampled as ``Normal(0, effect_strength)``.</span>
+<span class="sd">            - For ``effect_type=&quot;multiplicative&quot;``: standard deviation of the</span>
+<span class="sd">                  multiplicative deviations around 1.0, sampled as</span>
+<span class="sd">                  ``1 + Normal(0, effect_strength)``.</span>
+<span class="sd">        effect_type: Type of batch effect.</span>
+<span class="sd">            - ``&quot;additive&quot;``: Additive intercepts (shifts in feature means).</span>
+<span class="sd">            - ``&quot;multiplicative&quot;``: Multiplicative scaling (changes in variance/scale).</span>
+<span class="sd">        effect_granularity: Granularity of batch effects across features:</span>
+<span class="sd">            - ``&quot;per_feature&quot;``: draw distinct effects per batch and affected</span>
+<span class="sd">                    feature (shape ``(n_batches, n_affected_features)``).</span>
+<span class="sd">            - ``&quot;scalar&quot;``: draw a single effect per batch and apply it</span>
+<span class="sd">                uniformly to all affected features (global per-batch shift/scale).</span>
+<span class="sd">        confounding_with_class: Degree of confounding between batch and class in ``[0.0, 1.0]``.</span>
 <span class="sd">            Controls how strongly batch assignment correlates with class labels,</span>
 <span class="sd">            simulating **recruitment bias** in multi-center studies.</span>
 
@@ -332,12 +328,10 @@
 <span class="sd">                  one batch).</span>
 <span class="sd">                - 1.0 → perfect confounding: each class maps to one preferred</span>
 <span class="sd">                  batch (if ``n_batches &gt;= n_classes``).</span>
-<span class="sd">        affected_features:</span>
-<span class="sd">            Which features should be affected:</span>
-<span class="sd">                - ``&quot;all&quot;``: apply batch effects to all features.</span>
-<span class="sd">                - list of ints: explicit 0-based column indices of affected features.</span>
-<span class="sd">        proportions:</span>
-<span class="sd">            Optional target proportions for batch sizes. Values are normalized</span>
+<span class="sd">        affected_features: Which features should be affected:</span>
+<span class="sd">            - ``&quot;all&quot;``: apply batch effects to all features.</span>
+<span class="sd">            - list of ints: explicit 0-based column indices of affected features.</span>
+<span class="sd">        proportions: Optional target proportions for batch sizes. Values are normalized</span>
 <span class="sd">            to sum to 1. If ``None``, batches are (approximately) equal in size.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
