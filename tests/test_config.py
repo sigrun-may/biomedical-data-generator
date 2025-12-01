@@ -255,7 +255,6 @@ def test_corr_cluster_repr_method():
         anchor_role="informative",
         anchor_class=1,
         anchor_effect_size=0.8,
-        random_state=42,
     )
     repr_str = repr(cluster)
     # repr should contain the class name

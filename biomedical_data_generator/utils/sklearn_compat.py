@@ -267,7 +267,6 @@ def make_biomedical_dataset(
             anchor_role="informative",
             anchor_effect_size=None,  # use DatasetConfig / informative defaults
             anchor_class=1 if n_classes > 1 else 0,
-            random_state=None,
             label="sklearn_redundant_cluster",
         )
         corr_clusters.append(redundant_cluster)
