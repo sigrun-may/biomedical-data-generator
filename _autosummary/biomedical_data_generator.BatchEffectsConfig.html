@@ -114,16 +114,16 @@ to a subset of features. This can be used to mimic:</p>
 <li><p>cohort / recruitment waves (temporal batches).</p></li>
 </ul>
 </div></blockquote>
-<p><strong>Conceptual separation of batch effect aspects</strong>:
-- <code class="docutils literal notranslate"><span class="pre">confounding_with_class</span></code> controls <strong>sampling bias</strong>:</p>
-<blockquote>
-<div><p>which samples (classes) are recruited into which batch.</p>
-</div></blockquote>
-<ul class="simple">
+<dl class="simple">
+<dt><strong>Conceptual separation of batch effect aspects</strong>:</dt><dd><ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">confounding_with_class</span></code> controls <strong>sampling bias</strong>:
+which samples (classes) are recruited into which batch.</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">effect_strength</span></code>, <code class="docutils literal notranslate"><span class="pre">effect_type</span></code> and <code class="docutils literal notranslate"><span class="pre">effect_granularity</span></code> control
 <strong>technical variation</strong>: how strongly, and how coherently across features,
 the measurements shift between batches.</p></li>
 </ul>
+</dd>
+</dl>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
