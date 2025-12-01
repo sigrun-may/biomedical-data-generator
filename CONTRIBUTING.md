@@ -1,10 +1,10 @@
 # Contributing to `biomedical-data-generator`
 
-Thank you for considering a contribution to **`biomedical-data-generator`**!  
-This project aims to provide high-quality synthetic biomedical datasets for teaching, benchmarking, and method development in high-dimensional settings.  
+Thank you for considering a contribution to **`biomedical-data-generator`**!\
+This project aims to provide high-quality synthetic biomedical datasets for teaching, benchmarking, and method development in high-dimensional settings.\
 Contributions that improve robustness, clarity, and usability are very welcome.
 
----
+______________________________________________________________________
 
 ## How Can I Contribute?
 
@@ -19,14 +19,14 @@ There are many ways to help:
 
 If you are unsure whether an idea fits, feel free to open an issue first and discuss it.
 
----
+______________________________________________________________________
 
 ## Code of Conduct
 
-Please be respectful and constructive in all interactions.  
+Please be respectful and constructive in all interactions.\
 Be kind, assume good intent, and focus on technical issues rather than individuals.
 
----
+______________________________________________________________________
 
 ## Getting Started
 
@@ -48,7 +48,7 @@ git checkout -b fix/short-bug-description
 
 Short, descriptive names are encouraged.
 
----
+______________________________________________________________________
 
 ## Development Environment
 
@@ -85,7 +85,7 @@ or prefix commands with `poetry run`, e.g.:
 poetry run python -m pytest
 ```
 
----
+______________________________________________________________________
 
 ## Running Tests
 
@@ -107,7 +107,7 @@ Please ensure that:
 - New functionality comes with appropriate tests.
 - Bug fixes include a regression test when possible.
 
----
+______________________________________________________________________
 
 ## Code Style and Type Checking
 
@@ -134,7 +134,7 @@ poetry run ruff check biomedical_data_generator
 
 Fix any reported issues before submitting a PR.
 
----
+______________________________________________________________________
 
 ## Documentation
 
@@ -149,7 +149,7 @@ cd docs
 poetry run make html
 ```
 
-This will generate HTML documentation under `docs/_build/html/`.  
+This will generate HTML documentation under `docs/_build/html/`.\
 Open `docs/_build/html/index.html` in your browser to inspect the result.
 
 ### When to Update Docs
@@ -164,7 +164,7 @@ Please update the docs if you:
 
 Prefer succinct explanations plus small runnable examples.
 
----
+______________________________________________________________________
 
 ## Examples
 
@@ -181,7 +181,7 @@ Run an example like this:
 poetry run python examples/01_basic_usage.py
 ```
 
----
+______________________________________________________________________
 
 ## Command-Line Interface
 
@@ -191,14 +191,14 @@ If you modify or extend the CLI (e.g. `bdg` entry point):
 - Update CLI help strings and documentation.
 - Add tests for new CLI behavior (e.g. using `subprocess` or Click/Typer testing utilities, depending on the implementation).
 
----
+______________________________________________________________________
 
 ## Opening an Issue
 
 Before filing a new issue, please:
 
 1. Search the [issue tracker](https://github.com/sigrun-may/biomedical-data-generator/issues) to avoid duplicates.
-2. Include:
+1. Include:
    - A clear description of the problem or request.
    - Steps to reproduce (for bugs).
    - Minimal code example, if possible.
@@ -209,7 +209,7 @@ Before filing a new issue, please:
 
 Issues that come with a minimal reproducible example are much easier to diagnose and fix.
 
----
+______________________________________________________________________
 
 ## Pull Request Guidelines
 
@@ -225,7 +225,7 @@ When you are ready:
    git rebase main
    ```
 
-2. Run tests (and linters, if configured):
+1. Run tests (and linters, if configured):
 
    ```bash
    poetry run pytest
@@ -234,7 +234,7 @@ When you are ready:
    poetry run ruff check biomedical_data_generator
    ```
 
-3. Commit your changes with clear messages:
+1. Commit your changes with clear messages:
 
    ```bash
    git commit -am "Add class-specific correlation example" 
@@ -242,7 +242,7 @@ When you are ready:
 
    Prefer small, focused commits over one huge commit.
 
-4. Push and open a Pull Request on GitHub:
+1. Push and open a Pull Request on GitHub:
 
    - Provide a short summary.
    - Describe the motivation and what changed.
@@ -250,19 +250,22 @@ When you are ready:
 
 The CI (GitHub Actions) will run tests and other checks automatically on your PR.
 
----
+______________________________________________________________________
 
 ## Design Principles
 
 When contributing new features or refactoring existing code, please keep in mind:
 
-- **Reproducibility first**  
+- **Reproducibility first**
+
   - Single RNG flow, controlled `random_state`, and explicit metadata.
 
-- **Explicit ground truth**  
+- **Explicit ground truth**
+
   - Whenever new structure is introduced (e.g. new correlated blocks, new batch effects), ensure that relevant indices/labels are recorded in `DatasetMeta`.
 
-- **Small, composable building blocks**  
+- **Small, composable building blocks**
+
   - Each module should have a clear responsibility:
     - label generation
     - informative features
@@ -272,11 +275,12 @@ When contributing new features or refactoring existing code, please keep in mind
     - assembly / orchestration
     - metadata
 
-- **Biomedical realism with pedagogical clarity**  
+- **Biomedical realism with pedagogical clarity**
+
   - Effects should be interpretable and explainable in teaching materials.
   - Complex generators should be documented with examples that highlight their use.
 
----
+______________________________________________________________________
 
 ## Questions?
 

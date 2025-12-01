@@ -156,6 +156,7 @@ class ClassConfig(BaseModel):
         ...     )
         ... ]
     """
+
     model_config = ConfigDict(extra="forbid")
 
     n_samples: int = Field(
@@ -317,7 +318,7 @@ class CorrClusterConfig(BaseModel):
             correlation: float
             structure:   "equicorrelated" or "toeplitz"
 
-            Example:
+    Example:
                 correlation = 0.7
                 structure   = "equicorrelated"
 
