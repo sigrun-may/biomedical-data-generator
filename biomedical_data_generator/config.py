@@ -117,11 +117,14 @@ class ClassConfig(BaseModel):
     """Configuration for a single class in the dataset.
 
     Each class is defined by its sample count, distribution, and optional label.
-    Class labels (0, 1, 2, ...) are assigned by position in the list.
+    Class indices (0, 1, 2, ...) are assigned by position in the list.
+    Auto-generated labels follow pattern “class_{idx}”.
 
     Args:
         n_samples: Number of samples for this class (must be >= 1).
-        class_distribution: Distribution type for feature generation.
+        class_distribution: Distribution type for feature generation. Supported numpy random generator distrubutions:
+            - "normal", "lognormal", "uniform", "exponential", "laplace". Additionally, "exp_normal" for direct control
+                over lognormal parameters.
         class_distribution_params: Parameters for the chosen distribution.
         label: Optional descriptive name. Auto-generated as "class_0", "class_1", etc. if not provided.
 
@@ -140,7 +143,11 @@ class ClassConfig(BaseModel):
 
         >>> # Different distributions per class
         >>> configs = [
-        ...     ClassConfig(n_samples=50, label="control", class_distribution="normal"),
+        ...     ClassConfig(
+        ...         n_samples=50,
+        ...         label="control",
+        ...         class_distribution="normal"
+        ...     ),
         ...     ClassConfig(
         ...         n_samples=30,
         ...         label="diseased",
@@ -148,14 +155,7 @@ class ClassConfig(BaseModel):
         ...         class_distribution_params={"mean": 0, "sigma": 0.5}
         ...     )
         ... ]
-
-    Notes:
-        - Class index is determined by position: first config = class 0, etc.
-        - n_samples is exact (not a weight or proportion)
-        - label is auto-generated if None or empty string
-        - Auto-generated labels follow pattern "class_{idx}"
     """
-
     model_config = ConfigDict(extra="forbid")
 
     n_samples: int = Field(
@@ -204,8 +204,7 @@ class BatchEffectsConfig(BaseModel):
       - instrument calibration shifts,
       - cohort / recruitment waves (temporal batches).
 
-    Conceptual separation
-    ---------------------
+    **Conceptual separation of batch effect aspects**:
     - ``confounding_with_class`` controls **sampling bias**:
       which samples (classes) are recruited into which batch.
 
@@ -215,25 +214,24 @@ class BatchEffectsConfig(BaseModel):
 
     Args:
         n_batches:
-            Number of batches. Values 0 or 1 effectively disable batch effects.
+            Number of batches. Value 0 effectively disables batch effects.
         effect_strength:
             Scale of batch effects. Must be non-negative.
-            - For ``effect_type="additive"``: standard deviation of the additive
-              batch effects, sampled as ``Normal(0, effect_strength)``.
-            - For ``effect_type="multiplicative"``: standard deviation of the
-              multiplicative deviations around 1.0, sampled as
-              ``1 + Normal(0, effect_strength)``.
+                - For ``effect_type="additive"``: standard deviation of the additive
+                    batch effects, sampled as ``Normal(0, effect_strength)``.
+                - For ``effect_type="multiplicative"``: standard deviation of the
+                      multiplicative deviations around 1.0, sampled as
+                      ``1 + Normal(0, effect_strength)``.
         effect_type:
             Type of batch effect.
-            - ``"additive"``: Additive intercepts (shifts in feature means).
-            - ``"multiplicative"``: Multiplicative scaling (changes in
-              variance/scale).
+                - ``"additive"``: Additive intercepts (shifts in feature means).
+                - ``"multiplicative"``: Multiplicative scaling (changes in variance/scale).
         effect_granularity:
             Granularity of batch effects across features:
-            - ``"per_feature"``: draw distinct effects per batch and affected
+                - ``"per_feature"``: draw distinct effects per batch and affected
               feature (shape ``(n_batches, n_affected_features)``).
-            - ``"scalar"``: draw a single effect per batch and apply it
-              uniformly to all affected features (global per-batch shift/scale).
+                - ``"scalar"``: draw a single effect per batch and apply it
+                    uniformly to all affected features (global per-batch shift/scale).
         confounding_with_class:
             Degree of confounding between batch and class in ``[0.0, 1.0]``.
             Controls how strongly batch assignment correlates with class labels,
@@ -248,8 +246,8 @@ class BatchEffectsConfig(BaseModel):
                   batch (if ``n_batches >= n_classes``).
         affected_features:
             Which features should be affected:
-            - ``"all"``: apply batch effects to all features.
-            - list of ints: explicit 0-based column indices of affected features.
+                - ``"all"``: apply batch effects to all features.
+                - list of ints: explicit 0-based column indices of affected features.
         proportions:
             Optional target proportions for batch sizes. Values are normalized
             to sum to 1. If ``None``, batches are (approximately) equal in size.
@@ -313,18 +311,17 @@ class CorrClusterConfig(BaseModel):
     marker acts as the "anchor" (driver), while the others are "proxies"
     (followers).
 
-    Two correlation modes
-    ---------------------
+    **Two correlation modes are supported:**
 
-    1) Global correlation (most common):
-        correlation: float
-        structure:   "equicorrelated" or "toeplitz"
+        1) Global correlation (most common):
+            correlation: float
+            structure:   "equicorrelated" or "toeplitz"
 
-    Example:
-            correlation = 0.7
-            structure   = "equicorrelated"
+            Example:
+                correlation = 0.7
+                structure   = "equicorrelated"
 
-        All samples share the same correlation pattern.
+            All samples share the same correlation pattern.
 
     2) Class-specific correlation:
         correlation: dict[int, float]
@@ -358,8 +355,6 @@ class CorrClusterConfig(BaseModel):
             "small" (0.5), "medium" (1.0), "large" (1.5), custom > 0, or None.
         anchor_class:
             Class index the anchor predicts (if informative). None → all classes.
-        random_state:
-            Optional seed for this cluster. If None, uses the global dataset seed.
         label:
             Descriptive name for documentation.
     """
@@ -387,13 +382,9 @@ class CorrClusterConfig(BaseModel):
         ),
     )
 
-    # Biological relevance ----------------------------------------------------
     anchor_role: Literal["informative", "noise"] = "informative"
     anchor_effect_size: Literal["small", "medium", "large"] | float | None = None
     anchor_class: int | None = None
-
-    # Metadata ----------------------------------------------------------------
-    random_state: int | None = None
     label: str | None = None
 
     @field_validator("n_cluster_features")
