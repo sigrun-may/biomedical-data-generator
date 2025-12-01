@@ -13,7 +13,6 @@ from .features.correlated import sample_correlated_data
 from .generator import (
     generate_dataset,
 )
-from .utils.correlation_tools import find_seed_for_correlation
 
 __all__ = [
     "DatasetConfig",
@@ -22,5 +21,4 @@ __all__ = [
     "ClassConfig",
     "generate_dataset",
     "sample_correlated_data",
-    "find_seed_for_correlation",
 ]
