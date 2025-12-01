@@ -216,25 +216,21 @@ class BatchEffectsConfig(BaseModel):
     Args:
         n_batches:
             Number of batches. Value 0 effectively disables batch effects.
-        effect_strength:
-            Scale of batch effects. Must be non-negative.
-                - For ``effect_type="additive"``: standard deviation of the additive
-                    batch effects, sampled as ``Normal(0, effect_strength)``.
-                - For ``effect_type="multiplicative"``: standard deviation of the
-                      multiplicative deviations around 1.0, sampled as
-                      ``1 + Normal(0, effect_strength)``.
-        effect_type:
-            Type of batch effect.
-                - ``"additive"``: Additive intercepts (shifts in feature means).
-                - ``"multiplicative"``: Multiplicative scaling (changes in variance/scale).
-        effect_granularity:
-            Granularity of batch effects across features:
-                - ``"per_feature"``: draw distinct effects per batch and affected
-              feature (shape ``(n_batches, n_affected_features)``).
-                - ``"scalar"``: draw a single effect per batch and apply it
-                    uniformly to all affected features (global per-batch shift/scale).
-        confounding_with_class:
-            Degree of confounding between batch and class in ``[0.0, 1.0]``.
+        effect_strength: Scale of batch effects. Must be non-negative.
+            - For ``effect_type="additive"``: standard deviation of the additive
+                batch effects, sampled as ``Normal(0, effect_strength)``.
+            - For ``effect_type="multiplicative"``: standard deviation of the
+                  multiplicative deviations around 1.0, sampled as
+                  ``1 + Normal(0, effect_strength)``.
+        effect_type: Type of batch effect.
+            - ``"additive"``: Additive intercepts (shifts in feature means).
+            - ``"multiplicative"``: Multiplicative scaling (changes in variance/scale).
+        effect_granularity: Granularity of batch effects across features:
+            - ``"per_feature"``: draw distinct effects per batch and affected
+                    feature (shape ``(n_batches, n_affected_features)``).
+            - ``"scalar"``: draw a single effect per batch and apply it
+                uniformly to all affected features (global per-batch shift/scale).
+        confounding_with_class: Degree of confounding between batch and class in ``[0.0, 1.0]``.
             Controls how strongly batch assignment correlates with class labels,
             simulating **recruitment bias** in multi-center studies.
 
@@ -245,12 +241,10 @@ class BatchEffectsConfig(BaseModel):
                   one batch).
                 - 1.0 → perfect confounding: each class maps to one preferred
                   batch (if ``n_batches >= n_classes``).
-        affected_features:
-            Which features should be affected:
-                - ``"all"``: apply batch effects to all features.
-                - list of ints: explicit 0-based column indices of affected features.
-        proportions:
-            Optional target proportions for batch sizes. Values are normalized
+        affected_features: Which features should be affected:
+            - ``"all"``: apply batch effects to all features.
+            - list of ints: explicit 0-based column indices of affected features.
+        proportions: Optional target proportions for batch sizes. Values are normalized
             to sum to 1. If ``None``, batches are (approximately) equal in size.
     """
 
