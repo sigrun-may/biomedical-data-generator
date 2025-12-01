@@ -206,12 +206,12 @@ class BatchEffectsConfig(BaseModel):
       - cohort / recruitment waves (temporal batches).
 
     **Conceptual separation of batch effect aspects**:
-    - ``confounding_with_class`` controls **sampling bias**:
-      which samples (classes) are recruited into which batch.
+        - ``confounding_with_class`` controls **sampling bias**:
+          which samples (classes) are recruited into which batch.
 
-    - ``effect_strength``, ``effect_type`` and ``effect_granularity`` control
-      **technical variation**: how strongly, and how coherently across features,
-      the measurements shift between batches.
+        - ``effect_strength``, ``effect_type`` and ``effect_granularity`` control
+          **technical variation**: how strongly, and how coherently across features,
+          the measurements shift between batches.
 
     Args:
         n_batches:
