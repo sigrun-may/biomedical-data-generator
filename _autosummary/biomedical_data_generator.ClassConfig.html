@@ -105,12 +105,18 @@
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">BaseModel</span></code></p>
 <p>Configuration for a single class in the dataset.</p>
 <p>Each class is defined by its sample count, distribution, and optional label.
-Class labels (0, 1, 2, …) are assigned by position in the list.</p>
+Class indices (0, 1, 2, …) are assigned by position in the list.
+Auto-generated labels follow pattern “class_{idx}”.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>n_samples</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a>) – Number of samples for this class (must be &gt;= 1).</p></li>
-<li><p><strong>class_distribution</strong> (<a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Literal" title="(in Python v3.14)"><em>Literal</em></a><em>[</em><em>'normal'</em><em>, </em><em>'lognormal'</em><em>, </em><em>'exp_normal'</em><em>, </em><em>'uniform'</em><em>, </em><em>'exponential'</em><em>, </em><em>'laplace'</em><em>]</em>) – Distribution type for feature generation.</p></li>
+<li><p><strong>class_distribution</strong> (<a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Literal" title="(in Python v3.14)"><em>Literal</em></a><em>[</em><em>'normal'</em><em>, </em><em>'lognormal'</em><em>, </em><em>'exp_normal'</em><em>, </em><em>'uniform'</em><em>, </em><em>'exponential'</em><em>, </em><em>'laplace'</em><em>]</em>) – <p>Distribution type for feature generation. Supported numpy random generator distrubutions:
+- “normal”, “lognormal”, “uniform”, “exponential”, “laplace”. Additionally, “exp_normal” for direct control</p>
+<blockquote>
+<div><p>over lognormal parameters.</p>
+</div></blockquote>
+</p></li>
 <li><p><strong>class_distribution_params</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><em>dict</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a><em>, </em><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.14)"><em>Any</em></a><em>]</em>) – Parameters for the chosen distribution.</p></li>
 <li><p><strong>label</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a><em> | </em><em>None</em>) – Optional descriptive name. Auto-generated as “class_0”, “class_1”, etc. if not provided.</p></li>
 </ul>
@@ -133,7 +139,11 @@ Class labels (0, 1, 2, …) are assigned by position in the list.</p>
 </div>
 <div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="c1"># Different distributions per class</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">configs</span> <span class="o">=</span> <span class="p">[</span>
-<span class="gp">... </span>    <span class="n">ClassConfig</span><span class="p">(</span><span class="n">n_samples</span><span class="o">=</span><span class="mi">50</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;control&quot;</span><span class="p">,</span> <span class="n">class_distribution</span><span class="o">=</span><span class="s2">&quot;normal&quot;</span><span class="p">),</span>
+<span class="gp">... </span>    <span class="n">ClassConfig</span><span class="p">(</span>
+<span class="gp">... </span>        <span class="n">n_samples</span><span class="o">=</span><span class="mi">50</span><span class="p">,</span>
+<span class="gp">... </span>        <span class="n">label</span><span class="o">=</span><span class="s2">&quot;control&quot;</span><span class="p">,</span>
+<span class="gp">... </span>        <span class="n">class_distribution</span><span class="o">=</span><span class="s2">&quot;normal&quot;</span>
+<span class="gp">... </span>    <span class="p">),</span>
 <span class="gp">... </span>    <span class="n">ClassConfig</span><span class="p">(</span>
 <span class="gp">... </span>        <span class="n">n_samples</span><span class="o">=</span><span class="mi">30</span><span class="p">,</span>
 <span class="gp">... </span>        <span class="n">label</span><span class="o">=</span><span class="s2">&quot;diseased&quot;</span><span class="p">,</span>
@@ -143,13 +153,6 @@ Class labels (0, 1, 2, …) are assigned by position in the list.</p>
 <span class="gp">... </span><span class="p">]</span>
 </pre></div>
 </div>
-<p class="rubric">Notes</p>
-<ul class="simple">
-<li><p>Class index is determined by position: first config = class 0, etc.</p></li>
-<li><p>n_samples is exact (not a weight or proportion)</p></li>
-<li><p>label is auto-generated if None or empty string</p></li>
-<li><p>Auto-generated labels follow pattern “class_{idx}”</p></li>
-</ul>
 <p>Create a new model by parsing and validating input data from keyword arguments.</p>
 <p>Raises [<cite>ValidationError</cite>][pydantic_core.ValidationError] if the input data cannot be
 validated to form a valid model.</p>

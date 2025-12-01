@@ -116,56 +116,69 @@ to a subset of features. This can be used to mimic:</p>
 <li><p>cohort / recruitment waves (temporal batches).</p></li>
 </ul>
 </div></blockquote>
-<section id="conceptual-separation">
-<h2>Conceptual separation<a class="headerlink" href="#conceptual-separation" title="Link to this heading"></a></h2>
+<p><strong>Conceptual separation of batch effect aspects</strong>:
+- <code class="docutils literal notranslate"><span class="pre">confounding_with_class</span></code> controls <strong>sampling bias</strong>:</p>
+<blockquote>
+<div><p>which samples (classes) are recruited into which batch.</p>
+</div></blockquote>
 <ul class="simple">
-<li><p><code class="docutils literal notranslate"><span class="pre">confounding_with_class</span></code> controls <strong>sampling bias</strong>:
-which samples (classes) are recruited into which batch.</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">effect_strength</span></code>, <code class="docutils literal notranslate"><span class="pre">effect_type</span></code> and <code class="docutils literal notranslate"><span class="pre">effect_granularity</span></code> control
 <strong>technical variation</strong>: how strongly, and how coherently across features,
 the measurements shift between batches.</p></li>
 </ul>
-<dl class="field-list">
-<dt class="field-odd">param n_batches<span class="colon">:</span></dt>
-<dd class="field-odd"><p>Number of batches. Values 0 or 1 effectively disable batch effects.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>n_batches</strong> (<a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Annotated" title="(in Python v3.14)"><em>Annotated</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a><em>, </em><em>Ge</em><em>(</em><em>ge=0</em><em>)</em><em>]</em>) – Number of batches. Value 0 effectively disables batch effects.</p></li>
+<li><p><strong>effect_strength</strong> (<a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Annotated" title="(in Python v3.14)"><em>Annotated</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a><em>, </em><em>Ge</em><em>(</em><em>ge=0</em><em>)</em><em>]</em>) – <dl class="simple">
+<dt>Scale of batch effects. Must be non-negative.</dt><dd><ul>
+<li><dl class="simple">
+<dt>For <code class="docutils literal notranslate"><span class="pre">effect_type=&quot;additive&quot;</span></code>: standard deviation of the additive</dt><dd><p>batch effects, sampled as <code class="docutils literal notranslate"><span class="pre">Normal(0,</span> <span class="pre">effect_strength)</span></code>.</p>
 </dd>
-<dt class="field-even">param effect_strength<span class="colon">:</span></dt>
-<dd class="field-even"><p>Scale of batch effects. Must be non-negative.
-- For <code class="docutils literal notranslate"><span class="pre">effect_type=&quot;additive&quot;</span></code>: standard deviation of the additive</p>
-<blockquote>
-<div><p>batch effects, sampled as <code class="docutils literal notranslate"><span class="pre">Normal(0,</span> <span class="pre">effect_strength)</span></code>.</p>
-</div></blockquote>
-<ul class="simple">
-<li><p>For <code class="docutils literal notranslate"><span class="pre">effect_type=&quot;multiplicative&quot;</span></code>: standard deviation of the
-multiplicative deviations around 1.0, sampled as
-<code class="docutils literal notranslate"><span class="pre">1</span> <span class="pre">+</span> <span class="pre">Normal(0,</span> <span class="pre">effect_strength)</span></code>.</p></li>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>For <code class="docutils literal notranslate"><span class="pre">effect_type=&quot;multiplicative&quot;</span></code>: standard deviation of the</dt><dd><p>multiplicative deviations around 1.0, sampled as
+<code class="docutils literal notranslate"><span class="pre">1</span> <span class="pre">+</span> <span class="pre">Normal(0,</span> <span class="pre">effect_strength)</span></code>.</p>
+</dd>
+</dl>
+</li>
 </ul>
 </dd>
-<dt class="field-odd">param effect_type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>Type of batch effect.
-- <code class="docutils literal notranslate"><span class="pre">&quot;additive&quot;</span></code>: Additive intercepts (shifts in feature means).
-- <code class="docutils literal notranslate"><span class="pre">&quot;multiplicative&quot;</span></code>: Multiplicative scaling (changes in</p>
-<blockquote>
-<div><p>variance/scale).</p>
-</div></blockquote>
-</dd>
-<dt class="field-even">param effect_granularity<span class="colon">:</span></dt>
-<dd class="field-even"><p>Granularity of batch effects across features:
-- <code class="docutils literal notranslate"><span class="pre">&quot;per_feature&quot;</span></code>: draw distinct effects per batch and affected</p>
-<blockquote>
-<div><p>feature (shape <code class="docutils literal notranslate"><span class="pre">(n_batches,</span> <span class="pre">n_affected_features)</span></code>).</p>
-</div></blockquote>
-<ul class="simple">
-<li><p><code class="docutils literal notranslate"><span class="pre">&quot;scalar&quot;</span></code>: draw a single effect per batch and apply it
-uniformly to all affected features (global per-batch shift/scale).</p></li>
+</dl>
+</p></li>
+<li><p><strong>effect_type</strong> (<a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Literal" title="(in Python v3.14)"><em>Literal</em></a><em>[</em><em>'additive'</em><em>, </em><em>'multiplicative'</em><em>]</em>) – <dl class="simple">
+<dt>Type of batch effect.</dt><dd><ul>
+<li><p><code class="docutils literal notranslate"><span class="pre">&quot;additive&quot;</span></code>: Additive intercepts (shifts in feature means).</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">&quot;multiplicative&quot;</span></code>: Multiplicative scaling (changes in variance/scale).</p></li>
 </ul>
 </dd>
-<dt class="field-odd">param confounding_with_class<span class="colon">:</span></dt>
-<dd class="field-odd"><p>Degree of confounding between batch and class in <code class="docutils literal notranslate"><span class="pre">[0.0,</span> <span class="pre">1.0]</span></code>.
+</dl>
+</p></li>
+<li><p><strong>effect_granularity</strong> (<a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Literal" title="(in Python v3.14)"><em>Literal</em></a><em>[</em><em>'per_feature'</em><em>, </em><em>'scalar'</em><em>]</em>) – <dl>
+<dt>Granularity of batch effects across features:</dt><dd><blockquote>
+<div><ul>
+<li><p><code class="docutils literal notranslate"><span class="pre">&quot;per_feature&quot;</span></code>: draw distinct effects per batch and affected</p></li>
+</ul>
+</div></blockquote>
+<dl class="simple">
+<dt>feature (shape <code class="docutils literal notranslate"><span class="pre">(n_batches,</span> <span class="pre">n_affected_features)</span></code>).</dt><dd><ul>
+<li><dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">&quot;scalar&quot;</span></code>: draw a single effect per batch and apply it</dt><dd><p>uniformly to all affected features (global per-batch shift/scale).</p>
+</dd>
+</dl>
+</li>
+</ul>
+</dd>
+</dl>
+</dd>
+</dl>
+</p></li>
+<li><p><strong>confounding_with_class</strong> (<a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Annotated" title="(in Python v3.14)"><em>Annotated</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a><em>, </em><em>Ge</em><em>(</em><em>ge=0.0</em><em>)</em><em>, </em><em>Le</em><em>(</em><em>le=1.0</em><em>)</em><em>]</em>) – <p>Degree of confounding between batch and class in <code class="docutils literal notranslate"><span class="pre">[0.0,</span> <span class="pre">1.0]</span></code>.
 Controls how strongly batch assignment correlates with class labels,
 simulating <strong>recruitment bias</strong> in multi-center studies.</p>
 <dl class="simple">
-<dt>Semantics (for two classes / two batches with equal base proportions):</dt><dd><ul class="simple">
+<dt>Semantics (for two classes / two batches with equal base proportions):</dt><dd><ul>
 <li><p>0.0 → independent: each batch has ~50/50 class mix.</p></li>
 <li><p>0.5 → moderate correlation.</p></li>
 <li><p>0.8 → strong recruitment bias (most samples of a class go to
@@ -175,15 +188,18 @@ batch (if <code class="docutils literal notranslate"><span class="pre">n_batches
 </ul>
 </dd>
 </dl>
+</p></li>
+<li><p><strong>affected_features</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.14)"><em>list</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a><em>] </em><em>| </em><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Literal" title="(in Python v3.14)"><em>Literal</em></a><em>[</em><em>'all'</em><em>]</em>) – <dl class="simple">
+<dt>Which features should be affected:</dt><dd><ul>
+<li><p><code class="docutils literal notranslate"><span class="pre">&quot;all&quot;</span></code>: apply batch effects to all features.</p></li>
+<li><p>list of ints: explicit 0-based column indices of affected features.</p></li>
+</ul>
 </dd>
-<dt class="field-even">param affected_features<span class="colon">:</span></dt>
-<dd class="field-even"><p>Which features should be affected:
-- <code class="docutils literal notranslate"><span class="pre">&quot;all&quot;</span></code>: apply batch effects to all features.
-- list of ints: explicit 0-based column indices of affected features.</p>
-</dd>
-<dt class="field-odd">param proportions<span class="colon">:</span></dt>
-<dd class="field-odd"><p>Optional target proportions for batch sizes. Values are normalized
-to sum to 1. If <code class="docutils literal notranslate"><span class="pre">None</span></code>, batches are (approximately) equal in size.</p>
+</dl>
+</p></li>
+<li><p><strong>proportions</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.14)"><em>list</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a><em>] </em><em>| </em><em>None</em>) – Optional target proportions for batch sizes. Values are normalized
+to sum to 1. If <code class="docutils literal notranslate"><span class="pre">None</span></code>, batches are (approximately) equal in size.</p></li>
+</ul>
 </dd>
 </dl>
 <p>Create a new model by parsing and validating input data from keyword arguments.</p>
@@ -345,20 +361,6 @@ validated to form a valid model.</p>
 </dl>
 </dd></dl>
 
-</section>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>n_batches</strong> (<a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Annotated" title="(in Python v3.14)"><em>Annotated</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a><em>, </em><em>Ge</em><em>(</em><em>ge=0</em><em>)</em><em>]</em>)</p></li>
-<li><p><strong>effect_strength</strong> (<a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Annotated" title="(in Python v3.14)"><em>Annotated</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a><em>, </em><em>Ge</em><em>(</em><em>ge=0</em><em>)</em><em>]</em>)</p></li>
-<li><p><strong>effect_type</strong> (<a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Literal" title="(in Python v3.14)"><em>Literal</em></a><em>[</em><em>'additive'</em><em>, </em><em>'multiplicative'</em><em>]</em>)</p></li>
-<li><p><strong>effect_granularity</strong> (<a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Literal" title="(in Python v3.14)"><em>Literal</em></a><em>[</em><em>'per_feature'</em><em>, </em><em>'scalar'</em><em>]</em>)</p></li>
-<li><p><strong>confounding_with_class</strong> (<a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Annotated" title="(in Python v3.14)"><em>Annotated</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a><em>, </em><em>Ge</em><em>(</em><em>ge=0.0</em><em>)</em><em>, </em><em>Le</em><em>(</em><em>le=1.0</em><em>)</em><em>]</em>)</p></li>
-<li><p><strong>affected_features</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.14)"><em>list</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a><em>] </em><em>| </em><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Literal" title="(in Python v3.14)"><em>Literal</em></a><em>[</em><em>'all'</em><em>]</em>)</p></li>
-<li><p><strong>proportions</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.14)"><em>list</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a><em>] </em><em>| </em><em>None</em>)</p></li>
-</ul>
-</dd>
-</dl>
 </dd></dl>
 
 </section>

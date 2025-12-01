@@ -60,7 +60,6 @@
       ~CorrClusterConfig.anchor_role
       ~CorrClusterConfig.anchor_effect_size
       ~CorrClusterConfig.anchor_class
-      ~CorrClusterConfig.random_state
       ~CorrClusterConfig.label
    
    

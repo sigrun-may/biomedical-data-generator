@@ -201,11 +201,14 @@
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Configuration for a single class in the dataset.</span>
 
 <span class="sd">    Each class is defined by its sample count, distribution, and optional label.</span>
-<span class="sd">    Class labels (0, 1, 2, ...) are assigned by position in the list.</span>
+<span class="sd">    Class indices (0, 1, 2, ...) are assigned by position in the list.</span>
+<span class="sd">    Auto-generated labels follow pattern “class_{idx}”.</span>
 
 <span class="sd">    Args:</span>
 <span class="sd">        n_samples: Number of samples for this class (must be &gt;= 1).</span>
-<span class="sd">        class_distribution: Distribution type for feature generation.</span>
+<span class="sd">        class_distribution: Distribution type for feature generation. Supported numpy random generator distrubutions:</span>
+<span class="sd">            - &quot;normal&quot;, &quot;lognormal&quot;, &quot;uniform&quot;, &quot;exponential&quot;, &quot;laplace&quot;. Additionally, &quot;exp_normal&quot; for direct control</span>
+<span class="sd">                over lognormal parameters.</span>
 <span class="sd">        class_distribution_params: Parameters for the chosen distribution.</span>
 <span class="sd">        label: Optional descriptive name. Auto-generated as &quot;class_0&quot;, &quot;class_1&quot;, etc. if not provided.</span>
 
@@ -224,7 +227,11 @@
 
 <span class="sd">        &gt;&gt;&gt; # Different distributions per class</span>
 <span class="sd">        &gt;&gt;&gt; configs = [</span>
-<span class="sd">        ...     ClassConfig(n_samples=50, label=&quot;control&quot;, class_distribution=&quot;normal&quot;),</span>
+<span class="sd">        ...     ClassConfig(</span>
+<span class="sd">        ...         n_samples=50,</span>
+<span class="sd">        ...         label=&quot;control&quot;,</span>
+<span class="sd">        ...         class_distribution=&quot;normal&quot;</span>
+<span class="sd">        ...     ),</span>
 <span class="sd">        ...     ClassConfig(</span>
 <span class="sd">        ...         n_samples=30,</span>
 <span class="sd">        ...         label=&quot;diseased&quot;,</span>
@@ -232,14 +239,7 @@
 <span class="sd">        ...         class_distribution_params={&quot;mean&quot;: 0, &quot;sigma&quot;: 0.5}</span>
 <span class="sd">        ...     )</span>
 <span class="sd">        ... ]</span>
-
-<span class="sd">    Notes:</span>
-<span class="sd">        - Class index is determined by position: first config = class 0, etc.</span>
-<span class="sd">        - n_samples is exact (not a weight or proportion)</span>
-<span class="sd">        - label is auto-generated if None or empty string</span>
-<span class="sd">        - Auto-generated labels follow pattern &quot;class_{idx}&quot;</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-
     <span class="n">model_config</span> <span class="o">=</span> <span class="n">ConfigDict</span><span class="p">(</span><span class="n">extra</span><span class="o">=</span><span class="s2">&quot;forbid&quot;</span><span class="p">)</span>
 
     <span class="n">n_samples</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span>
@@ -291,8 +291,7 @@
 <span class="sd">      - instrument calibration shifts,</span>
 <span class="sd">      - cohort / recruitment waves (temporal batches).</span>
 
-<span class="sd">    Conceptual separation</span>
-<span class="sd">    ---------------------</span>
+<span class="sd">    **Conceptual separation of batch effect aspects**:</span>
 <span class="sd">    - ``confounding_with_class`` controls **sampling bias**:</span>
 <span class="sd">      which samples (classes) are recruited into which batch.</span>
 
@@ -302,25 +301,24 @@
 
 <span class="sd">    Args:</span>
 <span class="sd">        n_batches:</span>
-<span class="sd">            Number of batches. Values 0 or 1 effectively disable batch effects.</span>
+<span class="sd">            Number of batches. Value 0 effectively disables batch effects.</span>
 <span class="sd">        effect_strength:</span>
 <span class="sd">            Scale of batch effects. Must be non-negative.</span>
-<span class="sd">            - For ``effect_type=&quot;additive&quot;``: standard deviation of the additive</span>
-<span class="sd">              batch effects, sampled as ``Normal(0, effect_strength)``.</span>
-<span class="sd">            - For ``effect_type=&quot;multiplicative&quot;``: standard deviation of the</span>
-<span class="sd">              multiplicative deviations around 1.0, sampled as</span>
-<span class="sd">              ``1 + Normal(0, effect_strength)``.</span>
+<span class="sd">                - For ``effect_type=&quot;additive&quot;``: standard deviation of the additive</span>
+<span class="sd">                    batch effects, sampled as ``Normal(0, effect_strength)``.</span>
+<span class="sd">                - For ``effect_type=&quot;multiplicative&quot;``: standard deviation of the</span>
+<span class="sd">                      multiplicative deviations around 1.0, sampled as</span>
+<span class="sd">                      ``1 + Normal(0, effect_strength)``.</span>
 <span class="sd">        effect_type:</span>
 <span class="sd">            Type of batch effect.</span>
-<span class="sd">            - ``&quot;additive&quot;``: Additive intercepts (shifts in feature means).</span>
-<span class="sd">            - ``&quot;multiplicative&quot;``: Multiplicative scaling (changes in</span>
-<span class="sd">              variance/scale).</span>
+<span class="sd">                - ``&quot;additive&quot;``: Additive intercepts (shifts in feature means).</span>
+<span class="sd">                - ``&quot;multiplicative&quot;``: Multiplicative scaling (changes in variance/scale).</span>
 <span class="sd">        effect_granularity:</span>
 <span class="sd">            Granularity of batch effects across features:</span>
-<span class="sd">            - ``&quot;per_feature&quot;``: draw distinct effects per batch and affected</span>
+<span class="sd">                - ``&quot;per_feature&quot;``: draw distinct effects per batch and affected</span>
 <span class="sd">              feature (shape ``(n_batches, n_affected_features)``).</span>
-<span class="sd">            - ``&quot;scalar&quot;``: draw a single effect per batch and apply it</span>
-<span class="sd">              uniformly to all affected features (global per-batch shift/scale).</span>
+<span class="sd">                - ``&quot;scalar&quot;``: draw a single effect per batch and apply it</span>
+<span class="sd">                    uniformly to all affected features (global per-batch shift/scale).</span>
 <span class="sd">        confounding_with_class:</span>
 <span class="sd">            Degree of confounding between batch and class in ``[0.0, 1.0]``.</span>
 <span class="sd">            Controls how strongly batch assignment correlates with class labels,</span>
@@ -335,8 +333,8 @@
 <span class="sd">                  batch (if ``n_batches &gt;= n_classes``).</span>
 <span class="sd">        affected_features:</span>
 <span class="sd">            Which features should be affected:</span>
-<span class="sd">            - ``&quot;all&quot;``: apply batch effects to all features.</span>
-<span class="sd">            - list of ints: explicit 0-based column indices of affected features.</span>
+<span class="sd">                - ``&quot;all&quot;``: apply batch effects to all features.</span>
+<span class="sd">                - list of ints: explicit 0-based column indices of affected features.</span>
 <span class="sd">        proportions:</span>
 <span class="sd">            Optional target proportions for batch sizes. Values are normalized</span>
 <span class="sd">            to sum to 1. If ``None``, batches are (approximately) equal in size.</span>
@@ -406,18 +404,17 @@
 <span class="sd">    marker acts as the &quot;anchor&quot; (driver), while the others are &quot;proxies&quot;</span>
 <span class="sd">    (followers).</span>
 
-<span class="sd">    Two correlation modes</span>
-<span class="sd">    ---------------------</span>
+<span class="sd">    **Two correlation modes are supported:**</span>
 
-<span class="sd">    1) Global correlation (most common):</span>
-<span class="sd">        correlation: float</span>
-<span class="sd">        structure:   &quot;equicorrelated&quot; or &quot;toeplitz&quot;</span>
+<span class="sd">        1) Global correlation (most common):</span>
+<span class="sd">            correlation: float</span>
+<span class="sd">            structure:   &quot;equicorrelated&quot; or &quot;toeplitz&quot;</span>
 
-<span class="sd">    Example:</span>
-<span class="sd">            correlation = 0.7</span>
-<span class="sd">            structure   = &quot;equicorrelated&quot;</span>
+<span class="sd">            Example:</span>
+<span class="sd">                correlation = 0.7</span>
+<span class="sd">                structure   = &quot;equicorrelated&quot;</span>
 
-<span class="sd">        All samples share the same correlation pattern.</span>
+<span class="sd">            All samples share the same correlation pattern.</span>
 
 <span class="sd">    2) Class-specific correlation:</span>
 <span class="sd">        correlation: dict[int, float]</span>
@@ -451,8 +448,6 @@
 <span class="sd">            &quot;small&quot; (0.5), &quot;medium&quot; (1.0), &quot;large&quot; (1.5), custom &gt; 0, or None.</span>
 <span class="sd">        anchor_class:</span>
 <span class="sd">            Class index the anchor predicts (if informative). None → all classes.</span>
-<span class="sd">        random_state:</span>
-<span class="sd">            Optional seed for this cluster. If None, uses the global dataset seed.</span>
 <span class="sd">        label:</span>
 <span class="sd">            Descriptive name for documentation.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
@@ -480,13 +475,9 @@
         <span class="p">),</span>
     <span class="p">)</span>
 
-    <span class="c1"># Biological relevance ----------------------------------------------------</span>
     <span class="n">anchor_role</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;informative&quot;</span><span class="p">,</span> <span class="s2">&quot;noise&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;informative&quot;</span>
     <span class="n">anchor_effect_size</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;small&quot;</span><span class="p">,</span> <span class="s2">&quot;medium&quot;</span><span class="p">,</span> <span class="s2">&quot;large&quot;</span><span class="p">]</span> <span class="o">|</span> <span class="nb">float</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
     <span class="n">anchor_class</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
-
-    <span class="c1"># Metadata ----------------------------------------------------------------</span>
-    <span class="n">random_state</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
     <span class="n">label</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
 
     <span class="nd">@field_validator</span><span class="p">(</span><span class="s2">&quot;n_cluster_features&quot;</span><span class="p">)</span>
