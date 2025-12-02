@@ -34,7 +34,7 @@ ______________________________________________________________________
 
 ```bash
 # Fork on GitHub, then:
-git clone https://github.com/<your-username>/biomedical-data-generator.git
+git clone https://github.com/sigrun-may/biomedical-data-generator.git
 cd biomedical-data-generator
 ```
 
@@ -69,7 +69,6 @@ poetry install
 If you want to work on docs and development tooling (recommended):
 
 ```bash
-# If there are extras/groups like "dev" or "docs" configured:
 poetry install --with dev,docs
 ```
 
