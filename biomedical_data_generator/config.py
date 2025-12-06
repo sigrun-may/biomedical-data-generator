@@ -562,6 +562,7 @@ class DatasetConfig(BaseModel):
                 * Free noise:        n1, n2, ...
                 * Correlated:        corr{cid}_anchor, corr{cid}_2, ..., corr{cid}_k
             If False, use generic feature_{i} naming.
+            Default: True.
         prefix_informative (str): Prefix for informative features (if prefixed_feature_naming=True). Default: "i".
         prefix_noise (str): Prefix for noise features (if prefixed_feature_naming=True). Default: "n".
         prefix_corr (str): Prefix for correlated cluster features (if prefixed_feature_naming=True). Default: "corr".
