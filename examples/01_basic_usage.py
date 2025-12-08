@@ -64,7 +64,7 @@ def main() -> None:
     print("Feature Roles:")
     print(f"  - Informative features: {meta.informative_idx}")
     print(f"  - Noise features: {meta.noise_idx}")
-    print(f"  - Cluster features: {list(meta.corr_cluster_indices.keys())}")
+    print(f"  - Cluster features: {list(meta.corr_cluster_indices.values())}")
     for cid, indices in meta.corr_cluster_indices.items():
         anchor = meta.anchor_idx.get(cid)
         # Note: cid is 0-based (cluster 0, 1, 2, ...) but feature names use 1-based (corr1, corr2, ...)
@@ -73,10 +73,8 @@ def main() -> None:
 
     # Display sample statistics
     print("Class Distribution:")
-    for class_label in cfg.class_labels:
-        count = (y == class_label).sum()
-        print(f"  - {class_label}: {count} samples")
-    print()
+    for class_idx, class_name in enumerate(meta.class_names):
+        print(f"  - {class_name}: {meta.samples_per_class[class_idx]} samples")
 
     # Save to CSV
     out_path = "basic_dataset.csv"
