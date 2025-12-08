@@ -51,16 +51,16 @@ def sample_data():
 
 def test_to_labeled_dataframe_with_labels(sample_data):
     """Test converting to DataFrame with labels."""
-    X, y, meta = sample_data
+    x, y, meta = sample_data
 
-    df = to_labeled_dataframe(X, y, meta, include_labels=True)
+    df = to_labeled_dataframe(x, y, meta, include_labels=True)
 
     # Check shape - should have features + y column (string labels only if class_labels is non-empty)
     assert df.shape[0] == 3
     assert "y" in df.columns
 
     # Check feature values
-    np.testing.assert_array_equal(df[["feature_1", "feature_2", "feature_3"]].values, X)
+    np.testing.assert_array_equal(df[["feature_1", "feature_2", "feature_3"]].values, x)
 
     # Check numeric labels
     np.testing.assert_array_equal(df["y"].values, y)
@@ -68,9 +68,9 @@ def test_to_labeled_dataframe_with_labels(sample_data):
 
 def test_to_labeled_dataframe_without_labels(sample_data):
     """Test converting to DataFrame without labels."""
-    X, y, meta = sample_data
+    x, y, meta = sample_data
 
-    df = to_labeled_dataframe(X, y, meta, include_labels=False)
+    df = to_labeled_dataframe(x, y, meta, include_labels=False)
 
     # Check shape (only features, no labels)
     assert df.shape == (3, 3)
@@ -79,31 +79,31 @@ def test_to_labeled_dataframe_without_labels(sample_data):
     assert list(df.columns) == ["feature_1", "feature_2", "feature_3"]
 
     # Check values
-    np.testing.assert_array_equal(df.values, X)
+    np.testing.assert_array_equal(df.values, x)
 
 
 def test_to_labeled_dataframe_with_dataframe_input(sample_data):
     """Test with DataFrame input."""
-    X, y, meta = sample_data
+    x, y, meta = sample_data
 
     # Convert X to DataFrame
-    X_df = pd.DataFrame(X, columns=["col1", "col2", "col3"])
+    x_df = pd.DataFrame(x, columns=["col1", "col2", "col3"])
 
-    df = to_labeled_dataframe(X_df, y, meta, include_labels=True)
+    df = to_labeled_dataframe(x_df, y, meta, include_labels=True)
 
     # Should rename columns to match meta.feature_names
-    assert df.columns[0] == "feature_1"
-    assert df.columns[1] == "feature_2"
-    assert df.columns[2] == "feature_3"
+    assert df.columns[1] == "feature_1"
+    assert df.columns[2] == "feature_2"
+    assert df.columns[3] == "feature_3"
     assert "y" in df.columns
 
 
 def test_to_labeled_dataframe_custom_label_names(sample_data):
     """Test with custom label column names."""
-    X, y, meta = sample_data
+    x, y, meta = sample_data
 
     df = to_labeled_dataframe(
-        X,
+        x,
         y,
         meta,
         include_labels=True,
@@ -119,45 +119,45 @@ def test_to_labeled_dataframe_custom_label_names(sample_data):
 
 def test_to_labeled_dataframe_with_custom_feature_names(sample_data):
     """Test with custom feature names."""
-    X, y, _ = sample_data
+    x, y, _ = sample_data
 
     custom_names = ["custom_1", "custom_2", "custom_3"]
 
-    df = to_labeled_dataframe(X, y, None, feature_names=custom_names, include_labels=True)
+    df = to_labeled_dataframe(x, y, None, feature_names=custom_names, include_labels=True)
 
-    assert list(df.columns[:3]) == custom_names
+    assert list(df.columns[1:4]) == custom_names
 
 
 def test_to_labeled_dataframe_no_meta_no_names_raises(sample_data):
     """Test that missing both meta and feature_names raises error."""
-    X, y, _ = sample_data
+    x, y, _ = sample_data
 
     with pytest.raises(ValueError, match="Either meta or feature_names must be provided"):
-        to_labeled_dataframe(X, y, None, include_labels=False)
+        to_labeled_dataframe(x, y, None, include_labels=False)
 
 
 def test_to_labeled_dataframe_missing_y_with_labels_raises(sample_data):
     """Test that include_labels=True without y raises error."""
-    X, _, meta = sample_data
+    x, _, meta = sample_data
 
     with pytest.raises(ValueError, match="y must be provided when include_labels=True"):
-        to_labeled_dataframe(X, None, meta, include_labels=True)
+        to_labeled_dataframe(x, None, meta, include_labels=True)
 
 
 def test_to_labeled_dataframe_shape_mismatch_raises(sample_data):
-    """Test that shape mismatch between X and y raises error."""
-    X, y, meta = sample_data
+    """Test that shape mismatch between x and y raises error."""
+    x, y, meta = sample_data
 
     # Create y with wrong length
     y_wrong = np.array([0, 1])  # Only 2 elements instead of 3
 
     with pytest.raises(ValueError, match="Shape mismatch"):
-        to_labeled_dataframe(X, y_wrong, meta, include_labels=True)
+        to_labeled_dataframe(x, y_wrong, meta, include_labels=True)
 
 
 def test_to_labeled_dataframe_without_string_labels(sample_data):
     """Test handling when meta doesn't have class_labels."""
-    X, y, meta = sample_data
+    x, y, meta = sample_data
 
     # Create meta without class_labels attribute
     minimal_meta = DatasetMeta(
@@ -177,7 +177,7 @@ def test_to_labeled_dataframe_without_string_labels(sample_data):
         corr_between=0.0,
     )
 
-    df = to_labeled_dataframe(X, y, minimal_meta, include_labels=True)
+    df = to_labeled_dataframe(x, y, minimal_meta, include_labels=True)
 
     # Should have numeric labels but no string labels
     assert "y" in df.columns
@@ -187,11 +187,11 @@ def test_to_labeled_dataframe_without_string_labels(sample_data):
 
 def test_to_csv(sample_data, tmp_path):
     """Test exporting to CSV."""
-    X, y, meta = sample_data
+    x, y, meta = sample_data
 
     csv_path = tmp_path / "test.csv"
 
-    to_csv(X, y, meta, csv_path, index=False)
+    to_csv(x, y, meta, csv_path, index=False)
 
     # Check file exists
     assert csv_path.exists()
@@ -204,11 +204,11 @@ def test_to_csv(sample_data, tmp_path):
 
 def test_to_csv_without_labels(sample_data, tmp_path):
     """Test exporting to CSV without labels."""
-    X, y, meta = sample_data
+    x, y, meta = sample_data
 
     csv_path = tmp_path / "test_no_labels.csv"
 
-    to_csv(X, y, meta, csv_path, include_labels=False, index=False)
+    to_csv(x, y, meta, csv_path, include_labels=False, index=False)
 
     df = pd.read_csv(csv_path)
     assert df.shape == (3, 3)  # Only features
@@ -217,11 +217,11 @@ def test_to_csv_without_labels(sample_data, tmp_path):
 
 def test_to_csv_with_custom_kwargs(sample_data, tmp_path):
     """Test to_csv with custom CSV kwargs."""
-    X, y, meta = sample_data
+    x, y, meta = sample_data
 
     csv_path = tmp_path / "test_custom.csv"
 
-    to_csv(X, y, meta, csv_path, sep=";", index=True)
+    to_csv(x, y, meta, csv_path, sep=";", index=True)
 
     # Read back with semicolon separator
     df = pd.read_csv(csv_path, sep=";", index_col=0)
@@ -232,11 +232,11 @@ def test_to_parquet(sample_data, tmp_path):
     """Test exporting to Parquet."""
     pytest.importorskip("pyarrow", reason="PyArrow not installed")
 
-    X, y, meta = sample_data
+    x, y, meta = sample_data
 
     parquet_path = tmp_path / "test.parquet"
 
-    to_parquet(X, y, meta, parquet_path)
+    to_parquet(x, y, meta, parquet_path)
 
     # Check file exists
     assert parquet_path.exists()
@@ -251,11 +251,11 @@ def test_to_parquet_without_labels(sample_data, tmp_path):
     """Test exporting to Parquet without labels."""
     pytest.importorskip("pyarrow", reason="PyArrow not installed")
 
-    X, y, meta = sample_data
+    x, y, meta = sample_data
 
     parquet_path = tmp_path / "test_no_labels.parquet"
 
-    to_parquet(X, y, meta, parquet_path, include_labels=False)
+    to_parquet(x, y, meta, parquet_path, include_labels=False)
 
     df = pd.read_parquet(parquet_path)
     assert df.shape == (3, 3)
@@ -266,12 +266,12 @@ def test_to_parquet_with_path_object(sample_data):
     """Test to_parquet with Path object."""
     pytest.importorskip("pyarrow", reason="PyArrow not installed")
 
-    X, y, meta = sample_data
+    x, y, meta = sample_data
 
     with tempfile.TemporaryDirectory() as tmpdir:
         parquet_path = Path(tmpdir) / "test.parquet"
 
-        to_parquet(X, y, meta, parquet_path)
+        to_parquet(x, y, meta, parquet_path)
 
         assert parquet_path.exists()
         df = pd.read_parquet(parquet_path)
@@ -280,12 +280,12 @@ def test_to_parquet_with_path_object(sample_data):
 
 def test_to_csv_with_string_path(sample_data):
     """Test to_csv with string path."""
-    X, y, meta = sample_data
+    x, y, meta = sample_data
 
     with tempfile.TemporaryDirectory() as tmpdir:
         csv_path = f"{tmpdir}/test.csv"
 
-        to_csv(X, y, meta, csv_path, index=False)
+        to_csv(x, y, meta, csv_path, index=False)
 
         df = pd.read_csv(csv_path)
         assert df.shape[0] == 3

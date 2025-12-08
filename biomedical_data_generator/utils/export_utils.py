@@ -20,7 +20,7 @@ __all__ = [
 
 
 def to_labeled_dataframe(
-    X: pd.DataFrame | NDArray[np.float64],
+    x: pd.DataFrame | NDArray[np.float64],
     y: NDArray[np.int64] | None = None,
     meta: DatasetMeta | None = None,
     *,
@@ -32,12 +32,12 @@ def to_labeled_dataframe(
     """Convert generated dataset to DataFrame with optional labels.
 
     Flexible conversion supporting multiple use cases:
-    1. Full conversion: X + y + meta → df with features + labels
-    2. Features only: X + meta → df with features (no labels)
+    1. Full conversion: x + y + meta → df with features + labels
+    2. Features only: x + meta → df with features (no labels)
     3. Custom names: override default column names
 
     Args:
-        X: Feature matrix (DataFrame or ndarray).
+        x: Feature matrix (DataFrame or ndarray).
         y: Optional class labels (integers 0 to n_classes-1).
         meta: Optional dataset metadata.
         include_labels: If True and y provided, add label columns.
@@ -53,13 +53,13 @@ def to_labeled_dataframe(
 
     Examples:
         >>> # Standard usage
-        >>> df = to_labeled_dataframe(X, y, meta)
+        >>> df = to_labeled_dataframe(x, y, meta)
 
         >>> # Features only
-        >>> df_features = to_labeled_dataframe(X, meta=meta, include_labels=False)
+        >>> df_features = to_labeled_dataframe(x, meta=meta, include_labels=False)
 
         >>> # Custom column names
-        >>> df = to_labeled_dataframe(X, y, meta,
+        >>> df = to_labeled_dataframe(x, y, meta,
         ...                   label_col_name="class",
         ...                   label_str_col_name="diagnosis")
     """
@@ -70,13 +70,13 @@ def to_labeled_dataframe(
         feature_names = meta.feature_names
 
     # Convert X to DataFrame
-    if isinstance(X, pd.DataFrame):
-        df = X.copy()
+    if isinstance(x, pd.DataFrame):
+        df = x.copy()
         # Rename columns if needed
         if list(df.columns) != feature_names:
             df.columns = feature_names
     else:
-        df = pd.DataFrame(X, columns=feature_names)
+        df = pd.DataFrame(x, columns=feature_names)
 
     # Add labels if requested
     if include_labels:
@@ -87,8 +87,8 @@ def to_labeled_dataframe(
         if df.shape[0] != len(y):
             raise ValueError(f"Shape mismatch: X has {df.shape[0]} samples but y has {len(y)}")
 
-        # Add numeric labels
-        df[label_col_name] = y
+        # Add numeric labels in first column
+        df.insert(0, label_col_name, y)
 
         # Add string labels if meta available
         if meta is not None and hasattr(meta, "class_labels"):
@@ -98,12 +98,13 @@ def to_labeled_dataframe(
 
 
 def to_csv(
-    X: pd.DataFrame | NDArray[np.float64],
+    x: pd.DataFrame | NDArray[np.float64],
     y: NDArray[np.int64],
     meta: DatasetMeta,
     filepath: str | Path,
     *,
     include_labels: bool = True,
+    index: bool = False,
     **csv_kwargs,
 ) -> None:
     """Export dataset to CSV file.
@@ -111,19 +112,20 @@ def to_csv(
     Convenience wrapper around to_dataframe() + DataFrame.to_csv().
 
     Args:
-        X: Feature matrix.
+        x: Feature matrix.
         y: Class labels.
         meta: Dataset metadata.
         filepath: Output path (e.g., "data/train.csv").
         include_labels: If True, include label columns.
+        index: If True, write row indices to CSV.
         **csv_kwargs: Additional arguments for pd.DataFrame.to_csv()
                       (e.g., index=False, sep=';').
 
     Examples:
-        >>> to_csv(X, y, meta, "output/dataset.csv", index=False)
+        >>> to_csv(x, y, meta, "output/dataset.csv", index=False)
     """
-    df = to_labeled_dataframe(X, y, meta, include_labels=include_labels)
-    df.to_csv(filepath, **csv_kwargs)
+    df = to_labeled_dataframe(x, y, meta, include_labels=include_labels)
+    df.to_csv(filepath, index=index, **csv_kwargs)
 
 
 def to_parquet(
