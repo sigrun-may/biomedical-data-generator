@@ -15,8 +15,11 @@ This example demonstrates:
 
 from __future__ import annotations
 
+from typing import Literal
+
 import matplotlib.pyplot as plt
 import numpy as np
+import pandas as pd
 import seaborn as sns
 
 from biomedical_data_generator.config import (
@@ -31,7 +34,7 @@ from biomedical_data_generator.generator import generate_dataset
 def create_dataset_with_batches(
     n_batches: int,
     confounding: float,
-    effect_type: str = "additive",
+    effect_type: Literal["additive", "multiplicative"] = "additive",
     effect_strength: float = 0.5,
 ) -> tuple:
     """Create a dataset with specified batch effect configuration."""
@@ -77,17 +80,14 @@ def main() -> None:
     # Example 1: No confounding (random batch assignment)
     print("Example 1: Random Batch Assignment (No Confounding)")
     print("-" * 70)
-    X1, y1, meta1, cfg1 = create_dataset_with_batches(
+    x1, y1, meta1, cfg1 = create_dataset_with_batches(
         n_batches=3, confounding=0.0, effect_type="additive", effect_strength=0.5
     )
-    print(f"Generated dataset: {X1.shape}")
+    print(f"Generated dataset: {x1.shape}")
     print("Batch distribution across classes:")
-    batch_col = meta1.batch_labels if hasattr(meta1, "batch_labels") else None
-    if batch_col is not None:
-        for class_label in ["control", "treated"]:
-            mask = y1 == class_label
-            batch_counts = np.bincount(batch_col[mask])
-            print(f"  {class_label}: {batch_counts}")
+    for class_idx, class_name in enumerate(meta1.class_names):
+        batch_counts = np.bincount(meta1.batch_labels[y1 == class_idx])
+        print(f"  {class_name}: {batch_counts}")
     print()
 
     # Example 2: Strong confounding (recruitment bias)
@@ -96,17 +96,14 @@ def main() -> None:
     print("Simulating scenario where control samples are mostly from batch 0")
     print("and treated samples are mostly from batch 1.")
     print()
-    X2, y2, meta2, cfg2 = create_dataset_with_batches(
+    x2, y2, meta2, cfg2 = create_dataset_with_batches(
         n_batches=2, confounding=0.8, effect_type="additive", effect_strength=0.8
     )
-    print(f"Generated dataset: {X2.shape}")
+    print(f"Generated dataset: {x2.shape}")
     print("Batch distribution across classes:")
-    batch_col2 = meta2.batch_labels if hasattr(meta2, "batch_labels") else None
-    if batch_col2 is not None:
-        for class_label in ["control", "treated"]:
-            mask = y2 == class_label
-            batch_counts = np.bincount(batch_col2[mask])
-            print(f"  {class_label}: {batch_counts}")
+    for class_idx, class_name in enumerate(meta2.class_names):
+        batch_counts = np.bincount(meta2.batch_labels[y2 == class_idx])
+        print(f"  {class_name}: {batch_counts}")
     print()
 
     # Example 3: Multiplicative batch effects
@@ -114,10 +111,10 @@ def main() -> None:
     print("-" * 70)
     print("Simulating instrument calibration differences (scaling factors)")
     print()
-    X3, y3, meta3, cfg3 = create_dataset_with_batches(
+    x3, y3, meta3, cfg3 = create_dataset_with_batches(
         n_batches=3, confounding=0.0, effect_type="multiplicative", effect_strength=0.3
     )
-    print(f"Generated dataset: {X3.shape}")
+    print(f"Generated dataset: {x3.shape}")
     print()
 
     # Visualization (optional, requires matplotlib)
@@ -135,14 +132,13 @@ def main() -> None:
         fig, axes = plt.subplots(1, 2, figsize=(14, 5))
 
         # Plot 1: Feature distribution by batch (no confounding)
-        if batch_col is not None:
-            feature_idx = 0
+        feature_idx = 0
+        if meta1.batch_labels is not None:
             data1 = {
-                "Feature Value": X1.iloc[:, feature_idx],
-                "Batch": batch_col,
+                "Feature Value": x1.iloc[:, feature_idx],
+                "Batch": meta1.batch_labels,
                 "Class": y1,
             }
-            import pandas as pd
 
             df1 = pd.DataFrame(data1)
             sns.boxplot(data=df1, x="Batch", y="Feature Value", hue="Class", ax=axes[0])
@@ -150,10 +146,10 @@ def main() -> None:
             axes[0].legend(title="Class")
 
         # Plot 2: Feature distribution by batch (with confounding)
-        if batch_col2 is not None:
+        if meta2.batch_labels is not None:
             data2 = {
-                "Feature Value": X2.iloc[:, feature_idx],
-                "Batch": batch_col2,
+                "Feature Value": x2.iloc[:, feature_idx],
+                "Batch": meta2.batch_labels,
                 "Class": y2,
             }
             df2 = pd.DataFrame(data2)
@@ -172,9 +168,9 @@ def main() -> None:
     # Save datasets
     for i, (X, y, name) in enumerate(
         [
-            (X1, y1, "random_batches"),
-            (X2, y2, "confounded_batches"),
-            (X3, y3, "multiplicative_batches"),
+            (x1, y1, "random_batches"),
+            (x2, y2, "confounded_batches"),
+            (x3, y3, "multiplicative_batches"),
         ],
         start=1,
     ):
