@@ -104,7 +104,7 @@
 <div class="viewcode-block" id="to_labeled_dataframe">
 <a class="viewcode-back" href="../../../_autosummary/biomedical_data_generator.utils.export_utils.html#biomedical_data_generator.utils.export_utils.to_labeled_dataframe">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">to_labeled_dataframe</span><span class="p">(</span>
-    <span class="n">X</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span> <span class="o">|</span> <span class="n">NDArray</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">],</span>
+    <span class="n">x</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span> <span class="o">|</span> <span class="n">NDArray</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">],</span>
     <span class="n">y</span><span class="p">:</span> <span class="n">NDArray</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">int64</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">meta</span><span class="p">:</span> <span class="n">DatasetMeta</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="o">*</span><span class="p">,</span>
@@ -116,12 +116,12 @@
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Convert generated dataset to DataFrame with optional labels.</span>
 
 <span class="sd">    Flexible conversion supporting multiple use cases:</span>
-<span class="sd">    1. Full conversion: X + y + meta → df with features + labels</span>
-<span class="sd">    2. Features only: X + meta → df with features (no labels)</span>
+<span class="sd">    1. Full conversion: x + y + meta → df with features + labels</span>
+<span class="sd">    2. Features only: x + meta → df with features (no labels)</span>
 <span class="sd">    3. Custom names: override default column names</span>
 
 <span class="sd">    Args:</span>
-<span class="sd">        X: Feature matrix (DataFrame or ndarray).</span>
+<span class="sd">        x: Feature matrix (DataFrame or ndarray).</span>
 <span class="sd">        y: Optional class labels (integers 0 to n_classes-1).</span>
 <span class="sd">        meta: Optional dataset metadata.</span>
 <span class="sd">        include_labels: If True and y provided, add label columns.</span>
@@ -137,13 +137,13 @@
 
 <span class="sd">    Examples:</span>
 <span class="sd">        &gt;&gt;&gt; # Standard usage</span>
-<span class="sd">        &gt;&gt;&gt; df = to_labeled_dataframe(X, y, meta)</span>
+<span class="sd">        &gt;&gt;&gt; df = to_labeled_dataframe(x, y, meta)</span>
 
 <span class="sd">        &gt;&gt;&gt; # Features only</span>
-<span class="sd">        &gt;&gt;&gt; df_features = to_labeled_dataframe(X, meta=meta, include_labels=False)</span>
+<span class="sd">        &gt;&gt;&gt; df_features = to_labeled_dataframe(x, meta=meta, include_labels=False)</span>
 
 <span class="sd">        &gt;&gt;&gt; # Custom column names</span>
-<span class="sd">        &gt;&gt;&gt; df = to_labeled_dataframe(X, y, meta,</span>
+<span class="sd">        &gt;&gt;&gt; df = to_labeled_dataframe(x, y, meta,</span>
 <span class="sd">        ...                   label_col_name=&quot;class&quot;,</span>
 <span class="sd">        ...                   label_str_col_name=&quot;diagnosis&quot;)</span>
 <span class="sd">    &quot;&quot;&quot;</span>
@@ -154,13 +154,13 @@
         <span class="n">feature_names</span> <span class="o">=</span> <span class="n">meta</span><span class="o">.</span><span class="n">feature_names</span>
 
     <span class="c1"># Convert X to DataFrame</span>
-    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">):</span>
-        <span class="n">df</span> <span class="o">=</span> <span class="n">X</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">):</span>
+        <span class="n">df</span> <span class="o">=</span> <span class="n">x</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
         <span class="c1"># Rename columns if needed</span>
         <span class="k">if</span> <span class="nb">list</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">columns</span><span class="p">)</span> <span class="o">!=</span> <span class="n">feature_names</span><span class="p">:</span>
             <span class="n">df</span><span class="o">.</span><span class="n">columns</span> <span class="o">=</span> <span class="n">feature_names</span>
     <span class="k">else</span><span class="p">:</span>
-        <span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">columns</span><span class="o">=</span><span class="n">feature_names</span><span class="p">)</span>
+        <span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">columns</span><span class="o">=</span><span class="n">feature_names</span><span class="p">)</span>
 
     <span class="c1"># Add labels if requested</span>
     <span class="k">if</span> <span class="n">include_labels</span><span class="p">:</span>
@@ -171,8 +171,8 @@
         <span class="k">if</span> <span class="n">df</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="n">y</span><span class="p">):</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Shape mismatch: X has </span><span class="si">{</span><span class="n">df</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s2"> samples but y has </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">y</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
 
-        <span class="c1"># Add numeric labels</span>
-        <span class="n">df</span><span class="p">[</span><span class="n">label_col_name</span><span class="p">]</span> <span class="o">=</span> <span class="n">y</span>
+        <span class="c1"># Add numeric labels in first column</span>
+        <span class="n">df</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">label_col_name</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span>
 
         <span class="c1"># Add string labels if meta available</span>
         <span class="k">if</span> <span class="n">meta</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">meta</span><span class="p">,</span> <span class="s2">&quot;class_labels&quot;</span><span class="p">):</span>
@@ -185,12 +185,13 @@
 <div class="viewcode-block" id="to_csv">
 <a class="viewcode-back" href="../../../_autosummary/biomedical_data_generator.utils.export_utils.html#biomedical_data_generator.utils.export_utils.to_csv">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">to_csv</span><span class="p">(</span>
-    <span class="n">X</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span> <span class="o">|</span> <span class="n">NDArray</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">],</span>
+    <span class="n">x</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span> <span class="o">|</span> <span class="n">NDArray</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">],</span>
     <span class="n">y</span><span class="p">:</span> <span class="n">NDArray</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">int64</span><span class="p">],</span>
     <span class="n">meta</span><span class="p">:</span> <span class="n">DatasetMeta</span><span class="p">,</span>
     <span class="n">filepath</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">Path</span><span class="p">,</span>
     <span class="o">*</span><span class="p">,</span>
     <span class="n">include_labels</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+    <span class="n">index</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
     <span class="o">**</span><span class="n">csv_kwargs</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Export dataset to CSV file.</span>
@@ -198,19 +199,20 @@
 <span class="sd">    Convenience wrapper around to_dataframe() + DataFrame.to_csv().</span>
 
 <span class="sd">    Args:</span>
-<span class="sd">        X: Feature matrix.</span>
+<span class="sd">        x: Feature matrix.</span>
 <span class="sd">        y: Class labels.</span>
 <span class="sd">        meta: Dataset metadata.</span>
 <span class="sd">        filepath: Output path (e.g., &quot;data/train.csv&quot;).</span>
 <span class="sd">        include_labels: If True, include label columns.</span>
+<span class="sd">        index: If True, write row indices to CSV.</span>
 <span class="sd">        **csv_kwargs: Additional arguments for pd.DataFrame.to_csv()</span>
 <span class="sd">                      (e.g., index=False, sep=&#39;;&#39;).</span>
 
 <span class="sd">    Examples:</span>
-<span class="sd">        &gt;&gt;&gt; to_csv(X, y, meta, &quot;output/dataset.csv&quot;, index=False)</span>
+<span class="sd">        &gt;&gt;&gt; to_csv(x, y, meta, &quot;output/dataset.csv&quot;, index=False)</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">df</span> <span class="o">=</span> <span class="n">to_labeled_dataframe</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">meta</span><span class="p">,</span> <span class="n">include_labels</span><span class="o">=</span><span class="n">include_labels</span><span class="p">)</span>
-    <span class="n">df</span><span class="o">.</span><span class="n">to_csv</span><span class="p">(</span><span class="n">filepath</span><span class="p">,</span> <span class="o">**</span><span class="n">csv_kwargs</span><span class="p">)</span></div>
+    <span class="n">df</span> <span class="o">=</span> <span class="n">to_labeled_dataframe</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">meta</span><span class="p">,</span> <span class="n">include_labels</span><span class="o">=</span><span class="n">include_labels</span><span class="p">)</span>
+    <span class="n">df</span><span class="o">.</span><span class="n">to_csv</span><span class="p">(</span><span class="n">filepath</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="n">index</span><span class="p">,</span> <span class="o">**</span><span class="n">csv_kwargs</span><span class="p">)</span></div>
 
 
 
