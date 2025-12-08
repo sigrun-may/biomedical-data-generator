@@ -125,32 +125,6 @@ def test_03_class_specific_correlations_runs(capsys, suppress_matplotlib_show):
         assert Path(filename).exists(), f"Expected file {filename} not found"
 
 
-def test_04_feature_selection_stability_runs(capsys, suppress_matplotlib_show):
-    """Test that 04_feature_selection_stability.py runs without errors."""
-    example = import_example("04_feature_selection_stability")
-
-    example.main()
-
-    # Check that output was printed
-    captured = capsys.readouterr()
-    assert "Feature Selection Stability" in captured.out
-    assert "High Signal-to-Noise Ratio" in captured.out
-    assert "Low Signal-to-Noise Ratio" in captured.out
-    assert "Highly Correlated Features" in captured.out
-    assert "Mean Precision" in captured.out
-    assert "Mean Recall" in captured.out
-    assert "Stability" in captured.out
-
-    # Check that CSV files were created
-    expected_files = [
-        "feature_selection_example_1_high_snr.csv",
-        "feature_selection_example_2_low_snr.csv",
-        "feature_selection_example_3_high_correlation.csv",
-    ]
-    for filename in expected_files:
-        assert Path(filename).exists(), f"Expected file {filename} not found"
-
-
 def test_02_batch_effects_create_dataset_with_batches():
     """Test the helper function in 02_batch_effects.py."""
     example = import_example("02_batch_effects")
@@ -186,48 +160,12 @@ def test_03_compute_correlation_by_class():
     assert correlations["B"].shape == (2, 2)
 
 
-def test_04_evaluate_feature_selection_stability():
-    """Test the feature selection stability evaluation function."""
-
-    from biomedical_data_generator import ClassConfig, DatasetConfig, generate_dataset
-
-    example = import_example("04_feature_selection_stability")
-
-    # Create a simple dataset
-    cfg = DatasetConfig(
-        n_informative=5,
-        n_noise=5,
-        class_configs=[
-            ClassConfig(n_samples=50, label="A"),
-            ClassConfig(n_samples=50, label="B"),
-        ],
-        random_state=42,
-    )
-    X, y, meta = generate_dataset(cfg)
-
-    # Run stability evaluation with fewer splits for speed
-    results = example.evaluate_feature_selection_stability(X, y, meta, n_features=5, n_splits=3)
-
-    # Check that results were computed
-    assert "ANOVA F-test" in results
-    assert "Random Forest" in results
-
-    for method in results:
-        assert "mean_precision" in results[method]
-        assert "mean_recall" in results[method]
-        assert "stability" in results[method]
-        assert 0 <= results[method]["mean_precision"] <= 1
-        assert 0 <= results[method]["mean_recall"] <= 1
-        assert 0 <= results[method]["stability"] <= 1
-
-
 @pytest.mark.parametrize(
     "example_name",
     [
         "01_basic_usage",
         "02_batch_effects",
         "03_class_specific_correlations",
-        "04_feature_selection_stability",
     ],
 )
 def test_example_has_main_guard(example_name):
@@ -245,7 +183,6 @@ def test_example_has_main_guard(example_name):
         "01_basic_usage",
         "02_batch_effects",
         "03_class_specific_correlations",
-        "04_feature_selection_stability",
     ],
 )
 def test_example_has_copyright_and_docstring(example_name):
