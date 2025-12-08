@@ -22,6 +22,7 @@ import seaborn as sns
 
 from biomedical_data_generator.config import ClassConfig, CorrClusterConfig, DatasetConfig
 from biomedical_data_generator.generator import generate_dataset
+from biomedical_data_generator.utils.export_utils import to_csv
 
 
 def compute_correlation_by_class(
@@ -258,19 +259,14 @@ def main() -> None:
     # Save datasets
     print()
     datasets = [
-        (x1, y1, "disease_activated_pathway"),
-        (x2, y2, "progressive_correlation"),
-        (X3, y3, "multiple_pathways"),
+        (x1, y1, meta1, "disease_activated_pathway"),
+        (x2, y2, meta2, "progressive_correlation"),
+        (X3, y3, meta3, "multiple_pathways"),
     ]
 
-    for i, (x, y, name) in enumerate(datasets, start=1):
+    for i, (x, y, meta, name) in enumerate(datasets, start=1):
         out_path = f"class_specific_example_{i}_{name}.csv"
-        if isinstance(x, np.ndarray):
-            df_out = pd.DataFrame(x)
-        else:
-            df_out = x.copy()
-        df_out["target"] = y
-        df_out.to_csv(out_path, index=False)
+        to_csv(x, y, meta, out_path)
         print(f"✓ Saved {name} dataset to {out_path}")
 
     print()

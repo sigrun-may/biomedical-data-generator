@@ -29,6 +29,7 @@ from biomedical_data_generator.config import (
     DatasetConfig,
 )
 from biomedical_data_generator.generator import generate_dataset
+from biomedical_data_generator.utils.export_utils import to_csv
 
 
 def create_dataset_with_batches(
@@ -166,18 +167,16 @@ def main() -> None:
         print()
 
     # Save datasets
-    for i, (X, y, name) in enumerate(
+    for i, (x, y, meta, name) in enumerate(
         [
-            (x1, y1, "random_batches"),
-            (x2, y2, "confounded_batches"),
-            (x3, y3, "multiplicative_batches"),
+            (x1, y1, meta1, "random_batches"),
+            (x2, y2, meta2, "confounded_batches"),
+            (x3, y3, meta3, "multiplicative_batches"),
         ],
         start=1,
     ):
         out_path = f"batch_example_{i}_{name}.csv"
-        df_out = X.copy()
-        df_out["target"] = y
-        df_out.to_csv(out_path, index=False)
+        to_csv(x, y, meta, out_path)
         print(f"✓ Saved {name} dataset to {out_path}")
 
     print()

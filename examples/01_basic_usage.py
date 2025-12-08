@@ -15,10 +15,9 @@ This example demonstrates:
 
 from __future__ import annotations
 
-import pandas as pd
-
 from biomedical_data_generator.config import ClassConfig, CorrClusterConfig, DatasetConfig
 from biomedical_data_generator.generator import generate_dataset
+from biomedical_data_generator.utils.export_utils import to_csv
 
 
 def main() -> None:
@@ -78,9 +77,7 @@ def main() -> None:
 
     # Save to CSV
     out_path = "basic_dataset.csv"
-    df_out: pd.DataFrame = x.copy()  # type: ignore
-    df_out["target"] = y
-    df_out.to_csv(out_path, index=False)
+    to_csv(x, y, meta, out_path)
     print(f"✓ Saved dataset to {out_path}")
     print()
 
