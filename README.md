@@ -208,8 +208,7 @@ The `examples/` directory contains complete demonstrations:
 - **01_basic_usage.py** – Simple dataset generation
 - **02_batch_effects.py** – Technical variation simulation
 - **03_class_specific_correlations.py** – Disease-specific pathway activation
-- **04_feature_selection_stability.py** – Benchmarking feature selection methods
-
+  
 Run any example:
 
 ```bash
