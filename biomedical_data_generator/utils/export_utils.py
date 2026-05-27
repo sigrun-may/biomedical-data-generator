@@ -129,10 +129,11 @@ def to_csv(
 
 
 def to_parquet(
-    X: pd.DataFrame | NDArray[np.float64],
+    x: pd.DataFrame | NDArray[np.float64],
     y: NDArray[np.int64],
     meta: DatasetMeta,
     filepath: str | Path,
+
     *,
     include_labels: bool = True,
     **parquet_kwargs,
@@ -140,7 +141,7 @@ def to_parquet(
     """Export dataset to Parquet file (efficient for large datasets).
 
     Args:
-        X: Feature matrix.
+        x: Feature matrix.
         y: Class labels.
         meta: Dataset metadata.
         filepath: Output path (e.g., "data/train.parquet").
@@ -149,7 +150,7 @@ def to_parquet(
                           (e.g., compression='gzip', engine='pyarrow').
 
     Examples:
-        >>> to_parquet(X, y, meta, "output/dataset.parquet")
+        >>> to_parquet(x, y, meta, "output/dataset.parquet")
     """
-    df = to_labeled_dataframe(X, y, meta, include_labels=include_labels)
+    df = to_labeled_dataframe(x, y, meta, include_labels=include_labels)
     df.to_parquet(filepath, **parquet_kwargs)

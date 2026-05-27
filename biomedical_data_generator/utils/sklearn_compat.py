@@ -147,15 +147,15 @@ def make_biomedical_dataset(
       ``n_redundant`` **must be 0**; you are responsible for defining the
       cluster layout yourself in that advanced mode.
 
-    By default the function returns ``(X, y)`` using NumPy arrays for
+    By default the function returns ``(x, y)`` using NumPy arrays for
     broad compatibility with scikit-learn. Set ``return_pandas=True`` to
     obtain a ``DataFrame`` and ``Series`` instead. Set ``return_meta=True``
     to additionally return the :class:`DatasetMeta` object.
 
     Returns:
     -------
-    (X, y) or (X, y, meta)
-        Depending on ``return_meta``. ``X`` is a NumPy array or
+    (x, y) or (x, y, meta)
+        Depending on ``return_meta``. ``x`` is a NumPy array or
         pandas ``DataFrame``; ``y`` is a NumPy array or pandas ``Series``.
     """
     # ------------------------------------------------------------------
@@ -317,17 +317,17 @@ def make_biomedical_dataset(
     # ------------------------------------------------------------------
     # 6) Generate data via the core API
     # ------------------------------------------------------------------
-    X, y, meta = generate_dataset(cfg, return_dataframe=return_pandas)
+    x, y, meta = generate_dataset(cfg, return_dataframe=return_pandas)
 
     # Convert y to Series if pandas output is requested
     if return_pandas:
-        if not isinstance(X, pd.DataFrame):
+        if not isinstance(x, pd.DataFrame):
             # Defensive: generate_dataset should already have returned a DataFrame
-            X = pd.DataFrame(X)
+            x = pd.DataFrame(x)
         y_out: Any = pd.Series(y, name="target")
     else:
         y_out = y
 
     if return_meta:
-        return X, y_out, meta
-    return X, y_out
+        return x, y_out, meta
+    return x, y_out

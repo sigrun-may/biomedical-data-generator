@@ -25,10 +25,10 @@ def main():
     args = ap.parse_args()
 
     cfg = DatasetConfig.from_yaml(args.config)
-    X, y, meta = generate_dataset(cfg)
+    x, y, meta = generate_dataset(cfg)
 
     if args.out:
-        df = pd.DataFrame(X, columns=meta.feature_names)
+        df = pd.DataFrame(x, columns=meta.feature_names)
         df["class"] = y
         df.to_csv(args.out, index=False)
 
