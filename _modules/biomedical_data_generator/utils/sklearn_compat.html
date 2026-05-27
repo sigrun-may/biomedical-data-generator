@@ -231,15 +231,15 @@
 <span class="sd">      ``n_redundant`` **must be 0**; you are responsible for defining the</span>
 <span class="sd">      cluster layout yourself in that advanced mode.</span>
 
-<span class="sd">    By default the function returns ``(X, y)`` using NumPy arrays for</span>
+<span class="sd">    By default the function returns ``(x, y)`` using NumPy arrays for</span>
 <span class="sd">    broad compatibility with scikit-learn. Set ``return_pandas=True`` to</span>
 <span class="sd">    obtain a ``DataFrame`` and ``Series`` instead. Set ``return_meta=True``</span>
 <span class="sd">    to additionally return the :class:`DatasetMeta` object.</span>
 
 <span class="sd">    Returns:</span>
 <span class="sd">    -------</span>
-<span class="sd">    (X, y) or (X, y, meta)</span>
-<span class="sd">        Depending on ``return_meta``. ``X`` is a NumPy array or</span>
+<span class="sd">    (x, y) or (x, y, meta)</span>
+<span class="sd">        Depending on ``return_meta``. ``x`` is a NumPy array or</span>
 <span class="sd">        pandas ``DataFrame``; ``y`` is a NumPy array or pandas ``Series``.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="c1"># ------------------------------------------------------------------</span>
@@ -401,20 +401,20 @@
     <span class="c1"># ------------------------------------------------------------------</span>
     <span class="c1"># 6) Generate data via the core API</span>
     <span class="c1"># ------------------------------------------------------------------</span>
-    <span class="n">X</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">meta</span> <span class="o">=</span> <span class="n">generate_dataset</span><span class="p">(</span><span class="n">cfg</span><span class="p">,</span> <span class="n">return_dataframe</span><span class="o">=</span><span class="n">return_pandas</span><span class="p">)</span>
+    <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">meta</span> <span class="o">=</span> <span class="n">generate_dataset</span><span class="p">(</span><span class="n">cfg</span><span class="p">,</span> <span class="n">return_dataframe</span><span class="o">=</span><span class="n">return_pandas</span><span class="p">)</span>
 
     <span class="c1"># Convert y to Series if pandas output is requested</span>
     <span class="k">if</span> <span class="n">return_pandas</span><span class="p">:</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">):</span>
             <span class="c1"># Defensive: generate_dataset should already have returned a DataFrame</span>
-            <span class="n">X</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">X</span><span class="p">)</span>
+            <span class="n">x</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
         <span class="n">y_out</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">&quot;target&quot;</span><span class="p">)</span>
     <span class="k">else</span><span class="p">:</span>
         <span class="n">y_out</span> <span class="o">=</span> <span class="n">y</span>
 
     <span class="k">if</span> <span class="n">return_meta</span><span class="p">:</span>
-        <span class="k">return</span> <span class="n">X</span><span class="p">,</span> <span class="n">y_out</span><span class="p">,</span> <span class="n">meta</span>
-    <span class="k">return</span> <span class="n">X</span><span class="p">,</span> <span class="n">y_out</span></div>
+        <span class="k">return</span> <span class="n">x</span><span class="p">,</span> <span class="n">y_out</span><span class="p">,</span> <span class="n">meta</span>
+    <span class="k">return</span> <span class="n">x</span><span class="p">,</span> <span class="n">y_out</span></div>
 
 </pre></div>
 

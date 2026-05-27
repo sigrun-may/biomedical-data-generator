@@ -219,10 +219,11 @@
 <div class="viewcode-block" id="to_parquet">
 <a class="viewcode-back" href="../../../_autosummary/biomedical_data_generator.utils.export_utils.html#biomedical_data_generator.utils.export_utils.to_parquet">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">to_parquet</span><span class="p">(</span>
-    <span class="n">X</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span> <span class="o">|</span> <span class="n">NDArray</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">],</span>
+    <span class="n">x</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span> <span class="o">|</span> <span class="n">NDArray</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">],</span>
     <span class="n">y</span><span class="p">:</span> <span class="n">NDArray</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">int64</span><span class="p">],</span>
     <span class="n">meta</span><span class="p">:</span> <span class="n">DatasetMeta</span><span class="p">,</span>
     <span class="n">filepath</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">Path</span><span class="p">,</span>
+
     <span class="o">*</span><span class="p">,</span>
     <span class="n">include_labels</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
     <span class="o">**</span><span class="n">parquet_kwargs</span><span class="p">,</span>
@@ -230,7 +231,7 @@
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Export dataset to Parquet file (efficient for large datasets).</span>
 
 <span class="sd">    Args:</span>
-<span class="sd">        X: Feature matrix.</span>
+<span class="sd">        x: Feature matrix.</span>
 <span class="sd">        y: Class labels.</span>
 <span class="sd">        meta: Dataset metadata.</span>
 <span class="sd">        filepath: Output path (e.g., &quot;data/train.parquet&quot;).</span>
@@ -239,9 +240,9 @@
 <span class="sd">                          (e.g., compression=&#39;gzip&#39;, engine=&#39;pyarrow&#39;).</span>
 
 <span class="sd">    Examples:</span>
-<span class="sd">        &gt;&gt;&gt; to_parquet(X, y, meta, &quot;output/dataset.parquet&quot;)</span>
+<span class="sd">        &gt;&gt;&gt; to_parquet(x, y, meta, &quot;output/dataset.parquet&quot;)</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">df</span> <span class="o">=</span> <span class="n">to_labeled_dataframe</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">meta</span><span class="p">,</span> <span class="n">include_labels</span><span class="o">=</span><span class="n">include_labels</span><span class="p">)</span>
+    <span class="n">df</span> <span class="o">=</span> <span class="n">to_labeled_dataframe</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">meta</span><span class="p">,</span> <span class="n">include_labels</span><span class="o">=</span><span class="n">include_labels</span><span class="p">)</span>
     <span class="n">df</span><span class="o">.</span><span class="n">to_parquet</span><span class="p">(</span><span class="n">filepath</span><span class="p">,</span> <span class="o">**</span><span class="n">parquet_kwargs</span><span class="p">)</span></div>
 
 </pre></div>

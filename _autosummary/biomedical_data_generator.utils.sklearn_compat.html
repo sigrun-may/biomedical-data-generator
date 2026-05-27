@@ -153,7 +153,7 @@ inferred as <code class="docutils literal notranslate"><span class="pre">n_featu
 <code class="docutils literal notranslate"><span class="pre">n_redundant</span></code> <strong>must be 0</strong>; you are responsible for defining the
 cluster layout yourself in that advanced mode.</p></li>
 </ul>
-<p>By default the function returns <code class="docutils literal notranslate"><span class="pre">(X,</span> <span class="pre">y)</span></code> using NumPy arrays for
+<p>By default the function returns <code class="docutils literal notranslate"><span class="pre">(x,</span> <span class="pre">y)</span></code> using NumPy arrays for
 broad compatibility with scikit-learn. Set <code class="docutils literal notranslate"><span class="pre">return_pandas=True</span></code> to
 obtain a <code class="docutils literal notranslate"><span class="pre">DataFrame</span></code> and <code class="docutils literal notranslate"><span class="pre">Series</span></code> instead. Set <code class="docutils literal notranslate"><span class="pre">return_meta=True</span></code>
 to additionally return the <code class="xref py py-class docutils literal notranslate"><span class="pre">DatasetMeta</span></code> object.</p>
@@ -161,7 +161,7 @@ to additionally return the <code class="xref py py-class docutils literal notran
 <section id="returns">
 <h2>Returns:<a class="headerlink" href="#returns" title="Link to this heading"></a></h2>
 <dl class="simple">
-<dt>(X, y) or (X, y, meta)</dt><dd><p>Depending on <code class="docutils literal notranslate"><span class="pre">return_meta</span></code>. <code class="docutils literal notranslate"><span class="pre">X</span></code> is a NumPy array or
+<dt>(x, y) or (x, y, meta)</dt><dd><p>Depending on <code class="docutils literal notranslate"><span class="pre">return_meta</span></code>. <code class="docutils literal notranslate"><span class="pre">x</span></code> is a NumPy array or
 pandas <code class="docutils literal notranslate"><span class="pre">DataFrame</span></code>; <code class="docutils literal notranslate"><span class="pre">y</span></code> is a NumPy array or pandas <code class="docutils literal notranslate"><span class="pre">Series</span></code>.</p>
 </dd>
 </dl>
