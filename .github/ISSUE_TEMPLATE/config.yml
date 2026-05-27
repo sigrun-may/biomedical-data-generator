@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: GitHub Discussions
+    url: https://github.com/sigrun-may/biomedical-data-generator/discussions
+    about: For general questions and discussions about usage and methodology.
+  - name: Documentation
+    url: https://github.com/sigrun-may/biomedical-data-generator#readme
+    about: Check the README and documentation before opening an issue.
