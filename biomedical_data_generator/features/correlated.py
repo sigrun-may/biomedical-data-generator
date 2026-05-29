@@ -427,6 +427,9 @@ def sample_all_correlated_clusters(
             - "anchor_effect_size": cluster_id -> effect_size
             - "anchor_class": cluster_id -> target_class
             - "label": cluster_id -> human-readable label
+            - "structure": cluster_id -> correlation structure
+              ("equicorrelated" or "toeplitz")
+            - "correlation": cluster_id -> raw correlation (float or per-class dict)
 
     Examples:
         >>> # Pure correlation (noise anchor, no mean shift)
@@ -531,6 +534,8 @@ def sample_all_correlated_clusters(
         "anchor_effect_size": {cluster_id: cfg.anchor_effect_size for cluster_id, cfg in enumerate(cluster_cfgs)},
         "anchor_class": {cluster_id: cfg.anchor_class for cluster_id, cfg in enumerate(cluster_cfgs)},
         "label": {cluster_id: cfg.label for cluster_id, cfg in enumerate(cluster_cfgs)},
+        "structure": {cluster_id: cfg.structure for cluster_id, cfg in enumerate(cluster_cfgs)},
+        "correlation": {cluster_id: cfg.correlation for cluster_id, cfg in enumerate(cluster_cfgs)},
     }
 
     return x_clusters, cluster_meta
