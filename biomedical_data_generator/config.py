@@ -15,7 +15,6 @@ from typing import Any, Literal, TypeAlias, cast
 import numpy as np
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
-AnchorMode: TypeAlias = Literal["equalized", "strong"]
 DistributionType = Literal[
     "normal",
     "lognormal",
@@ -622,7 +621,7 @@ class DatasetConfig(BaseModel):
         ... )
     """
 
-    model_config = ConfigDict(extra="forbid", use_enum_values=True)
+    model_config = ConfigDict(extra="forbid")
 
     # Core dataset structure
     n_informative: int = Field(default=2, ge=0)
