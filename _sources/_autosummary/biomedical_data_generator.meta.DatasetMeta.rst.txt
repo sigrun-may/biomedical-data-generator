@@ -37,6 +37,8 @@
       ~DatasetMeta.anchor_effect_size
       ~DatasetMeta.anchor_class
       ~DatasetMeta.cluster_label
+      ~DatasetMeta.cluster_structure
+      ~DatasetMeta.cluster_correlation
       ~DatasetMeta.n_classes
       ~DatasetMeta.class_names
       ~DatasetMeta.samples_per_class
