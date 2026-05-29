@@ -112,7 +112,7 @@
     <span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">],</span>  <span class="c1"># informative_idx (anchors + free informative)</span>
     <span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">],</span>  <span class="c1"># noise_idx (independent/free noise only)</span>
     <span class="nb">dict</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">]],</span>  <span class="c1"># cluster_indices[cid] -&gt; list of column indices</span>
-    <span class="nb">dict</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span><span class="p">],</span>  <span class="c1"># anchor_idx[cid] -&gt; anchor column (or None)</span>
+    <span class="nb">dict</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">],</span>  <span class="c1"># anchor_idx[cid] -&gt; anchor column (always the first column of the block)</span>
 <span class="p">]:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Build feature names and role indices for the final concatenated matrix.</span>
 
@@ -153,7 +153,7 @@
     <span class="n">informative_idx</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
     <span class="n">noise_idx</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
     <span class="n">cluster_indices</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">]]</span> <span class="o">=</span> <span class="p">{}</span>
-    <span class="n">anchor_idx</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="n">anchor_idx</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
 
     <span class="c1"># -------------------------------------------------------------</span>
     <span class="c1"># Sanity checks: shapes from generator vs. structural config</span>
@@ -336,11 +336,13 @@
     <span class="c1"># ================================================================</span>
     <span class="c1"># STEP 3: Generate noise features</span>
     <span class="c1"># ================================================================</span>
+    <span class="c1"># Only free noise features are produced here; noise anchors (and their</span>
+    <span class="c1"># proxies) already live inside the correlated-cluster block.</span>
     <span class="n">x_noise</span> <span class="o">=</span> <span class="n">sample_distribution</span><span class="p">(</span>
         <span class="n">distribution</span><span class="o">=</span><span class="n">cfg</span><span class="o">.</span><span class="n">noise_distribution</span><span class="p">,</span>
         <span class="n">params</span><span class="o">=</span><span class="n">cfg</span><span class="o">.</span><span class="n">noise_distribution_params</span><span class="p">,</span>
         <span class="n">rng</span><span class="o">=</span><span class="n">rng_global</span><span class="p">,</span>
-        <span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="n">cfg</span><span class="o">.</span><span class="n">n_samples</span><span class="p">,</span> <span class="n">cfg</span><span class="o">.</span><span class="n">n_noise</span><span class="p">),</span>
+        <span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="n">cfg</span><span class="o">.</span><span class="n">n_samples</span><span class="p">,</span> <span class="n">cfg</span><span class="o">.</span><span class="n">n_noise_free</span><span class="p">),</span>
     <span class="p">)</span>
 
     <span class="c1"># ================================================================</span>
@@ -385,6 +387,8 @@
         <span class="n">anchor_effect_size</span><span class="o">=</span><span class="n">cluster_meta</span><span class="p">[</span><span class="s2">&quot;anchor_effect_size&quot;</span><span class="p">],</span>
         <span class="n">anchor_class</span><span class="o">=</span><span class="n">cluster_meta</span><span class="p">[</span><span class="s2">&quot;anchor_class&quot;</span><span class="p">],</span>
         <span class="n">cluster_label</span><span class="o">=</span><span class="n">cluster_meta</span><span class="p">[</span><span class="s2">&quot;label&quot;</span><span class="p">],</span>
+        <span class="n">cluster_structure</span><span class="o">=</span><span class="n">cluster_meta</span><span class="p">[</span><span class="s2">&quot;structure&quot;</span><span class="p">],</span>
+        <span class="n">cluster_correlation</span><span class="o">=</span><span class="n">cluster_meta</span><span class="p">[</span><span class="s2">&quot;correlation&quot;</span><span class="p">],</span>
         <span class="n">n_classes</span><span class="o">=</span><span class="n">cfg</span><span class="o">.</span><span class="n">n_classes</span><span class="p">,</span>
         <span class="n">class_names</span><span class="o">=</span><span class="n">cfg</span><span class="o">.</span><span class="n">class_labels</span><span class="p">,</span>
         <span class="n">samples_per_class</span><span class="o">=</span><span class="p">{</span><span class="nb">int</span><span class="p">(</span><span class="n">k</span><span class="p">):</span> <span class="nb">int</span><span class="p">(</span><span class="n">counts</span><span class="p">[</span><span class="n">k</span><span class="p">])</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">cfg</span><span class="o">.</span><span class="n">n_classes</span><span class="p">)},</span>
