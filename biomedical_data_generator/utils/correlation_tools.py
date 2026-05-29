@@ -458,7 +458,7 @@ def get_cluster_column_names(
     if not anchor_first:
         return _natural_member_sort(names) if natural_sort_rest else names
 
-    anchor_idx_map: dict[int, int | None] = meta.anchor_idx
+    anchor_idx_map: dict[int, int] = meta.anchor_idx
     anchor_index = anchor_idx_map.get(cluster_id, None)
     if anchor_index is not None:
         anchor_name = str(df.columns[anchor_index])
