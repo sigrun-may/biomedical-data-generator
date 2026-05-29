@@ -8,6 +8,7 @@
 from __future__ import annotations
 
 from dataclasses import asdict, dataclass, field
+from typing import Literal
 
 import numpy as np
 
@@ -79,13 +80,17 @@ class DatasetMeta:
 
     # Correlated clusters
     corr_cluster_indices: dict[int, list[int]]  # cluster_id -> list of column indices
-    anchor_idx: dict[int, int | None]  # cluster_id -> anchor col (or None)
+    anchor_idx: dict[int, int]  # cluster_id -> anchor col (always the first column of the block)
 
     # Per-cluster properties (mirroring CorrClusterConfig)
-    anchor_role: dict[int, str]  # "informative" | "noise"
+    anchor_role: dict[int, Literal["informative", "noise"]]
     anchor_effect_size: dict[int, float]  # numeric effect size used for the anchor
     anchor_class: dict[int, int | None]  # class index the anchor predicts (one-vs-rest)
     cluster_label: dict[int, str | None]  # descriptive label per cluster (didactic tag)
+    cluster_structure: dict[int, Literal["equicorrelated", "toeplitz"]]  # cluster_id -> correlation structure
+    cluster_correlation: dict[int, float | dict[int, float]]
+    # cluster_id -> within-cluster correlation (global float or
+    #   per-class mapping {class_index: correlation})
 
     # ---------------- provenance / global settings ----------------
 
