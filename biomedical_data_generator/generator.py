@@ -30,7 +30,7 @@ def _make_names_and_roles(
     list[int],  # informative_idx (anchors + free informative)
     list[int],  # noise_idx (independent/free noise only)
     dict[int, list[int]],  # cluster_indices[cid] -> list of column indices
-    dict[int, int | None],  # anchor_idx[cid] -> anchor column (or None)
+    dict[int, int],  # anchor_idx[cid] -> anchor column (always the first column of the block)
 ]:
     """Build feature names and role indices for the final concatenated matrix.
 
@@ -71,7 +71,7 @@ def _make_names_and_roles(
     informative_idx: list[int] = []
     noise_idx: list[int] = []
     cluster_indices: dict[int, list[int]] = {}
-    anchor_idx: dict[int, int | None] = {}
+    anchor_idx: dict[int, int] = {}
 
     # -------------------------------------------------------------
     # Sanity checks: shapes from generator vs. structural config
@@ -252,11 +252,13 @@ def generate_dataset(cfg, return_dataframe=True) -> tuple[pd.DataFrame | np.ndar
     # ================================================================
     # STEP 3: Generate noise features
     # ================================================================
+    # Only free noise features are produced here; noise anchors (and their
+    # proxies) already live inside the correlated-cluster block.
     x_noise = sample_distribution(
         distribution=cfg.noise_distribution,
         params=cfg.noise_distribution_params,
         rng=rng_global,
-        size=(cfg.n_samples, cfg.n_noise),
+        size=(cfg.n_samples, cfg.n_noise_free),
     )
 
     # ================================================================
@@ -301,6 +303,8 @@ def generate_dataset(cfg, return_dataframe=True) -> tuple[pd.DataFrame | np.ndar
         anchor_effect_size=cluster_meta["anchor_effect_size"],
         anchor_class=cluster_meta["anchor_class"],
         cluster_label=cluster_meta["label"],
+        cluster_structure=cluster_meta["structure"],
+        cluster_correlation=cluster_meta["correlation"],
         n_classes=cfg.n_classes,
         class_names=cfg.class_labels,
         samples_per_class={int(k): int(counts[k]) for k in range(cfg.n_classes)},
