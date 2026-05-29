@@ -366,6 +366,68 @@ def test_generate_dataset_metadata_complete():
     assert meta.class_names == ["class_A", "class_B"]
     assert meta.samples_per_class == {0: 50, 1: 50}
     assert meta.random_state == 42
+    # Per-cluster correlation structure and strength are exposed first-class.
+    assert meta.cluster_structure == {0: "equicorrelated"}
+    assert meta.cluster_correlation == {0: 0.7}
+
+
+def test_metadata_exposes_per_cluster_structure_and_correlation():
+    """cluster_structure and cluster_correlation reflect each cluster's config."""
+    cfg = DatasetConfig(
+        n_informative=2,  # one free informative + one informative anchor
+        n_noise=1,  # one noise anchor (no free noise)
+        corr_clusters=[
+            CorrClusterConfig(
+                n_cluster_features=3,
+                correlation=0.7,
+                structure="equicorrelated",
+                anchor_role="informative",
+                anchor_effect_size="medium",
+                anchor_class=1,
+            ),
+            CorrClusterConfig(
+                n_cluster_features=3,
+                correlation=0.6,
+                structure="toeplitz",
+                anchor_role="noise",
+            ),
+        ],
+        class_configs=[ClassConfig(n_samples=50), ClassConfig(n_samples=50)],
+        random_state=42,
+    )
+
+    _, _, meta = generate_dataset(cfg, return_dataframe=False)
+
+    # One entry per cluster_id, reflecting the configured values.
+    assert set(meta.cluster_structure) == {0, 1}
+    assert set(meta.cluster_correlation) == {0, 1}
+    assert meta.cluster_structure == {0: "equicorrelated", 1: "toeplitz"}
+    assert meta.cluster_correlation == {0: 0.7, 1: 0.6}
+
+
+def test_metadata_preserves_class_specific_correlation():
+    """A per-class correlation mapping is preserved unchanged in the metadata."""
+    cfg = DatasetConfig(
+        n_informative=1,
+        n_noise=0,
+        corr_clusters=[
+            CorrClusterConfig(
+                n_cluster_features=4,
+                correlation={0: 0.0, 1: 0.8},
+                structure="equicorrelated",
+                anchor_role="informative",
+                anchor_effect_size="medium",
+                anchor_class=1,
+            ),
+        ],
+        class_configs=[ClassConfig(n_samples=50), ClassConfig(n_samples=50)],
+        random_state=42,
+    )
+
+    _, _, meta = generate_dataset(cfg, return_dataframe=False)
+
+    assert meta.cluster_structure == {0: "equicorrelated"}
+    assert meta.cluster_correlation == {0: {0: 0.0, 1: 0.8}}
 
 
 def test_generate_dataset_with_no_informative():
@@ -404,3 +466,39 @@ def test_generate_dataset_with_no_noise():
     assert X.shape == (100, 5)
     assert len(meta.informative_idx) == 5
     assert len(meta.noise_idx) == 0
+
+
+def test_generate_dataset_with_noise_anchor_cluster():
+    """End-to-end generation works when a cluster has a noise anchor.
+
+    The standalone noise block must contain only free noise features; the noise
+    anchor and its proxies live inside the correlated-cluster block. The total
+    column count therefore equals cfg.n_features rather than including the
+    noise anchor twice.
+    """
+    cfg = DatasetConfig(
+        n_informative=2,  # 1 free informative + 1 informative anchor
+        n_noise=2,  # 1 noise anchor + 1 free noise
+        corr_clusters=[
+            CorrClusterConfig(
+                n_cluster_features=3,
+                correlation=0.7,
+                anchor_role="informative",
+                anchor_effect_size="medium",
+                anchor_class=1,
+            ),
+            CorrClusterConfig(n_cluster_features=3, correlation=0.5, anchor_role="noise"),
+        ],
+        class_configs=[ClassConfig(n_samples=50), ClassConfig(n_samples=50)],
+        random_state=42,
+    )
+
+    X, y, meta = generate_dataset(cfg, return_dataframe=False)
+
+    assert X.shape == (100, cfg.n_features) == (100, 8)
+    # Noise anchor and proxies stay in the cluster block, not in noise_idx.
+    assert meta.noise_idx == [7]
+    assert meta.informative_idx == [0, 1]
+    assert meta.anchor_role == {0: "informative", 1: "noise"}
+    assert meta.anchor_idx == {0: 1, 1: 4}
+    assert meta.corr_cluster_indices == {0: [1, 2, 3], 1: [4, 5, 6]}
