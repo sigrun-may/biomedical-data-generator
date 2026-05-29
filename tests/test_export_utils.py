@@ -39,6 +39,8 @@ def sample_data():
         anchor_effect_size={},
         anchor_class={},
         cluster_label={},
+        cluster_structure={},
+        cluster_correlation={},
         n_classes=2,
         class_names=class_labels,
         samples_per_class={0: 2, 1: 1},
@@ -170,6 +172,8 @@ def test_to_labeled_dataframe_without_string_labels(sample_data):
         anchor_effect_size={},
         anchor_class={},
         cluster_label={},
+        cluster_structure={},
+        cluster_correlation={},
         n_classes=2,
         class_names=[],  # Empty list
         samples_per_class={0: 2, 1: 1},
