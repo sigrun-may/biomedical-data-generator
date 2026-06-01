@@ -279,7 +279,12 @@ def apply_anchor_effects(
 
     The anchor feature (typically the first feature in each cluster) receives
     the full effect size, while correlated proxy features receive attenuated
-    shifts proportional to their empirical correlation with the anchor.
+    shifts equal to ``effect_size * rho``, where ``rho`` is the *configured*
+    structural correlation between anchor and proxy (``rho`` for equicorrelated,
+    ``rho**i`` for toeplitz). Using the configured correlation matrix instead of
+    the empirical correlation of the already-shifted data keeps the proxy shift
+    deterministic and independent of sample size, and makes the anchor the
+    unique carrier of the Bayes-optimal discriminant direction.
 
     **Effect application logic**:
       - anchor_role="noise" → no shift (effect_size ignored)
@@ -295,13 +300,12 @@ def apply_anchor_effects(
     Returns:
         The modified feature matrix (same object as input x).
     """
-    x = np.asarray(x)
+    x = np.asarray(x, dtype=float)
     y = np.asarray(y)
 
     feature_offset = 0
     for cluster_cfg in cluster_configs:
         n_cluster_features = cluster_cfg.n_cluster_features
-        cluster_slice = slice(feature_offset, feature_offset + n_cluster_features)
 
         # Resolve numeric effect size (returns 0.0 for noise anchors)
         effect_size = cluster_cfg.resolve_anchor_effect_size()
@@ -322,17 +326,23 @@ def apply_anchor_effects(
         anchor_idx = feature_offset
         x[target_mask, anchor_idx] += effect_size
 
-        # Apply attenuated shifts to proxy features based on correlation
+        # Apply attenuated shifts to proxies using the *configured* structural
+        # correlation, not the empirical correlation of the shifted data.
         if n_cluster_features > 1:
-            cluster_data = x[:, cluster_slice]
-            cluster_corr = np.corrcoef(cluster_data, rowvar=False)
+            if cluster_cfg.is_class_specific():
+                rho = cluster_cfg.get_correlation_for_class(
+                    target_class if target_class is not None else 0
+                )
+            else:
+                rho = float(cluster_cfg.correlation)
 
-            # Correlation of each proxy with anchor
-            anchor_correlations = cluster_corr[0, 1:]
+            sigma = build_correlation_matrix(
+                n_cluster_features, rho, cluster_cfg.structure
+            )
+            anchor_correlations = sigma[0, 1:]  # theoretical, not empirical
 
             for i, corr_with_anchor in enumerate(anchor_correlations, start=1):
                 proxy_idx = feature_offset + i
-                # Proxy shift = effect_size * correlation_with_anchor
                 x[target_mask, proxy_idx] += effect_size * corr_with_anchor
 
         feature_offset += n_cluster_features
