@@ -369,7 +369,12 @@
 
 <span class="sd">    The anchor feature (typically the first feature in each cluster) receives</span>
 <span class="sd">    the full effect size, while correlated proxy features receive attenuated</span>
-<span class="sd">    shifts proportional to their empirical correlation with the anchor.</span>
+<span class="sd">    shifts equal to ``effect_size * rho``, where ``rho`` is the *configured*</span>
+<span class="sd">    structural correlation between anchor and proxy (``rho`` for equicorrelated,</span>
+<span class="sd">    ``rho**i`` for toeplitz). Using the configured correlation matrix instead of</span>
+<span class="sd">    the empirical correlation of the already-shifted data keeps the proxy shift</span>
+<span class="sd">    deterministic and independent of sample size, and makes the anchor the</span>
+<span class="sd">    unique carrier of the Bayes-optimal discriminant direction.</span>
 
 <span class="sd">    **Effect application logic**:</span>
 <span class="sd">      - anchor_role=&quot;noise&quot; → no shift (effect_size ignored)</span>
@@ -385,13 +390,12 @@
 <span class="sd">    Returns:</span>
 <span class="sd">        The modified feature matrix (same object as input x).</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">x</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+    <span class="n">x</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
     <span class="n">y</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">y</span><span class="p">)</span>
 
     <span class="n">feature_offset</span> <span class="o">=</span> <span class="mi">0</span>
     <span class="k">for</span> <span class="n">cluster_cfg</span> <span class="ow">in</span> <span class="n">cluster_configs</span><span class="p">:</span>
         <span class="n">n_cluster_features</span> <span class="o">=</span> <span class="n">cluster_cfg</span><span class="o">.</span><span class="n">n_cluster_features</span>
-        <span class="n">cluster_slice</span> <span class="o">=</span> <span class="nb">slice</span><span class="p">(</span><span class="n">feature_offset</span><span class="p">,</span> <span class="n">feature_offset</span> <span class="o">+</span> <span class="n">n_cluster_features</span><span class="p">)</span>
 
         <span class="c1"># Resolve numeric effect size (returns 0.0 for noise anchors)</span>
         <span class="n">effect_size</span> <span class="o">=</span> <span class="n">cluster_cfg</span><span class="o">.</span><span class="n">resolve_anchor_effect_size</span><span class="p">()</span>
@@ -412,17 +416,23 @@
         <span class="n">anchor_idx</span> <span class="o">=</span> <span class="n">feature_offset</span>
         <span class="n">x</span><span class="p">[</span><span class="n">target_mask</span><span class="p">,</span> <span class="n">anchor_idx</span><span class="p">]</span> <span class="o">+=</span> <span class="n">effect_size</span>
 
-        <span class="c1"># Apply attenuated shifts to proxy features based on correlation</span>
+        <span class="c1"># Apply attenuated shifts to proxies using the *configured* structural</span>
+        <span class="c1"># correlation, not the empirical correlation of the shifted data.</span>
         <span class="k">if</span> <span class="n">n_cluster_features</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
-            <span class="n">cluster_data</span> <span class="o">=</span> <span class="n">x</span><span class="p">[:,</span> <span class="n">cluster_slice</span><span class="p">]</span>
-            <span class="n">cluster_corr</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">corrcoef</span><span class="p">(</span><span class="n">cluster_data</span><span class="p">,</span> <span class="n">rowvar</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">cluster_cfg</span><span class="o">.</span><span class="n">is_class_specific</span><span class="p">():</span>
+                <span class="n">rho</span> <span class="o">=</span> <span class="n">cluster_cfg</span><span class="o">.</span><span class="n">get_correlation_for_class</span><span class="p">(</span>
+                    <span class="n">target_class</span> <span class="k">if</span> <span class="n">target_class</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="mi">0</span>
+                <span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">rho</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">cluster_cfg</span><span class="o">.</span><span class="n">correlation</span><span class="p">)</span>
 
-            <span class="c1"># Correlation of each proxy with anchor</span>
-            <span class="n">anchor_correlations</span> <span class="o">=</span> <span class="n">cluster_corr</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">:]</span>
+            <span class="n">sigma</span> <span class="o">=</span> <span class="n">build_correlation_matrix</span><span class="p">(</span>
+                <span class="n">n_cluster_features</span><span class="p">,</span> <span class="n">rho</span><span class="p">,</span> <span class="n">cluster_cfg</span><span class="o">.</span><span class="n">structure</span>
+            <span class="p">)</span>
+            <span class="n">anchor_correlations</span> <span class="o">=</span> <span class="n">sigma</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">:]</span>  <span class="c1"># theoretical, not empirical</span>
 
             <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">corr_with_anchor</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">anchor_correlations</span><span class="p">,</span> <span class="n">start</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
                 <span class="n">proxy_idx</span> <span class="o">=</span> <span class="n">feature_offset</span> <span class="o">+</span> <span class="n">i</span>
-                <span class="c1"># Proxy shift = effect_size * correlation_with_anchor</span>
                 <span class="n">x</span><span class="p">[</span><span class="n">target_mask</span><span class="p">,</span> <span class="n">proxy_idx</span><span class="p">]</span> <span class="o">+=</span> <span class="n">effect_size</span> <span class="o">*</span> <span class="n">corr_with_anchor</span>
 
         <span class="n">feature_offset</span> <span class="o">+=</span> <span class="n">n_cluster_features</span>

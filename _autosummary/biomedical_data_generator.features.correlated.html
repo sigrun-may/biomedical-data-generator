@@ -209,7 +209,12 @@ generative model for complex omics data.</p>
 anchor features based on their configured effect sizes and target classes.</p>
 <p>The anchor feature (typically the first feature in each cluster) receives
 the full effect size, while correlated proxy features receive attenuated
-shifts proportional to their empirical correlation with the anchor.</p>
+shifts equal to <code class="docutils literal notranslate"><span class="pre">effect_size</span> <span class="pre">*</span> <span class="pre">rho</span></code>, where <code class="docutils literal notranslate"><span class="pre">rho</span></code> is the <em>configured</em>
+structural correlation between anchor and proxy (<code class="docutils literal notranslate"><span class="pre">rho</span></code> for equicorrelated,
+<code class="docutils literal notranslate"><span class="pre">rho**i</span></code> for toeplitz). Using the configured correlation matrix instead of
+the empirical correlation of the already-shifted data keeps the proxy shift
+deterministic and independent of sample size, and makes the anchor the
+unique carrier of the Bayes-optimal discriminant direction.</p>
 <dl class="simple">
 <dt><strong>Effect application logic</strong>:</dt><dd><ul class="simple">
 <li><p>anchor_role=”noise” → no shift (effect_size ignored)</p></li>
