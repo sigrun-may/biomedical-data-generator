@@ -323,6 +323,41 @@ def test_corr_cluster_config_anchor_effect_size_none():
 
     assert cfg.resolve_anchor_effect_size() == 1.0
 
+def test_noise_anchor_resolves_to_zero_effect():
+    """A noise anchor never carries a shift, so its effect size resolves to 0.0."""
+    cfg = CorrClusterConfig(
+        n_cluster_features=3,
+        correlation=0.8,
+        anchor_role="noise",
+    )
+    assert cfg.resolve_anchor_effect_size() == 0.0
+
+
+def test_noise_anchor_rejects_effect_size():
+    """Setting anchor_effect_size on a noise anchor is contradictory and rejected."""
+    from pydantic import ValidationError
+
+    with pytest.raises(ValidationError):
+        CorrClusterConfig(
+            n_cluster_features=3,
+            correlation=0.8,
+            anchor_role="noise",
+            anchor_effect_size="large",
+        )
+
+
+def test_noise_anchor_rejects_anchor_class():
+    """Setting anchor_class on a noise anchor is contradictory and rejected."""
+    from pydantic import ValidationError
+
+    with pytest.raises(ValidationError):
+        CorrClusterConfig(
+            n_cluster_features=3,
+            correlation=0.8,
+            anchor_role="noise",
+            anchor_class=1,
+        )
+
 
 def test_corr_cluster_config_anchor_effect_size_invalid_string():
     """Test that invalid string for anchor_effect_size raises error."""
