@@ -457,6 +457,27 @@ class CorrClusterConfig(BaseModel):
             raise ValueError(f"anchor_class must be >= 0 or None, got {v}.")
         return v
 
+    @model_validator(mode="after")
+    def _check_noise_anchor_consistency(self):
+        """Reject signal-related settings on a noise anchor.
+
+        A noise anchor seeds correlation structure only; it must not carry a
+        class-specific mean shift. Setting anchor_effect_size or anchor_class on
+        a noise anchor is contradictory and almost always a configuration mistake.
+        """
+        if self.anchor_role == "noise":
+            if self.anchor_effect_size is not None:
+                raise ValueError(
+                    "anchor_role='noise' must not set anchor_effect_size "
+                    f"(got {self.anchor_effect_size!r}); a noise anchor carries no shift."
+                )
+            if self.anchor_class is not None:
+                raise ValueError(
+                    "anchor_role='noise' must not set anchor_class "
+                    f"(got {self.anchor_class!r}); a noise anchor carries no class signal."
+                )
+        return self
+
     # Convenience methods -----------------------------------------------------
 
     def is_class_specific(self) -> bool:
@@ -476,10 +497,17 @@ class CorrClusterConfig(BaseModel):
         return float(mapping.get(class_idx, 0.0))
 
     def resolve_anchor_effect_size(self) -> float:
-        """Convert anchor_effect_size to a numeric effect size."""
+        """Convert anchor_effect_size to a numeric effect size.
+
+        Returns:
+            The numeric effect size. A noise anchor always returns ``0.0`` because
+            it seeds correlation structure only and never carries a mean shift,
+            regardless of any ``anchor_effect_size`` value.
+        """
+        if self.anchor_role == "noise":
+            return 0.0
         if self.anchor_effect_size is None:
             return 1.0  # default to medium
-
         if isinstance(self.anchor_effect_size, str):
             effect_map = {
                 "small": 0.5,
@@ -487,7 +515,6 @@ class CorrClusterConfig(BaseModel):
                 "large": 1.5,
             }
             return effect_map[self.anchor_effect_size]
-
         return float(self.anchor_effect_size)
 
     def __str__(self) -> str:
