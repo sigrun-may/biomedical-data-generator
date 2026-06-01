@@ -550,6 +550,27 @@
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;anchor_class must be &gt;= 0 or None, got </span><span class="si">{</span><span class="n">v</span><span class="si">}</span><span class="s2">.&quot;</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">v</span>
 
+    <span class="nd">@model_validator</span><span class="p">(</span><span class="n">mode</span><span class="o">=</span><span class="s2">&quot;after&quot;</span><span class="p">)</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_check_noise_anchor_consistency</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Reject signal-related settings on a noise anchor.</span>
+
+<span class="sd">        A noise anchor seeds correlation structure only; it must not carry a</span>
+<span class="sd">        class-specific mean shift. Setting anchor_effect_size or anchor_class on</span>
+<span class="sd">        a noise anchor is contradictory and almost always a configuration mistake.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">anchor_role</span> <span class="o">==</span> <span class="s2">&quot;noise&quot;</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">anchor_effect_size</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                    <span class="s2">&quot;anchor_role=&#39;noise&#39; must not set anchor_effect_size &quot;</span>
+                    <span class="sa">f</span><span class="s2">&quot;(got </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">anchor_effect_size</span><span class="si">!r}</span><span class="s2">); a noise anchor carries no shift.&quot;</span>
+                <span class="p">)</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">anchor_class</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                    <span class="s2">&quot;anchor_role=&#39;noise&#39; must not set anchor_class &quot;</span>
+                    <span class="sa">f</span><span class="s2">&quot;(got </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">anchor_class</span><span class="si">!r}</span><span class="s2">); a noise anchor carries no class signal.&quot;</span>
+                <span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span>
+
     <span class="c1"># Convenience methods -----------------------------------------------------</span>
 
 <div class="viewcode-block" id="CorrClusterConfig.is_class_specific">
@@ -577,10 +598,17 @@
 <div class="viewcode-block" id="CorrClusterConfig.resolve_anchor_effect_size">
 <a class="viewcode-back" href="../../_autosummary/biomedical_data_generator.config.CorrClusterConfig.html#biomedical_data_generator.CorrClusterConfig.resolve_anchor_effect_size">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">resolve_anchor_effect_size</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Convert anchor_effect_size to a numeric effect size.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Convert anchor_effect_size to a numeric effect size.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            The numeric effect size. A noise anchor always returns ``0.0`` because</span>
+<span class="sd">            it seeds correlation structure only and never carries a mean shift,</span>
+<span class="sd">            regardless of any ``anchor_effect_size`` value.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">anchor_role</span> <span class="o">==</span> <span class="s2">&quot;noise&quot;</span><span class="p">:</span>
+            <span class="k">return</span> <span class="mf">0.0</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">anchor_effect_size</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">return</span> <span class="mf">1.0</span>  <span class="c1"># default to medium</span>
-
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">anchor_effect_size</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
             <span class="n">effect_map</span> <span class="o">=</span> <span class="p">{</span>
                 <span class="s2">&quot;small&quot;</span><span class="p">:</span> <span class="mf">0.5</span><span class="p">,</span>
@@ -588,7 +616,6 @@
                 <span class="s2">&quot;large&quot;</span><span class="p">:</span> <span class="mf">1.5</span><span class="p">,</span>
             <span class="p">}</span>
             <span class="k">return</span> <span class="n">effect_map</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">anchor_effect_size</span><span class="p">]</span>
-
         <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">anchor_effect_size</span><span class="p">)</span></div>
 
 

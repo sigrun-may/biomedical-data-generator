@@ -361,8 +361,13 @@ validated to form a valid model.</p>
 <span class="sig-name descname"><span class="pre">resolve_anchor_effect_size</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/biomedical_data_generator/config.html#CorrClusterConfig.resolve_anchor_effect_size"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#biomedical_data_generator.CorrClusterConfig.resolve_anchor_effect_size" title="Link to this definition"></a></dt>
 <dd><p>Convert anchor_effect_size to a numeric effect size.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)">float</a></p>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>The numeric effect size. A noise anchor always returns <code class="docutils literal notranslate"><span class="pre">0.0</span></code> because
+it seeds correlation structure only and never carries a mean shift,
+regardless of any <code class="docutils literal notranslate"><span class="pre">anchor_effect_size</span></code> value.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)">float</a></p>
 </dd>
 </dl>
 </dd></dl>
