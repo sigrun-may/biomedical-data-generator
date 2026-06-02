@@ -9,16 +9,8 @@
 """Data generator main package."""
 
 from .config import BatchEffectsConfig, ClassConfig, CorrClusterConfig, DatasetConfig
-from .feature_relevance import (
-    FeatureRoles,
-    RelevanceView,
-    compute_feature_roles,
-    compute_relevance,
-)
 from .features.correlated import sample_correlated_data
-from .generator import (
-    generate_dataset,
-)
+from .generator import generate_dataset
 
 __all__ = [
     "DatasetConfig",
@@ -27,8 +19,4 @@ __all__ = [
     "ClassConfig",
     "generate_dataset",
     "sample_correlated_data",
-    "FeatureRoles",
-    "RelevanceView",
-    "compute_feature_roles",
-    "compute_relevance",
 ]
