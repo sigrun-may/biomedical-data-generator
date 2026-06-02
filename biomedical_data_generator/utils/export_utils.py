@@ -90,9 +90,9 @@ def to_labeled_dataframe(
         # Add numeric labels in first column
         df.insert(0, label_col_name, y)
 
-        # Add string labels if meta available
-        if meta is not None and hasattr(meta, "class_labels"):
-            df[label_str_col_name] = [meta.class_labels[int(i)] for i in y]
+        # Add string labels if meta provides class names
+        if meta is not None and meta.class_names:
+            df[label_str_col_name] = [meta.class_names[int(i)] for i in y]
 
     return df
 
