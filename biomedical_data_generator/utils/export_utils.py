@@ -1,4 +1,8 @@
-# biomedical_data_generator/utils/export_utils.py
+# Copyright (c) 2025 Sigrun May,
+# Ostfalia Hochschule für angewandte Wissenschaften
+#
+# This software is distributed under the terms of the MIT license
+# which is available at https://opensource.org/licenses/MIT
 
 """Export utilities for saving generated datasets to various formats."""
 
@@ -109,7 +113,7 @@ def to_csv(
 ) -> None:
     """Export dataset to CSV file.
 
-    Convenience wrapper around to_dataframe() + DataFrame.to_csv().
+    Convenience wrapper around to_labeled_dataframe() + DataFrame.to_csv().
 
     Args:
         x: Feature matrix.
