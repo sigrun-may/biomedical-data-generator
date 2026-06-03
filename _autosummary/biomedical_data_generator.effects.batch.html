@@ -283,7 +283,8 @@ accepted by np.unique (e.g. integers or strings).</p></li>
 - confounding_with_class: Degree of class-batch correlation in [0, 1]
 - effect_type: “additive” or “multiplicative”
 - effect_strength: Magnitude of batch effects
-- affected_features: “all”, “informative”, or list of indices</p></li>
+- effect_granularity: “per_feature” or “scalar”
+- affected_features: “all” or a list of feature indices</p></li>
 <li><p><strong>rng</strong> (<em>np.random.Generator</em>) – NumPy random generator (for reproducibility).</p></li>
 </ul>
 </dd>
