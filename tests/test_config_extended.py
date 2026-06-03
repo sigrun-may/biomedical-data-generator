@@ -198,11 +198,12 @@ def test_corr_cluster_config_defaults():
     assert cfg.anchor_effect_size is None
 
 
-def test_corr_cluster_config_invalid_n_cluster_features():
-    """Test that n_cluster_features must be >= 1."""
-    # n_cluster_features=1 is actually valid - there's no minimum of 2
-    cfg = CorrClusterConfig(n_cluster_features=2, correlation=0.5)
-    assert cfg.n_cluster_features == 2
+def test_corr_cluster_config_single_feature_rejected():
+    """A single-feature cluster is rejected: correlation is undefined for p=1."""
+    from pydantic import ValidationError
+
+    with pytest.raises(ValidationError, match="n_cluster_features must be >= 2"):
+        CorrClusterConfig(n_cluster_features=1, correlation=0.5)
 
 
 def test_corr_cluster_config_correlation_class_specific():
