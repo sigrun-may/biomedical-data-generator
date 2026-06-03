@@ -98,9 +98,9 @@ def test_generate_dataset_with_batch_effects():
     X, y, meta = generate_dataset(cfg, return_dataframe=False)
 
     assert X.shape == (100, 8)
-    assert meta.batch_labels is not None
-    assert len(meta.batch_labels) == 100
-    assert meta.batch_effects is not None
+    assert meta.batch is not None
+    assert len(meta.batch.batch_assignments) == 100
+    assert meta.batch.batch_effects is not None
 
 
 def test_generate_dataset_no_batch_effects_when_n_batches_1():
@@ -119,7 +119,7 @@ def test_generate_dataset_no_batch_effects_when_n_batches_1():
     X, y, meta = generate_dataset(cfg, return_dataframe=False)
 
     # With n_batches=1, batch effects should not be applied
-    assert meta.batch_labels is None
+    assert meta.batch is None
 
 
 def test_generate_dataset_feature_naming_prefixed():
