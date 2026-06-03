@@ -195,7 +195,7 @@ def _make_names_and_roles(
 # Public generator
 # =================
 def generate_dataset(
-    cfg: DatasetConfig, return_dataframe=True
+    cfg: DatasetConfig, return_dataframe: bool = True
 ) -> tuple[pd.DataFrame | np.ndarray, np.ndarray, DatasetMeta]:
     """Generate synthetic biomedical dataset with specified feature structure.
 
@@ -203,7 +203,7 @@ def generate_dataset(
     correlated feature clusters (e.g., biological pathways), and optional batch effects.
 
     Args:
-        cfg: Configuration object defining dataset the structure. See :class:`~biomedical_data_generator.config /
+        cfg: Configuration object defining the dataset structure. See
             :class:`~biomedical_data_generator.config.DatasetConfig` for details.
         return_dataframe: If ``True``, return features as a :class:`pandas.DataFrame`
             with named columns. If ``False``, return as a NumPy array.
@@ -214,10 +214,12 @@ def generate_dataset(
             - **x** (:class:`pandas.DataFrame` or :class:`numpy.ndarray`):
               Feature matrix of shape ``(n_samples, n_features)``. Each row represents one sample (e.g., patient),
               each column represents one feature (e.g., biomarker, gene expression value). When returned
-              as DataFrame, column names depend on ``cfg.feature_naming``: "prefixed" (default)
-              uses type-based prefixes (``i`` for informative, ``corr`` for correlated
-              clusters, ``n`` for noise), yielding names like ``i1, corr1_anchor, n1``.
-              "sequential" uses sequential numbering ``feature_1, feature_2, ...``.
+              as DataFrame, column names depend on ``cfg.prefixed_feature_naming``:
+              when ``True`` (default), names use type-based prefixes
+              (``cfg.prefix_informative`` for informative features,
+              ``cfg.prefix_corr`` for correlated clusters, ``cfg.prefix_noise``
+              for noise), yielding names like ``i1, corr1_anchor, n1``. When
+              ``False``, names use sequential numbering ``feature_1, feature_2, ...``.
             - **y** (:class:`numpy.ndarray`):
               Class labels of shape ``(n_samples,)`` with integer values
               ``0, 1, ..., n_classes-1``.
