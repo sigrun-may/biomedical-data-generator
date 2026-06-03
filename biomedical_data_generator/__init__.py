@@ -10,7 +10,7 @@
 
 from .config import BatchEffectsConfig, ClassConfig, CorrClusterConfig, DatasetConfig
 from .generator import generate_dataset
-from .meta import BatchMeta, DatasetMeta, FeatureRoles
+from .meta import BatchMeta, DatasetMeta, FeatureRoles, compute_feature_roles
 
 __all__ = [
     "DatasetConfig",
@@ -21,4 +21,5 @@ __all__ = [
     "FeatureRoles",
     "BatchMeta",
     "generate_dataset",
+    "compute_feature_roles",
 ]
