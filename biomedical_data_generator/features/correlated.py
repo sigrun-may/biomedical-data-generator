@@ -332,7 +332,9 @@ def apply_anchor_effects(
             if cluster_cfg.is_class_specific():
                 rho = cluster_cfg.get_correlation_for_class(target_class if target_class is not None else 0)
             else:
-                rho = float(cluster_cfg.correlation)
+                rho = cluster_cfg.get_correlation_for_class(0)
+                # regardless of the class index.
+                # Global mode: get_correlation_for_class returns the single value
 
             sigma = build_correlation_matrix(n_cluster_features, rho, cluster_cfg.structure)
             anchor_correlations = sigma[0, 1:]  # theoretical, not empirical
@@ -449,7 +451,7 @@ def sample_all_correlated_clusters(
         ...         )
         ...     ]
         ... )
-        >>> x, meta = sample_all_correlated_clusters(cfg, rng) # y auto-generated
+        >>> x, meta = sample_all_correlated_clusters(cfg, rng=rng) # y auto-generated
 
         >>> # Correlation + diagnostic signal (informative anchor with shift)
         >>> cfg = DatasetConfig(
