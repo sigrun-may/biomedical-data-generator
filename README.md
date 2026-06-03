@@ -87,8 +87,9 @@ cfg = DatasetConfig(
     corr_clusters=[
         CorrClusterConfig(
             n_cluster_features=6,
-            correlation=0.2,            # baseline correlation
-            class_correlation={1: 0.9}, # strong correlation in diseased class
+            # Class-specific correlation: pass a {class_index: value} dict.
+            # Classes omitted from the dict default to 0.0.
+            correlation={0: 0.2, 1: 0.9},  # healthy weak, diseased strong
             structure="equicorrelated",
             anchor_role="informative",
             anchor_effect_size="medium",
@@ -208,7 +209,7 @@ The `examples/` directory contains complete demonstrations:
 - **01_basic_usage.py** – Simple dataset generation
 - **02_batch_effects.py** – Technical variation simulation
 - **03_class_specific_correlations.py** – Disease-specific pathway activation
-  
+
 Run any example:
 
 ```bash
