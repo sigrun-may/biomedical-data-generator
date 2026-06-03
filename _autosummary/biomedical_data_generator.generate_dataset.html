@@ -108,8 +108,9 @@ correlated feature clusters (e.g., biological pathways), and optional batch effe
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>cfg</strong> (<a class="reference internal" href="biomedical_data_generator.config.DatasetConfig.html#biomedical_data_generator.config.DatasetConfig" title="biomedical_data_generator.config.DatasetConfig"><em>DatasetConfig</em></a>) – Configuration object defining dataset the structure. See <code class="xref py py-class docutils literal notranslate"><span class="pre">DatasetConfig</span></code> for details.</p></li>
-<li><p><strong>return_dataframe</strong> – If <code class="docutils literal notranslate"><span class="pre">True</span></code>, return features as a <code class="xref py py-class docutils literal notranslate"><span class="pre">pandas.DataFrame</span></code>
+<li><p><strong>cfg</strong> (<a class="reference internal" href="biomedical_data_generator.config.DatasetConfig.html#biomedical_data_generator.config.DatasetConfig" title="biomedical_data_generator.config.DatasetConfig"><em>DatasetConfig</em></a>) – Configuration object defining the dataset structure. See
+<a class="reference internal" href="biomedical_data_generator.config.DatasetConfig.html#biomedical_data_generator.config.DatasetConfig" title="biomedical_data_generator.config.DatasetConfig"><code class="xref py py-class docutils literal notranslate"><span class="pre">DatasetConfig</span></code></a> for details.</p></li>
+<li><p><strong>return_dataframe</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a>) – If <code class="docutils literal notranslate"><span class="pre">True</span></code>, return features as a <code class="xref py py-class docutils literal notranslate"><span class="pre">pandas.DataFrame</span></code>
 with named columns. If <code class="docutils literal notranslate"><span class="pre">False</span></code>, return as a NumPy array.</p></li>
 </ul>
 </dd>
@@ -120,10 +121,12 @@ with named columns. If <code class="docutils literal notranslate"><span class="p
 <li><p><strong>x</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">pandas.DataFrame</span></code> or <a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.4)"><code class="xref py py-class docutils literal notranslate"><span class="pre">numpy.ndarray</span></code></a>):
 Feature matrix of shape <code class="docutils literal notranslate"><span class="pre">(n_samples,</span> <span class="pre">n_features)</span></code>. Each row represents one sample (e.g., patient),
 each column represents one feature (e.g., biomarker, gene expression value). When returned
-as DataFrame, column names depend on <code class="docutils literal notranslate"><span class="pre">cfg.feature_naming</span></code>: “prefixed” (default)
-uses type-based prefixes (<code class="docutils literal notranslate"><span class="pre">i</span></code> for informative, <code class="docutils literal notranslate"><span class="pre">corr</span></code> for correlated
-clusters, <code class="docutils literal notranslate"><span class="pre">n</span></code> for noise), yielding names like <code class="docutils literal notranslate"><span class="pre">i1,</span> <span class="pre">corr1_anchor,</span> <span class="pre">n1</span></code>.
-“sequential” uses sequential numbering <code class="docutils literal notranslate"><span class="pre">feature_1,</span> <span class="pre">feature_2,</span> <span class="pre">...</span></code>.</p></li>
+as DataFrame, column names depend on <code class="docutils literal notranslate"><span class="pre">cfg.prefixed_feature_naming</span></code>:
+when <code class="docutils literal notranslate"><span class="pre">True</span></code> (default), names use type-based prefixes
+(<code class="docutils literal notranslate"><span class="pre">cfg.prefix_informative</span></code> for informative features,
+<code class="docutils literal notranslate"><span class="pre">cfg.prefix_corr</span></code> for correlated clusters, <code class="docutils literal notranslate"><span class="pre">cfg.prefix_noise</span></code>
+for noise), yielding names like <code class="docutils literal notranslate"><span class="pre">i1,</span> <span class="pre">corr1_anchor,</span> <span class="pre">n1</span></code>. When
+<code class="docutils literal notranslate"><span class="pre">False</span></code>, names use sequential numbering <code class="docutils literal notranslate"><span class="pre">feature_1,</span> <span class="pre">feature_2,</span> <span class="pre">...</span></code>.</p></li>
 <li><p><strong>y</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.4)"><code class="xref py py-class docutils literal notranslate"><span class="pre">numpy.ndarray</span></code></a>):
 Class labels of shape <code class="docutils literal notranslate"><span class="pre">(n_samples,)</span></code> with integer values
 <code class="docutils literal notranslate"><span class="pre">0,</span> <span class="pre">1,</span> <span class="pre">...,</span> <span class="pre">n_classes-1</span></code>.</p></li>
