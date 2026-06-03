@@ -482,8 +482,9 @@ def test_batch_effects():
     )
 
     assert X.shape == (100, 10)
-    assert hasattr(meta, "batch_labels")
-    assert meta.batch_labels is not None
+    assert meta.batch is not None
+    assert meta.batch.batch_assignments is not None
+    assert len(meta.batch.batch_assignments) == 100
 
 
 def test_noise_distribution_params():
