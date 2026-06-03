@@ -194,7 +194,9 @@ def _make_names_and_roles(
 # =================
 # Public generator
 # =================
-def generate_dataset(cfg: DatasetConfig, return_dataframe=True) -> tuple[pd.DataFrame | np.ndarray, np.ndarray, DatasetMeta]:
+def generate_dataset(
+    cfg: DatasetConfig, return_dataframe=True
+) -> tuple[pd.DataFrame | np.ndarray, np.ndarray, DatasetMeta]:
     """Generate synthetic biomedical dataset with specified feature structure.
 
     Creates a classification dataset with configurable informative features, noise,
