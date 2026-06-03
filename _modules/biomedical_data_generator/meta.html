@@ -215,7 +215,7 @@
 <span class="c1"># Ground-truth dataset meta</span>
 <span class="c1"># =========================</span>
 <div class="viewcode-block" id="DatasetMeta">
-<a class="viewcode-back" href="../../_autosummary/biomedical_data_generator.meta.DatasetMeta.html#biomedical_data_generator.meta.DatasetMeta">[docs]</a>
+<a class="viewcode-back" href="../../_autosummary/biomedical_data_generator.meta.DatasetMeta.html#biomedical_data_generator.DatasetMeta">[docs]</a>
 <span class="nd">@dataclass</span><span class="p">(</span><span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 <span class="k">class</span><span class="w"> </span><span class="nc">DatasetMeta</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Metadata about the generated dataset.</span>
@@ -281,7 +281,7 @@
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">batch</span><span class="o">.</span><span class="n">batch_effects</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">batch</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="kc">None</span>
 
 <div class="viewcode-block" id="DatasetMeta.to_dict">
-<a class="viewcode-back" href="../../_autosummary/biomedical_data_generator.meta.DatasetMeta.html#biomedical_data_generator.meta.DatasetMeta.to_dict">[docs]</a>
+<a class="viewcode-back" href="../../_autosummary/biomedical_data_generator.meta.DatasetMeta.html#biomedical_data_generator.DatasetMeta.to_dict">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">to_dict</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">object</span><span class="p">]:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Convert to a plain dictionary (e.g., for JSON serialization).</span>
 
