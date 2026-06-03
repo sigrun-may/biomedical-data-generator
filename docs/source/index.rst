@@ -56,7 +56,7 @@ Installation
 
    pip install biomedical-data-generator
 
-**Requirements:** Python 3.11+
+**Requirements:** Python 3.10+
 
 Documentation Contents
 ----------------------
@@ -134,7 +134,7 @@ Each module has single responsibility:
 
 * ``features/informative.py``: Labels and class separation
 * ``features/correlated.py``: Cluster generation with class-specific correlations
-* ``features/noise.py``: Pure noise generation
+* ``utils/sampling.py``: Distribution sampling (used for noise features)
 * ``effects/batch.py``: Technical overlays (batch effects)
 * ``generator.py``: Pipeline orchestration
 * ``config.py``: Configuration models with validation

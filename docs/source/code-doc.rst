@@ -69,13 +69,11 @@ Correlated feature clusters
    biomedical_data_generator.features.correlated
 
 Independent noise features
-~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. autosummary::
-   :toctree: _autosummary
-   :nosignatures:
-
-   biomedical_data_generator.features.noise
+Independent noise features are not produced by a dedicated module. They are
+sampled directly in :func:`biomedical_data_generator.generate_dataset` using
+:func:`biomedical_data_generator.utils.sampling.sample_distribution`.
 
 ---
 
@@ -119,6 +117,7 @@ integration with scikit-learn.
 
    biomedical_data_generator.utils.correlation_tools
    biomedical_data_generator.utils.export_utils
+   biomedical_data_generator.utils.sampling
    biomedical_data_generator.utils.visualization
    biomedical_data_generator.utils.sklearn_compat
 
