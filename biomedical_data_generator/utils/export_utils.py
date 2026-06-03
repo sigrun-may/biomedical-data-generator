@@ -133,7 +133,6 @@ def to_parquet(
     y: NDArray[np.int64],
     meta: DatasetMeta,
     filepath: str | Path,
-
     *,
     include_labels: bool = True,
     **parquet_kwargs,

@@ -330,15 +330,11 @@ def apply_anchor_effects(
         # correlation, not the empirical correlation of the shifted data.
         if n_cluster_features > 1:
             if cluster_cfg.is_class_specific():
-                rho = cluster_cfg.get_correlation_for_class(
-                    target_class if target_class is not None else 0
-                )
+                rho = cluster_cfg.get_correlation_for_class(target_class if target_class is not None else 0)
             else:
                 rho = float(cluster_cfg.correlation)
 
-            sigma = build_correlation_matrix(
-                n_cluster_features, rho, cluster_cfg.structure
-            )
+            sigma = build_correlation_matrix(n_cluster_features, rho, cluster_cfg.structure)
             anchor_correlations = sigma[0, 1:]  # theoretical, not empirical
 
             for i, corr_with_anchor in enumerate(anchor_correlations, start=1):
