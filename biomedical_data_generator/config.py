@@ -8,7 +8,6 @@
 
 from __future__ import annotations
 
-import warnings
 from collections.abc import Iterable, Mapping, Sequence
 from typing import Any, Literal, cast
 
@@ -23,6 +22,40 @@ DistributionType = Literal[
     "exponential",
     "laplace",
 ]
+
+
+# Single source of truth tying each distribution to its allowed parameter
+# names and the canonical defaults used when no parameters are provided.
+# Defaults mirror the NumPy Generator API (e.g. uniform -> [0, 1)).
+_DISTRIBUTION_SCHEMA: dict[str, dict[str, Any]] = {
+    "normal": {"required": set(), "optional": {"loc", "scale"}, "defaults": {"loc": 0.0, "scale": 1.0}},
+    "lognormal": {"required": set(), "optional": {"mean", "sigma"}, "defaults": {"mean": 0.0, "sigma": 1.0}},
+    "exp_normal": {"required": set(), "optional": {"loc", "scale"}, "defaults": {"loc": 0.0, "scale": 1.0}},
+    "uniform": {"required": {"low", "high"}, "optional": set(), "defaults": {"low": 0.0, "high": 1.0}},
+    "exponential": {"required": set(), "optional": {"scale"}, "defaults": {"scale": 1.0}},
+    "laplace": {"required": set(), "optional": {"loc", "scale"}, "defaults": {"loc": 0.0, "scale": 1.0}},
+}
+
+
+def default_distribution_params(distribution: str) -> dict[str, float]:
+    """Return the canonical default parameters for a distribution.
+
+    Defaults mirror the NumPy Generator API so that selecting a distribution
+    without explicit parameters yields the library's standard behavior (e.g.
+    ``uniform`` over ``[0, 1)``, ``normal`` with ``loc=0, scale=1``).
+
+    Args:
+        distribution: Distribution type (e.g., "normal", "uniform").
+
+    Returns:
+        A fresh dict with the default parameters for the distribution. Returns
+        an empty dict for unknown distributions (no parameters assumed).
+    """
+    schema = _DISTRIBUTION_SCHEMA.get(distribution)
+    if schema is None:
+        return {}
+    # Return a copy so callers cannot mutate the shared schema template.
+    return dict(schema["defaults"])
 
 
 def validate_distribution_params(
@@ -44,25 +77,15 @@ def validate_distribution_params(
     if not params:
         return params
 
-    param_schema = {
-        "normal": {"required": set(), "optional": {"loc", "scale"}},
-        "uniform": {"required": {"low", "high"}, "optional": set()},
-        "laplace": {"required": set(), "optional": {"loc", "scale"}},
-        "exponential": {"required": set(), "optional": {"scale"}},
-        "lognormal": {"required": set(), "optional": {"mean", "sigma"}},
-        "exp_normal": {"required": set(), "optional": {"loc", "scale"}},
-    }
-
-    schema = param_schema.get(distribution)
+    schema = _DISTRIBUTION_SCHEMA.get(distribution)
     if not schema:
         return params
 
+    allowed = schema["required"] | schema["optional"]
     provided = set(params.keys())
-    invalid = provided - (schema["required"] | schema["optional"])
+    invalid = provided - allowed
     if invalid:
-        raise ValueError(
-            f"Invalid parameters {invalid} for '{distribution}'. " f"Allowed: {schema['required'] | schema['optional']}"
-        )
+        raise ValueError(f"Invalid parameters {invalid} for '{distribution}'. Allowed: {allowed}")
 
     missing = schema["required"] - provided
     if missing:
@@ -167,9 +190,9 @@ class ClassConfig(BaseModel):
         default="normal",
         description="Distribution type for base feature generation.",
     )
-    class_distribution_params: dict[str, Any] = Field(
-        default_factory=lambda: {"loc": 0, "scale": 1},
-        description="Distribution parameters.",
+    class_distribution_params: dict[str, Any] | None = Field(
+        default=None,
+        description="Distribution parameters. If None, distribution-specific defaults are derived.",
     )
     label: str | None = Field(
         default=None,
@@ -184,6 +207,22 @@ class ClassConfig(BaseModel):
             return v
         distribution = info.data.get("class_distribution", "normal")
         return validate_distribution_params(v, distribution)
+
+    @model_validator(mode="after")
+    def _resolve_distribution_params(self):
+        """Derive distribution-specific default parameters when none are given.
+
+        Keeping resolution at config time means the constructed config is always
+        complete and internally consistent: the parameters can never disagree
+        with the chosen distribution.
+        """
+        if self.class_distribution_params is None:
+            object.__setattr__(
+                self,
+                "class_distribution_params",
+                default_distribution_params(self.class_distribution),
+            )
+        return self
 
     def __str__(self) -> str:
         """Concise string representation."""
@@ -665,7 +704,10 @@ class DatasetConfig(BaseModel):
 
     # Noise distribution (NumPy Generator API)
     noise_distribution: DistributionType = "normal"
-    noise_distribution_params: dict[str, Any] = Field(default_factory=lambda: {"loc": 0, "scale": 1})
+    noise_distribution_params: dict[str, Any] | None = Field(
+        default=None,
+        description="Parameters for the noise distribution. If None, distribution-specific defaults are derived.",
+    )
 
     # Naming
     prefixed_feature_naming: bool = True
@@ -781,21 +823,23 @@ class DatasetConfig(BaseModel):
         distribution = info.data.get("noise_distribution", "normal")
         return validate_distribution_params(v, distribution)
 
-    # ------------------------------------------------------ after validators
     @model_validator(mode="after")
-    def _enforce_minimum_informative(self):
-        """Ensure n_informative >= number of informative anchors."""
-        required = self.count_informative_anchors()
-        if self.n_informative < required:
-            old = self.n_informative
-            object.__setattr__(self, "n_informative", required)
-            warnings.warn(
-                f"[DatasetConfig] n_informative was increased from {old} to {required} "
-                f"because your correlated clusters define {required} informative anchors.",
-                UserWarning,
+    def _resolve_noise_distribution_params(self):
+        """Derive distribution-specific default noise parameters when none are given.
+
+        Without this, selecting a non-default ``noise_distribution`` (e.g.
+        "uniform") and omitting parameters would either fail validation or leave
+        the config carrying parameters that do not match the distribution.
+        """
+        if self.noise_distribution_params is None:
+            object.__setattr__(
+                self,
+                "noise_distribution_params",
+                default_distribution_params(self.noise_distribution),
             )
         return self
 
+    # ------------------------------------------------------ after validators
     @model_validator(mode="after")
     def _auto_generate_labels(self):
         """Auto-generate labels as 'class_{idx}' if not provided."""
@@ -817,21 +861,35 @@ class DatasetConfig(BaseModel):
         return self
 
     @model_validator(mode="after")
-    def __post_init__(self):
-        """Sanity checks tying together anchors, counts, and classes."""
-        if self.n_noise < 0:
-            raise ValueError("n_noise must be >= 0.")
-        if self.n_informative < 0:
-            raise ValueError("n_informative must be >= 0.")
+    def _validate_anchor_count_consistency(self):
+        """Validate that feature counts can accommodate all declared anchors.
 
+        Each correlated cluster reserves one feature of its ``anchor_role`` from
+        the corresponding global budget. Informative and noise anchors are
+        treated identically: an under-budget configuration is a structural
+        impossibility and is rejected rather than silently repaired.
+
+        Raises:
+            ValueError: If ``n_informative``/``n_noise`` cannot cover their
+                respective anchors, if ``corr_between`` is outside [-1, 1], or if
+                any ``anchor_class`` index exceeds the number of classes.
+        """
         inf_anchors = self.count_informative_anchors()
         noise_anchors = self.count_noise_anchors()
         if self.n_informative < inf_anchors:
-            raise ValueError(f"n_informative ({self.n_informative}) < number of informative anchors ({inf_anchors}).")
+            raise ValueError(
+                f"n_informative ({self.n_informative}) must be >= number of "
+                f"informative anchors ({inf_anchors}); each informative cluster "
+                f"anchor consumes one informative feature."
+            )
         if self.n_noise < noise_anchors:
-            raise ValueError(f"n_noise ({self.n_noise}) < number of noise anchors ({noise_anchors}).")
+            raise ValueError(
+                f"n_noise ({self.n_noise}) must be >= number of noise anchors "
+                f"({noise_anchors}); each noise cluster anchor consumes one noise "
+                f"feature."
+            )
 
-        # Corr-between range sanity check
+        # corr_between range sanity check
         if not (-1.0 <= float(self.corr_between) <= 1.0):
             raise ValueError(f"corr_between must lie in [-1, 1], got {self.corr_between}.")
 
