@@ -46,7 +46,7 @@ build: ## Build sdist and wheel
 
 clean: ## Remove build and cache artifacts
 	rm -rf .mypy_cache .pytest_cache .ruff_cache .coverage* htmlcov
-	rm -rf build dist *.egg-info
+	rm -rf build dist *.egg-info docs/build
 	find . -type d -name __pycache__ -exec rm -rf {} +
 
 distclean: clean ## Also remove Poetry venv
@@ -54,8 +54,8 @@ distclean: clean ## Also remove Poetry venv
 
 .PHONY: docs serve-docs
 
-docs: ## Build Sphinx docs to docs/_build/html
-	poetry run sphinx-build -b html docs docs/_build/html
+docs: ## Build Sphinx docs (delegates to docs/Makefile, same as CI)
+	poetry run $(MAKE) -C docs html
 
 serve-docs: docs ## Serve docs locally at http://localhost:8000
-	python -m http.server -d docs/_build/html 8000
+	python -m http.server -d docs/build/html 8000
