@@ -180,6 +180,22 @@ class DatasetMeta:
     random_state: int | None = None
     resolved_config: dict[str, object] = field(default_factory=dict)
 
+    @property
+    def batch_labels(self) -> np.ndarray | None:
+        """Per-sample batch assignments, or None if no batch effects were applied.
+
+        Backward-compatibility accessor delegating to :attr:`batch`.
+        """
+        return self.batch.batch_assignments if self.batch is not None else None
+
+    @property
+    def batch_effects(self) -> np.ndarray | None:
+        """Per-batch effect summary, or None if no batch effects were applied.
+
+        Backward-compatibility accessor delegating to :attr:`batch`.
+        """
+        return self.batch.batch_effects if self.batch is not None else None
+
     def to_dict(self) -> dict[str, object]:
         """Convert to a plain dictionary (e.g., for JSON serialization).
 
