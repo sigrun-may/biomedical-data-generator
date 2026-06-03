@@ -24,9 +24,7 @@
 
    .. autosummary::
    
-      ~DatasetMeta.batch_config
-      ~DatasetMeta.batch_effects
-      ~DatasetMeta.batch_labels
+      ~DatasetMeta.batch
       ~DatasetMeta.random_state
       ~DatasetMeta.feature_names
       ~DatasetMeta.informative_idx

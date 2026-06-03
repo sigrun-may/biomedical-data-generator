@@ -94,49 +94,121 @@
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
 
+<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="s2">&quot;BatchMeta&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;DatasetMeta&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;FeatureRoles&quot;</span><span class="p">,</span>
+<span class="p">]</span>
+
 
 <span class="c1"># =========================</span>
 <span class="c1"># Batch effects meta</span>
 <span class="c1"># =========================</span>
-<span class="nd">@dataclass</span>
+<span class="nd">@dataclass</span><span class="p">(</span><span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 <span class="k">class</span><span class="w"> </span><span class="nc">BatchMeta</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Metadata about applied batch effects.</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Metadata about the batch overlay applied to a dataset.</span>
+
+<span class="sd">    Present on :class:`DatasetMeta` only when batch effects were applied;</span>
+<span class="sd">    otherwise ``DatasetMeta.batch`` is ``None``.</span>
 
 <span class="sd">    Attributes:</span>
 <span class="sd">        batch_assignments:</span>
-<span class="sd">            Array of shape (n_samples,) with per-sample batch IDs.</span>
-
-<span class="sd">        batch_intercepts:</span>
-<span class="sd">            Mapping from batch_id to array of intercepts per affected feature.</span>
-<span class="sd">            Structure: {batch_id: np.ndarray of shape (n_affected_features,)}.</span>
-<span class="sd">            For example, with 3 batches and 5 affected features:</span>
-<span class="sd">            {0: array([0.5, -0.3, 0.8, ...]), 1: array([...]), 2: array([...])}</span>
-
+<span class="sd">            Array of shape (n_samples,) with the batch ID per sample.</span>
+<span class="sd">        batch_effects:</span>
+<span class="sd">            Per-batch summary of the applied effects as returned by</span>
+<span class="sd">            ``apply_batch_effects``. For ``effect_granularity=&quot;scalar&quot;`` these</span>
+<span class="sd">            are the exact per-batch shifts (additive) or factors minus 1.0</span>
+<span class="sd">            (multiplicative); for ``&quot;per_feature&quot;`` they are the mean across</span>
+<span class="sd">            affected features per batch.</span>
 <span class="sd">        effect_type:</span>
-<span class="sd">            Type of batch effect (&quot;additive&quot; or &quot;multiplicative&quot;).</span>
-
+<span class="sd">            Either ``&quot;additive&quot;`` or ``&quot;multiplicative&quot;``.</span>
 <span class="sd">        effect_strength:</span>
-<span class="sd">            Standard deviation of batch intercepts (controls magnitude).</span>
-
+<span class="sd">            Standard deviation controlling the effect magnitude.</span>
+<span class="sd">        effect_granularity:</span>
+<span class="sd">            Either ``&quot;per_feature&quot;`` or ``&quot;scalar&quot;``.</span>
 <span class="sd">        confounding_with_class:</span>
-<span class="sd">            Degree of correlation between batch and class (0.0–1.0).</span>
-<span class="sd">            0.0 = independent, 1.0 = perfect confounding.</span>
-
+<span class="sd">            Degree of batch-class correlation in [0.0, 1.0].</span>
 <span class="sd">        proportions:</span>
-<span class="sd">            Proportions of samples per batch (if specified).</span>
-
+<span class="sd">            Target batch proportions, or ``None`` for balanced batches.</span>
 <span class="sd">        affected_feature_indices:</span>
-<span class="sd">            List of feature indices affected by batch effects</span>
-<span class="sd">            (None if all features are affected).</span>
+<span class="sd">            Column indices that received batch effects, or ``None`` if all</span>
+<span class="sd">            features were affected.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="n">batch_assignments</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span>  <span class="c1"># (n_samples,)</span>
-    <span class="n">batch_intercepts</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]</span>  <span class="c1"># batch_id -&gt; intercepts per affected feature</span>
-    <span class="n">effect_type</span><span class="p">:</span> <span class="nb">str</span>  <span class="c1"># &quot;additive&quot; or &quot;multiplicative&quot;</span>
+    <span class="n">batch_assignments</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span>
+    <span class="n">batch_effects</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span>
+    <span class="n">effect_type</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;additive&quot;</span><span class="p">,</span> <span class="s2">&quot;multiplicative&quot;</span><span class="p">]</span>
     <span class="n">effect_strength</span><span class="p">:</span> <span class="nb">float</span>
+    <span class="n">effect_granularity</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;per_feature&quot;</span><span class="p">,</span> <span class="s2">&quot;scalar&quot;</span><span class="p">]</span>
     <span class="n">confounding_with_class</span><span class="p">:</span> <span class="nb">float</span>
     <span class="n">proportions</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
     <span class="n">affected_feature_indices</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+
+
+<span class="c1"># =========================</span>
+<span class="c1"># Generative feature roles</span>
+<span class="c1"># =========================</span>
+<span class="nd">@dataclass</span><span class="p">(</span><span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">FeatureRoles</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Generative feature roles derived from a DatasetMeta.</span>
+
+<span class="sd">    A purely structural partition of the feature columns into six</span>
+<span class="sd">    roles that the generator distinguishes. The six roles arise from two</span>
+<span class="sd">    orthogonal distinctions:</span>
+
+<span class="sd">    * **Signal** -- *informative* features encode a class mean shift, *noise*</span>
+<span class="sd">      features do not.</span>
+<span class="sd">    * **Cluster membership** -- a *free* feature is independent and belongs to</span>
+<span class="sd">      no cluster. Within a correlated cluster, the lead column is the *anchor*</span>
+<span class="sd">      (the only column shifted directly), and every other member is a *proxy*</span>
+<span class="sd">      that inherits an attenuated version of the anchor&#39;s behaviour through</span>
+<span class="sd">      correlation.</span>
+
+<span class="sd">    Combining the two distinctions yields the six roles, one per index attribute</span>
+<span class="sd">    below.</span>
+
+<span class="sd">    Attributes:</span>
+<span class="sd">        free_informative_indices:</span>
+<span class="sd">            List of column indices for free informative features. These are</span>
+<span class="sd">            independent informative features that are not part of any</span>
+<span class="sd">            correlated cluster and therefore carry a class-separating mean</span>
+<span class="sd">            shift on their own.</span>
+<span class="sd">        informative_anchor_indices:</span>
+<span class="sd">            List of column indices of cluster anchors whose ``anchor_role`` is</span>
+<span class="sd">            ``&quot;informative&quot;``. Anchors receive the class-specific mean shift</span>
+<span class="sd">            and seed the within-cluster correlation shared by their proxies.</span>
+<span class="sd">        informative_proxy_indices:</span>
+<span class="sd">            List of column indices of proxy members in informative clusters</span>
+<span class="sd">            (non-anchor members). Proxies do not receive a direct mean shift</span>
+<span class="sd">            but inherit an attenuated signal through their correlation with</span>
+<span class="sd">            the informative anchor. The degree of attenuation follows the</span>
+<span class="sd">            cluster&#39;s correlation structure — roughly uniform for</span>
+<span class="sd">            equicorrelated clusters and decaying with distance from the anchor</span>
+<span class="sd">            for Toeplitz clusters.</span>
+<span class="sd">        free_noise_indices:</span>
+<span class="sd">            List of column indices for free noise features. These are</span>
+<span class="sd">            independent noise features outside any cluster and carry no</span>
+<span class="sd">            class-discriminating signal.</span>
+<span class="sd">        noise_anchor_indices:</span>
+<span class="sd">            List of column indices of cluster anchors whose ``anchor_role`` is</span>
+<span class="sd">            ``&quot;noise&quot;``. Noise anchors seed a within-cluster correlation but</span>
+<span class="sd">            do not receive a class-specific mean shift.</span>
+<span class="sd">        noise_proxy_indices:</span>
+<span class="sd">            List of column indices of proxy members in noise clusters</span>
+<span class="sd">            (non-anchor members) that are correlated with their noise anchor</span>
+<span class="sd">            and form purely structural, signal-free correlated blocks.</span>
+<span class="sd">        cluster_membership:</span>
+<span class="sd">            Mapping from ``column_index`` to ``cluster_id`` for every column</span>
+<span class="sd">            that belongs to a correlated cluster.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">free_informative_indices</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span>
+    <span class="n">informative_anchor_indices</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span>
+    <span class="n">informative_proxy_indices</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span>
+    <span class="n">free_noise_indices</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span>
+    <span class="n">noise_anchor_indices</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span>
+    <span class="n">noise_proxy_indices</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span>
+    <span class="n">cluster_membership</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">]</span>
 
 
 <span class="c1"># =========================</span>
@@ -185,13 +257,7 @@
     <span class="n">corr_between</span><span class="p">:</span> <span class="nb">float</span>  <span class="c1"># correlation between different clusters/roles</span>
 
     <span class="c1"># ---------------- batch effects (optional) ----------------</span>
-
-    <span class="n">batch_labels</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>  <span class="c1"># shape (n_samples,)</span>
-    <span class="n">batch_effects</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
-    <span class="c1"># If present, raw effects as returned by apply_batch_effects:</span>
-    <span class="c1"># - scalar granularity: shape (n_batches,)</span>
-    <span class="c1"># - per-feature summary: shape (n_batches, n_affected_features)</span>
-    <span class="n">batch_config</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">object</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>  <span class="c1"># serialized BatchEffectsConfig</span>
+    <span class="n">batch</span><span class="p">:</span> <span class="n">BatchMeta</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
 
     <span class="c1"># ---------------- generator config snapshot ----------------</span>
 
@@ -201,8 +267,24 @@
 <div class="viewcode-block" id="DatasetMeta.to_dict">
 <a class="viewcode-back" href="../../_autosummary/biomedical_data_generator.meta.DatasetMeta.html#biomedical_data_generator.meta.DatasetMeta.to_dict">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">to_dict</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">object</span><span class="p">]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Convert to a plain dictionary (e.g., for JSON serialization).&quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="n">asdict</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span></div>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Convert to a plain dictionary (e.g., for JSON serialization).</span>
+
+<span class="sd">        NumPy arrays are converted to plain lists so the result can be passed</span>
+<span class="sd">        directly to ``json.dumps``.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">def</span><span class="w"> </span><span class="nf">_convert</span><span class="p">(</span><span class="n">obj</span><span class="p">):</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>
+                <span class="k">return</span> <span class="n">obj</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+                <span class="k">return</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="n">_convert</span><span class="p">(</span><span class="n">v</span><span class="p">)</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">obj</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="p">(</span><span class="nb">list</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">)):</span>
+                <span class="k">return</span> <span class="p">[</span><span class="n">_convert</span><span class="p">(</span><span class="n">v</span><span class="p">)</span> <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">obj</span><span class="p">]</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">generic</span><span class="p">):</span>
+                <span class="k">return</span> <span class="n">obj</span><span class="o">.</span><span class="n">item</span><span class="p">()</span>
+            <span class="k">return</span> <span class="n">obj</span>
+
+        <span class="k">return</span> <span class="n">_convert</span><span class="p">(</span><span class="n">asdict</span><span class="p">(</span><span class="bp">self</span><span class="p">))</span></div>
 </div>
 
 </pre></div>
