@@ -228,7 +228,7 @@
 
 <span class="sd">    Args:</span>
 <span class="sd">        n_samples: Number of samples for this class (must be &gt;= 1).</span>
-<span class="sd">        class_distribution: Distribution type for feature generation. Supported numpy random generator distrubutions:</span>
+<span class="sd">        class_distribution: Distribution type for feature generation. Supported numpy random generator distributions:</span>
 <span class="sd">            - &quot;normal&quot;, &quot;lognormal&quot;, &quot;uniform&quot;, &quot;exponential&quot;, &quot;laplace&quot;. Additionally, &quot;exp_normal&quot; for direct control</span>
 <span class="sd">                over lognormal parameters.</span>
 <span class="sd">        class_distribution_params: Parameters for the chosen distribution.</span>
@@ -569,7 +569,7 @@
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
             <span class="k">if</span> <span class="n">v</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;small&quot;</span><span class="p">,</span> <span class="s2">&quot;medium&quot;</span><span class="p">,</span> <span class="s2">&quot;large&quot;</span><span class="p">):</span>
                 <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;anchor_effect_size must be &#39;small&#39;, &#39;medium&#39;, or &#39;large&#39;, &quot;</span> <span class="sa">f</span><span class="s2">&quot;got &#39;</span><span class="si">{</span><span class="n">v</span><span class="si">}</span><span class="s2">&#39;.&quot;</span><span class="p">)</span>
-            <span class="k">return</span> <span class="n">cast</span><span class="p">(</span><span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;small&quot;</span><span class="p">,</span> <span class="s2">&quot;medium&quot;</span><span class="p">,</span> <span class="s2">&quot;large&quot;</span><span class="p">],</span> <span class="n">v</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">v</span>
 
         <span class="k">try</span><span class="p">:</span>
             <span class="n">val</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">v</span><span class="p">)</span>
@@ -830,7 +830,6 @@
 
     <span class="c1"># Global seed</span>
     <span class="n">random_state</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
-
 
     <span class="nd">@classmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">_validate_sep_value</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">class_separation</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
