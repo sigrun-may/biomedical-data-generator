@@ -1,0 +1,12 @@
+﻿biomedical\_data\_generator.features.noise
+==========================================
+
+.. automodule:: biomedical_data_generator.features.noise
+
+   
+   .. rubric:: Functions
+
+   .. autosummary::
+   
+      generate_noise_features
+   
