@@ -502,3 +502,103 @@ def test_generate_dataset_with_noise_anchor_cluster():
     assert meta.anchor_role == {0: "informative", 1: "noise"}
     assert meta.anchor_idx == {0: 1, 1: 4}
     assert meta.corr_cluster_indices == {0: [1, 2, 3], 1: [4, 5, 6]}
+
+
+def test_generate_dataset_populates_batch_meta():
+    """generate_dataset stores all batch settings in meta.batch."""
+    cfg = DatasetConfig(
+        n_informative=5,
+        n_noise=3,
+        class_configs=[ClassConfig(n_samples=50), ClassConfig(n_samples=50)],
+        batch_effects=BatchEffectsConfig(
+            n_batches=3,
+            effect_type="multiplicative",
+            effect_strength=0.4,
+            effect_granularity="scalar",
+            confounding_with_class=0.5,
+            affected_features="all",
+        ),
+        random_state=42,
+    )
+
+    _, _, meta = generate_dataset(cfg, return_dataframe=False)
+
+    assert meta.batch is not None
+    assert meta.batch.effect_type == "multiplicative"
+    assert meta.batch.effect_strength == 0.4
+    assert meta.batch.effect_granularity == "scalar"
+    assert meta.batch.confounding_with_class == 0.5
+    assert meta.batch.affected_feature_indices is None  # "all" maps to None
+    assert meta.batch.batch_assignments.shape == (100,)
+
+
+def test_generate_dataset_batch_meta_affected_feature_indices_list():
+    """An explicit affected_features list is stored verbatim in meta.batch."""
+    affected = [0, 2, 4]
+    cfg = DatasetConfig(
+        n_informative=5,
+        n_noise=3,
+        class_configs=[ClassConfig(n_samples=40), ClassConfig(n_samples=40)],
+        batch_effects=BatchEffectsConfig(
+            n_batches=2,
+            effect_strength=0.5,
+            affected_features=affected,
+        ),
+        random_state=0,
+    )
+
+    _, _, meta = generate_dataset(cfg, return_dataframe=False)
+
+    assert meta.batch is not None
+    assert meta.batch.affected_feature_indices == affected
+
+
+def test_dataset_meta_to_dict_is_json_serializable_with_batch_effects():
+    """meta.to_dict() must be JSON-serializable when batch effects are active."""
+    import json
+
+    cfg = DatasetConfig(
+        n_informative=4,
+        n_noise=2,
+        class_configs=[ClassConfig(n_samples=30), ClassConfig(n_samples=30)],
+        batch_effects=BatchEffectsConfig(n_batches=2, effect_strength=0.5),
+        random_state=7,
+    )
+
+    _, _, meta = generate_dataset(cfg, return_dataframe=False)
+    payload = meta.to_dict()
+
+    serialized = json.dumps(payload)  # must not raise
+    assert isinstance(serialized, str)
+    assert isinstance(payload["batch"]["batch_assignments"], list)
+
+
+def test_dataset_meta_batch_labels_property_matches_batch_meta():
+    """The backward-compatible batch_labels property mirrors meta.batch.batch_assignments."""
+    cfg = DatasetConfig(
+        n_informative=3,
+        n_noise=2,
+        class_configs=[ClassConfig(n_samples=25), ClassConfig(n_samples=25)],
+        batch_effects=BatchEffectsConfig(n_batches=2, effect_strength=0.5),
+        random_state=1,
+    )
+
+    _, _, meta = generate_dataset(cfg, return_dataframe=False)
+
+    assert meta.batch_labels is not None
+    np.testing.assert_array_equal(meta.batch_labels, meta.batch.batch_assignments)
+
+
+def test_dataset_meta_batch_is_none_without_batch_effects():
+    """Without batch effects, meta.batch is None and the compat property returns None."""
+    cfg = DatasetConfig(
+        n_informative=3,
+        n_noise=2,
+        class_configs=[ClassConfig(n_samples=25), ClassConfig(n_samples=25)],
+        random_state=1,
+    )
+
+    _, _, meta = generate_dataset(cfg, return_dataframe=False)
+
+    assert meta.batch is None
+    assert meta.batch_labels is None
