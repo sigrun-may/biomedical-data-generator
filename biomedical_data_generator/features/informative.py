@@ -6,15 +6,21 @@
 
 """Generation of free informative features and class separation.
 
-This module builds numeric class labels from DatasetConfig.class_configs,
+This module builds numeric class labels from ``DatasetConfig.class_configs``,
 samples base values for free informative features according to per-class
 distributions, and applies class-wise mean shifts controlled by
-DatasetConfig.class_sep.
+``DatasetConfig.class_sep``.
 
-Correlated clusters (including anchors) are handled in `correlated.py`.
-Noise features are handled in `noise.py`. The shifting logic is implemented
-in `shift_classes` and can be reused by other modules (for example, for
-anchor effects in correlated clusters).
+Scope:
+    Only *free* informative features are produced here (i.e. informative
+    features that are not cluster anchors). Correlated clusters, including
+    their anchors and the attenuated proxy shifts, are handled in
+    ``correlated.py``. Independent noise features are sampled directly in
+    ``generator.py`` via ``utils.sampling.sample_distribution``.
+
+The class-wise offsets are derived from ``class_sep`` by
+``_class_offsets_from_sep`` and applied as pure mean shifts, so the per-class
+distribution shape is preserved.
 """
 
 from __future__ import annotations
