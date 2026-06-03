@@ -40,7 +40,7 @@ ______________________________________________________________________
 pip install biomedical-data-generator
 ```
 
-**Minimum Requirements:** Python 3.11+
+**Minimum Requirements:** Python 3.10+
 
 ______________________________________________________________________
 
