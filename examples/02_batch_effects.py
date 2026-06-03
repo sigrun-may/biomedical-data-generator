@@ -87,7 +87,7 @@ def main() -> None:
     print(f"Generated dataset: {x1.shape}")
     print("Batch distribution across classes:")
     for class_idx, class_name in enumerate(meta1.class_names):
-        batch_counts = np.bincount(meta1.batch_labels[y1 == class_idx])
+        batch_counts = np.bincount(meta1.batch.batch_assignments[y1 == class_idx])
         print(f"  {class_name}: {batch_counts}")
     print()
 
@@ -103,7 +103,7 @@ def main() -> None:
     print(f"Generated dataset: {x2.shape}")
     print("Batch distribution across classes:")
     for class_idx, class_name in enumerate(meta2.class_names):
-        batch_counts = np.bincount(meta2.batch_labels[y2 == class_idx])
+        batch_counts = np.bincount(meta2.batch.batch_assignments[y2 == class_idx])
         print(f"  {class_name}: {batch_counts}")
     print()
 
@@ -134,10 +134,10 @@ def main() -> None:
 
         # Plot 1: Feature distribution by batch (no confounding)
         feature_idx = 0
-        if meta1.batch_labels is not None:
+        if meta1.batch is not None:
             data1 = {
                 "Feature Value": x1.iloc[:, feature_idx],
-                "Batch": meta1.batch_labels,
+                "Batch": meta1.batch.batch_assignments,
                 "Class": y1,
             }
 
@@ -147,10 +147,10 @@ def main() -> None:
             axes[0].legend(title="Class")
 
         # Plot 2: Feature distribution by batch (with confounding)
-        if meta2.batch_labels is not None:
+        if meta2.batch is not None:
             data2 = {
                 "Feature Value": x2.iloc[:, feature_idx],
-                "Batch": meta2.batch_labels,
+                "Batch": meta2.batch.batch_assignments,
                 "Class": y2,
             }
             df2 = pd.DataFrame(data2)
