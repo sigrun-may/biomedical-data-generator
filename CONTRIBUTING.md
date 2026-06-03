@@ -52,7 +52,15 @@ ______________________________________________________________________
 
 ## Development Environment
 
-This project uses **Python 3.11** and **Poetry** for dependency management.
+This project uses **Poetry** for dependency management.
+
+**Supported Python versions:** the minimum supported version is **Python 3.10**.
+CI tests against 3.10–3.14, so your contributions must run on 3.10 — please avoid
+3.11-only features (e.g. `tomllib`, `except*` exception groups, `typing.Self`).
+
+You may develop on any version in that range; the maintainers' reference
+environment is **Python 3.11**. Developing or running the tests on **3.10**
+locally is the safest way to catch compatibility issues before CI does.
 
 ### 1. Install Poetry (if needed)
 
@@ -69,7 +77,7 @@ poetry install
 If you want to work on docs and development tooling (recommended):
 
 ```bash
-poetry install --with dev,docs
+poetry install --with lint,test,doc
 ```
 
 Use the virtual environment managed by Poetry:
@@ -148,8 +156,8 @@ cd docs
 poetry run make html
 ```
 
-This will generate HTML documentation under `docs/_build/html/`.\
-Open `docs/_build/html/index.html` in your browser to inspect the result.
+This will generate HTML documentation under `docs/build/html/`.\
+Open `docs/build/html/index.html` in your browser to inspect the result.
 
 ### When to Update Docs
 
