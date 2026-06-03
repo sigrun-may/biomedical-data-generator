@@ -17,7 +17,7 @@ You will learn:
 pip install biomedical-data-generator
 ```
 
-Requires **Python 3.11+**.
+Requires **Python 3.10+**.
 
 ---
 
