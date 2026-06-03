@@ -80,7 +80,11 @@
            <div itemprop="articleBody">
              
   <h1>Source code for biomedical_data_generator.utils.export_utils</h1><div class="highlight"><pre>
-<span></span><span class="c1"># biomedical_data_generator/utils/export_utils.py</span>
+<span></span><span class="c1"># Copyright (c) 2025 Sigrun May,</span>
+<span class="c1"># Ostfalia Hochschule für angewandte Wissenschaften</span>
+<span class="c1">#</span>
+<span class="c1"># This software is distributed under the terms of the MIT license</span>
+<span class="c1"># which is available at https://opensource.org/licenses/MIT</span>
 
 <span class="sd">&quot;&quot;&quot;Export utilities for saving generated datasets to various formats.&quot;&quot;&quot;</span>
 
@@ -196,7 +200,7 @@
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Export dataset to CSV file.</span>
 
-<span class="sd">    Convenience wrapper around to_dataframe() + DataFrame.to_csv().</span>
+<span class="sd">    Convenience wrapper around to_labeled_dataframe() + DataFrame.to_csv().</span>
 
 <span class="sd">    Args:</span>
 <span class="sd">        x: Feature matrix.</span>
