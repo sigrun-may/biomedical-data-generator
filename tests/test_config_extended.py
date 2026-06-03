@@ -323,6 +323,7 @@ def test_corr_cluster_config_anchor_effect_size_none():
 
     assert cfg.resolve_anchor_effect_size() == 1.0
 
+
 def test_noise_anchor_resolves_to_zero_effect():
     """A noise anchor never carries a shift, so its effect size resolves to 0.0."""
     cfg = CorrClusterConfig(

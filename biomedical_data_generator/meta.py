@@ -12,49 +12,121 @@ from typing import Literal
 
 import numpy as np
 
+__all__ = [
+    "BatchMeta",
+    "DatasetMeta",
+    "FeatureRoles",
+]
+
 
 # =========================
 # Batch effects meta
 # =========================
-@dataclass
+@dataclass(frozen=True)
 class BatchMeta:
-    """Metadata about applied batch effects.
+    """Metadata about the batch overlay applied to a dataset.
+
+    Present on :class:`DatasetMeta` only when batch effects were applied;
+    otherwise ``DatasetMeta.batch`` is ``None``.
 
     Attributes:
         batch_assignments:
-            Array of shape (n_samples,) with per-sample batch IDs.
-
-        batch_intercepts:
-            Mapping from batch_id to array of intercepts per affected feature.
-            Structure: {batch_id: np.ndarray of shape (n_affected_features,)}.
-            For example, with 3 batches and 5 affected features:
-            {0: array([0.5, -0.3, 0.8, ...]), 1: array([...]), 2: array([...])}
-
+            Array of shape (n_samples,) with the batch ID per sample.
+        batch_effects:
+            Per-batch summary of the applied effects as returned by
+            ``apply_batch_effects``. For ``effect_granularity="scalar"`` these
+            are the exact per-batch shifts (additive) or factors minus 1.0
+            (multiplicative); for ``"per_feature"`` they are the mean across
+            affected features per batch.
         effect_type:
-            Type of batch effect ("additive" or "multiplicative").
-
+            Either ``"additive"`` or ``"multiplicative"``.
         effect_strength:
-            Standard deviation of batch intercepts (controls magnitude).
-
+            Standard deviation controlling the effect magnitude.
+        effect_granularity:
+            Either ``"per_feature"`` or ``"scalar"``.
         confounding_with_class:
-            Degree of correlation between batch and class (0.0–1.0).
-            0.0 = independent, 1.0 = perfect confounding.
-
+            Degree of batch-class correlation in [0.0, 1.0].
         proportions:
-            Proportions of samples per batch (if specified).
-
+            Target batch proportions, or ``None`` for balanced batches.
         affected_feature_indices:
-            List of feature indices affected by batch effects
-            (None if all features are affected).
+            Column indices that received batch effects, or ``None`` if all
+            features were affected.
     """
 
-    batch_assignments: np.ndarray  # (n_samples,)
-    batch_intercepts: dict[int, np.ndarray]  # batch_id -> intercepts per affected feature
-    effect_type: str  # "additive" or "multiplicative"
+    batch_assignments: np.ndarray
+    batch_effects: np.ndarray
+    effect_type: Literal["additive", "multiplicative"]
     effect_strength: float
+    effect_granularity: Literal["per_feature", "scalar"]
     confounding_with_class: float
     proportions: tuple[float, ...] | None = None
     affected_feature_indices: list[int] | None = None
+
+
+# =========================
+# Generative feature roles
+# =========================
+@dataclass(frozen=True)
+class FeatureRoles:
+    """Generative feature roles derived from a DatasetMeta.
+
+    A purely structural partition of the feature columns into six
+    roles that the generator distinguishes. The six roles arise from two
+    orthogonal distinctions:
+
+    * **Signal** -- *informative* features encode a class mean shift, *noise*
+      features do not.
+    * **Cluster membership** -- a *free* feature is independent and belongs to
+      no cluster. Within a correlated cluster, the lead column is the *anchor*
+      (the only column shifted directly), and every other member is a *proxy*
+      that inherits an attenuated version of the anchor's behaviour through
+      correlation.
+
+    Combining the two distinctions yields the six roles, one per index attribute
+    below.
+
+    Attributes:
+        free_informative_indices:
+            List of column indices for free informative features. These are
+            independent informative features that are not part of any
+            correlated cluster and therefore carry a class-separating mean
+            shift on their own.
+        informative_anchor_indices:
+            List of column indices of cluster anchors whose ``anchor_role`` is
+            ``"informative"``. Anchors receive the class-specific mean shift
+            and seed the within-cluster correlation shared by their proxies.
+        informative_proxy_indices:
+            List of column indices of proxy members in informative clusters
+            (non-anchor members). Proxies do not receive a direct mean shift
+            but inherit an attenuated signal through their correlation with
+            the informative anchor. The degree of attenuation follows the
+            cluster's correlation structure — roughly uniform for
+            equicorrelated clusters and decaying with distance from the anchor
+            for Toeplitz clusters.
+        free_noise_indices:
+            List of column indices for free noise features. These are
+            independent noise features outside any cluster and carry no
+            class-discriminating signal.
+        noise_anchor_indices:
+            List of column indices of cluster anchors whose ``anchor_role`` is
+            ``"noise"``. Noise anchors seed a within-cluster correlation but
+            do not receive a class-specific mean shift.
+        noise_proxy_indices:
+            List of column indices of proxy members in noise clusters
+            (non-anchor members) that are correlated with their noise anchor
+            and form purely structural, signal-free correlated blocks.
+        cluster_membership:
+            Mapping from ``column_index`` to ``cluster_id`` for every column
+            that belongs to a correlated cluster.
+    """
+
+    free_informative_indices: list[int]
+    informative_anchor_indices: list[int]
+    informative_proxy_indices: list[int]
+    free_noise_indices: list[int]
+    noise_anchor_indices: list[int]
+    noise_proxy_indices: list[int]
+    cluster_membership: dict[int, int]
 
 
 # =========================
@@ -101,13 +173,7 @@ class DatasetMeta:
     corr_between: float  # correlation between different clusters/roles
 
     # ---------------- batch effects (optional) ----------------
-
-    batch_labels: np.ndarray | None = None  # shape (n_samples,)
-    batch_effects: np.ndarray | None = None
-    # If present, raw effects as returned by apply_batch_effects:
-    # - scalar granularity: shape (n_batches,)
-    # - per-feature summary: shape (n_batches, n_affected_features)
-    batch_config: dict[str, object] | None = None  # serialized BatchEffectsConfig
+    batch: BatchMeta | None = None
 
     # ---------------- generator config snapshot ----------------
 
@@ -115,5 +181,21 @@ class DatasetMeta:
     resolved_config: dict[str, object] = field(default_factory=dict)
 
     def to_dict(self) -> dict[str, object]:
-        """Convert to a plain dictionary (e.g., for JSON serialization)."""
-        return asdict(self)
+        """Convert to a plain dictionary (e.g., for JSON serialization).
+
+        NumPy arrays are converted to plain lists so the result can be passed
+        directly to ``json.dumps``.
+        """
+
+        def _convert(obj):
+            if isinstance(obj, np.ndarray):
+                return obj.tolist()
+            if isinstance(obj, dict):
+                return {k: _convert(v) for k, v in obj.items()}
+            if isinstance(obj, (list, tuple)):
+                return [_convert(v) for v in obj]
+            if isinstance(obj, np.generic):
+                return obj.item()
+            return obj
+
+        return _convert(asdict(self))
