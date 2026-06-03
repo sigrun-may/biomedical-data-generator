@@ -144,7 +144,7 @@ class ClassConfig(BaseModel):
 
     Args:
         n_samples: Number of samples for this class (must be >= 1).
-        class_distribution: Distribution type for feature generation. Supported numpy random generator distrubutions:
+        class_distribution: Distribution type for feature generation. Supported numpy random generator distributions:
             - "normal", "lognormal", "uniform", "exponential", "laplace". Additionally, "exp_normal" for direct control
                 over lognormal parameters.
         class_distribution_params: Parameters for the chosen distribution.
@@ -476,7 +476,7 @@ class CorrClusterConfig(BaseModel):
         if isinstance(v, str):
             if v not in ("small", "medium", "large"):
                 raise ValueError("anchor_effect_size must be 'small', 'medium', or 'large', " f"got '{v}'.")
-            return cast(Literal["small", "medium", "large"], v)
+            return v
 
         try:
             val = float(v)
@@ -725,7 +725,6 @@ class DatasetConfig(BaseModel):
 
     # Global seed
     random_state: int | None = None
-
 
     @classmethod
     def _validate_sep_value(cls, class_separation: Any) -> float:
