@@ -422,7 +422,9 @@
             <span class="k">if</span> <span class="n">cluster_cfg</span><span class="o">.</span><span class="n">is_class_specific</span><span class="p">():</span>
                 <span class="n">rho</span> <span class="o">=</span> <span class="n">cluster_cfg</span><span class="o">.</span><span class="n">get_correlation_for_class</span><span class="p">(</span><span class="n">target_class</span> <span class="k">if</span> <span class="n">target_class</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="mi">0</span><span class="p">)</span>
             <span class="k">else</span><span class="p">:</span>
-                <span class="n">rho</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">cluster_cfg</span><span class="o">.</span><span class="n">correlation</span><span class="p">)</span>
+                <span class="n">rho</span> <span class="o">=</span> <span class="n">cluster_cfg</span><span class="o">.</span><span class="n">get_correlation_for_class</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+                <span class="c1"># regardless of the class index.</span>
+                <span class="c1"># Global mode: get_correlation_for_class returns the single value</span>
 
             <span class="n">sigma</span> <span class="o">=</span> <span class="n">build_correlation_matrix</span><span class="p">(</span><span class="n">n_cluster_features</span><span class="p">,</span> <span class="n">rho</span><span class="p">,</span> <span class="n">cluster_cfg</span><span class="o">.</span><span class="n">structure</span><span class="p">)</span>
             <span class="n">anchor_correlations</span> <span class="o">=</span> <span class="n">sigma</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">:]</span>  <span class="c1"># theoretical, not empirical</span>
@@ -542,7 +544,7 @@
 <span class="sd">        ...         )</span>
 <span class="sd">        ...     ]</span>
 <span class="sd">        ... )</span>
-<span class="sd">        &gt;&gt;&gt; x, meta = sample_all_correlated_clusters(cfg, rng) # y auto-generated</span>
+<span class="sd">        &gt;&gt;&gt; x, meta = sample_all_correlated_clusters(cfg, rng=rng) # y auto-generated</span>
 
 <span class="sd">        &gt;&gt;&gt; # Correlation + diagnostic signal (informative anchor with shift)</span>
 <span class="sd">        &gt;&gt;&gt; cfg = DatasetConfig(</span>
