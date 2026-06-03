@@ -1,0 +1,12 @@
+﻿biomedical\_data\_generator.utils.sampling
+==========================================
+
+.. automodule:: biomedical_data_generator.utils.sampling
+
+   
+   .. rubric:: Functions
+
+   .. autosummary::
+   
+      sample_distribution
+   
