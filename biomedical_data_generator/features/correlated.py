@@ -284,7 +284,10 @@ def apply_anchor_effects(
     ``rho**i`` for toeplitz). Using the configured correlation matrix instead of
     the empirical correlation of the already-shifted data keeps the proxy shift
     deterministic and independent of sample size, and makes the anchor the
-    unique carrier of the Bayes-optimal discriminant direction.
+    unique carrier of the Bayes-optimal discriminant direction. For
+    class-specific clusters, ``rho`` is resolved and applied per class, so each
+    class's proxies are attenuated by that class's own correlation even when the
+    anchor shift covers all classes (``anchor_class=None``).
 
     **Effect application logic**:
       - anchor_role="noise" → no shift (effect_size ignored)
@@ -299,6 +302,15 @@ def apply_anchor_effects(
 
     Returns:
         The modified feature matrix (same object as input x).
+
+    Note:
+        For class-specific clusters whose anchor shift targets all classes
+        (``anchor_class=None``), the proxy attenuation is computed separately
+        per class using each class's configured correlation. A class without an
+        entry in the correlation mapping resolves to ``rho=0`` via
+        ``get_correlation_for_class``, so its anchor still shifts while its
+        proxies stay unshifted (consistent with an anchor that is uncorrelated
+        with its proxies in that class).
     """
     x = np.asarray(x, dtype=float)
     y = np.asarray(y)
@@ -330,18 +342,30 @@ def apply_anchor_effects(
         # correlation, not the empirical correlation of the shifted data.
         if n_cluster_features > 1:
             if cluster_cfg.is_class_specific():
-                rho = cluster_cfg.get_correlation_for_class(target_class if target_class is not None else 0)
+                # Class-specific mode: each class has its own correlation
+                # structure, so the proxy attenuation is resolved and applied
+                # separately per class. Iterating over the distinct shifted
+                # classes attenuates each class's proxies with its own
+                # configured correlation, which is exact even when the anchor
+                # shift covers all classes (anchor_class=None).
+                shifted_classes = np.unique(y[target_mask])
+                for class_label in shifted_classes:
+                    class_mask = target_mask & (y == class_label)
+                    rho = cluster_cfg.get_correlation_for_class(int(class_label))
+                    sigma = build_correlation_matrix(n_cluster_features, rho, cluster_cfg.structure)
+                    anchor_correlations = sigma[0, 1:]  # theoretical, not empirical
+                    for i, corr_with_anchor in enumerate(anchor_correlations, start=1):
+                        proxy_idx = feature_offset + i
+                        x[class_mask, proxy_idx] += effect_size * corr_with_anchor
             else:
+                # Global mode: a single correlation value governs proxy
+                # attenuation for all samples, regardless of the class index.
                 rho = cluster_cfg.get_correlation_for_class(0)
-                # regardless of the class index.
-                # Global mode: get_correlation_for_class returns the single value
-
-            sigma = build_correlation_matrix(n_cluster_features, rho, cluster_cfg.structure)
-            anchor_correlations = sigma[0, 1:]  # theoretical, not empirical
-
-            for i, corr_with_anchor in enumerate(anchor_correlations, start=1):
-                proxy_idx = feature_offset + i
-                x[target_mask, proxy_idx] += effect_size * corr_with_anchor
+                sigma = build_correlation_matrix(n_cluster_features, rho, cluster_cfg.structure)
+                anchor_correlations = sigma[0, 1:]  # theoretical, not empirical
+                for i, corr_with_anchor in enumerate(anchor_correlations, start=1):
+                    proxy_idx = feature_offset + i
+                    x[target_mask, proxy_idx] += effect_size * corr_with_anchor
 
         feature_offset += n_cluster_features
 
