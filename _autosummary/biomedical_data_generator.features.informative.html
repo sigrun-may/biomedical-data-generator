@@ -102,14 +102,21 @@
   <section id="module-biomedical_data_generator.features.informative">
 <span id="biomedical-data-generator-features-informative"></span><h1>biomedical_data_generator.features.informative<a class="headerlink" href="#module-biomedical_data_generator.features.informative" title="Link to this heading"></a></h1>
 <p>Generation of free informative features and class separation.</p>
-<p>This module builds numeric class labels from DatasetConfig.class_configs,
+<p>This module builds numeric class labels from <code class="docutils literal notranslate"><span class="pre">DatasetConfig.class_configs</span></code>,
 samples base values for free informative features according to per-class
 distributions, and applies class-wise mean shifts controlled by
-DatasetConfig.class_sep.</p>
-<p>Correlated clusters (including anchors) are handled in <cite>correlated.py</cite>.
-Noise features are handled in <cite>noise.py</cite>. The shifting logic is implemented
-in <cite>shift_classes</cite> and can be reused by other modules (for example, for
-anchor effects in correlated clusters).</p>
+<code class="docutils literal notranslate"><span class="pre">DatasetConfig.class_sep</span></code>.</p>
+<dl class="simple">
+<dt>Scope:</dt><dd><p>Only <em>free</em> informative features are produced here (i.e. informative
+features that are not cluster anchors). Correlated clusters, including
+their anchors and the attenuated proxy shifts, are handled in
+<code class="docutils literal notranslate"><span class="pre">correlated.py</span></code>. Independent noise features are sampled directly in
+<code class="docutils literal notranslate"><span class="pre">generator.py</span></code> via <code class="docutils literal notranslate"><span class="pre">utils.sampling.sample_distribution</span></code>.</p>
+</dd>
+</dl>
+<p>The class-wise offsets are derived from <code class="docutils literal notranslate"><span class="pre">class_sep</span></code> by
+<code class="docutils literal notranslate"><span class="pre">_class_offsets_from_sep</span></code> and applied as pure mean shifts, so the per-class
+distribution shape is preserved.</p>
 <p class="rubric">Functions</p>
 <table class="autosummary longtable docutils align-default">
 <tbody>
