@@ -214,7 +214,10 @@ structural correlation between anchor and proxy (<code class="docutils literal n
 <code class="docutils literal notranslate"><span class="pre">rho**i</span></code> for toeplitz). Using the configured correlation matrix instead of
 the empirical correlation of the already-shifted data keeps the proxy shift
 deterministic and independent of sample size, and makes the anchor the
-unique carrier of the Bayes-optimal discriminant direction.</p>
+unique carrier of the Bayes-optimal discriminant direction. For
+class-specific clusters, <code class="docutils literal notranslate"><span class="pre">rho</span></code> is resolved and applied per class, so each
+class’s proxies are attenuated by that class’s own correlation even when the
+anchor shift covers all classes (<code class="docutils literal notranslate"><span class="pre">anchor_class=None</span></code>).</p>
 <dl class="simple">
 <dt><strong>Effect application logic</strong>:</dt><dd><ul class="simple">
 <li><p>anchor_role=”noise” → no shift (effect_size ignored)</p></li>
@@ -239,6 +242,16 @@ anchor_effect_size != None</p></li>
 <dd class="field-odd"><p><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.4)"><em>ndarray</em></a></p>
 </dd>
 </dl>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>For class-specific clusters whose anchor shift targets all classes
+(<code class="docutils literal notranslate"><span class="pre">anchor_class=None</span></code>), the proxy attenuation is computed separately
+per class using each class’s configured correlation. A class without an
+entry in the correlation mapping resolves to <code class="docutils literal notranslate"><span class="pre">rho=0</span></code> via
+<code class="docutils literal notranslate"><span class="pre">get_correlation_for_class</span></code>, so its anchor still shifts while its
+proxies stay unshifted (consistent with an anchor that is uncorrelated
+with its proxies in that class).</p>
+</div>
 </dd></dl>
 
 <dl class="py function">
