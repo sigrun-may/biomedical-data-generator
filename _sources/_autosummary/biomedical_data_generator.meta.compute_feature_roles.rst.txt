@@ -1,0 +1,6 @@
+﻿biomedical\_data\_generator.meta.compute\_feature\_roles
+========================================================
+
+.. currentmodule:: biomedical_data_generator.meta
+
+.. autofunction:: compute_feature_roles

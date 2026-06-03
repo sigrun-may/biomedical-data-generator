@@ -1,0 +1,318 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>biomedical_data_generator.meta.FeatureRoles &mdash; Biomedical Data Generator 1.0.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../_static/copybutton.css?v=76b2166b" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/custom.css?v=7f485136" />
+
+  
+      <script src="../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../_static/documentation_options.js?v=8d563738"></script>
+      <script src="../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../_static/clipboard.min.js?v=a7894cd8"></script>
+      <script src="../_static/copybutton.js?v=f281be69"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="biomedical_data_generator.meta.compute_feature_roles" href="biomedical_data_generator.meta.compute_feature_roles.html" />
+    <link rel="prev" title="biomedical_data_generator.meta.DatasetMeta" href="biomedical_data_generator.meta.DatasetMeta.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            Biomedical Data Generator
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Reference</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../api.html">API Reference</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../code-doc.html">Code Documentation</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../code-doc.html#configuration-models">Configuration Models</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../code-doc.html#dataset-generator">Dataset Generator</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../code-doc.html#feature-generators">Feature Generators</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../code-doc.html#batch-effects">Batch Effects</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="../code-doc.html#metadata">Metadata</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="biomedical_data_generator.meta.DatasetMeta.html">biomedical_data_generator.meta.DatasetMeta</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">biomedical_data_generator.meta.FeatureRoles</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#biomedical_data_generator.meta.FeatureRoles"><code class="docutils literal notranslate"><span class="pre">FeatureRoles</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="biomedical_data_generator.meta.compute_feature_roles.html">biomedical_data_generator.meta.compute_feature_roles</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../code-doc.html#utility-modules-optional">Utility Modules (Optional)</a></li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">External Links</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference external" href="https://github.com/sigrun-may/biomedical-data-generator">GitHub Repository</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://pypi.org/project/biomedical-data-generator/">PyPI Package</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://github.com/sigrun-may/biomedical-data-generator/blob/main/LICENSE">License</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">Biomedical Data Generator</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../code-doc.html">Code Documentation</a></li>
+      <li class="breadcrumb-item active">biomedical_data_generator.meta.FeatureRoles</li>
+      <li class="wy-breadcrumbs-aside">
+              <a href="https://github.com/sigrun-may/biomedical-data-generator/blob/main/docs/_autosummary/biomedical_data_generator.meta.FeatureRoles.rst" class="fa fa-github"> Edit on GitHub</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="biomedical-data-generator-meta-featureroles">
+<h1>biomedical_data_generator.meta.FeatureRoles<a class="headerlink" href="#biomedical-data-generator-meta-featureroles" title="Link to this heading"></a></h1>
+<dl class="py class">
+<dt class="sig sig-object py" id="biomedical_data_generator.meta.FeatureRoles">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">biomedical_data_generator.meta.</span></span><span class="sig-name descname"><span class="pre">FeatureRoles</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">free_informative_indices</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">informative_anchor_indices</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">informative_proxy_indices</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">free_noise_indices</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">noise_anchor_indices</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">noise_proxy_indices</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cluster_membership</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/biomedical_data_generator/meta.html#FeatureRoles"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#biomedical_data_generator.meta.FeatureRoles" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<p>Generative feature roles derived from a DatasetMeta.</p>
+<p>A purely structural partition of the feature columns into six
+roles that the generator distinguishes. The six roles arise from two
+orthogonal distinctions:</p>
+<ul class="simple">
+<li><p><strong>Signal</strong> – <em>informative</em> features encode a class mean shift, <em>noise</em>
+features do not.</p></li>
+<li><p><strong>Cluster membership</strong> – a <em>free</em> feature is independent and belongs to
+no cluster. Within a correlated cluster, the lead column is the <em>anchor</em>
+(the only column shifted directly), and every other member is a <em>proxy</em>
+that inherits an attenuated version of the anchor’s behaviour through
+correlation.</p></li>
+</ul>
+<p>Combining the two distinctions yields the six roles, one per index attribute
+below.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>free_informative_indices</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.14)"><em>list</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a><em>]</em>)</p></li>
+<li><p><strong>informative_anchor_indices</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.14)"><em>list</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a><em>]</em>)</p></li>
+<li><p><strong>informative_proxy_indices</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.14)"><em>list</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a><em>]</em>)</p></li>
+<li><p><strong>free_noise_indices</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.14)"><em>list</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a><em>]</em>)</p></li>
+<li><p><strong>noise_anchor_indices</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.14)"><em>list</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a><em>]</em>)</p></li>
+<li><p><strong>noise_proxy_indices</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.14)"><em>list</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a><em>]</em>)</p></li>
+<li><p><strong>cluster_membership</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><em>dict</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a><em>, </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a><em>]</em>)</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="biomedical_data_generator.meta.FeatureRoles.free_informative_indices">
+<span class="sig-name descname"><span class="pre">free_informative_indices</span></span><a class="headerlink" href="#biomedical_data_generator.meta.FeatureRoles.free_informative_indices" title="Link to this definition"></a></dt>
+<dd><p>List of column indices for free informative features. These are
+independent informative features that are not part of any
+correlated cluster and therefore carry a class-separating mean
+shift on their own.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.14)">list</a>[<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)">int</a>]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="biomedical_data_generator.meta.FeatureRoles.informative_anchor_indices">
+<span class="sig-name descname"><span class="pre">informative_anchor_indices</span></span><a class="headerlink" href="#biomedical_data_generator.meta.FeatureRoles.informative_anchor_indices" title="Link to this definition"></a></dt>
+<dd><p>List of column indices of cluster anchors whose <code class="docutils literal notranslate"><span class="pre">anchor_role</span></code> is
+<code class="docutils literal notranslate"><span class="pre">&quot;informative&quot;</span></code>. Anchors receive the class-specific mean shift
+and seed the within-cluster correlation shared by their proxies.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.14)">list</a>[<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)">int</a>]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="biomedical_data_generator.meta.FeatureRoles.informative_proxy_indices">
+<span class="sig-name descname"><span class="pre">informative_proxy_indices</span></span><a class="headerlink" href="#biomedical_data_generator.meta.FeatureRoles.informative_proxy_indices" title="Link to this definition"></a></dt>
+<dd><p>List of column indices of proxy members in informative clusters
+(non-anchor members). Proxies do not receive a direct mean shift
+but inherit an attenuated signal through their correlation with
+the informative anchor. The degree of attenuation follows the
+cluster’s correlation structure — roughly uniform for
+equicorrelated clusters and decaying with distance from the anchor
+for Toeplitz clusters.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.14)">list</a>[<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)">int</a>]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="biomedical_data_generator.meta.FeatureRoles.free_noise_indices">
+<span class="sig-name descname"><span class="pre">free_noise_indices</span></span><a class="headerlink" href="#biomedical_data_generator.meta.FeatureRoles.free_noise_indices" title="Link to this definition"></a></dt>
+<dd><p>List of column indices for free noise features. These are
+independent noise features outside any cluster and carry no
+class-discriminating signal.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.14)">list</a>[<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)">int</a>]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="biomedical_data_generator.meta.FeatureRoles.noise_anchor_indices">
+<span class="sig-name descname"><span class="pre">noise_anchor_indices</span></span><a class="headerlink" href="#biomedical_data_generator.meta.FeatureRoles.noise_anchor_indices" title="Link to this definition"></a></dt>
+<dd><p>List of column indices of cluster anchors whose <code class="docutils literal notranslate"><span class="pre">anchor_role</span></code> is
+<code class="docutils literal notranslate"><span class="pre">&quot;noise&quot;</span></code>. Noise anchors seed a within-cluster correlation but
+do not receive a class-specific mean shift.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.14)">list</a>[<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)">int</a>]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="biomedical_data_generator.meta.FeatureRoles.noise_proxy_indices">
+<span class="sig-name descname"><span class="pre">noise_proxy_indices</span></span><a class="headerlink" href="#biomedical_data_generator.meta.FeatureRoles.noise_proxy_indices" title="Link to this definition"></a></dt>
+<dd><p>List of column indices of proxy members in noise clusters
+(non-anchor members) that are correlated with their noise anchor
+and form purely structural, signal-free correlated blocks.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.14)">list</a>[<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)">int</a>]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="biomedical_data_generator.meta.FeatureRoles.cluster_membership">
+<span class="sig-name descname"><span class="pre">cluster_membership</span></span><a class="headerlink" href="#biomedical_data_generator.meta.FeatureRoles.cluster_membership" title="Link to this definition"></a></dt>
+<dd><p>Mapping from <code class="docutils literal notranslate"><span class="pre">column_index</span></code> to <code class="docutils literal notranslate"><span class="pre">cluster_id</span></code> for every column
+that belongs to a correlated cluster.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)">dict</a>[<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)">int</a>, <a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)">int</a>]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="biomedical_data_generator.meta.FeatureRoles.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">free_informative_indices</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">informative_anchor_indices</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">informative_proxy_indices</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">free_noise_indices</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">noise_anchor_indices</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">noise_proxy_indices</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cluster_membership</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#biomedical_data_generator.meta.FeatureRoles.__init__" title="Link to this definition"></a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>free_informative_indices</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.14)"><em>list</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a><em>]</em>)</p></li>
+<li><p><strong>informative_anchor_indices</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.14)"><em>list</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a><em>]</em>)</p></li>
+<li><p><strong>informative_proxy_indices</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.14)"><em>list</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a><em>]</em>)</p></li>
+<li><p><strong>free_noise_indices</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.14)"><em>list</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a><em>]</em>)</p></li>
+<li><p><strong>noise_anchor_indices</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.14)"><em>list</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a><em>]</em>)</p></li>
+<li><p><strong>noise_proxy_indices</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.14)"><em>list</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a><em>]</em>)</p></li>
+<li><p><strong>cluster_membership</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><em>dict</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a><em>, </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a><em>]</em>)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<p class="rubric">Methods</p>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#biomedical_data_generator.meta.FeatureRoles.__init__" title="biomedical_data_generator.meta.FeatureRoles.__init__"><code class="xref py py-obj docutils literal notranslate"><span class="pre">__init__</span></code></a>(free_informative_indices, ...)</p></td>
+<td><p></p></td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Attributes</p>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#biomedical_data_generator.meta.FeatureRoles.free_informative_indices" title="biomedical_data_generator.meta.FeatureRoles.free_informative_indices"><code class="xref py py-obj docutils literal notranslate"><span class="pre">free_informative_indices</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#biomedical_data_generator.meta.FeatureRoles.informative_anchor_indices" title="biomedical_data_generator.meta.FeatureRoles.informative_anchor_indices"><code class="xref py py-obj docutils literal notranslate"><span class="pre">informative_anchor_indices</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#biomedical_data_generator.meta.FeatureRoles.informative_proxy_indices" title="biomedical_data_generator.meta.FeatureRoles.informative_proxy_indices"><code class="xref py py-obj docutils literal notranslate"><span class="pre">informative_proxy_indices</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#biomedical_data_generator.meta.FeatureRoles.free_noise_indices" title="biomedical_data_generator.meta.FeatureRoles.free_noise_indices"><code class="xref py py-obj docutils literal notranslate"><span class="pre">free_noise_indices</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#biomedical_data_generator.meta.FeatureRoles.noise_anchor_indices" title="biomedical_data_generator.meta.FeatureRoles.noise_anchor_indices"><code class="xref py py-obj docutils literal notranslate"><span class="pre">noise_anchor_indices</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#biomedical_data_generator.meta.FeatureRoles.noise_proxy_indices" title="biomedical_data_generator.meta.FeatureRoles.noise_proxy_indices"><code class="xref py py-obj docutils literal notranslate"><span class="pre">noise_proxy_indices</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#biomedical_data_generator.meta.FeatureRoles.cluster_membership" title="biomedical_data_generator.meta.FeatureRoles.cluster_membership"><code class="xref py py-obj docutils literal notranslate"><span class="pre">cluster_membership</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="biomedical_data_generator.meta.DatasetMeta.html" class="btn btn-neutral float-left" title="biomedical_data_generator.meta.DatasetMeta" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="biomedical_data_generator.meta.compute_feature_roles.html" class="btn btn-neutral float-right" title="biomedical_data_generator.meta.compute_feature_roles" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2026, Sigrun May.</p>
+  </div>
+
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
