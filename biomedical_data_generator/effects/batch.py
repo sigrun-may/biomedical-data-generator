@@ -599,7 +599,8 @@ def apply_batch_effects_from_config(
             - confounding_with_class: Degree of class-batch correlation in [0, 1]
             - effect_type: "additive" or "multiplicative"
             - effect_strength: Magnitude of batch effects
-            - affected_features: "all", "informative", or list of indices
+            - effect_granularity: "per_feature" or "scalar"
+            - affected_features: "all" or a list of feature indices
         rng: NumPy random generator (for reproducibility).
 
     Returns:
@@ -632,6 +633,7 @@ def apply_batch_effects_from_config(
         effect_type=batch_config.effect_type,
         effect_strength=batch_config.effect_strength,
         affected_features=batch_config.affected_features,
+        effect_granularity=batch_config.effect_granularity,
     )
 
     return X_affected, batch_labels, batch_effects
