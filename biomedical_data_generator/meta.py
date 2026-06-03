@@ -16,6 +16,7 @@ __all__ = [
     "BatchMeta",
     "DatasetMeta",
     "FeatureRoles",
+    "compute_feature_roles"
 ]
 
 
@@ -215,3 +216,59 @@ class DatasetMeta:
             return obj
 
         return _convert(asdict(self))
+
+
+def compute_feature_roles(meta: DatasetMeta) -> FeatureRoles:
+    """Derive the six-way generative feature-role partition from a DatasetMeta.
+
+    The partition is reconstructed purely from the structural index sets that
+    the generator already records on ``meta`` (informative and noise indices,
+    cluster layout, anchor columns, and anchor roles). No feature matrix is
+    required.
+
+    Args:
+        meta: Resolved dataset metadata produced by
+            :func:`biomedical_data_generator.generate_dataset`.
+
+    Returns:
+        A :class:`FeatureRoles` instance assigning every feature column to
+        exactly one of the six generative roles, together with a
+        column-to-cluster membership map.
+    """
+    informative_anchor_indices: list[int] = []
+    informative_proxy_indices: list[int] = []
+    noise_anchor_indices: list[int] = []
+    noise_proxy_indices: list[int] = []
+    cluster_membership: dict[int, int] = {}
+
+    for cluster_id, member_columns in meta.corr_cluster_indices.items():
+        anchor_column = meta.anchor_idx[cluster_id]
+        proxy_columns = [column for column in member_columns if column != anchor_column]
+
+        for column in member_columns:
+            cluster_membership[column] = cluster_id
+
+        if meta.anchor_role[cluster_id] == "informative":
+            informative_anchor_indices.append(anchor_column)
+            informative_proxy_indices.extend(proxy_columns)
+        else:
+            noise_anchor_indices.append(anchor_column)
+            noise_proxy_indices.extend(proxy_columns)
+
+    # meta.informative_idx contains free informative features plus informative
+    # anchors; subtract the anchors to recover the free informative features.
+    informative_anchor_set = set(informative_anchor_indices)
+    free_informative_indices = [idx for idx in meta.informative_idx if idx not in informative_anchor_set]
+
+    # meta.noise_idx already excludes cluster anchors (free noise features only).
+    free_noise_indices = list(meta.noise_idx)
+
+    return FeatureRoles(
+        free_informative_indices=sorted(free_informative_indices),
+        informative_anchor_indices=sorted(informative_anchor_indices),
+        informative_proxy_indices=sorted(informative_proxy_indices),
+        free_noise_indices=sorted(free_noise_indices),
+        noise_anchor_indices=sorted(noise_anchor_indices),
+        noise_proxy_indices=sorted(noise_proxy_indices),
+        cluster_membership=dict(sorted(cluster_membership.items())),
+    )
