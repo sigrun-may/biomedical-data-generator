@@ -726,29 +726,6 @@ class DatasetConfig(BaseModel):
     # Global seed
     random_state: int | None = None
 
-    @staticmethod
-    def _iter_cluster_dicts(
-        raw_config: Mapping[str, Any],
-    ) -> Iterable[Mapping[str, Any]]:
-        """Yield cluster dicts from raw_config, regardless of item type.
-
-        This helper is kept for potential external use (e.g., pre-inspection of
-        raw YAML configs). It is not used in the main validation path.
-        """
-        clusters: Any = raw_config.get("corr_clusters")  # list[dict] / list[CorrClusterConfig] / None
-        if not clusters:
-            return []
-        out: list[Mapping[str, Any]] = []
-        for cc in clusters:
-            if isinstance(cc, CorrClusterConfig):
-                out.append(cc.model_dump())
-            elif isinstance(cc, Mapping):
-                out.append(cc)
-            else:
-                raise TypeError(
-                    "corr_clusters entries must be Mapping or CorrClusterConfig, " f"got {type(cc).__name__}"
-                )
-        return out
 
     @classmethod
     def _validate_sep_value(cls, class_separation: Any) -> float:
