@@ -278,7 +278,9 @@
 <span class="c1"># =================</span>
 <div class="viewcode-block" id="generate_dataset">
 <a class="viewcode-back" href="../../_autosummary/biomedical_data_generator.generate_dataset.html#biomedical_data_generator.generate_dataset">[docs]</a>
-<span class="k">def</span><span class="w"> </span><span class="nf">generate_dataset</span><span class="p">(</span><span class="n">cfg</span><span class="p">:</span> <span class="n">DatasetConfig</span><span class="p">,</span> <span class="n">return_dataframe</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span> <span class="o">|</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">DatasetMeta</span><span class="p">]:</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">generate_dataset</span><span class="p">(</span>
+    <span class="n">cfg</span><span class="p">:</span> <span class="n">DatasetConfig</span><span class="p">,</span> <span class="n">return_dataframe</span><span class="o">=</span><span class="kc">True</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span> <span class="o">|</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">DatasetMeta</span><span class="p">]:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Generate synthetic biomedical dataset with specified feature structure.</span>
 
 <span class="sd">    Creates a classification dataset with configurable informative features, noise,</span>
