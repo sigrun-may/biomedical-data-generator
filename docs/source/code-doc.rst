@@ -103,6 +103,8 @@ and derived dataset properties.
    :nosignatures:
 
    biomedical_data_generator.meta.DatasetMeta
+   biomedical_data_generator.meta.FeatureRoles
+   biomedical_data_generator.meta.compute_feature_roles
 
 ---
 
