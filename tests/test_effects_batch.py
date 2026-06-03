@@ -718,3 +718,57 @@ class TestBatchEffectsValidation:
         for batch_id in np.unique(batch_assignments):
             rows_in_batch = affected_matrix[batch_assignments == batch_id]
             assert not np.allclose(rows_in_batch, rows_in_batch[:, [0]])
+
+    def test_apply_batch_effects_draw_count_is_config_determined(self, rng_effects):
+        """Effects are drawn for all configured batches, even an empty trailing one."""
+        rng_x = np.random.default_rng(0)
+        feature_matrix = rng_x.normal(size=(40, 4))
+        # Batch index 2 is intentionally unused (empty trailing batch).
+        batch_assignments = np.array([0] * 20 + [1] * 20)
+
+        _, batch_effects = apply_batch_effects(
+            feature_matrix,
+            batch_assignments,
+            rng=rng_effects,
+            effect_type="additive",
+            effect_strength=0.5,
+            n_batches=3,  # config says 3, data only realizes 0 and 1
+        )
+        assert len(batch_effects) == 3
+
+    def test_apply_batch_effects_rejects_n_batches_below_observed(self, rng_effects):
+        """A configured n_batches below the observed maximum is a config error."""
+        rng_x = np.random.default_rng(0)
+        feature_matrix = rng_x.normal(size=(30, 3))
+        batch_assignments = np.array([0] * 10 + [1] * 10 + [2] * 10)
+
+        with pytest.raises(ValueError, match="must be >= max observed batch index"):
+            apply_batch_effects(
+                feature_matrix,
+                batch_assignments,
+                rng=rng_effects,
+                n_batches=2,  # but the data contains batch index 2
+            )
+
+    def test_from_config_effects_length_matches_config_n_batches(self):
+        """from_config sizes effects by config n_batches, not by realized batches."""
+        base_matrix = np.zeros((40, 4))
+        # Two classes, perfect confounding, 3 batches -> batch 2 stays empty.
+        class_labels = np.array([0] * 20 + [1] * 20)
+        batch_config = BatchEffectsConfig(
+            n_batches=3,
+            effect_type="additive",
+            effect_strength=0.5,
+            confounding_with_class=1.0,
+            affected_features="all",
+        )
+        rng = np.random.default_rng(42)
+        _, batch_assignments, batch_effects = apply_batch_effects_from_config(
+            x=base_matrix, y=class_labels, batch_config=batch_config, rng=rng
+        )
+
+        # Batch 2 receives zero probability under perfect confounding with 2 classes,
+        # so it is empty in the realized assignment...
+        assert set(np.unique(batch_assignments)) <= {0, 1}
+        # ...yet the effect summary still covers all three configured batches.
+        assert len(batch_effects) == 3

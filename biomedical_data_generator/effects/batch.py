@@ -442,6 +442,15 @@ def apply_batch_effects(
             - ``"scalar"``: Draws a single scalar per batch and applies it uniformly
               across all affected features. This corresponds to a global per-batch
               offset (additive) or global scaling factor (multiplicative).
+        n_batches:
+            Total number of batches to draw effects for. Sizes the per-batch
+            effect draw as ``(n_batches, ...)``, so it must be >= the largest
+            batch index present in ``batch_assignments``. If ``None``, it is
+            derived from the data as ``max(batch_assignments) + 1``. Passing the
+            configured value (rather than relying on the observed maximum) makes
+            the RNG consumption independent of how samples happen to distribute
+            across batches, which is required for reproducible generation when a
+            trailing batch is empty.
 
     Returns:
         Tuple[pd.DataFrame | np.ndarray, np.ndarray]:
@@ -478,14 +487,14 @@ def apply_batch_effects(
         >>> x = np.random.normal(size=(100, 5))
         >>> batches = np.random.randint(0, 3, size=100)
         >>>
-        >>> X_batch, batch_effects = apply_batch_effects(
+        >>> x_batch, batch_effects = apply_batch_effects(
         ...     x, batches, rng,
         ...     effect_type="additive",
         ...     effect_strength=0.5,
         ...     affected_features=[0, 2],
         ...     effect_granularity="scalar",
         ... )
-        >>> X_batch.shape
+        >>> x_batch.shape
         (100, 5)
         >>> batch_effects.shape
         (3,)
@@ -510,7 +519,18 @@ def apply_batch_effects(
     if np.any(batch_assignments < 0):
         raise ValueError("batch_assignments must be non-negative integers")
 
-    n_batches = int(batch_assignments.max()) + 1
+    # Draw count is config-determined, never data-determined: this keeps RNG
+    # consumption a pure function of (config, seed) and reproducible even when a
+    # trailing batch happens to be empty. Fall back to the observed count only
+    # when no explicit n_batches is given (low-level/standalone use).
+    observed_n_batches = int(batch_assignments.max()) + 1
+    if n_batches is None:
+        n_batches = observed_n_batches
+    elif n_batches < observed_n_batches:
+        raise ValueError(
+            f"n_batches ({n_batches}) must be >= max observed batch index + 1 "
+            f"({observed_n_batches})."
+        )
 
     # Determine which features to affect
     if affected_features == "all":
@@ -635,6 +655,7 @@ def apply_batch_effects_from_config(
         effect_strength=batch_config.effect_strength,
         affected_features=batch_config.affected_features,
         effect_granularity=batch_config.effect_granularity,
+        n_batches=batch_config.n_batches,  # config-determined draw count
     )
 
     return x_affected, batch_labels, batch_effects
