@@ -10,7 +10,7 @@ from __future__ import annotations
 
 import warnings
 from collections.abc import Iterable, Mapping, Sequence
-from typing import Any, Literal, TypeAlias, cast
+from typing import Any, Literal, cast
 
 import numpy as np
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
@@ -330,7 +330,7 @@ class CorrClusterConfig(BaseModel):
 
     Args:
         n_cluster_features:
-            Number of biomarkers in the cluster (including anchor). Must be >= 1.
+            Number of biomarkers in the cluster (including anchor). Must be > 1.
         structure:
             Correlation structure for this cluster:
               - "equicorrelated": all pairwise correlations are equal.
@@ -385,8 +385,8 @@ class CorrClusterConfig(BaseModel):
     @classmethod
     def _validate_size(cls, v: int) -> int:
         """Ensure cluster has at least one marker."""
-        if v < 1:
-            raise ValueError(f"n_cluster_features must be >= 1, got {v}.")
+        if v < 2:
+            raise ValueError(f"n_cluster_features must be >= 2, got {v}.")
         return v
 
     @field_validator("correlation")
