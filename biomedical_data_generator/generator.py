@@ -15,7 +15,7 @@ from .config import DatasetConfig
 from .effects.batch import apply_batch_effects_from_config
 from .features.correlated import sample_all_correlated_clusters
 from .features.informative import generate_informative_features
-from .meta import DatasetMeta
+from .meta import BatchMeta, DatasetMeta
 from .utils.sampling import sample_distribution
 
 
@@ -271,12 +271,26 @@ def generate_dataset(cfg, return_dataframe=True) -> tuple[pd.DataFrame | np.ndar
     # ================================================================
     batch_labels = None
     batch_effects = None
+    batch_meta: BatchMeta | None = None
     if cfg.batch_effects is not None and cfg.batch_effects.n_batches > 1:
         x, batch_labels, batch_effects = apply_batch_effects_from_config(
             x=x,
             y=y,
             batch_config=cfg.batch_effects,
             rng=rng_global,
+        )
+        bcfg = cfg.batch_effects
+        affected_indices = None if bcfg.affected_features == "all" else list(bcfg.affected_features)
+        proportions = tuple(bcfg.proportions) if bcfg.proportions is not None else None
+        batch_meta = BatchMeta(
+            batch_assignments=batch_labels,
+            batch_effects=batch_effects,
+            effect_type=bcfg.effect_type,
+            effect_strength=bcfg.effect_strength,
+            effect_granularity=bcfg.effect_granularity,
+            confounding_with_class=bcfg.confounding_with_class,
+            proportions=proportions,
+            affected_feature_indices=affected_indices,
         )
 
     # ================================================================
@@ -310,9 +324,7 @@ def generate_dataset(cfg, return_dataframe=True) -> tuple[pd.DataFrame | np.ndar
         samples_per_class={int(k): int(counts[k]) for k in range(cfg.n_classes)},
         class_sep=cfg.class_sep,
         corr_between=cfg.corr_between,
-        batch_labels=batch_labels,
-        batch_effects=batch_effects,
-        batch_config=cfg.batch_effects.model_dump() if cfg.batch_effects is not None else None,
+        batch=batch_meta,
         random_state=cfg.random_state,
         resolved_config=cfg.model_dump(),
     )
