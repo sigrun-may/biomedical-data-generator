@@ -410,6 +410,7 @@ def apply_batch_effects(
     effect_strength: float = 0.5,
     affected_features: Sequence[int] | Literal["all"] = "all",
     effect_granularity: Literal["per_feature", "scalar"] = "per_feature",
+    n_batches: int | None = None,
 ) -> tuple[pd.DataFrame | NDArray[np.float64], NDArray[np.float64]]:
     """Apply batch effects to a feature matrix.
 
