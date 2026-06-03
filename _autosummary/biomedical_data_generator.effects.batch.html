@@ -203,7 +203,14 @@ across all affected features. This corresponds to a global per-batch
 offset (additive) or global scaling factor (multiplicative).</p></li>
 </ul>
 </p></li>
-<li><p><strong>n_batches</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a><em> | </em><em>None</em>)</p></li>
+<li><p><strong>n_batches</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a><em> | </em><em>None</em>) – Total number of batches to draw effects for. Sizes the per-batch
+effect draw as <code class="docutils literal notranslate"><span class="pre">(n_batches,</span> <span class="pre">...)</span></code>, so it must be &gt;= the largest
+batch index present in <code class="docutils literal notranslate"><span class="pre">batch_assignments</span></code>. If <code class="docutils literal notranslate"><span class="pre">None</span></code>, it is
+derived from the data as <code class="docutils literal notranslate"><span class="pre">max(batch_assignments)</span> <span class="pre">+</span> <span class="pre">1</span></code>. Passing the
+configured value (rather than relying on the observed maximum) makes
+the RNG consumption independent of how samples happen to distribute
+across batches, which is required for reproducible generation when a
+trailing batch is empty.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
@@ -251,14 +258,14 @@ the full per-feature effects vary within batches.</p></li>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">x</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="mi">100</span><span class="p">,</span> <span class="mi">5</span><span class="p">))</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">batches</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="mi">100</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt;</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">X_batch</span><span class="p">,</span> <span class="n">batch_effects</span> <span class="o">=</span> <span class="n">apply_batch_effects</span><span class="p">(</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">x_batch</span><span class="p">,</span> <span class="n">batch_effects</span> <span class="o">=</span> <span class="n">apply_batch_effects</span><span class="p">(</span>
 <span class="gp">... </span>    <span class="n">x</span><span class="p">,</span> <span class="n">batches</span><span class="p">,</span> <span class="n">rng</span><span class="p">,</span>
 <span class="gp">... </span>    <span class="n">effect_type</span><span class="o">=</span><span class="s2">&quot;additive&quot;</span><span class="p">,</span>
 <span class="gp">... </span>    <span class="n">effect_strength</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span>
 <span class="gp">... </span>    <span class="n">affected_features</span><span class="o">=</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">],</span>
 <span class="gp">... </span>    <span class="n">effect_granularity</span><span class="o">=</span><span class="s2">&quot;scalar&quot;</span><span class="p">,</span>
 <span class="gp">... </span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">X_batch</span><span class="o">.</span><span class="n">shape</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">x_batch</span><span class="o">.</span><span class="n">shape</span>
 <span class="go">(100, 5)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">batch_effects</span><span class="o">.</span><span class="n">shape</span>
 <span class="go">(3,)</span>

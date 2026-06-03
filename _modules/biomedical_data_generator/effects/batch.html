@@ -535,6 +535,15 @@
 <span class="sd">            - ``&quot;scalar&quot;``: Draws a single scalar per batch and applies it uniformly</span>
 <span class="sd">              across all affected features. This corresponds to a global per-batch</span>
 <span class="sd">              offset (additive) or global scaling factor (multiplicative).</span>
+<span class="sd">        n_batches:</span>
+<span class="sd">            Total number of batches to draw effects for. Sizes the per-batch</span>
+<span class="sd">            effect draw as ``(n_batches, ...)``, so it must be &gt;= the largest</span>
+<span class="sd">            batch index present in ``batch_assignments``. If ``None``, it is</span>
+<span class="sd">            derived from the data as ``max(batch_assignments) + 1``. Passing the</span>
+<span class="sd">            configured value (rather than relying on the observed maximum) makes</span>
+<span class="sd">            the RNG consumption independent of how samples happen to distribute</span>
+<span class="sd">            across batches, which is required for reproducible generation when a</span>
+<span class="sd">            trailing batch is empty.</span>
 
 <span class="sd">    Returns:</span>
 <span class="sd">        Tuple[pd.DataFrame | np.ndarray, np.ndarray]:</span>
@@ -571,14 +580,14 @@
 <span class="sd">        &gt;&gt;&gt; x = np.random.normal(size=(100, 5))</span>
 <span class="sd">        &gt;&gt;&gt; batches = np.random.randint(0, 3, size=100)</span>
 <span class="sd">        &gt;&gt;&gt;</span>
-<span class="sd">        &gt;&gt;&gt; X_batch, batch_effects = apply_batch_effects(</span>
+<span class="sd">        &gt;&gt;&gt; x_batch, batch_effects = apply_batch_effects(</span>
 <span class="sd">        ...     x, batches, rng,</span>
 <span class="sd">        ...     effect_type=&quot;additive&quot;,</span>
 <span class="sd">        ...     effect_strength=0.5,</span>
 <span class="sd">        ...     affected_features=[0, 2],</span>
 <span class="sd">        ...     effect_granularity=&quot;scalar&quot;,</span>
 <span class="sd">        ... )</span>
-<span class="sd">        &gt;&gt;&gt; X_batch.shape</span>
+<span class="sd">        &gt;&gt;&gt; x_batch.shape</span>
 <span class="sd">        (100, 5)</span>
 <span class="sd">        &gt;&gt;&gt; batch_effects.shape</span>
 <span class="sd">        (3,)</span>
@@ -603,7 +612,18 @@
     <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">batch_assignments</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">):</span>
         <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;batch_assignments must be non-negative integers&quot;</span><span class="p">)</span>
 
-    <span class="n">n_batches</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">batch_assignments</span><span class="o">.</span><span class="n">max</span><span class="p">())</span> <span class="o">+</span> <span class="mi">1</span>
+    <span class="c1"># Draw count is config-determined, never data-determined: this keeps RNG</span>
+    <span class="c1"># consumption a pure function of (config, seed) and reproducible even when a</span>
+    <span class="c1"># trailing batch happens to be empty. Fall back to the observed count only</span>
+    <span class="c1"># when no explicit n_batches is given (low-level/standalone use).</span>
+    <span class="n">observed_n_batches</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">batch_assignments</span><span class="o">.</span><span class="n">max</span><span class="p">())</span> <span class="o">+</span> <span class="mi">1</span>
+    <span class="k">if</span> <span class="n">n_batches</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">n_batches</span> <span class="o">=</span> <span class="n">observed_n_batches</span>
+    <span class="k">elif</span> <span class="n">n_batches</span> <span class="o">&lt;</span> <span class="n">observed_n_batches</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;n_batches (</span><span class="si">{</span><span class="n">n_batches</span><span class="si">}</span><span class="s2">) must be &gt;= max observed batch index + 1 &quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;(</span><span class="si">{</span><span class="n">observed_n_batches</span><span class="si">}</span><span class="s2">).&quot;</span>
+        <span class="p">)</span>
 
     <span class="c1"># Determine which features to affect</span>
     <span class="k">if</span> <span class="n">affected_features</span> <span class="o">==</span> <span class="s2">&quot;all&quot;</span><span class="p">:</span>
@@ -731,6 +751,7 @@
         <span class="n">effect_strength</span><span class="o">=</span><span class="n">batch_config</span><span class="o">.</span><span class="n">effect_strength</span><span class="p">,</span>
         <span class="n">affected_features</span><span class="o">=</span><span class="n">batch_config</span><span class="o">.</span><span class="n">affected_features</span><span class="p">,</span>
         <span class="n">effect_granularity</span><span class="o">=</span><span class="n">batch_config</span><span class="o">.</span><span class="n">effect_granularity</span><span class="p">,</span>
+        <span class="n">n_batches</span><span class="o">=</span><span class="n">batch_config</span><span class="o">.</span><span class="n">n_batches</span><span class="p">,</span>  <span class="c1"># config-determined draw count</span>
     <span class="p">)</span>
 
     <span class="k">return</span> <span class="n">x_affected</span><span class="p">,</span> <span class="n">batch_labels</span><span class="p">,</span> <span class="n">batch_effects</span></div>
