@@ -403,7 +403,7 @@ def confounded_batch_assignment(
 # Applying batch effects to feature matrices
 # ---------------------------------------------------------------------------
 def apply_batch_effects(
-    X: pd.DataFrame | NDArray[np.float64],
+    x: pd.DataFrame | NDArray[np.float64],
     batch_assignments: NDArray[np.int_],
     rng: np.random.Generator,
     effect_type: Literal["additive", "multiplicative"] = "additive",
@@ -417,7 +417,7 @@ def apply_batch_effects(
     simulating site differences or instrument variations.
 
     Args:
-        X: Feature matrix (DataFrame or array).
+        x: Feature matrix (DataFrame or array).
         batch_assignments: Array of batch assignments per sample.
         rng:
             NumPy random number generator used to sample batch effects.
@@ -490,16 +490,16 @@ def apply_batch_effects(
         (3,)
     """
     # Convert to DataFrame if needed for consistent handling
-    is_dataframe = isinstance(X, pd.DataFrame)
+    is_dataframe = isinstance(x, pd.DataFrame)
     X_df: pd.DataFrame | None = None
     feature_names: list[str] | None = None
 
     if is_dataframe:
-        X_df = cast(pd.DataFrame, X)
+        X_df = cast(pd.DataFrame, x)
         X_array = X_df.to_numpy(copy=True, dtype=float)
         feature_names = X_df.columns.tolist()
     else:
-        X_array = np.asarray(X, dtype=float).copy()
+        X_array = np.asarray(x, dtype=float).copy()
 
     n_samples, n_features = X_array.shape
 
@@ -626,8 +626,8 @@ def apply_batch_effects_from_config(
     )
 
     # Apply batch effects to feature matrix
-    X_affected, batch_effects = apply_batch_effects(
-        X=x,
+    x_affected, batch_effects = apply_batch_effects(
+        x=x,
         batch_assignments=batch_labels,
         rng=rng,
         effect_type=batch_config.effect_type,
@@ -636,4 +636,4 @@ def apply_batch_effects_from_config(
         effect_granularity=batch_config.effect_granularity,
     )
 
-    return X_affected, batch_labels, batch_effects
+    return x_affected, batch_labels, batch_effects
