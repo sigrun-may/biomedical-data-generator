@@ -496,7 +496,7 @@
 <div class="viewcode-block" id="apply_batch_effects">
 <a class="viewcode-back" href="../../../_autosummary/biomedical_data_generator.effects.batch.html#biomedical_data_generator.effects.batch.apply_batch_effects">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">apply_batch_effects</span><span class="p">(</span>
-    <span class="n">X</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span> <span class="o">|</span> <span class="n">NDArray</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">],</span>
+    <span class="n">x</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span> <span class="o">|</span> <span class="n">NDArray</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">],</span>
     <span class="n">batch_assignments</span><span class="p">:</span> <span class="n">NDArray</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">int_</span><span class="p">],</span>
     <span class="n">rng</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">Generator</span><span class="p">,</span>
     <span class="n">effect_type</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;additive&quot;</span><span class="p">,</span> <span class="s2">&quot;multiplicative&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;additive&quot;</span><span class="p">,</span>
@@ -510,7 +510,7 @@
 <span class="sd">    simulating site differences or instrument variations.</span>
 
 <span class="sd">    Args:</span>
-<span class="sd">        X: Feature matrix (DataFrame or array).</span>
+<span class="sd">        x: Feature matrix (DataFrame or array).</span>
 <span class="sd">        batch_assignments: Array of batch assignments per sample.</span>
 <span class="sd">        rng:</span>
 <span class="sd">            NumPy random number generator used to sample batch effects.</span>
@@ -583,16 +583,16 @@
 <span class="sd">        (3,)</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="c1"># Convert to DataFrame if needed for consistent handling</span>
-    <span class="n">is_dataframe</span> <span class="o">=</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">)</span>
+    <span class="n">is_dataframe</span> <span class="o">=</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">)</span>
     <span class="n">X_df</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
     <span class="n">feature_names</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
 
     <span class="k">if</span> <span class="n">is_dataframe</span><span class="p">:</span>
-        <span class="n">X_df</span> <span class="o">=</span> <span class="n">cast</span><span class="p">(</span><span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">X</span><span class="p">)</span>
+        <span class="n">X_df</span> <span class="o">=</span> <span class="n">cast</span><span class="p">(</span><span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">x</span><span class="p">)</span>
         <span class="n">X_array</span> <span class="o">=</span> <span class="n">X_df</span><span class="o">.</span><span class="n">to_numpy</span><span class="p">(</span><span class="n">copy</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
         <span class="n">feature_names</span> <span class="o">=</span> <span class="n">X_df</span><span class="o">.</span><span class="n">columns</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
     <span class="k">else</span><span class="p">:</span>
-        <span class="n">X_array</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+        <span class="n">X_array</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
 
     <span class="n">n_samples</span><span class="p">,</span> <span class="n">n_features</span> <span class="o">=</span> <span class="n">X_array</span><span class="o">.</span><span class="n">shape</span>
 
@@ -722,8 +722,8 @@
     <span class="p">)</span>
 
     <span class="c1"># Apply batch effects to feature matrix</span>
-    <span class="n">X_affected</span><span class="p">,</span> <span class="n">batch_effects</span> <span class="o">=</span> <span class="n">apply_batch_effects</span><span class="p">(</span>
-        <span class="n">X</span><span class="o">=</span><span class="n">x</span><span class="p">,</span>
+    <span class="n">x_affected</span><span class="p">,</span> <span class="n">batch_effects</span> <span class="o">=</span> <span class="n">apply_batch_effects</span><span class="p">(</span>
+        <span class="n">x</span><span class="o">=</span><span class="n">x</span><span class="p">,</span>
         <span class="n">batch_assignments</span><span class="o">=</span><span class="n">batch_labels</span><span class="p">,</span>
         <span class="n">rng</span><span class="o">=</span><span class="n">rng</span><span class="p">,</span>
         <span class="n">effect_type</span><span class="o">=</span><span class="n">batch_config</span><span class="o">.</span><span class="n">effect_type</span><span class="p">,</span>
@@ -732,7 +732,7 @@
         <span class="n">effect_granularity</span><span class="o">=</span><span class="n">batch_config</span><span class="o">.</span><span class="n">effect_granularity</span><span class="p">,</span>
     <span class="p">)</span>
 
-    <span class="k">return</span> <span class="n">X_affected</span><span class="p">,</span> <span class="n">batch_labels</span><span class="p">,</span> <span class="n">batch_effects</span></div>
+    <span class="k">return</span> <span class="n">x_affected</span><span class="p">,</span> <span class="n">batch_labels</span><span class="p">,</span> <span class="n">batch_effects</span></div>
 
 </pre></div>
 
