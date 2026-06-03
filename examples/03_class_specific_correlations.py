@@ -136,7 +136,7 @@ def main() -> None:
     # Compute correlations per class
     cluster_id = 0  # First cluster (0-based indexing)
     cluster_features2 = meta2.corr_cluster_indices[cluster_id]
-    correlations2 = compute_correlation_by_class(x2, y2, cluster_features2)  # ignore: E1101
+    correlations2 = compute_correlation_by_class(x2, y2, cluster_features2)
 
     print("Mean pairwise correlations per class:")
     for class_label, corr_matrix in correlations2.items():
