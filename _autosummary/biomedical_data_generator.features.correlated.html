@@ -193,7 +193,7 @@ generative model for complex omics data.</p>
 <tr class="row-even"><td><p><a class="reference internal" href="#biomedical_data_generator.features.correlated.build_correlation_matrix" title="biomedical_data_generator.features.correlated.build_correlation_matrix"><code class="xref py py-obj docutils literal notranslate"><span class="pre">build_correlation_matrix</span></code></a>(n_features, correlation)</p></td>
 <td><p>Build a correlation matrix with specified structure.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#biomedical_data_generator.features.correlated.sample_all_correlated_clusters" title="biomedical_data_generator.features.correlated.sample_all_correlated_clusters"><code class="xref py py-obj docutils literal notranslate"><span class="pre">sample_all_correlated_clusters</span></code></a>(cfg[, y, rng])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#biomedical_data_generator.features.correlated.sample_all_correlated_clusters" title="biomedical_data_generator.features.correlated.sample_all_correlated_clusters"><code class="xref py py-obj docutils literal notranslate"><span class="pre">sample_all_correlated_clusters</span></code></a>(cfg, y[, rng])</p></td>
 <td><p>Generate and assemble all correlated feature clusters for a dataset.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#biomedical_data_generator.features.correlated.sample_correlated_data" title="biomedical_data_generator.features.correlated.sample_correlated_data"><code class="xref py py-obj docutils literal notranslate"><span class="pre">sample_correlated_data</span></code></a>(n_samples, ...[, ...])</p></td>
@@ -280,7 +280,7 @@ with its proxies in that class).</p>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="biomedical_data_generator.features.correlated.sample_all_correlated_clusters">
-<span class="sig-prename descclassname"><span class="pre">biomedical_data_generator.features.correlated.</span></span><span class="sig-name descname"><span class="pre">sample_all_correlated_clusters</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cfg</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rng</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/biomedical_data_generator/features/correlated.html#sample_all_correlated_clusters"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#biomedical_data_generator.features.correlated.sample_all_correlated_clusters" title="Link to this definition"></a></dt>
+<span class="sig-prename descclassname"><span class="pre">biomedical_data_generator.features.correlated.</span></span><span class="sig-name descname"><span class="pre">sample_all_correlated_clusters</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cfg</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rng</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/biomedical_data_generator/features/correlated.html#sample_all_correlated_clusters"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#biomedical_data_generator.features.correlated.sample_all_correlated_clusters" title="Link to this definition"></a></dt>
 <dd><p>Generate and assemble all correlated feature clusters for a dataset.</p>
 <p>This function connects the abstract configuration with the actual data
 matrix and cluster-level metadata. It supports both global and class-specific
@@ -298,8 +298,7 @@ CorrClusterConfig validation.</p>
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>cfg</strong> (<a class="reference internal" href="biomedical_data_generator.config.DatasetConfig.html#biomedical_data_generator.config.DatasetConfig" title="biomedical_data_generator.config.DatasetConfig"><em>DatasetConfig</em></a>) – Dataset configuration with corr_clusters field.</p></li>
-<li><p><strong>y</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.4)"><em>ndarray</em></a><em> | </em><em>None</em>) – Class labels as a 1D NumPy array of length n_samples.
-If None, generates labels from cfg.class_configs in sequential order.</p></li>
+<li><p><strong>y</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.4)"><em>ndarray</em></a>) – Class labels as a 1D NumPy array of length n_samples.</p></li>
 <li><p><strong>rng</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/random/generator.html#numpy.random.Generator" title="(in NumPy v2.4)"><em>Generator</em></a><em> | </em><em>None</em>) – Optional random number generator. If None, creates a new one.</p></li>
 </ul>
 </dd>
@@ -339,7 +338,8 @@ correlated clusters including anchor effects where configured.</p></li>
 <span class="gp">... </span>        <span class="p">)</span>
 <span class="gp">... </span>    <span class="p">]</span>
 <span class="gp">... </span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">x</span><span class="p">,</span> <span class="n">meta</span> <span class="o">=</span> <span class="n">sample_all_correlated_clusters</span><span class="p">(</span><span class="n">cfg</span><span class="p">,</span> <span class="n">rng</span><span class="o">=</span><span class="n">rng</span><span class="p">)</span> <span class="c1"># y auto-generated</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">y</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">repeat</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span> <span class="mi">50</span><span class="p">)</span>  <span class="c1"># 50 samples per class</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">x</span><span class="p">,</span> <span class="n">meta</span> <span class="o">=</span> <span class="n">sample_all_correlated_clusters</span><span class="p">(</span><span class="n">cfg</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">rng</span><span class="o">=</span><span class="n">rng</span><span class="p">)</span>
 </pre></div>
 </div>
 <div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="c1"># Correlation + diagnostic signal (informative anchor with shift)</span>
@@ -355,7 +355,8 @@ correlated clusters including anchor effects where configured.</p></li>
 <span class="gp">... </span>        <span class="p">)</span>
 <span class="gp">... </span>    <span class="p">]</span>
 <span class="gp">... </span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">x</span><span class="p">,</span> <span class="n">meta</span> <span class="o">=</span> <span class="n">sample_all_correlated_clusters</span><span class="p">(</span><span class="n">cfg</span><span class="p">,</span> <span class="n">rng</span><span class="o">=</span><span class="n">rng</span><span class="p">)</span> <span class="c1"># y auto-generated</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">y</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">repeat</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span> <span class="mi">50</span><span class="p">)</span>  <span class="c1"># 50 samples per class</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">x</span><span class="p">,</span> <span class="n">meta</span> <span class="o">=</span> <span class="n">sample_all_correlated_clusters</span><span class="p">(</span><span class="n">cfg</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">rng</span><span class="o">=</span><span class="n">rng</span><span class="p">)</span>
 </pre></div>
 </div>
 <div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="c1"># Advanced: provide custom labels</span>

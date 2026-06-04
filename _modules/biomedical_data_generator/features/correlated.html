@@ -223,7 +223,7 @@
         <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Correlation matrix requires at least two features, got </span><span class="si">{</span><span class="n">n_features</span><span class="si">}</span><span class="s2">.&quot;</span><span class="p">)</span>
 
     <span class="k">if</span> <span class="n">structure</span> <span class="o">==</span> <span class="s2">&quot;equicorrelated&quot;</span><span class="p">:</span>
-        <span class="n">lower_bound</span> <span class="o">=</span> <span class="o">-</span><span class="mf">1.0</span> <span class="o">/</span> <span class="p">(</span><span class="n">n_features</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="k">if</span> <span class="n">n_features</span> <span class="o">&gt;</span> <span class="mi">1</span> <span class="k">else</span> <span class="o">-</span><span class="mf">1.0</span>
+        <span class="n">lower_bound</span> <span class="o">=</span> <span class="o">-</span><span class="mf">1.0</span> <span class="o">/</span> <span class="p">(</span><span class="n">n_features</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="n">lower_bound</span> <span class="o">&lt;</span> <span class="n">correlation</span> <span class="o">&lt;</span> <span class="mf">1.0</span><span class="p">):</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
                 <span class="sa">f</span><span class="s2">&quot;For equicorrelated with n_features=</span><span class="si">{</span><span class="n">n_features</span><span class="si">}</span><span class="s2">, correlation must be in &quot;</span>
@@ -518,7 +518,7 @@
 <a class="viewcode-back" href="../../../_autosummary/biomedical_data_generator.features.correlated.html#biomedical_data_generator.features.correlated.sample_all_correlated_clusters">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">sample_all_correlated_clusters</span><span class="p">(</span>
     <span class="n">cfg</span><span class="p">:</span> <span class="n">DatasetConfig</span><span class="p">,</span>
-    <span class="n">y</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">y</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
     <span class="n">rng</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">Generator</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]]:</span>
 <span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Generate and assemble all correlated feature clusters for a dataset.</span>
@@ -539,7 +539,6 @@
 <span class="sd">    Args:</span>
 <span class="sd">        cfg: Dataset configuration with corr_clusters field.</span>
 <span class="sd">        y: Class labels as a 1D NumPy array of length n_samples.</span>
-<span class="sd">            If None, generates labels from cfg.class_configs in sequential order.</span>
 <span class="sd">        rng: Optional random number generator. If None, creates a new one.</span>
 
 <span class="sd">    Returns:</span>
@@ -568,7 +567,8 @@
 <span class="sd">        ...         )</span>
 <span class="sd">        ...     ]</span>
 <span class="sd">        ... )</span>
-<span class="sd">        &gt;&gt;&gt; x, meta = sample_all_correlated_clusters(cfg, rng=rng) # y auto-generated</span>
+<span class="sd">        &gt;&gt;&gt; y = np.repeat([0, 1], 50)  # 50 samples per class</span>
+<span class="sd">        &gt;&gt;&gt; x, meta = sample_all_correlated_clusters(cfg, y, rng=rng)</span>
 
 <span class="sd">        &gt;&gt;&gt; # Correlation + diagnostic signal (informative anchor with shift)</span>
 <span class="sd">        &gt;&gt;&gt; cfg = DatasetConfig(</span>
@@ -583,7 +583,8 @@
 <span class="sd">        ...         )</span>
 <span class="sd">        ...     ]</span>
 <span class="sd">        ... )</span>
-<span class="sd">        &gt;&gt;&gt; x, meta = sample_all_correlated_clusters(cfg, rng=rng) # y auto-generated</span>
+<span class="sd">        &gt;&gt;&gt; y = np.repeat([0, 1], 50)  # 50 samples per class</span>
+<span class="sd">        &gt;&gt;&gt; x, meta = sample_all_correlated_clusters(cfg, y, rng=rng)</span>
 
 <span class="sd">        &gt;&gt;&gt; # Advanced: provide custom labels</span>
 <span class="sd">        &gt;&gt;&gt; y_custom = np.array([...])</span>
@@ -592,16 +593,9 @@
     <span class="k">if</span> <span class="n">rng</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
         <span class="n">rng</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">default_rng</span><span class="p">()</span>
 
-    <span class="k">if</span> <span class="n">y</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="c1"># Generate y from config if not provided</span>
-        <span class="n">labels</span> <span class="o">=</span> <span class="p">[]</span>
-        <span class="k">for</span> <span class="n">class_idx</span><span class="p">,</span> <span class="n">class_cfg</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">cfg</span><span class="o">.</span><span class="n">class_configs</span><span class="p">):</span>
-            <span class="n">labels</span><span class="o">.</span><span class="n">extend</span><span class="p">([</span><span class="n">class_idx</span><span class="p">]</span> <span class="o">*</span> <span class="n">class_cfg</span><span class="o">.</span><span class="n">n_samples</span><span class="p">)</span>
-        <span class="n">y</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">labels</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int64</span><span class="p">)</span>
-    <span class="k">else</span><span class="p">:</span>
-        <span class="n">y</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">y</span><span class="p">)</span>
-        <span class="k">if</span> <span class="n">y</span><span class="o">.</span><span class="n">ndim</span> <span class="o">!=</span> <span class="mi">1</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;y must be a 1D array of class labels, got shape </span><span class="si">{</span><span class="n">y</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s2">.&quot;</span><span class="p">)</span>
+    <span class="n">y</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">y</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">y</span><span class="o">.</span><span class="n">ndim</span> <span class="o">!=</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;y must be a 1D array of class labels, got shape </span><span class="si">{</span><span class="n">y</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s2">.&quot;</span><span class="p">)</span>
 
     <span class="n">n_samples</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">y</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
     <span class="n">cluster_cfgs</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">CorrClusterConfig</span><span class="p">]</span> <span class="o">=</span> <span class="n">cfg</span><span class="o">.</span><span class="n">corr_clusters</span> <span class="ow">or</span> <span class="p">[]</span>
