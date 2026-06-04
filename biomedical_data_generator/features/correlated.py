@@ -139,7 +139,7 @@ def build_correlation_matrix(
         raise ValueError(f"Correlation matrix requires at least two features, got {n_features}.")
 
     if structure == "equicorrelated":
-        lower_bound = -1.0 / (n_features - 1) if n_features > 1 else -1.0
+        lower_bound = -1.0 / (n_features - 1)
         if not (lower_bound < correlation < 1.0):
             raise ValueError(
                 f"For equicorrelated with n_features={n_features}, correlation must be in "
@@ -425,7 +425,7 @@ def _sample_class_specific_cluster(
 
 def sample_all_correlated_clusters(
     cfg: DatasetConfig,
-    y: np.ndarray | None = None,
+    y: np.ndarray,
     rng: np.random.Generator | None = None,
 ) -> tuple[np.ndarray, dict[str, dict[int, Any]]]:
     r"""Generate and assemble all correlated feature clusters for a dataset.
@@ -446,7 +446,6 @@ def sample_all_correlated_clusters(
     Args:
         cfg: Dataset configuration with corr_clusters field.
         y: Class labels as a 1D NumPy array of length n_samples.
-            If None, generates labels from cfg.class_configs in sequential order.
         rng: Optional random number generator. If None, creates a new one.
 
     Returns:
@@ -475,7 +474,8 @@ def sample_all_correlated_clusters(
         ...         )
         ...     ]
         ... )
-        >>> x, meta = sample_all_correlated_clusters(cfg, rng=rng) # y auto-generated
+        >>> y = np.repeat([0, 1], 50)  # 50 samples per class
+        >>> x, meta = sample_all_correlated_clusters(cfg, y, rng=rng)
 
         >>> # Correlation + diagnostic signal (informative anchor with shift)
         >>> cfg = DatasetConfig(
@@ -490,7 +490,8 @@ def sample_all_correlated_clusters(
         ...         )
         ...     ]
         ... )
-        >>> x, meta = sample_all_correlated_clusters(cfg, rng=rng) # y auto-generated
+        >>> y = np.repeat([0, 1], 50)  # 50 samples per class
+        >>> x, meta = sample_all_correlated_clusters(cfg, y, rng=rng)
 
         >>> # Advanced: provide custom labels
         >>> y_custom = np.array([...])
@@ -499,16 +500,9 @@ def sample_all_correlated_clusters(
     if rng is None:
         rng = np.random.default_rng()
 
-    if y is None:
-        # Generate y from config if not provided
-        labels = []
-        for class_idx, class_cfg in enumerate(cfg.class_configs):
-            labels.extend([class_idx] * class_cfg.n_samples)
-        y = np.array(labels, dtype=np.int64)
-    else:
-        y = np.asarray(y)
-        if y.ndim != 1:
-            raise ValueError(f"y must be a 1D array of class labels, got shape {y.shape}.")
+    y = np.asarray(y)
+    if y.ndim != 1:
+        raise ValueError(f"y must be a 1D array of class labels, got shape {y.shape}.")
 
     n_samples = int(y.shape[0])
     cluster_cfgs: list[CorrClusterConfig] = cfg.corr_clusters or []
