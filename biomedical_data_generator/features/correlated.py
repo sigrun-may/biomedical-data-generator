@@ -562,14 +562,14 @@ def sample_all_correlated_clusters(
 
     # Build cluster-level metadata
     cluster_meta: dict[str, dict[int, object]] = {
-        "anchor_role": {cluster_id: cfg.anchor_role for cluster_id, cfg in enumerate(cluster_cfgs)},
+        "anchor_role": {cluster_id: cluster_cfg.anchor_role for cluster_id, cluster_cfg in enumerate(cluster_cfgs)},
         "anchor_effect_size": {
-            cluster_id: cfg.resolve_anchor_effect_size for cluster_id, cfg in enumerate(cluster_cfgs)
+            cluster_id: cluster_cfg.resolve_anchor_effect_size for cluster_id, cluster_cfg in enumerate(cluster_cfgs)
         },
-        "anchor_class": {cluster_id: cfg.anchor_class for cluster_id, cfg in enumerate(cluster_cfgs)},
-        "label": {cluster_id: cfg.label for cluster_id, cfg in enumerate(cluster_cfgs)},
-        "structure": {cluster_id: cfg.structure for cluster_id, cfg in enumerate(cluster_cfgs)},
-        "correlation": {cluster_id: cfg.correlation for cluster_id, cfg in enumerate(cluster_cfgs)},
+        "anchor_class": {cluster_id: cluster_cfg.anchor_class for cluster_id, cluster_cfg in enumerate(cluster_cfgs)},
+        "label": {cluster_id: cluster_cfg.label for cluster_id, cluster_cfg in enumerate(cluster_cfgs)},
+        "structure": {cluster_id: cluster_cfg.structure for cluster_id, cluster_cfg in enumerate(cluster_cfgs)},
+        "correlation": {cluster_id: cluster_cfg.correlation for cluster_id, cluster_cfg in enumerate(cluster_cfgs)},
     }
 
     return x_clusters, cluster_meta
