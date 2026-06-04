@@ -22,7 +22,7 @@ update: ## Update dependencies
 
 check: lint typecheck test ## Run full CI-style checks
 
-lint: ## Ruff lint (inkl. Imports & Docstrings) + Black check + Markdown check
+lint: ## Ruff lint (including Imports & Docstrings) + Black check + Markdown check
 	$(PY) ruff check $(SRC) $(EXAMPLES) $(TESTS)
 	$(PY) black --check --diff $(SRC) $(EXAMPLES) $(TESTS)
 	$(PY) mdformat --check *.md
