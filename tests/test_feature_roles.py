@@ -6,6 +6,7 @@
 
 """Unit tests for feature role assignment logic in compute_feature_roles."""
 
+
 def test_compute_feature_roles_partitions_all_columns():
     """compute_feature_roles assigns every feature to exactly one role."""
     from biomedical_data_generator import (

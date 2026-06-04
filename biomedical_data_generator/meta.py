@@ -12,12 +12,7 @@ from typing import Literal
 
 import numpy as np
 
-__all__ = [
-    "BatchMeta",
-    "DatasetMeta",
-    "FeatureRoles",
-    "compute_feature_roles"
-]
+__all__ = ["BatchMeta", "DatasetMeta", "FeatureRoles", "compute_feature_roles"]
 
 
 # =========================

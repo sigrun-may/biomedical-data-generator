@@ -527,10 +527,7 @@ def apply_batch_effects(
     if n_batches is None:
         n_batches = observed_n_batches
     elif n_batches < observed_n_batches:
-        raise ValueError(
-            f"n_batches ({n_batches}) must be >= max observed batch index + 1 "
-            f"({observed_n_batches})."
-        )
+        raise ValueError(f"n_batches ({n_batches}) must be >= max observed batch index + 1 " f"({observed_n_batches}).")
 
     # Determine which features to affect
     if affected_features == "all":
