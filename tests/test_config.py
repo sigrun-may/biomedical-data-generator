@@ -193,19 +193,6 @@ def test_anchor_class_out_of_range_raises():
         )
 
 
-def test_corr_between_out_of_range_raises():
-    """corr_between must lie within [-1, 1]."""
-    from biomedical_data_generator import DatasetConfig
-
-    with pytest.raises(ValueError):
-        DatasetConfig(
-            n_informative=1,
-            n_noise=0,
-            corr_between=1.5,  # invalid
-            class_configs=_minimal_class_configs(2, 5),
-        )
-
-
 def test_corr_cluster_str_method():
     """Test CorrClusterConfig __str__ method with different configurations."""
     from biomedical_data_generator import CorrClusterConfig

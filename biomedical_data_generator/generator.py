@@ -327,7 +327,6 @@ def generate_dataset(
         class_names=cfg.class_labels,
         samples_per_class={int(k): int(counts[k]) for k in range(cfg.n_classes)},
         class_sep=cfg.class_sep,
-        corr_between=cfg.corr_between,
         batch=batch_meta,
         random_state=cfg.random_state,
         resolved_config=cfg.model_dump(),

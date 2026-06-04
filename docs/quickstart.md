@@ -109,8 +109,6 @@ corr_clusters:
     anchor_role: "noise"
     label: "Noise_Block"
 
-corr_between: 0.0
-
 noise_distribution: "normal"
 noise_distribution_params:
   loc: 0

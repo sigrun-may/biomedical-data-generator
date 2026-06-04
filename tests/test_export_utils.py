@@ -45,7 +45,6 @@ def sample_data():
         class_names=class_labels,
         samples_per_class={0: 2, 1: 1},
         class_sep=[1.0],
-        corr_between=0.0,
     )
 
     return X, y, meta
@@ -178,7 +177,6 @@ def test_to_labeled_dataframe_without_string_labels(sample_data):
         class_names=[],  # Empty list
         samples_per_class={0: 2, 1: 1},
         class_sep=[1.0],
-        corr_between=0.0,
     )
 
     df = to_labeled_dataframe(x, y, minimal_meta, include_labels=True)

@@ -166,7 +166,6 @@ class DatasetMeta:
     class_names: list[str]
     samples_per_class: dict[int, int]
     class_sep: list[float]  # resolved class separation per boundary
-    corr_between: float  # correlation between different clusters/roles
 
     # ---------------- batch effects (optional) ----------------
     batch: BatchMeta | None = None
