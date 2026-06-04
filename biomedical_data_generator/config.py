@@ -397,7 +397,7 @@ class CorrClusterConfig(BaseModel):
     # Core cluster structure and correlation settings -------------------------
     n_cluster_features: int = Field(
         ...,
-        ge=1,
+        ge=2,
         description="Number of biomarkers in cluster (including anchor).",
     )
 
