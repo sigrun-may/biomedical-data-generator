@@ -620,10 +620,7 @@
     <span class="k">if</span> <span class="n">n_batches</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
         <span class="n">n_batches</span> <span class="o">=</span> <span class="n">observed_n_batches</span>
     <span class="k">elif</span> <span class="n">n_batches</span> <span class="o">&lt;</span> <span class="n">observed_n_batches</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-            <span class="sa">f</span><span class="s2">&quot;n_batches (</span><span class="si">{</span><span class="n">n_batches</span><span class="si">}</span><span class="s2">) must be &gt;= max observed batch index + 1 &quot;</span>
-            <span class="sa">f</span><span class="s2">&quot;(</span><span class="si">{</span><span class="n">observed_n_batches</span><span class="si">}</span><span class="s2">).&quot;</span>
-        <span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;n_batches (</span><span class="si">{</span><span class="n">n_batches</span><span class="si">}</span><span class="s2">) must be &gt;= max observed batch index + 1 &quot;</span> <span class="sa">f</span><span class="s2">&quot;(</span><span class="si">{</span><span class="n">observed_n_batches</span><span class="si">}</span><span class="s2">).&quot;</span><span class="p">)</span>
 
     <span class="c1"># Determine which features to affect</span>
     <span class="k">if</span> <span class="n">affected_features</span> <span class="o">==</span> <span class="s2">&quot;all&quot;</span><span class="p">:</span>
