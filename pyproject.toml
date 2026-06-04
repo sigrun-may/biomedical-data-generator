@@ -1,7 +1,7 @@
 [tool.poetry]
 name = "biomedical-data-generator"
 version = "1.0.0"
-description = "Generate synthetic data for data science, machine learning, and statistics."
+description = "Generate synthetic biomedical data for data science, machine learning, and statistics."
 authors = ["Sigrun May <s.may@ostfalia.de>"]
 license = "MIT"
 readme = "README.md"
