@@ -618,7 +618,6 @@ class DatasetConfig(BaseModel):
         class_configs (list[ClassConfig]): List of class definitions.
         class_sep (float | Sequence[float]): Class separation values (length n_classes - 1); scalar is broadcast.
         corr_clusters (list[CorrClusterConfig]): List of CorrClusterConfig defining correlated feature clusters.
-        corr_between (float): Correlation between different clusters/roles (0 = independent).
         noise_distribution: (str): Distribution for noise features. Can be any supported `DistributionType`.
         noise_distribution_params (dict): Parameters for noise distribution.
         prefixed_feature_naming (bool):
@@ -645,7 +644,6 @@ class DatasetConfig(BaseModel):
             - Normalize `class_sep`: broadcast scalar to length `n_classes - 1` or validate sequence length.
         After model construction:
             - Ensure `n_informative >= #informative_anchors` and `n_noise >= #noise_anchors`.
-            - Check `corr_between` in [-1, 1].
             - Ensure `anchor_class` indices < `n_classes`.
             - Require at least one non-zero `class_sep` if `n_informative_free > 0`.
             - Auto-generate missing class labels as ``class_{idx}``.
@@ -679,7 +677,6 @@ class DatasetConfig(BaseModel):
         ...             label="Random Noise Cluster"
         ...         )
         ...     ],
-        ...     corr_between=0.1,
         ...     noise_distribution="normal",
         ...     noise_distribution_params={"loc": 0, "scale": 1},
         ...     prefixed_feature_naming=True,
@@ -718,7 +715,6 @@ class DatasetConfig(BaseModel):
 
     # Correlated structure
     corr_clusters: list[CorrClusterConfig] = Field(default_factory=list)
-    corr_between: float = 0.0  # correlation between different clusters/roles (0 = independent)
 
     # Batch effects
     batch_effects: BatchEffectsConfig | None = None
@@ -847,8 +843,8 @@ class DatasetConfig(BaseModel):
 
         Raises:
             ValueError: If ``n_informative``/``n_noise`` cannot cover their
-                respective anchors, if ``corr_between`` is outside [-1, 1], or if
-                any ``anchor_class`` index exceeds the number of classes.
+                respective anchors, or if any ``anchor_class`` index exceeds the
+                number of classes.
         """
         inf_anchors = self.count_informative_anchors()
         noise_anchors = self.count_noise_anchors()
@@ -864,10 +860,6 @@ class DatasetConfig(BaseModel):
                 f"({noise_anchors}); each noise cluster anchor consumes one noise "
                 f"feature."
             )
-
-        # corr_between range sanity check
-        if not (-1.0 <= float(self.corr_between) <= 1.0):
-            raise ValueError(f"corr_between must lie in [-1, 1], got {self.corr_between}.")
 
         # anchor_class indices must be < n_classes
         max_idx = self.n_classes - 1
