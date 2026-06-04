@@ -563,7 +563,9 @@ def sample_all_correlated_clusters(
     # Build cluster-level metadata
     cluster_meta: dict[str, dict[int, object]] = {
         "anchor_role": {cluster_id: cfg.anchor_role for cluster_id, cfg in enumerate(cluster_cfgs)},
-        "anchor_effect_size": {cluster_id: cfg.anchor_effect_size for cluster_id, cfg in enumerate(cluster_cfgs)},
+        "anchor_effect_size": {
+            cluster_id: cfg.resolve_anchor_effect_size for cluster_id, cfg in enumerate(cluster_cfgs)
+        },
         "anchor_class": {cluster_id: cfg.anchor_class for cluster_id, cfg in enumerate(cluster_cfgs)},
         "label": {cluster_id: cfg.label for cluster_id, cfg in enumerate(cluster_cfgs)},
         "structure": {cluster_id: cfg.structure for cluster_id, cfg in enumerate(cluster_cfgs)},
