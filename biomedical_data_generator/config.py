@@ -446,7 +446,7 @@ class CorrClusterConfig(BaseModel):
 
         def check_one(correlation: float) -> None:
             if structure == "equicorrelated":
-                lower = -1.0 / (n_features - 1) if n_features > 1 else float("-inf")
+                lower = -1.0 / (n_features - 1)
                 if not (lower < correlation < 1.0):
                     raise ValueError(
                         f"correlation={correlation} invalid for equicorrelated with "
