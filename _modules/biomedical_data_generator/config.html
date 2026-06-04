@@ -723,7 +723,6 @@
 <span class="sd">        class_configs (list[ClassConfig]): List of class definitions.</span>
 <span class="sd">        class_sep (float | Sequence[float]): Class separation values (length n_classes - 1); scalar is broadcast.</span>
 <span class="sd">        corr_clusters (list[CorrClusterConfig]): List of CorrClusterConfig defining correlated feature clusters.</span>
-<span class="sd">        corr_between (float): Correlation between different clusters/roles (0 = independent).</span>
 <span class="sd">        noise_distribution: (str): Distribution for noise features. Can be any supported `DistributionType`.</span>
 <span class="sd">        noise_distribution_params (dict): Parameters for noise distribution.</span>
 <span class="sd">        prefixed_feature_naming (bool):</span>
@@ -750,7 +749,6 @@
 <span class="sd">            - Normalize `class_sep`: broadcast scalar to length `n_classes - 1` or validate sequence length.</span>
 <span class="sd">        After model construction:</span>
 <span class="sd">            - Ensure `n_informative &gt;= #informative_anchors` and `n_noise &gt;= #noise_anchors`.</span>
-<span class="sd">            - Check `corr_between` in [-1, 1].</span>
 <span class="sd">            - Ensure `anchor_class` indices &lt; `n_classes`.</span>
 <span class="sd">            - Require at least one non-zero `class_sep` if `n_informative_free &gt; 0`.</span>
 <span class="sd">            - Auto-generate missing class labels as ``class_{idx}``.</span>
@@ -784,7 +782,6 @@
 <span class="sd">        ...             label=&quot;Random Noise Cluster&quot;</span>
 <span class="sd">        ...         )</span>
 <span class="sd">        ...     ],</span>
-<span class="sd">        ...     corr_between=0.1,</span>
 <span class="sd">        ...     noise_distribution=&quot;normal&quot;,</span>
 <span class="sd">        ...     noise_distribution_params={&quot;loc&quot;: 0, &quot;scale&quot;: 1},</span>
 <span class="sd">        ...     prefixed_feature_naming=True,</span>
@@ -823,7 +820,6 @@
 
     <span class="c1"># Correlated structure</span>
     <span class="n">corr_clusters</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">CorrClusterConfig</span><span class="p">]</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="nb">list</span><span class="p">)</span>
-    <span class="n">corr_between</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.0</span>  <span class="c1"># correlation between different clusters/roles (0 = independent)</span>
 
     <span class="c1"># Batch effects</span>
     <span class="n">batch_effects</span><span class="p">:</span> <span class="n">BatchEffectsConfig</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
@@ -952,8 +948,8 @@
 
 <span class="sd">        Raises:</span>
 <span class="sd">            ValueError: If ``n_informative``/``n_noise`` cannot cover their</span>
-<span class="sd">                respective anchors, if ``corr_between`` is outside [-1, 1], or if</span>
-<span class="sd">                any ``anchor_class`` index exceeds the number of classes.</span>
+<span class="sd">                respective anchors, or if any ``anchor_class`` index exceeds the</span>
+<span class="sd">                number of classes.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">inf_anchors</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">count_informative_anchors</span><span class="p">()</span>
         <span class="n">noise_anchors</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">count_noise_anchors</span><span class="p">()</span>
@@ -969,10 +965,6 @@
                 <span class="sa">f</span><span class="s2">&quot;(</span><span class="si">{</span><span class="n">noise_anchors</span><span class="si">}</span><span class="s2">); each noise cluster anchor consumes one noise &quot;</span>
                 <span class="sa">f</span><span class="s2">&quot;feature.&quot;</span>
             <span class="p">)</span>
-
-        <span class="c1"># corr_between range sanity check</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="o">-</span><span class="mf">1.0</span> <span class="o">&lt;=</span> <span class="nb">float</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">corr_between</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="mf">1.0</span><span class="p">):</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;corr_between must lie in [-1, 1], got </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">corr_between</span><span class="si">}</span><span class="s2">.&quot;</span><span class="p">)</span>
 
         <span class="c1"># anchor_class indices must be &lt; n_classes</span>
         <span class="n">max_idx</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_classes</span> <span class="o">-</span> <span class="mi">1</span>
