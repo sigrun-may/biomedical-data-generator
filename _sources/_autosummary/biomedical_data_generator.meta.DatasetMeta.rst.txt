@@ -43,7 +43,6 @@
       ~DatasetMeta.class_names
       ~DatasetMeta.samples_per_class
       ~DatasetMeta.class_sep
-      ~DatasetMeta.corr_between
       ~DatasetMeta.resolved_config
    
    
