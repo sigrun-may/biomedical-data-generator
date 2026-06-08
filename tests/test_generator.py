@@ -279,8 +279,15 @@ def test_make_names_and_roles_total_mismatch_raises():
     assert len(names) == 3
 
 
-def test_make_names_and_roles_with_informative_anchor():
-    """Test naming and roles with informative cluster anchor."""
+def test_make_names_and_roles_with_class_uniform_informative_anchor():
+    """A class-uniform informative anchor is labeled noise (derived relevance).
+
+    The anchor is declared ``anchor_role="informative"`` but has no target class
+    (``anchor_class=None``) and a scalar correlation, so its mean shift is applied
+    equally to every class and carries no discriminative signal. Relevance is
+    derived from the generated signal, so the anchor is not added to the
+    informative index list.
+    """
     cfg = DatasetConfig(
         n_informative=2,
         n_noise=1,
@@ -302,10 +309,11 @@ def test_make_names_and_roles_with_informative_anchor():
         n_noise_cols=1,
     )
 
-    # Informative should include free informative (1) + anchor (1) = 2
-    assert len(inf_idx) == 2
-    # Noise should only include free noise (1)
-    assert len(noi_idx) == 1
+    # Only the free informative feature is informative; the class-uniform anchor
+    # is not added (derived noise), and noise_idx still holds only free noise.
+    assert inf_idx == [0]
+    assert noi_idx == [4]
+    assert anchor_idx[0] not in inf_idx
     # Should have one cluster
     assert len(cluster_idx) == 1
 
