@@ -70,8 +70,10 @@ class FeatureRoles:
     roles that the generator distinguishes. The six roles arise from two
     orthogonal distinctions:
 
-    * **Signal** -- *informative* features encode a class mean shift, *noise*
-      features do not.
+    * **Signal** -- a feature is *informative* when its cluster carries
+      class-discriminative signal through **either** a class-dependent mean
+      shift **or** a class-dependent within-cluster correlation (differential
+      co-expression); *noise* features carry neither.
     * **Cluster membership** -- a *free* feature is independent and belongs to
       no cluster. Within a correlated cluster, the lead column is the *anchor*
       (the only column shifted directly), and every other member is a *proxy*
@@ -88,29 +90,31 @@ class FeatureRoles:
             correlated cluster and therefore carry a class-separating mean
             shift on their own.
         informative_anchor_indices:
-            List of column indices of cluster anchors whose ``anchor_role`` is
-            ``"informative"``. Anchors receive the class-specific mean shift
-            and seed the within-cluster correlation shared by their proxies.
+            List of column indices of anchors of clusters **derived** to carry
+            class-discriminative signal (through the mean or the covariance
+            channel), independent of the declared ``anchor_role``. Such anchors
+            seed the within-cluster correlation shared by their proxies.
         informative_proxy_indices:
-            List of column indices of proxy members in informative clusters
-            (non-anchor members). Proxies do not receive a direct mean shift
-            but inherit an attenuated signal through their correlation with
-            the informative anchor. The degree of attenuation follows the
-            cluster's correlation structure — roughly uniform for
-            equicorrelated clusters and decaying with distance from the anchor
-            for Toeplitz clusters.
+            List of column indices of proxy members (non-anchor members) in
+            clusters derived informative. Proxies do not receive a direct mean
+            shift but inherit an attenuated signal through their correlation
+            with the anchor. The degree of attenuation follows the cluster's
+            correlation structure — roughly uniform for equicorrelated clusters
+            and decaying with distance from the anchor for Toeplitz clusters.
         free_noise_indices:
             List of column indices for free noise features. These are
             independent noise features outside any cluster and carry no
             class-discriminating signal.
         noise_anchor_indices:
-            List of column indices of cluster anchors whose ``anchor_role`` is
-            ``"noise"``. Noise anchors seed a within-cluster correlation but
-            do not receive a class-specific mean shift.
+            List of column indices of anchors of clusters derived to carry
+            **no** class-discriminative signal (neither a class-dependent mean
+            shift nor a class-dependent within-cluster correlation), independent
+            of the declared ``anchor_role``. They seed a within-cluster
+            correlation that is identical across classes.
         noise_proxy_indices:
-            List of column indices of proxy members in noise clusters
-            (non-anchor members) that are correlated with their noise anchor
-            and form purely structural, signal-free correlated blocks.
+            List of column indices of proxy members (non-anchor members) in
+            clusters derived noise. They are correlated with their anchor and
+            form purely structural, signal-free correlated blocks.
         cluster_membership:
             Mapping from ``column_index`` to ``cluster_id`` for every column
             that belongs to a correlated cluster.
@@ -278,8 +282,11 @@ def compute_feature_roles(meta: DatasetMeta) -> FeatureRoles:
 
     The partition is reconstructed purely from the structural index sets that
     the generator already records on ``meta`` (informative and noise indices,
-    cluster layout, anchor columns, and anchor roles). No feature matrix is
-    required.
+    cluster layout, anchor columns, and per-cluster anchor properties). Each
+    cluster's relevance is **derived** from the generated signal — a class-
+    dependent mean shift or a class-dependent within-cluster correlation
+    (differential co-expression) — rather than read from the declared
+    ``anchor_role``. No feature matrix is required.
 
     Args:
         meta: Resolved dataset metadata produced by
