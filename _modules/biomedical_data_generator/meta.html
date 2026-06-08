@@ -303,6 +303,67 @@
 
 
 
+<span class="k">def</span><span class="w"> </span><span class="nf">_mapping_varies_across_classes</span><span class="p">(</span><span class="n">per_class_values</span><span class="p">,</span> <span class="n">n_classes</span><span class="p">,</span> <span class="n">tol</span><span class="o">=</span><span class="mf">1e-9</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Return whether a per-class mapping differs across classes.</span>
+
+<span class="sd">    Absent classes resolve to the 0.0 baseline. A scalar (non-mapping) input</span>
+<span class="sd">    never varies and must be guarded by the caller.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        per_class_values: Mapping from class index to value.</span>
+<span class="sd">        n_classes: Number of classes to resolve over.</span>
+<span class="sd">        tol: Numerical tolerance for treating values as equal.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        True if the resolved per-class values are not all equal.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">resolved_values</span> <span class="o">=</span> <span class="p">[</span><span class="nb">float</span><span class="p">(</span><span class="n">per_class_values</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">class_index</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">))</span> <span class="k">for</span> <span class="n">class_index</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_classes</span><span class="p">)]</span>
+    <span class="k">return</span> <span class="p">(</span><span class="nb">max</span><span class="p">(</span><span class="n">resolved_values</span><span class="p">)</span> <span class="o">-</span> <span class="nb">min</span><span class="p">(</span><span class="n">resolved_values</span><span class="p">))</span> <span class="o">&gt;</span> <span class="n">tol</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_mean_varies_across_classes</span><span class="p">(</span><span class="n">anchor_role</span><span class="p">,</span> <span class="n">anchor_class</span><span class="p">,</span> <span class="n">effect_size</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Return whether the anchor&#39;s mean location differs across classes.</span>
+
+<span class="sd">    An informative anchor targeting a specific class shifts only that class and</span>
+<span class="sd">    is discriminative; an anchor with no specific target class shifts every</span>
+<span class="sd">    class equally and is not.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        anchor_role: Declared anchor role.</span>
+<span class="sd">        anchor_class: Target class index, or None for an untargeted shift.</span>
+<span class="sd">        effect_size: Resolved numeric effect size (e.g. from</span>
+<span class="sd">            ``CorrClusterConfig.resolve_anchor_effect_size``).</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        True if the anchor introduces a between-class mean difference.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">anchor_role</span> <span class="o">==</span> <span class="s2">&quot;informative&quot;</span> <span class="ow">and</span> <span class="n">effect_size</span> <span class="o">&gt;</span> <span class="mf">0.0</span> <span class="ow">and</span> <span class="n">anchor_class</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_cluster_is_informative</span><span class="p">(</span><span class="n">anchor_role</span><span class="p">,</span> <span class="n">anchor_class</span><span class="p">,</span> <span class="n">effect_size</span><span class="p">,</span> <span class="n">correlation</span><span class="p">,</span> <span class="n">n_classes</span><span class="p">,</span> <span class="n">tol</span><span class="o">=</span><span class="mf">1e-9</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Derive whether a correlated cluster carries class-discriminative signal.</span>
+
+<span class="sd">    A cluster is informative if its mean channel varies across classes (first</span>
+<span class="sd">    moment) OR its within-cluster correlation varies across classes (second</span>
+<span class="sd">    moment / differential co-expression).</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        anchor_role: Declared anchor role.</span>
+<span class="sd">        anchor_class: Target class index, or None.</span>
+<span class="sd">        effect_size: Resolved numeric anchor effect size (e.g. from</span>
+<span class="sd">            ``CorrClusterConfig.resolve_anchor_effect_size``).</span>
+<span class="sd">        correlation: Scalar correlation or a per-class correlation mapping.</span>
+<span class="sd">        n_classes: Number of classes.</span>
+<span class="sd">        tol: Numerical tolerance for treating values as equal.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        True if any channel varies across classes.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">mean_signal</span> <span class="o">=</span> <span class="n">_mean_varies_across_classes</span><span class="p">(</span><span class="n">anchor_role</span><span class="p">,</span> <span class="n">anchor_class</span><span class="p">,</span> <span class="n">effect_size</span><span class="p">)</span>
+    <span class="n">covariance_signal</span> <span class="o">=</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">correlation</span><span class="p">,</span> <span class="nb">dict</span><span class="p">)</span> <span class="ow">and</span> <span class="n">_mapping_varies_across_classes</span><span class="p">(</span><span class="n">correlation</span><span class="p">,</span> <span class="n">n_classes</span><span class="p">,</span> <span class="n">tol</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">mean_signal</span> <span class="ow">or</span> <span class="n">covariance_signal</span>
+
+
 <div class="viewcode-block" id="compute_feature_roles">
 <a class="viewcode-back" href="../../_autosummary/biomedical_data_generator.meta.compute_feature_roles.html#biomedical_data_generator.compute_feature_roles">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">compute_feature_roles</span><span class="p">(</span><span class="n">meta</span><span class="p">:</span> <span class="n">DatasetMeta</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">FeatureRoles</span><span class="p">:</span>
@@ -335,7 +396,13 @@
         <span class="k">for</span> <span class="n">column</span> <span class="ow">in</span> <span class="n">member_columns</span><span class="p">:</span>
             <span class="n">cluster_membership</span><span class="p">[</span><span class="n">column</span><span class="p">]</span> <span class="o">=</span> <span class="n">cluster_id</span>
 
-        <span class="k">if</span> <span class="n">meta</span><span class="o">.</span><span class="n">anchor_role</span><span class="p">[</span><span class="n">cluster_id</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;informative&quot;</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">_cluster_is_informative</span><span class="p">(</span>
+            <span class="n">anchor_role</span><span class="o">=</span><span class="n">meta</span><span class="o">.</span><span class="n">anchor_role</span><span class="p">[</span><span class="n">cluster_id</span><span class="p">],</span>
+            <span class="n">anchor_class</span><span class="o">=</span><span class="n">meta</span><span class="o">.</span><span class="n">anchor_class</span><span class="p">[</span><span class="n">cluster_id</span><span class="p">],</span>
+            <span class="n">effect_size</span><span class="o">=</span><span class="n">meta</span><span class="o">.</span><span class="n">anchor_effect_size</span><span class="p">[</span><span class="n">cluster_id</span><span class="p">],</span>
+            <span class="n">correlation</span><span class="o">=</span><span class="n">meta</span><span class="o">.</span><span class="n">cluster_correlation</span><span class="p">[</span><span class="n">cluster_id</span><span class="p">],</span>
+            <span class="n">n_classes</span><span class="o">=</span><span class="n">meta</span><span class="o">.</span><span class="n">n_classes</span><span class="p">,</span>
+        <span class="p">):</span>
             <span class="n">informative_anchor_indices</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">anchor_column</span><span class="p">)</span>
             <span class="n">informative_proxy_indices</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">proxy_columns</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>

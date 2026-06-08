@@ -97,7 +97,7 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">.effects.batch</span><span class="w"> </span><span class="kn">import</span> <span class="n">apply_batch_effects_from_config</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">.features.correlated</span><span class="w"> </span><span class="kn">import</span> <span class="n">sample_all_correlated_clusters</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">.features.informative</span><span class="w"> </span><span class="kn">import</span> <span class="n">generate_informative_features</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">.meta</span><span class="w"> </span><span class="kn">import</span> <span class="n">BatchMeta</span><span class="p">,</span> <span class="n">DatasetMeta</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.meta</span><span class="w"> </span><span class="kn">import</span> <span class="n">BatchMeta</span><span class="p">,</span> <span class="n">DatasetMeta</span><span class="p">,</span> <span class="n">_cluster_is_informative</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">.utils.sampling</span><span class="w"> </span><span class="kn">import</span> <span class="n">sample_distribution</span>
 
 
@@ -229,8 +229,15 @@
             <span class="n">anchor_name</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;feature_</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">names</span><span class="p">)</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">1</span><span class="si">}</span><span class="s2">&quot;</span>
         <span class="n">names</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">anchor_name</span><span class="p">)</span>
 
-        <span class="c1"># Mark anchor as informative if requested</span>
-        <span class="k">if</span> <span class="n">cluster_cfg</span><span class="o">.</span><span class="n">anchor_role</span> <span class="o">==</span> <span class="s2">&quot;informative&quot;</span><span class="p">:</span>
+        <span class="c1"># Mark anchor as informative when the cluster carries class-discriminative</span>
+        <span class="c1"># signal (derived from the generated mean/covariance, not the declared role).</span>
+        <span class="k">if</span> <span class="n">_cluster_is_informative</span><span class="p">(</span>
+            <span class="n">anchor_role</span><span class="o">=</span><span class="n">cluster_cfg</span><span class="o">.</span><span class="n">anchor_role</span><span class="p">,</span>
+            <span class="n">anchor_class</span><span class="o">=</span><span class="n">cluster_cfg</span><span class="o">.</span><span class="n">anchor_class</span><span class="p">,</span>
+            <span class="n">effect_size</span><span class="o">=</span><span class="n">cluster_cfg</span><span class="o">.</span><span class="n">resolve_anchor_effect_size</span><span class="p">(),</span>
+            <span class="n">correlation</span><span class="o">=</span><span class="n">cluster_cfg</span><span class="o">.</span><span class="n">correlation</span><span class="p">,</span>
+            <span class="n">n_classes</span><span class="o">=</span><span class="n">cfg</span><span class="o">.</span><span class="n">n_classes</span><span class="p">,</span>
+        <span class="p">):</span>
             <span class="n">informative_idx</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">anchor_col</span><span class="p">)</span>
 
         <span class="c1"># Name proxy features (never added to informative_idx / noise_idx)</span>
@@ -262,12 +269,12 @@
             <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">names</span><span class="p">)</span><span class="si">}</span><span class="s2"> names, but expected </span><span class="si">{</span><span class="n">total_cols</span><span class="si">}</span><span class="s2">.&quot;</span>
         <span class="p">)</span>
 
-    <span class="c1"># Informative feature count in X (anchors + free informative) must match cfg.n_informative</span>
-    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">informative_idx</span><span class="p">)</span> <span class="o">!=</span> <span class="n">cfg</span><span class="o">.</span><span class="n">n_informative</span><span class="p">:</span>
+    <span class="c1"># Informative and noise labels must never overlap.</span>
+    <span class="k">if</span> <span class="nb">set</span><span class="p">(</span><span class="n">informative_idx</span><span class="p">)</span> <span class="o">&amp;</span> <span class="nb">set</span><span class="p">(</span><span class="n">noise_idx</span><span class="p">):</span>
         <span class="k">raise</span> <span class="ne">AssertionError</span><span class="p">(</span>
-            <span class="s2">&quot;Mismatch between cfg.n_informative and resolved informative indices: &quot;</span>
-            <span class="sa">f</span><span class="s2">&quot;cfg.n_informative=</span><span class="si">{</span><span class="n">cfg</span><span class="o">.</span><span class="n">n_informative</span><span class="si">}</span><span class="s2">, but informative_idx has &quot;</span>
-            <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">informative_idx</span><span class="p">)</span><span class="si">}</span><span class="s2"> entries.&quot;</span>
+            <span class="s2">&quot;Internal inconsistency in _make_names_and_roles: informative_idx and &quot;</span>
+            <span class="s2">&quot;noise_idx must be disjoint, but share columns &quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="nb">sorted</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">informative_idx</span><span class="p">)</span><span class="w"> </span><span class="o">&amp;</span><span class="w"> </span><span class="nb">set</span><span class="p">(</span><span class="n">noise_idx</span><span class="p">))</span><span class="si">}</span><span class="s2">.&quot;</span>
         <span class="p">)</span>
 
     <span class="k">return</span> <span class="n">names</span><span class="p">,</span> <span class="n">informative_idx</span><span class="p">,</span> <span class="n">noise_idx</span><span class="p">,</span> <span class="n">cluster_indices</span><span class="p">,</span> <span class="n">anchor_idx</span>
