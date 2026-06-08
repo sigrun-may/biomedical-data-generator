@@ -513,14 +513,6 @@
     <span class="n">anchor_class</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
     <span class="n">label</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
 
-    <span class="nd">@field_validator</span><span class="p">(</span><span class="s2">&quot;n_cluster_features&quot;</span><span class="p">)</span>
-    <span class="nd">@classmethod</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">_validate_size</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">v</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Ensure cluster has at least one marker.&quot;&quot;&quot;</span>
-        <span class="k">if</span> <span class="n">v</span> <span class="o">&lt;</span> <span class="mi">2</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;n_cluster_features must be &gt;= 2, got </span><span class="si">{</span><span class="n">v</span><span class="si">}</span><span class="s2">.&quot;</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">v</span>
-
     <span class="nd">@field_validator</span><span class="p">(</span><span class="s2">&quot;correlation&quot;</span><span class="p">)</span>
     <span class="nd">@classmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">_validate_correlation</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">v</span><span class="p">,</span> <span class="n">info</span><span class="p">):</span>
