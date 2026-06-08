@@ -19,7 +19,7 @@ __all__ = ["sample_distribution"]
 
 def sample_distribution(
     distribution: DistributionType,
-    params: dict[str, Any],
+    params: dict[str, Any] | None,
     rng: np.random.Generator,
     size: tuple[int, int],
 ) -> np.ndarray:
@@ -31,8 +31,10 @@ def sample_distribution(
 
     All parameter names and values are validated in `DatasetConfig` /
     `ClassConfig` via `validate_distribution_params`, so this function
-    only dispatches to the correct RNG method.
+    only dispatches to the correct RNG method. ``None`` params resolve to an
+    empty mapping, falling back to the RNG method's own defaults.
     """
+    params = params or {}
     if distribution == "exp_normal":
         # Special case: exp of an underlying normal
         base = rng.normal(size=size, **params)
