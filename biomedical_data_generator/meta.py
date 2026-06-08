@@ -212,6 +212,67 @@ class DatasetMeta:
         return _convert(asdict(self))
 
 
+def _mapping_varies_across_classes(per_class_values, n_classes, tol=1e-9):
+    """Return whether a per-class mapping differs across classes.
+
+    Absent classes resolve to the 0.0 baseline. A scalar (non-mapping) input
+    never varies and must be guarded by the caller.
+
+    Args:
+        per_class_values: Mapping from class index to value.
+        n_classes: Number of classes to resolve over.
+        tol: Numerical tolerance for treating values as equal.
+
+    Returns:
+        True if the resolved per-class values are not all equal.
+    """
+    resolved_values = [float(per_class_values.get(class_index, 0.0)) for class_index in range(n_classes)]
+    return (max(resolved_values) - min(resolved_values)) > tol
+
+
+def _mean_varies_across_classes(anchor_role, anchor_class, effect_size):
+    """Return whether the anchor's mean location differs across classes.
+
+    An informative anchor targeting a specific class shifts only that class and
+    is discriminative; an anchor with no specific target class shifts every
+    class equally and is not.
+
+    Args:
+        anchor_role: Declared anchor role.
+        anchor_class: Target class index, or None for an untargeted shift.
+        effect_size: Resolved numeric effect size (e.g. from
+            ``CorrClusterConfig.resolve_anchor_effect_size``).
+
+    Returns:
+        True if the anchor introduces a between-class mean difference.
+    """
+    return anchor_role == "informative" and effect_size > 0.0 and anchor_class is not None
+
+
+def _cluster_is_informative(anchor_role, anchor_class, effect_size, correlation, n_classes, tol=1e-9):
+    """Derive whether a correlated cluster carries class-discriminative signal.
+
+    A cluster is informative if its mean channel varies across classes (first
+    moment) OR its within-cluster correlation varies across classes (second
+    moment / differential co-expression).
+
+    Args:
+        anchor_role: Declared anchor role.
+        anchor_class: Target class index, or None.
+        effect_size: Resolved numeric anchor effect size (e.g. from
+            ``CorrClusterConfig.resolve_anchor_effect_size``).
+        correlation: Scalar correlation or a per-class correlation mapping.
+        n_classes: Number of classes.
+        tol: Numerical tolerance for treating values as equal.
+
+    Returns:
+        True if any channel varies across classes.
+    """
+    mean_signal = _mean_varies_across_classes(anchor_role, anchor_class, effect_size)
+    covariance_signal = isinstance(correlation, dict) and _mapping_varies_across_classes(correlation, n_classes, tol)
+    return mean_signal or covariance_signal
+
+
 def compute_feature_roles(meta: DatasetMeta) -> FeatureRoles:
     """Derive the six-way generative feature-role partition from a DatasetMeta.
 
@@ -242,7 +303,13 @@ def compute_feature_roles(meta: DatasetMeta) -> FeatureRoles:
         for column in member_columns:
             cluster_membership[column] = cluster_id
 
-        if meta.anchor_role[cluster_id] == "informative":
+        if _cluster_is_informative(
+            anchor_role=meta.anchor_role[cluster_id],
+            anchor_class=meta.anchor_class[cluster_id],
+            effect_size=meta.anchor_effect_size[cluster_id],
+            correlation=meta.cluster_correlation[cluster_id],
+            n_classes=meta.n_classes,
+        ):
             informative_anchor_indices.append(anchor_column)
             informative_proxy_indices.extend(proxy_columns)
         else:
