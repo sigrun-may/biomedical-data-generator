@@ -420,14 +420,6 @@ class CorrClusterConfig(BaseModel):
     anchor_class: int | None = None
     label: str | None = None
 
-    @field_validator("n_cluster_features")
-    @classmethod
-    def _validate_size(cls, v: int) -> int:
-        """Ensure cluster has at least one marker."""
-        if v < 2:
-            raise ValueError(f"n_cluster_features must be >= 2, got {v}.")
-        return v
-
     @field_validator("correlation")
     @classmethod
     def _validate_correlation(cls, v, info):

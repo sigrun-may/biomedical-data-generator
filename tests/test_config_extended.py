@@ -202,7 +202,7 @@ def test_corr_cluster_config_single_feature_rejected():
     """A single-feature cluster is rejected: correlation is undefined for p=1."""
     from pydantic import ValidationError
 
-    with pytest.raises(ValidationError, match="n_cluster_features must be >= 2"):
+    with pytest.raises(ValidationError, match="greater than or equal to 2"):
         CorrClusterConfig(n_cluster_features=1, correlation=0.5)
 
 
