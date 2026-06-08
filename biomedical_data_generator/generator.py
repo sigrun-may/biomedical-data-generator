@@ -15,7 +15,7 @@ from .config import DatasetConfig
 from .effects.batch import apply_batch_effects_from_config
 from .features.correlated import sample_all_correlated_clusters
 from .features.informative import generate_informative_features
-from .meta import BatchMeta, DatasetMeta
+from .meta import BatchMeta, DatasetMeta, _cluster_is_informative
 from .utils.sampling import sample_distribution
 
 
@@ -147,8 +147,15 @@ def _make_names_and_roles(
             anchor_name = f"feature_{len(names) + 1}"
         names.append(anchor_name)
 
-        # Mark anchor as informative if requested
-        if cluster_cfg.anchor_role == "informative":
+        # Mark anchor as informative when the cluster carries class-discriminative
+        # signal (derived from the generated mean/covariance, not the declared role).
+        if _cluster_is_informative(
+            anchor_role=cluster_cfg.anchor_role,
+            anchor_class=cluster_cfg.anchor_class,
+            effect_size=cluster_cfg.resolve_anchor_effect_size(),
+            correlation=cluster_cfg.correlation,
+            n_classes=cfg.n_classes,
+        ):
             informative_idx.append(anchor_col)
 
         # Name proxy features (never added to informative_idx / noise_idx)
@@ -180,12 +187,12 @@ def _make_names_and_roles(
             f"{len(names)} names, but expected {total_cols}."
         )
 
-    # Informative feature count in X (anchors + free informative) must match cfg.n_informative
-    if len(informative_idx) != cfg.n_informative:
+    # Informative and noise labels must never overlap.
+    if set(informative_idx) & set(noise_idx):
         raise AssertionError(
-            "Mismatch between cfg.n_informative and resolved informative indices: "
-            f"cfg.n_informative={cfg.n_informative}, but informative_idx has "
-            f"{len(informative_idx)} entries."
+            "Internal inconsistency in _make_names_and_roles: informative_idx and "
+            "noise_idx must be disjoint, but share columns "
+            f"{sorted(set(informative_idx) & set(noise_idx))}."
         )
 
     return names, informative_idx, noise_idx, cluster_indices, anchor_idx
