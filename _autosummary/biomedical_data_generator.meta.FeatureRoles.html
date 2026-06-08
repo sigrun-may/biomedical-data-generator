@@ -110,8 +110,10 @@
 roles that the generator distinguishes. The six roles arise from two
 orthogonal distinctions:</p>
 <ul class="simple">
-<li><p><strong>Signal</strong> – <em>informative</em> features encode a class mean shift, <em>noise</em>
-features do not.</p></li>
+<li><p><strong>Signal</strong> – a feature is <em>informative</em> when its cluster carries
+class-discriminative signal through <strong>either</strong> a class-dependent mean
+shift <strong>or</strong> a class-dependent within-cluster correlation (differential
+co-expression); <em>noise</em> features carry neither.</p></li>
 <li><p><strong>Cluster membership</strong> – a <em>free</em> feature is independent and belongs to
 no cluster. Within a correlated cluster, the lead column is the <em>anchor</em>
 (the only column shifted directly), and every other member is a <em>proxy</em>
@@ -150,9 +152,10 @@ shift on their own.</p>
 <dl class="py attribute">
 <dt class="sig sig-object py" id="biomedical_data_generator.meta.FeatureRoles.informative_anchor_indices">
 <span class="sig-name descname"><span class="pre">informative_anchor_indices</span></span><a class="headerlink" href="#biomedical_data_generator.meta.FeatureRoles.informative_anchor_indices" title="Link to this definition"></a></dt>
-<dd><p>List of column indices of cluster anchors whose <code class="docutils literal notranslate"><span class="pre">anchor_role</span></code> is
-<code class="docutils literal notranslate"><span class="pre">&quot;informative&quot;</span></code>. Anchors receive the class-specific mean shift
-and seed the within-cluster correlation shared by their proxies.</p>
+<dd><p>List of column indices of anchors of clusters <strong>derived</strong> to carry
+class-discriminative signal (through the mean or the covariance
+channel), independent of the declared <code class="docutils literal notranslate"><span class="pre">anchor_role</span></code>. Such anchors
+seed the within-cluster correlation shared by their proxies.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type<span class="colon">:</span></dt>
 <dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.14)">list</a>[<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)">int</a>]</p>
@@ -163,13 +166,12 @@ and seed the within-cluster correlation shared by their proxies.</p>
 <dl class="py attribute">
 <dt class="sig sig-object py" id="biomedical_data_generator.meta.FeatureRoles.informative_proxy_indices">
 <span class="sig-name descname"><span class="pre">informative_proxy_indices</span></span><a class="headerlink" href="#biomedical_data_generator.meta.FeatureRoles.informative_proxy_indices" title="Link to this definition"></a></dt>
-<dd><p>List of column indices of proxy members in informative clusters
-(non-anchor members). Proxies do not receive a direct mean shift
-but inherit an attenuated signal through their correlation with
-the informative anchor. The degree of attenuation follows the
-cluster’s correlation structure — roughly uniform for
-equicorrelated clusters and decaying with distance from the anchor
-for Toeplitz clusters.</p>
+<dd><p>List of column indices of proxy members (non-anchor members) in
+clusters derived informative. Proxies do not receive a direct mean
+shift but inherit an attenuated signal through their correlation
+with the anchor. The degree of attenuation follows the cluster’s
+correlation structure — roughly uniform for equicorrelated clusters
+and decaying with distance from the anchor for Toeplitz clusters.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type<span class="colon">:</span></dt>
 <dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.14)">list</a>[<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)">int</a>]</p>
@@ -193,9 +195,11 @@ class-discriminating signal.</p>
 <dl class="py attribute">
 <dt class="sig sig-object py" id="biomedical_data_generator.meta.FeatureRoles.noise_anchor_indices">
 <span class="sig-name descname"><span class="pre">noise_anchor_indices</span></span><a class="headerlink" href="#biomedical_data_generator.meta.FeatureRoles.noise_anchor_indices" title="Link to this definition"></a></dt>
-<dd><p>List of column indices of cluster anchors whose <code class="docutils literal notranslate"><span class="pre">anchor_role</span></code> is
-<code class="docutils literal notranslate"><span class="pre">&quot;noise&quot;</span></code>. Noise anchors seed a within-cluster correlation but
-do not receive a class-specific mean shift.</p>
+<dd><p>List of column indices of anchors of clusters derived to carry
+<strong>no</strong> class-discriminative signal (neither a class-dependent mean
+shift nor a class-dependent within-cluster correlation), independent
+of the declared <code class="docutils literal notranslate"><span class="pre">anchor_role</span></code>. They seed a within-cluster
+correlation that is identical across classes.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type<span class="colon">:</span></dt>
 <dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.14)">list</a>[<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)">int</a>]</p>
@@ -206,9 +210,9 @@ do not receive a class-specific mean shift.</p>
 <dl class="py attribute">
 <dt class="sig sig-object py" id="biomedical_data_generator.meta.FeatureRoles.noise_proxy_indices">
 <span class="sig-name descname"><span class="pre">noise_proxy_indices</span></span><a class="headerlink" href="#biomedical_data_generator.meta.FeatureRoles.noise_proxy_indices" title="Link to this definition"></a></dt>
-<dd><p>List of column indices of proxy members in noise clusters
-(non-anchor members) that are correlated with their noise anchor
-and form purely structural, signal-free correlated blocks.</p>
+<dd><p>List of column indices of proxy members (non-anchor members) in
+clusters derived noise. They are correlated with their anchor and
+form purely structural, signal-free correlated blocks.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type<span class="colon">:</span></dt>
 <dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.14)">list</a>[<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)">int</a>]</p>

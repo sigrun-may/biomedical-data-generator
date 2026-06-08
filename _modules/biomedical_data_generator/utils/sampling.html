@@ -103,7 +103,7 @@
 <a class="viewcode-back" href="../../../_autosummary/biomedical_data_generator.utils.sampling.html#biomedical_data_generator.utils.sampling.sample_distribution">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">sample_distribution</span><span class="p">(</span>
     <span class="n">distribution</span><span class="p">:</span> <span class="n">DistributionType</span><span class="p">,</span>
-    <span class="n">params</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">],</span>
+    <span class="n">params</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">rng</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">Generator</span><span class="p">,</span>
     <span class="n">size</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">],</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
@@ -115,8 +115,10 @@
 
 <span class="sd">    All parameter names and values are validated in `DatasetConfig` /</span>
 <span class="sd">    `ClassConfig` via `validate_distribution_params`, so this function</span>
-<span class="sd">    only dispatches to the correct RNG method.</span>
+<span class="sd">    only dispatches to the correct RNG method. ``None`` params resolve to an</span>
+<span class="sd">    empty mapping, falling back to the RNG method&#39;s own defaults.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">params</span> <span class="o">=</span> <span class="n">params</span> <span class="ow">or</span> <span class="p">{}</span>
     <span class="k">if</span> <span class="n">distribution</span> <span class="o">==</span> <span class="s2">&quot;exp_normal&quot;</span><span class="p">:</span>
         <span class="c1"># Special case: exp of an underlying normal</span>
         <span class="n">base</span> <span class="o">=</span> <span class="n">rng</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="n">size</span><span class="p">,</span> <span class="o">**</span><span class="n">params</span><span class="p">)</span>
