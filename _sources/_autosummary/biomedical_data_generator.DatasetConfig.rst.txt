@@ -15,6 +15,7 @@
    
       ~DatasetConfig.__init__
       ~DatasetConfig.breakdown
+      ~DatasetConfig.cluster_column_informative_flags
       ~DatasetConfig.cluster_informative_flags
       ~DatasetConfig.construct
       ~DatasetConfig.copy

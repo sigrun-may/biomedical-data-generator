@@ -108,11 +108,15 @@
 <p>The partition is reconstructed purely from the structural block ranges that
 the generator records on <code class="docutils literal notranslate"><span class="pre">meta</span></code> (the per-group standalone-informative
 column indices, the standalone-noise column range, each cluster’s columns,
-and its structural anchor column) together with the per-cluster channel mappings. Each cluster’s
-relevance is <strong>derived</strong> from the generated signal — a class-dependent mean
-shift or a class-dependent within-cluster correlation (differential
-co-expression) — never read from a declared role. No feature matrix is
-required.</p>
+and its structural anchor column) together with the per-cluster channel
+mappings. Relevance is <strong>derived per column</strong>, not per cluster: a cluster
+column is informative iff it carries a class-dependent mean shift (the
+anchor’s shift, or a proxy’s attenuated propagation) or participates in a
+class-dependent within-cluster correlation — never read from a declared role.
+Because the predicate is per column, a single cluster may be split across
+informative and noise roles (an informative anchor with noise proxies is
+expected for a mean-only cluster with zero within-cluster correlation). No
+feature matrix is required.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><p><strong>meta</strong> (<a class="reference internal" href="biomedical_data_generator.meta.DatasetMeta.html#biomedical_data_generator.meta.DatasetMeta" title="biomedical_data_generator.meta.DatasetMeta"><em>DatasetMeta</em></a>) – Resolved dataset metadata produced by

@@ -96,7 +96,7 @@
 <span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ConfigDict</span><span class="p">,</span> <span class="n">Field</span><span class="p">,</span> <span class="n">field_validator</span><span class="p">,</span> <span class="n">model_validator</span>
 
-<span class="kn">from</span><span class="w"> </span><span class="nn">.meta</span><span class="w"> </span><span class="kn">import</span> <span class="n">_cluster_is_informative</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.meta</span><span class="w"> </span><span class="kn">import</span> <span class="n">_cluster_column_carries_signal</span><span class="p">,</span> <span class="n">_cluster_is_informative</span>
 
 <span class="n">DistributionType</span> <span class="o">=</span> <span class="n">Literal</span><span class="p">[</span>
     <span class="s2">&quot;normal&quot;</span><span class="p">,</span>
@@ -956,6 +956,45 @@
         <span class="k">return</span> <span class="n">flags</span></div>
 
 
+<div class="viewcode-block" id="DatasetConfig.cluster_column_informative_flags">
+<a class="viewcode-back" href="../../_autosummary/biomedical_data_generator.config.DatasetConfig.html#biomedical_data_generator.DatasetConfig.cluster_column_informative_flags">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">cluster_column_informative_flags</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">list</span><span class="p">[</span><span class="nb">bool</span><span class="p">]]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Per-column booleans: whether each cluster column is *derived* informative.</span>
+
+<span class="sd">        The per-column refinement of :meth:`cluster_informative_flags`. Relevance</span>
+<span class="sd">        is derived per column from the channel mappings via the shared predicate,</span>
+<span class="sd">        never declared. A cluster column is informative iff it carries a</span>
+<span class="sd">        class-dependent mean shift (the anchor&#39;s shift, or a proxy&#39;s attenuated</span>
+<span class="sd">        propagation) or participates in a class-dependent within-cluster</span>
+<span class="sd">        correlation. A single cluster may therefore split across informative and</span>
+<span class="sd">        noise roles (e.g. an informative anchor with noise proxies).</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            One inner list per cluster, in ``corr_clusters`` order, with one</span>
+<span class="sd">            boolean per column (anchor and proxies) in block-column order.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">flags</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">list</span><span class="p">[</span><span class="nb">bool</span><span class="p">]]</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">cluster</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">corr_clusters</span> <span class="ow">or</span> <span class="p">[]:</span>
+            <span class="n">mean_per_class</span> <span class="o">=</span> <span class="n">cluster</span><span class="o">.</span><span class="n">mean_channel</span><span class="o">.</span><span class="n">per_class_effect</span> <span class="k">if</span> <span class="n">cluster</span><span class="o">.</span><span class="n">mean_channel</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="kc">None</span>
+            <span class="n">covariance_per_class</span> <span class="o">=</span> <span class="p">(</span>
+                <span class="n">cluster</span><span class="o">.</span><span class="n">covariance_channel</span><span class="o">.</span><span class="n">per_class_correlation</span> <span class="k">if</span> <span class="n">cluster</span><span class="o">.</span><span class="n">covariance_channel</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="kc">None</span>
+            <span class="p">)</span>
+            <span class="n">cluster_flags</span> <span class="o">=</span> <span class="p">[</span>
+                <span class="n">_cluster_column_carries_signal</span><span class="p">(</span>
+                    <span class="n">mean_per_class</span><span class="o">=</span><span class="n">mean_per_class</span><span class="p">,</span>
+                    <span class="n">covariance_per_class</span><span class="o">=</span><span class="n">covariance_per_class</span><span class="p">,</span>
+                    <span class="n">baseline_correlation</span><span class="o">=</span><span class="n">cluster</span><span class="o">.</span><span class="n">baseline_correlation</span><span class="p">,</span>
+                    <span class="n">correlation_structure</span><span class="o">=</span><span class="n">cluster</span><span class="o">.</span><span class="n">correlation_structure</span><span class="p">,</span>
+                    <span class="n">proxy_attenuation</span><span class="o">=</span><span class="n">cluster</span><span class="o">.</span><span class="n">proxy_attenuation</span><span class="p">,</span>
+                    <span class="n">distance</span><span class="o">=</span><span class="nb">abs</span><span class="p">(</span><span class="n">position</span> <span class="o">-</span> <span class="n">cluster</span><span class="o">.</span><span class="n">anchor_index</span><span class="p">),</span>
+                    <span class="n">n_classes</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">n_classes</span><span class="p">,</span>
+                <span class="p">)</span>
+                <span class="k">for</span> <span class="n">position</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">cluster</span><span class="o">.</span><span class="n">n_cluster_features</span><span class="p">)</span>
+            <span class="p">]</span>
+            <span class="n">flags</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">cluster_flags</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">flags</span></div>
+
+
     <span class="nd">@property</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">n_standalone_informative</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Derived count of standalone (cluster-free) informative features.</span>
@@ -971,11 +1010,8 @@
 <span class="sd">        Standalone informative features plus all members of clusters that the</span>
 <span class="sd">        signal predicate marks informative.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">clusters</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">corr_clusters</span> <span class="ow">or</span> <span class="p">[]</span>
         <span class="n">cluster_informative</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span>
-            <span class="nb">int</span><span class="p">(</span><span class="n">cluster</span><span class="o">.</span><span class="n">n_cluster_features</span><span class="p">)</span>
-            <span class="k">for</span> <span class="n">cluster</span><span class="p">,</span> <span class="n">is_informative</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">clusters</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">cluster_informative_flags</span><span class="p">(),</span> <span class="n">strict</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-            <span class="k">if</span> <span class="n">is_informative</span>
+            <span class="nb">sum</span><span class="p">(</span><span class="n">column_flags</span><span class="p">)</span> <span class="k">for</span> <span class="n">column_flags</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">cluster_column_informative_flags</span><span class="p">()</span>
         <span class="p">)</span>
         <span class="k">return</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">n_standalone_informative</span> <span class="o">+</span> <span class="n">cluster_informative</span><span class="p">)</span>
 

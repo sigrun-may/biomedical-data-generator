@@ -129,11 +129,12 @@
 <span class="sd">      columns (anchor at ``anchor_index``, the others proxies),</span>
 <span class="sd">    * ``x_standalone_noise`` contains only standalone noise features.</span>
 
-<span class="sd">    Relevance is derived per cluster from its channels (via the shared</span>
-<span class="sd">    predicate, exposed as :meth:`DatasetConfig.cluster_informative_flags`): a</span>
-<span class="sd">    derived-informative cluster contributes all its columns to ``informative_idx``;</span>
-<span class="sd">    a derived-noise cluster contributes all its columns to ``noise_idx``. The two</span>
-<span class="sd">    index lists are therefore an exhaustive, disjoint two-way partition.</span>
+<span class="sd">    Relevance is derived **per column** from each cluster&#39;s channels (via the</span>
+<span class="sd">    shared predicate, exposed as</span>
+<span class="sd">    :meth:`DatasetConfig.cluster_column_informative_flags`): each cluster column</span>
+<span class="sd">    goes to ``informative_idx`` or ``noise_idx`` according to whether it carries</span>
+<span class="sd">    signal, so a single cluster may contribute columns to both. The two index</span>
+<span class="sd">    lists are nonetheless an exhaustive, disjoint two-way partition.</span>
 
 <span class="sd">    Args:</span>
 <span class="sd">        cfg: Resolved :class:`DatasetConfig` used for generation.</span>
@@ -198,7 +199,7 @@
     <span class="c1"># -------------------------------------------------------------</span>
     <span class="c1"># 2) Correlated clusters: one contiguous block per CorrClusterConfig.</span>
     <span class="c1"># -------------------------------------------------------------</span>
-    <span class="n">informative_flags</span> <span class="o">=</span> <span class="n">cfg</span><span class="o">.</span><span class="n">cluster_informative_flags</span><span class="p">()</span>
+    <span class="n">column_flags</span> <span class="o">=</span> <span class="n">cfg</span><span class="o">.</span><span class="n">cluster_column_informative_flags</span><span class="p">()</span>
     <span class="n">current</span> <span class="o">=</span> <span class="n">n_inf_cols</span>
     <span class="k">for</span> <span class="n">cid</span><span class="p">,</span> <span class="n">cluster_cfg</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">clusters</span><span class="p">):</span>
         <span class="n">k</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">cluster_cfg</span><span class="o">.</span><span class="n">n_cluster_features</span><span class="p">)</span>
@@ -206,7 +207,7 @@
         <span class="n">cluster_indices</span><span class="p">[</span><span class="n">cid</span><span class="p">]</span> <span class="o">=</span> <span class="n">cols</span>
         <span class="n">anchor_idx</span><span class="p">[</span><span class="n">cid</span><span class="p">]</span> <span class="o">=</span> <span class="n">current</span> <span class="o">+</span> <span class="n">cluster_cfg</span><span class="o">.</span><span class="n">anchor_index</span>
 
-        <span class="k">for</span> <span class="n">position</span><span class="p">,</span> <span class="n">_col</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">cols</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">position</span><span class="p">,</span> <span class="n">col</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">cols</span><span class="p">):</span>
             <span class="k">if</span> <span class="n">cfg</span><span class="o">.</span><span class="n">prefixed_feature_naming</span><span class="p">:</span>
                 <span class="k">if</span> <span class="n">position</span> <span class="o">==</span> <span class="n">cluster_cfg</span><span class="o">.</span><span class="n">anchor_index</span><span class="p">:</span>
                     <span class="n">names</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">cfg</span><span class="o">.</span><span class="n">prefix_corr</span><span class="si">}{</span><span class="n">cid</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">1</span><span class="si">}</span><span class="s2">_anchor&quot;</span><span class="p">)</span>
@@ -215,11 +216,11 @@
             <span class="k">else</span><span class="p">:</span>
                 <span class="n">names</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;feature_</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">names</span><span class="p">)</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">1</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
 
-        <span class="c1"># Derived relevance assigns the whole cluster to one side of the partition.</span>
-        <span class="k">if</span> <span class="n">informative_flags</span><span class="p">[</span><span class="n">cid</span><span class="p">]:</span>
-            <span class="n">informative_idx</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">cols</span><span class="p">)</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="n">noise_idx</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">cols</span><span class="p">)</span>
+            <span class="c1"># Derived relevance is per column: a cluster may split across roles.</span>
+            <span class="k">if</span> <span class="n">column_flags</span><span class="p">[</span><span class="n">cid</span><span class="p">][</span><span class="n">position</span><span class="p">]:</span>
+                <span class="n">informative_idx</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">col</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">noise_idx</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">col</span><span class="p">)</span>
 
         <span class="n">current</span> <span class="o">+=</span> <span class="n">k</span>
 

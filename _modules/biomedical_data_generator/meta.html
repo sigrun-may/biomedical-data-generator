@@ -97,13 +97,17 @@
 <span class="sd">* :func:`compute_feature_strengths` returns the per-feature signal-strength</span>
 <span class="sd">  annotation, including the set of active signal *channels* per feature.</span>
 
-<span class="sd">Both are grounded in the **same** predicate, ``_cluster_is_informative`` (the</span>
-<span class="sd">mean channel varies across classes OR the within-cluster correlation varies</span>
-<span class="sd">across classes). Consequently the two derivations must agree: a feature is</span>
-<span class="sd">placed in an informative role by :func:`compute_feature_roles` **iff**</span>
-<span class="sd">:func:`compute_feature_strengths` reports a non-empty ``signal_channels`` tuple</span>
-<span class="sd">for it, and a noise role iff its channels are empty. They are two views of one</span>
-<span class="sd">predicate, not independent computations.</span>
+<span class="sd">Both are grounded in the **same** per-column predicate,</span>
+<span class="sd">``_cluster_column_carries_signal`` (the column carries a class-dependent mean</span>
+<span class="sd">shift -- the anchor&#39;s shift or a proxy&#39;s attenuated propagation -- OR</span>
+<span class="sd">participates in a class-dependent within-cluster correlation). Consequently the</span>
+<span class="sd">two derivations must agree **per column**: a feature is placed in an informative</span>
+<span class="sd">role by :func:`compute_feature_roles` **iff** :func:`compute_feature_strengths`</span>
+<span class="sd">reports a non-empty ``signal_channels`` tuple for it, and a noise role iff its</span>
+<span class="sd">channels are empty. They are two views of one predicate, not independent</span>
+<span class="sd">computations. Because the predicate is per column, a single cluster may split</span>
+<span class="sd">across roles -- a mean-only cluster with zero within-cluster correlation yields</span>
+<span class="sd">an informative anchor and noise proxies.</span>
 <span class="sd">&quot;&quot;&quot;</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">annotations</span>
 
@@ -198,10 +202,13 @@
 <span class="sd">    roles that the generator distinguishes. The six roles arise from two</span>
 <span class="sd">    orthogonal distinctions:</span>
 
-<span class="sd">    * **Signal** -- a feature is *informative* when its cluster carries</span>
-<span class="sd">      class-discriminative signal through **either** a class-dependent mean</span>
-<span class="sd">      shift **or** a class-dependent within-cluster correlation (differential</span>
-<span class="sd">      co-expression); *noise* features carry neither.</span>
+<span class="sd">    * **Signal** -- relevance is derived **per column**: a feature is</span>
+<span class="sd">      *informative* when it carries class-discriminative signal through</span>
+<span class="sd">      **either** a class-dependent mean shift (the anchor&#39;s shift, or a proxy&#39;s</span>
+<span class="sd">      attenuated propagation) **or** a class-dependent within-cluster correlation</span>
+<span class="sd">      (differential co-expression); *noise* features carry neither. Because the</span>
+<span class="sd">      predicate is per column, a single cluster may contribute columns to both</span>
+<span class="sd">      informative and noise roles.</span>
 <span class="sd">    * **Cluster membership** -- a *standalone* feature is independent and belongs</span>
 <span class="sd">      to no cluster. Within a correlated cluster, the structural anchor column is</span>
 <span class="sd">      the only column shifted directly, and every other member is a *proxy*</span>
@@ -218,31 +225,39 @@
 <span class="sd">            correlated cluster and therefore carry a class-separating mean</span>
 <span class="sd">            shift on their own.</span>
 <span class="sd">        informative_anchor_indices:</span>
-<span class="sd">            List of column indices of anchors of clusters **derived** to carry</span>
-<span class="sd">            class-discriminative signal: the cluster is informative iff its mean</span>
+<span class="sd">            List of column indices of anchors **derived** per column to carry</span>
+<span class="sd">            class-discriminative signal: an anchor is informative iff its mean</span>
 <span class="sd">            channel varies across classes or its within-cluster correlation varies</span>
 <span class="sd">            across classes. Such anchors seed the within-cluster correlation</span>
 <span class="sd">            shared by their proxies.</span>
 <span class="sd">        informative_proxy_indices:</span>
-<span class="sd">            List of column indices of proxy members (non-anchor members) in</span>
-<span class="sd">            clusters derived informative. Proxies do not receive a direct mean</span>
-<span class="sd">            shift but inherit an attenuated signal through their correlation</span>
-<span class="sd">            with the anchor. The degree of attenuation follows the cluster&#39;s</span>
-<span class="sd">            correlation structure — roughly uniform for equicorrelated clusters</span>
-<span class="sd">            and decaying with distance from the anchor for Toeplitz clusters.</span>
+<span class="sd">            List of column indices of proxy members (non-anchor members) derived</span>
+<span class="sd">            per column to carry signal. A proxy is informative only when it</span>
+<span class="sd">            inherits a nonzero attenuated mean shift **or** participates in a</span>
+<span class="sd">            class-varying within-cluster correlation. The degree of mean</span>
+<span class="sd">            attenuation follows the cluster&#39;s correlation structure — roughly</span>
+<span class="sd">            uniform for equicorrelated clusters and decaying with distance from</span>
+<span class="sd">            the anchor for Toeplitz clusters. A proxy whose attenuated shift is</span>
+<span class="sd">            zero and whose correlation is class-uniform is a *noise* proxy</span>
+<span class="sd">            instead, so a single cluster may contribute to both proxy roles (for</span>
+<span class="sd">            example, a mean-only cluster with zero within-cluster correlation</span>
+<span class="sd">            yields an informative anchor and noise proxies).</span>
 <span class="sd">        standalone_noise_indices:</span>
 <span class="sd">            List of column indices for standalone noise features. These are</span>
 <span class="sd">            independent noise features outside any cluster and carry no</span>
 <span class="sd">            class-discriminating signal.</span>
 <span class="sd">        noise_anchor_indices:</span>
-<span class="sd">            List of column indices of anchors of clusters derived to carry</span>
-<span class="sd">            **no** class-discriminative signal: neither the mean channel nor the</span>
+<span class="sd">            List of column indices of anchors derived per column to carry **no**</span>
+<span class="sd">            class-discriminative signal: neither the mean channel nor the</span>
 <span class="sd">            within-cluster correlation varies across classes. They seed a</span>
 <span class="sd">            within-cluster correlation that is identical across classes.</span>
 <span class="sd">        noise_proxy_indices:</span>
-<span class="sd">            List of column indices of proxy members (non-anchor members) in</span>
-<span class="sd">            clusters derived noise. They are correlated with their anchor and</span>
-<span class="sd">            form purely structural, signal-free correlated blocks.</span>
+<span class="sd">            List of column indices of proxy members (non-anchor members) derived</span>
+<span class="sd">            per column to carry no signal: their attenuated mean shift is zero and</span>
+<span class="sd">            their within-cluster correlation is class-uniform. They are correlated</span>
+<span class="sd">            with their anchor and form purely structural, signal-free correlated</span>
+<span class="sd">            blocks. A noise proxy may sit in the same cluster as an informative</span>
+<span class="sd">            anchor.</span>
 <span class="sd">        cluster_membership:</span>
 <span class="sd">            Mapping from ``column_index`` to ``cluster_id`` for every column</span>
 <span class="sd">            that belongs to a correlated cluster.</span>
@@ -484,6 +499,98 @@
     <span class="k">return</span> <span class="n">mean_signal</span> <span class="ow">or</span> <span class="n">covariance_signal</span>
 
 
+<span class="k">def</span><span class="w"> </span><span class="nf">_cluster_column_strengths</span><span class="p">(</span>
+    <span class="n">mean_per_class</span><span class="p">,</span>
+    <span class="n">covariance_per_class</span><span class="p">,</span>
+    <span class="n">baseline_correlation</span><span class="p">,</span>
+    <span class="n">correlation_structure</span><span class="p">,</span>
+    <span class="n">proxy_attenuation</span><span class="p">,</span>
+    <span class="n">distance</span><span class="p">,</span>
+    <span class="n">n_classes</span><span class="p">,</span>
+<span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Resolve one cluster column&#39;s (mean_strength, covariance_strength).</span>
+
+<span class="sd">    The covariance strength is the range of the effective per-class within-cluster</span>
+<span class="sd">    correlation and is shared by every column of the cluster. The mean strength is</span>
+<span class="sd">    the anchor&#39;s mean-channel range when ``distance == 0`` (the anchor), otherwise</span>
+<span class="sd">    the range of the attenuated per-class offset propagated to the proxy.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        mean_per_class: Per-class mean-shift mapping, or None.</span>
+<span class="sd">        covariance_per_class: Per-class within-cluster correlation mapping, or None.</span>
+<span class="sd">        baseline_correlation: Structural correlation for classes absent from the</span>
+<span class="sd">            covariance mapping.</span>
+<span class="sd">        correlation_structure: ``&quot;equicorrelated&quot;`` or ``&quot;toeplitz&quot;``.</span>
+<span class="sd">        proxy_attenuation: Neutral multiplier on the propagated proxy offset.</span>
+<span class="sd">        distance: Structural distance from the anchor; 0 for the anchor itself.</span>
+<span class="sd">        n_classes: Number of classes.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        The tuple ``(mean_strength, covariance_strength)`` for the column.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">covariance_strength</span> <span class="o">=</span> <span class="n">_range_across_classes</span><span class="p">(</span>
+        <span class="n">covariance_per_class</span> <span class="k">if</span> <span class="n">covariance_per_class</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="p">{},</span>
+        <span class="n">n_classes</span><span class="p">,</span>
+        <span class="n">baseline_correlation</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="k">if</span> <span class="n">distance</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">mean_strength</span> <span class="o">=</span> <span class="n">_range_across_classes</span><span class="p">(</span>
+            <span class="n">mean_per_class</span> <span class="k">if</span> <span class="n">mean_per_class</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="p">{},</span> <span class="n">n_classes</span><span class="p">,</span> <span class="mf">0.0</span>
+        <span class="p">)</span>
+        <span class="k">return</span> <span class="n">mean_strength</span><span class="p">,</span> <span class="n">covariance_strength</span>
+
+    <span class="n">proxy_per_class_offset</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">for</span> <span class="n">class_index</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_classes</span><span class="p">):</span>
+        <span class="n">anchor_offset</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span>
+            <span class="p">(</span><span class="n">mean_per_class</span> <span class="k">if</span> <span class="n">mean_per_class</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="p">{})</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">class_index</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">)</span>
+        <span class="p">)</span>
+        <span class="n">effective_correlation</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="n">covariance_per_class</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">class_index</span><span class="p">,</span> <span class="n">baseline_correlation</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">covariance_per_class</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+            <span class="k">else</span> <span class="n">baseline_correlation</span>
+        <span class="p">)</span>
+        <span class="n">propagated_offset</span> <span class="o">=</span> <span class="n">_proxy_mean_offset</span><span class="p">(</span>
+            <span class="n">anchor_per_class_offset</span><span class="o">=</span><span class="n">anchor_offset</span><span class="p">,</span>
+            <span class="n">distance</span><span class="o">=</span><span class="n">distance</span><span class="p">,</span>
+            <span class="n">correlation_structure</span><span class="o">=</span><span class="n">correlation_structure</span><span class="p">,</span>
+            <span class="n">effective_per_class_correlation</span><span class="o">=</span><span class="n">effective_correlation</span><span class="p">,</span>
+            <span class="n">proxy_attenuation</span><span class="o">=</span><span class="n">proxy_attenuation</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="k">if</span> <span class="n">propagated_offset</span> <span class="o">!=</span> <span class="mf">0.0</span><span class="p">:</span>
+            <span class="n">proxy_per_class_offset</span><span class="p">[</span><span class="n">class_index</span><span class="p">]</span> <span class="o">=</span> <span class="n">propagated_offset</span>
+    <span class="n">mean_strength</span> <span class="o">=</span> <span class="n">_range_across_classes</span><span class="p">(</span><span class="n">proxy_per_class_offset</span><span class="p">,</span> <span class="n">n_classes</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">mean_strength</span><span class="p">,</span> <span class="n">covariance_strength</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_cluster_column_carries_signal</span><span class="p">(</span>
+    <span class="n">mean_per_class</span><span class="p">,</span>
+    <span class="n">covariance_per_class</span><span class="p">,</span>
+    <span class="n">baseline_correlation</span><span class="p">,</span>
+    <span class="n">correlation_structure</span><span class="p">,</span>
+    <span class="n">proxy_attenuation</span><span class="p">,</span>
+    <span class="n">distance</span><span class="p">,</span>
+    <span class="n">n_classes</span><span class="p">,</span>
+    <span class="n">tol</span><span class="o">=</span><span class="mf">1e-9</span><span class="p">,</span>
+<span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Whether one cluster column carries class-discriminative signal.</span>
+
+<span class="sd">    The per-column form of :func:`_cluster_is_informative`: True iff the column&#39;s</span>
+<span class="sd">    mean strength or covariance strength exceeds ``tol``. This is the single</span>
+<span class="sd">    predicate shared by role assignment, the derived feature counts, and the</span>
+<span class="sd">    per-feature strength annotation.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">mean_strength</span><span class="p">,</span> <span class="n">covariance_strength</span> <span class="o">=</span> <span class="n">_cluster_column_strengths</span><span class="p">(</span>
+        <span class="n">mean_per_class</span><span class="p">,</span>
+        <span class="n">covariance_per_class</span><span class="p">,</span>
+        <span class="n">baseline_correlation</span><span class="p">,</span>
+        <span class="n">correlation_structure</span><span class="p">,</span>
+        <span class="n">proxy_attenuation</span><span class="p">,</span>
+        <span class="n">distance</span><span class="p">,</span>
+        <span class="n">n_classes</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="k">return</span> <span class="n">mean_strength</span> <span class="o">&gt;</span> <span class="n">tol</span> <span class="ow">or</span> <span class="n">covariance_strength</span> <span class="o">&gt;</span> <span class="n">tol</span>
+
+
 <span class="k">def</span><span class="w"> </span><span class="nf">compute_feature_strengths</span><span class="p">(</span><span class="n">meta</span><span class="p">:</span> <span class="n">DatasetMeta</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">FeatureStrengths</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Derive per-feature signal strengths from a DatasetMeta.</span>
 
@@ -492,10 +599,13 @@
 <span class="sd">    within-cluster correlation), and signal_channels (the active channels per</span>
 <span class="sd">    feature).</span>
 
-<span class="sd">    A feature carries a signal iff at least one channel is active. The predicate</span>
-<span class="sd">    on channels agrees with :func:`compute_feature_roles` — a feature is placed</span>
-<span class="sd">    in an informative role iff its channels are non-empty, and in a noise role</span>
-<span class="sd">    iff its channels are empty.</span>
+<span class="sd">    A feature carries a signal iff at least one channel is active. Cluster</span>
+<span class="sd">    columns are resolved one at a time via :func:`_cluster_column_strengths`</span>
+<span class="sd">    (keyed on the column&#39;s structural distance from its anchor), so the predicate</span>
+<span class="sd">    on channels agrees with :func:`compute_feature_roles` **per column** — a</span>
+<span class="sd">    feature is placed in an informative role iff its channels are non-empty, and</span>
+<span class="sd">    in a noise role iff its channels are empty. A single cluster may therefore</span>
+<span class="sd">    yield both kinds of column.</span>
 
 <span class="sd">    Args:</span>
 <span class="sd">        meta: Resolved dataset metadata produced by</span>
@@ -510,63 +620,34 @@
     <span class="n">signal_channels_list</span> <span class="o">=</span> <span class="p">[]</span>
     <span class="n">tol</span> <span class="o">=</span> <span class="mf">1e-9</span>
 
+    <span class="n">standalone_group_columns</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="n">c</span> <span class="k">for</span> <span class="n">group</span> <span class="ow">in</span> <span class="n">meta</span><span class="o">.</span><span class="n">standalone_informative_groups</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">group</span><span class="o">.</span><span class="n">column_indices</span>
+    <span class="p">}</span>
+
     <span class="k">for</span> <span class="n">column_idx</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_features</span><span class="p">):</span>
         <span class="n">mean_str</span> <span class="o">=</span> <span class="mf">0.0</span>
         <span class="n">covar_str</span> <span class="o">=</span> <span class="mf">0.0</span>
         <span class="n">channels</span> <span class="o">=</span> <span class="p">[]</span>
 
-        <span class="k">if</span> <span class="n">column_idx</span> <span class="ow">in</span> <span class="n">meta</span><span class="o">.</span><span class="n">informative_idx</span> <span class="ow">and</span> <span class="n">column_idx</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">[</span>
-            <span class="n">c</span> <span class="k">for</span> <span class="n">group</span> <span class="ow">in</span> <span class="n">meta</span><span class="o">.</span><span class="n">standalone_informative_groups</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">group</span><span class="o">.</span><span class="n">column_indices</span>
-        <span class="p">]:</span>
-            <span class="n">cluster_id</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="n">cluster_id</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">if</span> <span class="n">column_idx</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">standalone_group_columns</span><span class="p">:</span>
             <span class="k">for</span> <span class="n">cid</span><span class="p">,</span> <span class="n">members</span> <span class="ow">in</span> <span class="n">meta</span><span class="o">.</span><span class="n">corr_cluster_indices</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
                 <span class="k">if</span> <span class="n">column_idx</span> <span class="ow">in</span> <span class="n">members</span><span class="p">:</span>
                     <span class="n">cluster_id</span> <span class="o">=</span> <span class="n">cid</span>
                     <span class="k">break</span>
 
-            <span class="k">if</span> <span class="n">cluster_id</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-                <span class="n">anchor_col</span> <span class="o">=</span> <span class="n">meta</span><span class="o">.</span><span class="n">anchor_idx</span><span class="p">[</span><span class="n">cluster_id</span><span class="p">]</span>
-                <span class="n">mean_per_class</span> <span class="o">=</span> <span class="n">meta</span><span class="o">.</span><span class="n">mean_per_class_effect</span><span class="p">[</span><span class="n">cluster_id</span><span class="p">]</span>
-                <span class="n">covariance_per_class</span> <span class="o">=</span> <span class="n">meta</span><span class="o">.</span><span class="n">covariance_per_class_correlation</span><span class="p">[</span><span class="n">cluster_id</span><span class="p">]</span>
-                <span class="n">baseline_corr</span> <span class="o">=</span> <span class="n">meta</span><span class="o">.</span><span class="n">baseline_correlation</span><span class="p">[</span><span class="n">cluster_id</span><span class="p">]</span>
-                <span class="n">structure</span> <span class="o">=</span> <span class="n">meta</span><span class="o">.</span><span class="n">cluster_structure</span><span class="p">[</span><span class="n">cluster_id</span><span class="p">]</span>
-                <span class="n">proxy_attenuation</span> <span class="o">=</span> <span class="n">meta</span><span class="o">.</span><span class="n">cluster_proxy_attenuation</span><span class="p">[</span><span class="n">cluster_id</span><span class="p">]</span>
-
-                <span class="k">if</span> <span class="n">column_idx</span> <span class="o">==</span> <span class="n">anchor_col</span><span class="p">:</span>
-                    <span class="n">anchor_per_class_offset</span> <span class="o">=</span> <span class="n">mean_per_class</span> <span class="k">if</span> <span class="n">mean_per_class</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="p">{}</span>
-                    <span class="n">mean_str</span> <span class="o">=</span> <span class="n">_range_across_classes</span><span class="p">(</span><span class="n">anchor_per_class_offset</span><span class="p">,</span> <span class="n">meta</span><span class="o">.</span><span class="n">n_classes</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">)</span>
-                    <span class="n">covar_str</span> <span class="o">=</span> <span class="n">_range_across_classes</span><span class="p">(</span>
-                        <span class="n">covariance_per_class</span> <span class="k">if</span> <span class="n">covariance_per_class</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="p">{},</span>
-                        <span class="n">meta</span><span class="o">.</span><span class="n">n_classes</span><span class="p">,</span>
-                        <span class="n">baseline_corr</span><span class="p">,</span>
-                    <span class="p">)</span>
-                <span class="k">else</span><span class="p">:</span>
-                    <span class="n">distance</span> <span class="o">=</span> <span class="nb">abs</span><span class="p">(</span><span class="n">column_idx</span> <span class="o">-</span> <span class="n">anchor_col</span><span class="p">)</span>
-                    <span class="n">anchor_per_class_offset</span> <span class="o">=</span> <span class="n">mean_per_class</span> <span class="k">if</span> <span class="n">mean_per_class</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="p">{}</span>
-                    <span class="n">proxy_per_class_offset</span> <span class="o">=</span> <span class="p">{}</span>
-                    <span class="k">for</span> <span class="n">class_idx</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">meta</span><span class="o">.</span><span class="n">n_classes</span><span class="p">):</span>
-                        <span class="n">anchor_offset</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">anchor_per_class_offset</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">class_idx</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">))</span>
-                        <span class="n">effective_corr</span> <span class="o">=</span> <span class="p">(</span>
-                            <span class="n">covariance_per_class</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">class_idx</span><span class="p">,</span> <span class="n">baseline_corr</span><span class="p">)</span>
-                            <span class="k">if</span> <span class="n">covariance_per_class</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
-                            <span class="k">else</span> <span class="n">baseline_corr</span>
-                        <span class="p">)</span>
-                        <span class="n">proxy_offset</span> <span class="o">=</span> <span class="n">_proxy_mean_offset</span><span class="p">(</span>
-                            <span class="n">anchor_per_class_offset</span><span class="o">=</span><span class="n">anchor_offset</span><span class="p">,</span>
-                            <span class="n">distance</span><span class="o">=</span><span class="n">distance</span><span class="p">,</span>
-                            <span class="n">correlation_structure</span><span class="o">=</span><span class="n">structure</span><span class="p">,</span>
-                            <span class="n">effective_per_class_correlation</span><span class="o">=</span><span class="n">effective_corr</span><span class="p">,</span>
-                            <span class="n">proxy_attenuation</span><span class="o">=</span><span class="n">proxy_attenuation</span><span class="p">,</span>
-                        <span class="p">)</span>
-                        <span class="k">if</span> <span class="n">proxy_offset</span> <span class="o">!=</span> <span class="mf">0.0</span><span class="p">:</span>
-                            <span class="n">proxy_per_class_offset</span><span class="p">[</span><span class="n">class_idx</span><span class="p">]</span> <span class="o">=</span> <span class="n">proxy_offset</span>
-                    <span class="n">mean_str</span> <span class="o">=</span> <span class="n">_range_across_classes</span><span class="p">(</span><span class="n">proxy_per_class_offset</span><span class="p">,</span> <span class="n">meta</span><span class="o">.</span><span class="n">n_classes</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">)</span>
-                    <span class="n">covar_str</span> <span class="o">=</span> <span class="n">_range_across_classes</span><span class="p">(</span>
-                        <span class="n">covariance_per_class</span> <span class="k">if</span> <span class="n">covariance_per_class</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="p">{},</span>
-                        <span class="n">meta</span><span class="o">.</span><span class="n">n_classes</span><span class="p">,</span>
-                        <span class="n">baseline_corr</span><span class="p">,</span>
-                    <span class="p">)</span>
-        <span class="k">elif</span> <span class="n">column_idx</span> <span class="ow">in</span> <span class="p">[</span><span class="n">c</span> <span class="k">for</span> <span class="n">group</span> <span class="ow">in</span> <span class="n">meta</span><span class="o">.</span><span class="n">standalone_informative_groups</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">group</span><span class="o">.</span><span class="n">column_indices</span><span class="p">]:</span>
+        <span class="k">if</span> <span class="n">cluster_id</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">anchor_col</span> <span class="o">=</span> <span class="n">meta</span><span class="o">.</span><span class="n">anchor_idx</span><span class="p">[</span><span class="n">cluster_id</span><span class="p">]</span>
+            <span class="n">mean_str</span><span class="p">,</span> <span class="n">covar_str</span> <span class="o">=</span> <span class="n">_cluster_column_strengths</span><span class="p">(</span>
+                <span class="n">mean_per_class</span><span class="o">=</span><span class="n">meta</span><span class="o">.</span><span class="n">mean_per_class_effect</span><span class="p">[</span><span class="n">cluster_id</span><span class="p">],</span>
+                <span class="n">covariance_per_class</span><span class="o">=</span><span class="n">meta</span><span class="o">.</span><span class="n">covariance_per_class_correlation</span><span class="p">[</span><span class="n">cluster_id</span><span class="p">],</span>
+                <span class="n">baseline_correlation</span><span class="o">=</span><span class="n">meta</span><span class="o">.</span><span class="n">baseline_correlation</span><span class="p">[</span><span class="n">cluster_id</span><span class="p">],</span>
+                <span class="n">correlation_structure</span><span class="o">=</span><span class="n">meta</span><span class="o">.</span><span class="n">cluster_structure</span><span class="p">[</span><span class="n">cluster_id</span><span class="p">],</span>
+                <span class="n">proxy_attenuation</span><span class="o">=</span><span class="n">meta</span><span class="o">.</span><span class="n">cluster_proxy_attenuation</span><span class="p">[</span><span class="n">cluster_id</span><span class="p">],</span>
+                <span class="n">distance</span><span class="o">=</span><span class="nb">abs</span><span class="p">(</span><span class="n">column_idx</span> <span class="o">-</span> <span class="n">anchor_col</span><span class="p">),</span>
+                <span class="n">n_classes</span><span class="o">=</span><span class="n">meta</span><span class="o">.</span><span class="n">n_classes</span><span class="p">,</span>
+            <span class="p">)</span>
+        <span class="k">elif</span> <span class="n">column_idx</span> <span class="ow">in</span> <span class="n">standalone_group_columns</span><span class="p">:</span>
             <span class="k">for</span> <span class="n">group</span> <span class="ow">in</span> <span class="n">meta</span><span class="o">.</span><span class="n">standalone_informative_groups</span><span class="p">:</span>
                 <span class="k">if</span> <span class="n">column_idx</span> <span class="ow">in</span> <span class="n">group</span><span class="o">.</span><span class="n">column_indices</span><span class="p">:</span>
                     <span class="n">mean_str</span> <span class="o">=</span> <span class="n">_range_across_classes</span><span class="p">(</span>
@@ -600,11 +681,15 @@
 <span class="sd">    The partition is reconstructed purely from the structural block ranges that</span>
 <span class="sd">    the generator records on ``meta`` (the per-group standalone-informative</span>
 <span class="sd">    column indices, the standalone-noise column range, each cluster&#39;s columns,</span>
-<span class="sd">    and its structural anchor column) together with the per-cluster channel mappings. Each cluster&#39;s</span>
-<span class="sd">    relevance is **derived** from the generated signal — a class-dependent mean</span>
-<span class="sd">    shift or a class-dependent within-cluster correlation (differential</span>
-<span class="sd">    co-expression) — never read from a declared role. No feature matrix is</span>
-<span class="sd">    required.</span>
+<span class="sd">    and its structural anchor column) together with the per-cluster channel</span>
+<span class="sd">    mappings. Relevance is **derived per column**, not per cluster: a cluster</span>
+<span class="sd">    column is informative iff it carries a class-dependent mean shift (the</span>
+<span class="sd">    anchor&#39;s shift, or a proxy&#39;s attenuated propagation) or participates in a</span>
+<span class="sd">    class-dependent within-cluster correlation — never read from a declared role.</span>
+<span class="sd">    Because the predicate is per column, a single cluster may be split across</span>
+<span class="sd">    informative and noise roles (an informative anchor with noise proxies is</span>
+<span class="sd">    expected for a mean-only cluster with zero within-cluster correlation). No</span>
+<span class="sd">    feature matrix is required.</span>
 
 <span class="sd">    Args:</span>
 <span class="sd">        meta: Resolved dataset metadata produced by</span>
@@ -628,22 +713,24 @@
 
     <span class="k">for</span> <span class="n">cluster_id</span><span class="p">,</span> <span class="n">member_columns</span> <span class="ow">in</span> <span class="n">meta</span><span class="o">.</span><span class="n">corr_cluster_indices</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
         <span class="n">anchor_column</span> <span class="o">=</span> <span class="n">meta</span><span class="o">.</span><span class="n">anchor_idx</span><span class="p">[</span><span class="n">cluster_id</span><span class="p">]</span>
-        <span class="n">proxy_columns</span> <span class="o">=</span> <span class="p">[</span><span class="n">column</span> <span class="k">for</span> <span class="n">column</span> <span class="ow">in</span> <span class="n">member_columns</span> <span class="k">if</span> <span class="n">column</span> <span class="o">!=</span> <span class="n">anchor_column</span><span class="p">]</span>
 
         <span class="k">for</span> <span class="n">column</span> <span class="ow">in</span> <span class="n">member_columns</span><span class="p">:</span>
             <span class="n">cluster_membership</span><span class="p">[</span><span class="n">column</span><span class="p">]</span> <span class="o">=</span> <span class="n">cluster_id</span>
 
-        <span class="k">if</span> <span class="n">_cluster_is_informative</span><span class="p">(</span>
-            <span class="n">mean_per_class</span><span class="o">=</span><span class="n">meta</span><span class="o">.</span><span class="n">mean_per_class_effect</span><span class="p">[</span><span class="n">cluster_id</span><span class="p">],</span>
-            <span class="n">covariance_per_class</span><span class="o">=</span><span class="n">meta</span><span class="o">.</span><span class="n">covariance_per_class_correlation</span><span class="p">[</span><span class="n">cluster_id</span><span class="p">],</span>
-            <span class="n">baseline_correlation</span><span class="o">=</span><span class="n">meta</span><span class="o">.</span><span class="n">baseline_correlation</span><span class="p">[</span><span class="n">cluster_id</span><span class="p">],</span>
-            <span class="n">n_classes</span><span class="o">=</span><span class="n">meta</span><span class="o">.</span><span class="n">n_classes</span><span class="p">,</span>
-        <span class="p">):</span>
-            <span class="n">informative_anchor_indices</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">anchor_column</span><span class="p">)</span>
-            <span class="n">informative_proxy_indices</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">proxy_columns</span><span class="p">)</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="n">noise_anchor_indices</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">anchor_column</span><span class="p">)</span>
-            <span class="n">noise_proxy_indices</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">proxy_columns</span><span class="p">)</span>
+            <span class="n">carries</span> <span class="o">=</span> <span class="n">_cluster_column_carries_signal</span><span class="p">(</span>
+                <span class="n">mean_per_class</span><span class="o">=</span><span class="n">meta</span><span class="o">.</span><span class="n">mean_per_class_effect</span><span class="p">[</span><span class="n">cluster_id</span><span class="p">],</span>
+                <span class="n">covariance_per_class</span><span class="o">=</span><span class="n">meta</span><span class="o">.</span><span class="n">covariance_per_class_correlation</span><span class="p">[</span><span class="n">cluster_id</span><span class="p">],</span>
+                <span class="n">baseline_correlation</span><span class="o">=</span><span class="n">meta</span><span class="o">.</span><span class="n">baseline_correlation</span><span class="p">[</span><span class="n">cluster_id</span><span class="p">],</span>
+                <span class="n">correlation_structure</span><span class="o">=</span><span class="n">meta</span><span class="o">.</span><span class="n">cluster_structure</span><span class="p">[</span><span class="n">cluster_id</span><span class="p">],</span>
+                <span class="n">proxy_attenuation</span><span class="o">=</span><span class="n">meta</span><span class="o">.</span><span class="n">cluster_proxy_attenuation</span><span class="p">[</span><span class="n">cluster_id</span><span class="p">],</span>
+                <span class="n">distance</span><span class="o">=</span><span class="nb">abs</span><span class="p">(</span><span class="n">column</span> <span class="o">-</span> <span class="n">anchor_column</span><span class="p">),</span>
+                <span class="n">n_classes</span><span class="o">=</span><span class="n">meta</span><span class="o">.</span><span class="n">n_classes</span><span class="p">,</span>
+            <span class="p">)</span>
+            <span class="n">is_anchor</span> <span class="o">=</span> <span class="n">column</span> <span class="o">==</span> <span class="n">anchor_column</span>
+            <span class="k">if</span> <span class="n">carries</span><span class="p">:</span>
+                <span class="p">(</span><span class="n">informative_anchor_indices</span> <span class="k">if</span> <span class="n">is_anchor</span> <span class="k">else</span> <span class="n">informative_proxy_indices</span><span class="p">)</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">column</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="p">(</span><span class="n">noise_anchor_indices</span> <span class="k">if</span> <span class="n">is_anchor</span> <span class="k">else</span> <span class="n">noise_proxy_indices</span><span class="p">)</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">column</span><span class="p">)</span>
 
     <span class="k">return</span> <span class="n">FeatureRoles</span><span class="p">(</span>
         <span class="n">standalone_informative_indices</span><span class="o">=</span><span class="nb">sorted</span><span class="p">(</span><span class="n">standalone_informative_indices</span><span class="p">),</span>
