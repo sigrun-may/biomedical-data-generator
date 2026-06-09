@@ -899,9 +899,7 @@ class DatasetConfig(BaseModel):
         Standalone informative features plus all members of clusters that the
         signal predicate marks informative.
         """
-        cluster_informative = sum(
-            sum(column_flags) for column_flags in self.cluster_column_informative_flags()
-        )
+        cluster_informative = sum(sum(column_flags) for column_flags in self.cluster_column_informative_flags())
         return int(self.n_standalone_informative + cluster_informative)
 
     @property

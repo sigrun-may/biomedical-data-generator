@@ -557,9 +557,7 @@ def test_informative_role_iff_nonempty_signal_channels():
     strengths = compute_feature_strengths(meta)
 
     informative_role_columns = set(
-        roles.standalone_informative_indices
-        + roles.informative_anchor_indices
-        + roles.informative_proxy_indices
+        roles.standalone_informative_indices + roles.informative_anchor_indices + roles.informative_proxy_indices
     )
     for column_index in range(cfg.n_features):
         in_informative_role = column_index in informative_role_columns
@@ -702,9 +700,7 @@ def test_informative_role_iff_nonempty_signal_channels_sweep(cluster_key):
     strengths = compute_feature_strengths(meta)
 
     informative_role_columns = set(
-        roles.standalone_informative_indices
-        + roles.informative_anchor_indices
-        + roles.informative_proxy_indices
+        roles.standalone_informative_indices + roles.informative_anchor_indices + roles.informative_proxy_indices
     )
     for column_index in range(cfg.n_features):
         in_informative_role = column_index in informative_role_columns

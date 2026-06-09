@@ -443,16 +443,12 @@ def _cluster_column_strengths(
         baseline_correlation,
     )
     if distance == 0:
-        mean_strength = _range_across_classes(
-            mean_per_class if mean_per_class is not None else {}, n_classes, 0.0
-        )
+        mean_strength = _range_across_classes(mean_per_class if mean_per_class is not None else {}, n_classes, 0.0)
         return mean_strength, covariance_strength
 
     proxy_per_class_offset = {}
     for class_index in range(n_classes):
-        anchor_offset = float(
-            (mean_per_class if mean_per_class is not None else {}).get(class_index, 0.0)
-        )
+        anchor_offset = float((mean_per_class if mean_per_class is not None else {}).get(class_index, 0.0))
         effective_correlation = (
             covariance_per_class.get(class_index, baseline_correlation)
             if covariance_per_class is not None
@@ -529,9 +525,7 @@ def compute_feature_strengths(meta: DatasetMeta) -> FeatureStrengths:
     signal_channels_list = []
     tol = 1e-9
 
-    standalone_group_columns = {
-        c for group in meta.standalone_informative_groups for c in group.column_indices
-    }
+    standalone_group_columns = {c for group in meta.standalone_informative_groups for c in group.column_indices}
 
     for column_idx in range(n_features):
         mean_str = 0.0
