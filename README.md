@@ -85,11 +85,20 @@ If you provide human-readable labels via `ClassConfig(label=...)`, these are sto
 Simulate biomarkers that only correlate in diseased patients:
 
 ```python
-from biomedical_data_generator import DatasetConfig, ClassConfig, CorrClusterConfig, generate_dataset
+from biomedical_data_generator import (
+    DatasetConfig,
+    ClassConfig,
+    CorrClusterConfig,
+    CovarianceChannel,
+    StandaloneInformativeGroup,
+    generate_dataset,
+)
 
 cfg = DatasetConfig(
-    n_informative=3,
-    n_noise=5,
+    standalone_informative_groups=[
+        StandaloneInformativeGroup(n_features=3, class_sep=1.0),
+    ],
+    n_standalone_noise=5,
     class_configs=[
         ClassConfig(n_samples=100, label="healthy"),
         ClassConfig(n_samples=100, label="diseased"),
@@ -97,12 +106,13 @@ cfg = DatasetConfig(
     corr_clusters=[
         CorrClusterConfig(
             n_cluster_features=6,
-            # Class-specific correlation: pass a {class_index: value} dict.
-            # Classes omitted from the dict default to 0.0.
-            correlation={0: 0.2, 1: 0.9},  # healthy weak, diseased strong
-            structure="equicorrelated",
-            anchor_role="informative",
-            anchor_effect_size="medium",
+            correlation_structure="equicorrelated",
+            # Class-specific correlation via the covariance channel: map each
+            # class index to a within-cluster correlation. Classes omitted from
+            # the mapping fall back to `baseline_correlation` (0.0 by default).
+            covariance_channel=CovarianceChannel(
+                per_class_correlation={0: 0.2, 1: 0.9},  # healthy weak, diseased strong
+            ),
         )
     ],
     random_state=42,
@@ -116,11 +126,19 @@ X, y, meta = generate_dataset(cfg)
 Model recruitment bias and technical variation:
 
 ```python
-from biomedical_data_generator import DatasetConfig, ClassConfig, BatchEffectsConfig, generate_dataset
+from biomedical_data_generator import (
+    DatasetConfig,
+    ClassConfig,
+    BatchEffectsConfig,
+    StandaloneInformativeGroup,
+    generate_dataset,
+)
 
 cfg = DatasetConfig(
-    n_informative=5,
-    n_noise=10,
+    standalone_informative_groups=[
+        StandaloneInformativeGroup(n_features=5, class_sep=1.0),
+    ],
+    n_standalone_noise=10,
     class_configs=[
         ClassConfig(n_samples=100, label="control"),
         ClassConfig(n_samples=100, label="disease"),
@@ -239,14 +257,15 @@ bdg --config my_config.yaml --out dataset.csv
 Example `my_config.yaml`:
 
 ```yaml
-n_informative: 5
-n_noise: 10
+standalone_informative_groups:
+  - n_features: 5
+    class_sep: 1.5
+n_standalone_noise: 10
 class_configs:
   - n_samples: 50
     label: "control"
   - n_samples: 50
     label: "disease"
-class_sep: 1.5
 random_state: 42
 ```
 
@@ -278,7 +297,7 @@ If you use this package in scientific work, please cite:
                   generator for benchmarking and teaching},
   year         = {2025},
   url          = {https://github.com/sigrun-may/biomedical-data-generator},
-  version      = {1.0.0}
+  version      = {2.0.0}
 }
 ```
 
