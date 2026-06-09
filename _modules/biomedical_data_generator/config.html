@@ -1010,9 +1010,7 @@
 <span class="sd">        Standalone informative features plus all members of clusters that the</span>
 <span class="sd">        signal predicate marks informative.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">cluster_informative</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span>
-            <span class="nb">sum</span><span class="p">(</span><span class="n">column_flags</span><span class="p">)</span> <span class="k">for</span> <span class="n">column_flags</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">cluster_column_informative_flags</span><span class="p">()</span>
-        <span class="p">)</span>
+        <span class="n">cluster_informative</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="nb">sum</span><span class="p">(</span><span class="n">column_flags</span><span class="p">)</span> <span class="k">for</span> <span class="n">column_flags</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">cluster_column_informative_flags</span><span class="p">())</span>
         <span class="k">return</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">n_standalone_informative</span> <span class="o">+</span> <span class="n">cluster_informative</span><span class="p">)</span>
 
     <span class="nd">@property</span>
