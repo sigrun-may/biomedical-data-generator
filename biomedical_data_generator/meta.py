@@ -15,13 +15,17 @@ This module also hosts the two derivations that read ground truth off a
 * :func:`compute_feature_strengths` returns the per-feature signal-strength
   annotation, including the set of active signal *channels* per feature.
 
-Both are grounded in the **same** predicate, ``_cluster_is_informative`` (the
-mean channel varies across classes OR the within-cluster correlation varies
-across classes). Consequently the two derivations must agree: a feature is
-placed in an informative role by :func:`compute_feature_roles` **iff**
-:func:`compute_feature_strengths` reports a non-empty ``signal_channels`` tuple
-for it, and a noise role iff its channels are empty. They are two views of one
-predicate, not independent computations.
+Both are grounded in the **same** per-column predicate,
+``_cluster_column_carries_signal`` (the column carries a class-dependent mean
+shift -- the anchor's shift or a proxy's attenuated propagation -- OR
+participates in a class-dependent within-cluster correlation). Consequently the
+two derivations must agree **per column**: a feature is placed in an informative
+role by :func:`compute_feature_roles` **iff** :func:`compute_feature_strengths`
+reports a non-empty ``signal_channels`` tuple for it, and a noise role iff its
+channels are empty. They are two views of one predicate, not independent
+computations. Because the predicate is per column, a single cluster may split
+across roles -- a mean-only cluster with zero within-cluster correlation yields
+an informative anchor and noise proxies.
 """
 from __future__ import annotations
 
@@ -114,10 +118,13 @@ class FeatureRoles:
     roles that the generator distinguishes. The six roles arise from two
     orthogonal distinctions:
 
-    * **Signal** -- a feature is *informative* when its cluster carries
-      class-discriminative signal through **either** a class-dependent mean
-      shift **or** a class-dependent within-cluster correlation (differential
-      co-expression); *noise* features carry neither.
+    * **Signal** -- relevance is derived **per column**: a feature is
+      *informative* when it carries class-discriminative signal through
+      **either** a class-dependent mean shift (the anchor's shift, or a proxy's
+      attenuated propagation) **or** a class-dependent within-cluster correlation
+      (differential co-expression); *noise* features carry neither. Because the
+      predicate is per column, a single cluster may contribute columns to both
+      informative and noise roles.
     * **Cluster membership** -- a *standalone* feature is independent and belongs
       to no cluster. Within a correlated cluster, the structural anchor column is
       the only column shifted directly, and every other member is a *proxy*
@@ -134,31 +141,39 @@ class FeatureRoles:
             correlated cluster and therefore carry a class-separating mean
             shift on their own.
         informative_anchor_indices:
-            List of column indices of anchors of clusters **derived** to carry
-            class-discriminative signal: the cluster is informative iff its mean
+            List of column indices of anchors **derived** per column to carry
+            class-discriminative signal: an anchor is informative iff its mean
             channel varies across classes or its within-cluster correlation varies
             across classes. Such anchors seed the within-cluster correlation
             shared by their proxies.
         informative_proxy_indices:
-            List of column indices of proxy members (non-anchor members) in
-            clusters derived informative. Proxies do not receive a direct mean
-            shift but inherit an attenuated signal through their correlation
-            with the anchor. The degree of attenuation follows the cluster's
-            correlation structure — roughly uniform for equicorrelated clusters
-            and decaying with distance from the anchor for Toeplitz clusters.
+            List of column indices of proxy members (non-anchor members) derived
+            per column to carry signal. A proxy is informative only when it
+            inherits a nonzero attenuated mean shift **or** participates in a
+            class-varying within-cluster correlation. The degree of mean
+            attenuation follows the cluster's correlation structure — roughly
+            uniform for equicorrelated clusters and decaying with distance from
+            the anchor for Toeplitz clusters. A proxy whose attenuated shift is
+            zero and whose correlation is class-uniform is a *noise* proxy
+            instead, so a single cluster may contribute to both proxy roles (for
+            example, a mean-only cluster with zero within-cluster correlation
+            yields an informative anchor and noise proxies).
         standalone_noise_indices:
             List of column indices for standalone noise features. These are
             independent noise features outside any cluster and carry no
             class-discriminating signal.
         noise_anchor_indices:
-            List of column indices of anchors of clusters derived to carry
-            **no** class-discriminative signal: neither the mean channel nor the
+            List of column indices of anchors derived per column to carry **no**
+            class-discriminative signal: neither the mean channel nor the
             within-cluster correlation varies across classes. They seed a
             within-cluster correlation that is identical across classes.
         noise_proxy_indices:
-            List of column indices of proxy members (non-anchor members) in
-            clusters derived noise. They are correlated with their anchor and
-            form purely structural, signal-free correlated blocks.
+            List of column indices of proxy members (non-anchor members) derived
+            per column to carry no signal: their attenuated mean shift is zero and
+            their within-cluster correlation is class-uniform. They are correlated
+            with their anchor and form purely structural, signal-free correlated
+            blocks. A noise proxy may sit in the same cluster as an informative
+            anchor.
         cluster_membership:
             Mapping from ``column_index`` to ``cluster_id`` for every column
             that belongs to a correlated cluster.
@@ -393,6 +408,98 @@ def _cluster_is_informative(mean_per_class, covariance_per_class, baseline_corre
     return mean_signal or covariance_signal
 
 
+def _cluster_column_strengths(
+    mean_per_class,
+    covariance_per_class,
+    baseline_correlation,
+    correlation_structure,
+    proxy_attenuation,
+    distance,
+    n_classes,
+):
+    """Resolve one cluster column's (mean_strength, covariance_strength).
+
+    The covariance strength is the range of the effective per-class within-cluster
+    correlation and is shared by every column of the cluster. The mean strength is
+    the anchor's mean-channel range when ``distance == 0`` (the anchor), otherwise
+    the range of the attenuated per-class offset propagated to the proxy.
+
+    Args:
+        mean_per_class: Per-class mean-shift mapping, or None.
+        covariance_per_class: Per-class within-cluster correlation mapping, or None.
+        baseline_correlation: Structural correlation for classes absent from the
+            covariance mapping.
+        correlation_structure: ``"equicorrelated"`` or ``"toeplitz"``.
+        proxy_attenuation: Neutral multiplier on the propagated proxy offset.
+        distance: Structural distance from the anchor; 0 for the anchor itself.
+        n_classes: Number of classes.
+
+    Returns:
+        The tuple ``(mean_strength, covariance_strength)`` for the column.
+    """
+    covariance_strength = _range_across_classes(
+        covariance_per_class if covariance_per_class is not None else {},
+        n_classes,
+        baseline_correlation,
+    )
+    if distance == 0:
+        mean_strength = _range_across_classes(
+            mean_per_class if mean_per_class is not None else {}, n_classes, 0.0
+        )
+        return mean_strength, covariance_strength
+
+    proxy_per_class_offset = {}
+    for class_index in range(n_classes):
+        anchor_offset = float(
+            (mean_per_class if mean_per_class is not None else {}).get(class_index, 0.0)
+        )
+        effective_correlation = (
+            covariance_per_class.get(class_index, baseline_correlation)
+            if covariance_per_class is not None
+            else baseline_correlation
+        )
+        propagated_offset = _proxy_mean_offset(
+            anchor_per_class_offset=anchor_offset,
+            distance=distance,
+            correlation_structure=correlation_structure,
+            effective_per_class_correlation=effective_correlation,
+            proxy_attenuation=proxy_attenuation,
+        )
+        if propagated_offset != 0.0:
+            proxy_per_class_offset[class_index] = propagated_offset
+    mean_strength = _range_across_classes(proxy_per_class_offset, n_classes, 0.0)
+    return mean_strength, covariance_strength
+
+
+def _cluster_column_carries_signal(
+    mean_per_class,
+    covariance_per_class,
+    baseline_correlation,
+    correlation_structure,
+    proxy_attenuation,
+    distance,
+    n_classes,
+    tol=1e-9,
+):
+    """Whether one cluster column carries class-discriminative signal.
+
+    The per-column form of :func:`_cluster_is_informative`: True iff the column's
+    mean strength or covariance strength exceeds ``tol``. This is the single
+    predicate shared by role assignment, the derived feature counts, and the
+    per-feature strength annotation.
+    """
+    mean_strength, covariance_strength = _cluster_column_strengths(
+        mean_per_class,
+        covariance_per_class,
+        baseline_correlation,
+        correlation_structure,
+        proxy_attenuation,
+        distance,
+        n_classes,
+    )
+    return mean_strength > tol or covariance_strength > tol
+
+
 def compute_feature_strengths(meta: DatasetMeta) -> FeatureStrengths:
     """Derive per-feature signal strengths from a DatasetMeta.
 
@@ -401,10 +508,13 @@ def compute_feature_strengths(meta: DatasetMeta) -> FeatureStrengths:
     within-cluster correlation), and signal_channels (the active channels per
     feature).
 
-    A feature carries a signal iff at least one channel is active. The predicate
-    on channels agrees with :func:`compute_feature_roles` — a feature is placed
-    in an informative role iff its channels are non-empty, and in a noise role
-    iff its channels are empty.
+    A feature carries a signal iff at least one channel is active. Cluster
+    columns are resolved one at a time via :func:`_cluster_column_strengths`
+    (keyed on the column's structural distance from its anchor), so the predicate
+    on channels agrees with :func:`compute_feature_roles` **per column** — a
+    feature is placed in an informative role iff its channels are non-empty, and
+    in a noise role iff its channels are empty. A single cluster may therefore
+    yield both kinds of column.
 
     Args:
         meta: Resolved dataset metadata produced by
@@ -419,63 +529,34 @@ def compute_feature_strengths(meta: DatasetMeta) -> FeatureStrengths:
     signal_channels_list = []
     tol = 1e-9
 
+    standalone_group_columns = {
+        c for group in meta.standalone_informative_groups for c in group.column_indices
+    }
+
     for column_idx in range(n_features):
         mean_str = 0.0
         covar_str = 0.0
         channels = []
 
-        if column_idx in meta.informative_idx and column_idx not in [
-            c for group in meta.standalone_informative_groups for c in group.column_indices
-        ]:
-            cluster_id = None
+        cluster_id = None
+        if column_idx not in standalone_group_columns:
             for cid, members in meta.corr_cluster_indices.items():
                 if column_idx in members:
                     cluster_id = cid
                     break
 
-            if cluster_id is not None:
-                anchor_col = meta.anchor_idx[cluster_id]
-                mean_per_class = meta.mean_per_class_effect[cluster_id]
-                covariance_per_class = meta.covariance_per_class_correlation[cluster_id]
-                baseline_corr = meta.baseline_correlation[cluster_id]
-                structure = meta.cluster_structure[cluster_id]
-                proxy_attenuation = meta.cluster_proxy_attenuation[cluster_id]
-
-                if column_idx == anchor_col:
-                    anchor_per_class_offset = mean_per_class if mean_per_class is not None else {}
-                    mean_str = _range_across_classes(anchor_per_class_offset, meta.n_classes, 0.0)
-                    covar_str = _range_across_classes(
-                        covariance_per_class if covariance_per_class is not None else {},
-                        meta.n_classes,
-                        baseline_corr,
-                    )
-                else:
-                    distance = abs(column_idx - anchor_col)
-                    anchor_per_class_offset = mean_per_class if mean_per_class is not None else {}
-                    proxy_per_class_offset = {}
-                    for class_idx in range(meta.n_classes):
-                        anchor_offset = float(anchor_per_class_offset.get(class_idx, 0.0))
-                        effective_corr = (
-                            covariance_per_class.get(class_idx, baseline_corr)
-                            if covariance_per_class is not None
-                            else baseline_corr
-                        )
-                        proxy_offset = _proxy_mean_offset(
-                            anchor_per_class_offset=anchor_offset,
-                            distance=distance,
-                            correlation_structure=structure,
-                            effective_per_class_correlation=effective_corr,
-                            proxy_attenuation=proxy_attenuation,
-                        )
-                        if proxy_offset != 0.0:
-                            proxy_per_class_offset[class_idx] = proxy_offset
-                    mean_str = _range_across_classes(proxy_per_class_offset, meta.n_classes, 0.0)
-                    covar_str = _range_across_classes(
-                        covariance_per_class if covariance_per_class is not None else {},
-                        meta.n_classes,
-                        baseline_corr,
-                    )
-        elif column_idx in [c for group in meta.standalone_informative_groups for c in group.column_indices]:
+        if cluster_id is not None:
+            anchor_col = meta.anchor_idx[cluster_id]
+            mean_str, covar_str = _cluster_column_strengths(
+                mean_per_class=meta.mean_per_class_effect[cluster_id],
+                covariance_per_class=meta.covariance_per_class_correlation[cluster_id],
+                baseline_correlation=meta.baseline_correlation[cluster_id],
+                correlation_structure=meta.cluster_structure[cluster_id],
+                proxy_attenuation=meta.cluster_proxy_attenuation[cluster_id],
+                distance=abs(column_idx - anchor_col),
+                n_classes=meta.n_classes,
+            )
+        elif column_idx in standalone_group_columns:
             for group in meta.standalone_informative_groups:
                 if column_idx in group.column_indices:
                     mean_str = _range_across_classes(
@@ -507,11 +588,15 @@ def compute_feature_roles(meta: DatasetMeta) -> FeatureRoles:
     The partition is reconstructed purely from the structural block ranges that
     the generator records on ``meta`` (the per-group standalone-informative
     column indices, the standalone-noise column range, each cluster's columns,
-    and its structural anchor column) together with the per-cluster channel mappings. Each cluster's
-    relevance is **derived** from the generated signal — a class-dependent mean
-    shift or a class-dependent within-cluster correlation (differential
-    co-expression) — never read from a declared role. No feature matrix is
-    required.
+    and its structural anchor column) together with the per-cluster channel
+    mappings. Relevance is **derived per column**, not per cluster: a cluster
+    column is informative iff it carries a class-dependent mean shift (the
+    anchor's shift, or a proxy's attenuated propagation) or participates in a
+    class-dependent within-cluster correlation — never read from a declared role.
+    Because the predicate is per column, a single cluster may be split across
+    informative and noise roles (an informative anchor with noise proxies is
+    expected for a mean-only cluster with zero within-cluster correlation). No
+    feature matrix is required.
 
     Args:
         meta: Resolved dataset metadata produced by
@@ -535,22 +620,24 @@ def compute_feature_roles(meta: DatasetMeta) -> FeatureRoles:
 
     for cluster_id, member_columns in meta.corr_cluster_indices.items():
         anchor_column = meta.anchor_idx[cluster_id]
-        proxy_columns = [column for column in member_columns if column != anchor_column]
 
         for column in member_columns:
             cluster_membership[column] = cluster_id
 
-        if _cluster_is_informative(
-            mean_per_class=meta.mean_per_class_effect[cluster_id],
-            covariance_per_class=meta.covariance_per_class_correlation[cluster_id],
-            baseline_correlation=meta.baseline_correlation[cluster_id],
-            n_classes=meta.n_classes,
-        ):
-            informative_anchor_indices.append(anchor_column)
-            informative_proxy_indices.extend(proxy_columns)
-        else:
-            noise_anchor_indices.append(anchor_column)
-            noise_proxy_indices.extend(proxy_columns)
+            carries = _cluster_column_carries_signal(
+                mean_per_class=meta.mean_per_class_effect[cluster_id],
+                covariance_per_class=meta.covariance_per_class_correlation[cluster_id],
+                baseline_correlation=meta.baseline_correlation[cluster_id],
+                correlation_structure=meta.cluster_structure[cluster_id],
+                proxy_attenuation=meta.cluster_proxy_attenuation[cluster_id],
+                distance=abs(column - anchor_column),
+                n_classes=meta.n_classes,
+            )
+            is_anchor = column == anchor_column
+            if carries:
+                (informative_anchor_indices if is_anchor else informative_proxy_indices).append(column)
+            else:
+                (noise_anchor_indices if is_anchor else noise_proxy_indices).append(column)
 
     return FeatureRoles(
         standalone_informative_indices=sorted(standalone_informative_indices),

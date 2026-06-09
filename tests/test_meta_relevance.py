@@ -526,3 +526,190 @@ def test_strengths_cover_every_column_exactly_once():
     assert n_features == len(meta.feature_names)
     role_cols = set(range(n_features))
     assert role_cols == set(range(len(strengths.mean_strength)))
+
+
+# ---------------------------------------------------------------------------
+# Per-column relevance: role assignment, counts, and strengths are one predicate
+# ---------------------------------------------------------------------------
+def test_informative_role_iff_nonempty_signal_channels():
+    """A column is in an informative role iff its signal_channels are non-empty.
+
+    Reproduces the divergence for a mean-only cluster at the default
+    baseline_correlation of 0.0: the proxies inherit no propagated signal, yet
+    cluster-level role assignment places them in informative_proxy_indices.
+    """
+    cfg = DatasetConfig(
+        standalone_informative_groups=[],
+        n_standalone_noise=0,
+        corr_clusters=[
+            CorrClusterConfig(
+                n_cluster_features=3,
+                baseline_correlation=0.0,  # the field default
+                mean_channel=MeanChannel(per_class_effect={1: 1.0}),
+            ),
+        ],
+        class_configs=[ClassConfig(n_samples=50), ClassConfig(n_samples=50)],
+        random_state=0,
+    )
+
+    _, _, meta = generate_dataset(cfg, return_dataframe=False)
+    roles = compute_feature_roles(meta)
+    strengths = compute_feature_strengths(meta)
+
+    informative_role_columns = set(
+        roles.standalone_informative_indices
+        + roles.informative_anchor_indices
+        + roles.informative_proxy_indices
+    )
+    for column_index in range(cfg.n_features):
+        in_informative_role = column_index in informative_role_columns
+        has_signal = len(strengths.signal_channels[column_index]) > 0
+        assert in_informative_role == has_signal, (
+            f"column {column_index}: informative_role={in_informative_role}, "
+            f"signal_channels={strengths.signal_channels[column_index]}"
+        )
+
+
+def test_mean_only_zero_correlation_proxies_are_noise():
+    """Mean-only, zero within-cluster correlation: only the anchor carries signal."""
+    cfg = DatasetConfig(
+        standalone_informative_groups=[],
+        n_standalone_noise=0,
+        corr_clusters=[
+            CorrClusterConfig(
+                n_cluster_features=3,
+                baseline_correlation=0.0,
+                mean_channel=MeanChannel(per_class_effect={1: 1.0}),
+            ),
+        ],
+        class_configs=[ClassConfig(n_samples=50), ClassConfig(n_samples=50)],
+        random_state=0,
+    )
+    _, _, meta = generate_dataset(cfg, return_dataframe=False)
+    roles = compute_feature_roles(meta)
+
+    anchor_col = meta.anchor_idx[0]
+    proxy_cols = [c for c in meta.corr_cluster_indices[0] if c != anchor_col]
+
+    assert roles.informative_anchor_indices == [anchor_col]
+    assert sorted(roles.noise_proxy_indices) == sorted(proxy_cols)
+    assert roles.informative_proxy_indices == []
+    assert roles.noise_anchor_indices == []
+    assert cfg.n_informative == 1
+    assert cfg.n_noise == cfg.n_features - 1
+    assert anchor_col in meta.informative_idx
+    assert all(c in meta.noise_idx for c in proxy_cols)
+
+
+def test_mean_cluster_with_correlation_keeps_all_members_informative():
+    """Regression guard: nonzero correlation -> no proxy demotion."""
+    cfg = DatasetConfig(
+        standalone_informative_groups=[],
+        n_standalone_noise=0,
+        corr_clusters=[
+            CorrClusterConfig(
+                n_cluster_features=3,
+                baseline_correlation=0.6,
+                mean_channel=MeanChannel(per_class_effect={1: 1.0}),
+            ),
+        ],
+        class_configs=[ClassConfig(n_samples=50), ClassConfig(n_samples=50)],
+        random_state=0,
+    )
+    _, _, meta = generate_dataset(cfg, return_dataframe=False)
+    roles = compute_feature_roles(meta)
+    assert roles.noise_proxy_indices == []
+    assert roles.noise_anchor_indices == []
+    assert cfg.n_informative == 3
+
+
+def test_covariance_only_cluster_keeps_all_members_informative():
+    """Regression guard: the second-moment signal is shared cluster-wide."""
+    cfg = DatasetConfig(
+        standalone_informative_groups=[],
+        n_standalone_noise=0,
+        corr_clusters=[
+            CorrClusterConfig(
+                n_cluster_features=3,
+                baseline_correlation=0.0,
+                covariance_channel=CovarianceChannel(per_class_correlation={0: 0.0, 1: 0.8}),
+            ),
+        ],
+        class_configs=[ClassConfig(n_samples=50), ClassConfig(n_samples=50)],
+        random_state=0,
+    )
+    _, _, meta = generate_dataset(cfg, return_dataframe=False)
+    roles = compute_feature_roles(meta)
+    assert roles.noise_proxy_indices == []
+    assert roles.noise_anchor_indices == []
+    assert cfg.n_informative == 3
+
+
+# ---------------------------------------------------------------------------
+# Parametrized invariant sweep: (informative role) == (non-empty channels)
+# ---------------------------------------------------------------------------
+def _invariant_sweep_clusters() -> dict[str, CorrClusterConfig]:
+    """Representative single-cluster configs covering the relevant channel mixes."""
+    return {
+        "mean_only_rho0": CorrClusterConfig(
+            n_cluster_features=3,
+            baseline_correlation=0.0,
+            mean_channel=MeanChannel(per_class_effect={1: 1.0}),
+        ),
+        "mean_only_rho06": CorrClusterConfig(
+            n_cluster_features=3,
+            baseline_correlation=0.6,
+            mean_channel=MeanChannel(per_class_effect={1: 1.0}),
+        ),
+        "covariance_only": CorrClusterConfig(
+            n_cluster_features=3,
+            baseline_correlation=0.0,
+            covariance_channel=CovarianceChannel(per_class_correlation={0: 0.0, 1: 0.8}),
+        ),
+        "mean_covariance_mixed": CorrClusterConfig(
+            n_cluster_features=3,
+            baseline_correlation=0.3,
+            mean_channel=MeanChannel(per_class_effect={1: 1.2}),
+            covariance_channel=CovarianceChannel(per_class_correlation={0: 0.2, 1: 0.6}),
+        ),
+        "pure_noise": CorrClusterConfig(
+            n_cluster_features=3,
+            baseline_correlation=0.5,
+        ),
+        "toeplitz_mean": CorrClusterConfig(
+            n_cluster_features=4,
+            correlation_structure="toeplitz",
+            baseline_correlation=0.5,
+            mean_channel=MeanChannel(per_class_effect={1: 1.0}),
+        ),
+    }
+
+
+@pytest.mark.parametrize("cluster_key", list(_invariant_sweep_clusters().keys()))
+def test_informative_role_iff_nonempty_signal_channels_sweep(cluster_key):
+    """(column in an informative role) == (signal_channels non-empty), per cluster config."""
+    cluster = _invariant_sweep_clusters()[cluster_key]
+    cfg = DatasetConfig(
+        standalone_informative_groups=[],
+        n_standalone_noise=0,
+        corr_clusters=[cluster],
+        class_configs=[ClassConfig(n_samples=50), ClassConfig(n_samples=50)],
+        random_state=0,
+    )
+
+    _, _, meta = generate_dataset(cfg, return_dataframe=False)
+    roles = compute_feature_roles(meta)
+    strengths = compute_feature_strengths(meta)
+
+    informative_role_columns = set(
+        roles.standalone_informative_indices
+        + roles.informative_anchor_indices
+        + roles.informative_proxy_indices
+    )
+    for column_index in range(cfg.n_features):
+        in_informative_role = column_index in informative_role_columns
+        has_signal = len(strengths.signal_channels[column_index]) > 0
+        assert in_informative_role == has_signal, (
+            f"column {column_index}: informative_role={in_informative_role}, "
+            f"signal_channels={strengths.signal_channels[column_index]}"
+        )

@@ -14,7 +14,7 @@ from typing import Any, Literal
 import numpy as np
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
-from .meta import _cluster_is_informative
+from .meta import _cluster_column_carries_signal, _cluster_is_informative
 
 DistributionType = Literal[
     "normal",
@@ -848,6 +848,42 @@ class DatasetConfig(BaseModel):
             )
         return flags
 
+    def cluster_column_informative_flags(self) -> list[list[bool]]:
+        """Per-column booleans: whether each cluster column is *derived* informative.
+
+        The per-column refinement of :meth:`cluster_informative_flags`. Relevance
+        is derived per column from the channel mappings via the shared predicate,
+        never declared. A cluster column is informative iff it carries a
+        class-dependent mean shift (the anchor's shift, or a proxy's attenuated
+        propagation) or participates in a class-dependent within-cluster
+        correlation. A single cluster may therefore split across informative and
+        noise roles (e.g. an informative anchor with noise proxies).
+
+        Returns:
+            One inner list per cluster, in ``corr_clusters`` order, with one
+            boolean per column (anchor and proxies) in block-column order.
+        """
+        flags: list[list[bool]] = []
+        for cluster in self.corr_clusters or []:
+            mean_per_class = cluster.mean_channel.per_class_effect if cluster.mean_channel is not None else None
+            covariance_per_class = (
+                cluster.covariance_channel.per_class_correlation if cluster.covariance_channel is not None else None
+            )
+            cluster_flags = [
+                _cluster_column_carries_signal(
+                    mean_per_class=mean_per_class,
+                    covariance_per_class=covariance_per_class,
+                    baseline_correlation=cluster.baseline_correlation,
+                    correlation_structure=cluster.correlation_structure,
+                    proxy_attenuation=cluster.proxy_attenuation,
+                    distance=abs(position - cluster.anchor_index),
+                    n_classes=self.n_classes,
+                )
+                for position in range(cluster.n_cluster_features)
+            ]
+            flags.append(cluster_flags)
+        return flags
+
     @property
     def n_standalone_informative(self) -> int:
         """Derived count of standalone (cluster-free) informative features.
@@ -863,11 +899,8 @@ class DatasetConfig(BaseModel):
         Standalone informative features plus all members of clusters that the
         signal predicate marks informative.
         """
-        clusters = self.corr_clusters or []
         cluster_informative = sum(
-            int(cluster.n_cluster_features)
-            for cluster, is_informative in zip(clusters, self.cluster_informative_flags(), strict=True)
-            if is_informative
+            sum(column_flags) for column_flags in self.cluster_column_informative_flags()
         )
         return int(self.n_standalone_informative + cluster_informative)
 

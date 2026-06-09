@@ -47,11 +47,12 @@ def _make_names_and_roles(
       columns (anchor at ``anchor_index``, the others proxies),
     * ``x_standalone_noise`` contains only standalone noise features.
 
-    Relevance is derived per cluster from its channels (via the shared
-    predicate, exposed as :meth:`DatasetConfig.cluster_informative_flags`): a
-    derived-informative cluster contributes all its columns to ``informative_idx``;
-    a derived-noise cluster contributes all its columns to ``noise_idx``. The two
-    index lists are therefore an exhaustive, disjoint two-way partition.
+    Relevance is derived **per column** from each cluster's channels (via the
+    shared predicate, exposed as
+    :meth:`DatasetConfig.cluster_column_informative_flags`): each cluster column
+    goes to ``informative_idx`` or ``noise_idx`` according to whether it carries
+    signal, so a single cluster may contribute columns to both. The two index
+    lists are nonetheless an exhaustive, disjoint two-way partition.
 
     Args:
         cfg: Resolved :class:`DatasetConfig` used for generation.
@@ -116,7 +117,7 @@ def _make_names_and_roles(
     # -------------------------------------------------------------
     # 2) Correlated clusters: one contiguous block per CorrClusterConfig.
     # -------------------------------------------------------------
-    informative_flags = cfg.cluster_informative_flags()
+    column_flags = cfg.cluster_column_informative_flags()
     current = n_inf_cols
     for cid, cluster_cfg in enumerate(clusters):
         k = int(cluster_cfg.n_cluster_features)
@@ -124,7 +125,7 @@ def _make_names_and_roles(
         cluster_indices[cid] = cols
         anchor_idx[cid] = current + cluster_cfg.anchor_index
 
-        for position, _col in enumerate(cols):
+        for position, col in enumerate(cols):
             if cfg.prefixed_feature_naming:
                 if position == cluster_cfg.anchor_index:
                     names.append(f"{cfg.prefix_corr}{cid + 1}_anchor")
@@ -133,11 +134,11 @@ def _make_names_and_roles(
             else:
                 names.append(f"feature_{len(names) + 1}")
 
-        # Derived relevance assigns the whole cluster to one side of the partition.
-        if informative_flags[cid]:
-            informative_idx.extend(cols)
-        else:
-            noise_idx.extend(cols)
+            # Derived relevance is per column: a cluster may split across roles.
+            if column_flags[cid][position]:
+                informative_idx.append(col)
+            else:
+                noise_idx.append(col)
 
         current += k
 
