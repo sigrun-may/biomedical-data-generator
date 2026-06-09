@@ -23,10 +23,10 @@
 
    .. autosummary::
    
-      ~FeatureRoles.free_informative_indices
+      ~FeatureRoles.standalone_informative_indices
       ~FeatureRoles.informative_anchor_indices
       ~FeatureRoles.informative_proxy_indices
-      ~FeatureRoles.free_noise_indices
+      ~FeatureRoles.standalone_noise_indices
       ~FeatureRoles.noise_anchor_indices
       ~FeatureRoles.noise_proxy_indices
       ~FeatureRoles.cluster_membership

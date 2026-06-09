@@ -6,7 +6,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>biomedical_data_generator.features.informative &mdash; Biomedical Data Generator 1.0.0 documentation</title>
+  <title>biomedical_data_generator.features.informative &mdash; Biomedical Data Generator 2.0.0 documentation</title>
       <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=b86133f3" />
       <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=9edc463e" />
       <link rel="stylesheet" type="text/css" href="../_static/copybutton.css?v=76b2166b" />
@@ -15,7 +15,7 @@
   
       <script src="../_static/jquery.js?v=5d32c60e"></script>
       <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="../_static/documentation_options.js?v=8d563738"></script>
+      <script src="../_static/documentation_options.js?v=51b770b3"></script>
       <script src="../_static/doctools.js?v=9bcbadda"></script>
       <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
       <script src="../_static/clipboard.min.js?v=a7894cd8"></script>
@@ -101,39 +101,62 @@
              
   <section id="module-biomedical_data_generator.features.informative">
 <span id="biomedical-data-generator-features-informative"></span><h1>biomedical_data_generator.features.informative<a class="headerlink" href="#module-biomedical_data_generator.features.informative" title="Link to this heading"></a></h1>
-<p>Generation of free informative features and class separation.</p>
+<p>Generation of standalone informative features and class separation.</p>
 <p>This module builds numeric class labels from <code class="docutils literal notranslate"><span class="pre">DatasetConfig.class_configs</span></code>,
-samples base values for free informative features according to per-class
-distributions, and applies class-wise mean shifts controlled by
-<code class="docutils literal notranslate"><span class="pre">DatasetConfig.class_sep</span></code>.</p>
+samples base values for standalone informative features according to per-class
+distributions, and applies class-wise mean shifts controlled by the
+per-group <code class="docutils literal notranslate"><span class="pre">class_sep</span></code> on <code class="docutils literal notranslate"><span class="pre">DatasetConfig.standalone_informative_groups</span></code>.</p>
 <dl class="simple">
-<dt>Scope:</dt><dd><p>Only <em>free</em> informative features are produced here (i.e. informative
+<dt>Scope:</dt><dd><p>Only <em>standalone</em> informative features are produced here (i.e. informative
 features that are not cluster anchors). Correlated clusters, including
 their anchors and the attenuated proxy shifts, are handled in
 <code class="docutils literal notranslate"><span class="pre">correlated.py</span></code>. Independent noise features are sampled directly in
 <code class="docutils literal notranslate"><span class="pre">generator.py</span></code> via <code class="docutils literal notranslate"><span class="pre">utils.sampling.sample_distribution</span></code>.</p>
 </dd>
 </dl>
-<p>The class-wise offsets are derived from <code class="docutils literal notranslate"><span class="pre">class_sep</span></code> by
-<code class="docutils literal notranslate"><span class="pre">_class_offsets_from_sep</span></code> and applied as pure mean shifts, so the per-class
-distribution shape is preserved.</p>
+<p>The standalone-informative block is partitioned into contiguous groups, each
+carrying its own <code class="docutils literal notranslate"><span class="pre">class_sep</span></code>. The class-wise offsets are derived per group
+from <code class="docutils literal notranslate"><span class="pre">class_sep</span></code> by <code class="docutils literal notranslate"><span class="pre">_class_offsets_from_sep</span></code> and applied as pure mean
+shifts, so the per-class distribution shape is preserved.</p>
 <p class="rubric">Functions</p>
 <table class="autosummary longtable docutils align-default">
 <tbody>
 <tr class="row-odd"><td><p><a class="reference internal" href="#biomedical_data_generator.features.informative.generate_informative_features" title="biomedical_data_generator.features.informative.generate_informative_features"><code class="xref py py-obj docutils literal notranslate"><span class="pre">generate_informative_features</span></code></a>(cfg, rng)</p></td>
-<td><p>Generate all free informative features (no anchors, no clusters).</p></td>
+<td><p>Generate all standalone informative features (no anchors, no clusters).</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#biomedical_data_generator.features.informative.resolve_standalone_groups" title="biomedical_data_generator.features.informative.resolve_standalone_groups"><code class="xref py py-obj docutils literal notranslate"><span class="pre">resolve_standalone_groups</span></code></a>(cfg)</p></td>
+<td><p>Resolve the column layout and centered per-class offsets of each group.</p></td>
 </tr>
 </tbody>
 </table>
 <dl class="py function">
 <dt class="sig sig-object py" id="biomedical_data_generator.features.informative.generate_informative_features">
 <span class="sig-prename descclassname"><span class="pre">biomedical_data_generator.features.informative.</span></span><span class="sig-name descname"><span class="pre">generate_informative_features</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cfg</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rng</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/biomedical_data_generator/features/informative.html#generate_informative_features"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#biomedical_data_generator.features.informative.generate_informative_features" title="Link to this definition"></a></dt>
-<dd><p>Generate all free informative features (no anchors, no clusters).</p>
-<p>The function performs:
-1. Build numeric labels <cite>y</cite> from <cite>cfg.class_configs</cite>.
-2. Allocate a matrix <cite>x_informative</cite> of shape (n_samples, n_informative_free).
-3. Sample base values for each class via <cite>sample_2d_array</cite>.
-4. Apply class-wise mean shifts (multi-class offsets only).</p>
+<dd><p>Generate all standalone informative features (no anchors, no clusters).</p>
+<p>The function performs:</p>
+<ol class="arabic simple">
+<li><p>Build numeric labels <code class="docutils literal notranslate"><span class="pre">y</span></code> from <code class="docutils literal notranslate"><span class="pre">cfg.class_configs</span></code>.</p></li>
+<li><p>Allocate a matrix <code class="docutils literal notranslate"><span class="pre">x_informative</span></code> of shape
+<code class="docutils literal notranslate"><span class="pre">(n_samples,</span> <span class="pre">n_standalone_informative)</span></code>.</p></li>
+<li><p><strong>Base draw</strong> over the <em>entire</em> block: for each class in declaration
+order, sample a contiguous <code class="docutils literal notranslate"><span class="pre">(n_class_samples,</span> <span class="pre">n_standalone_informative)</span></code>
+block spanning all columns.</p></li>
+<li><p><strong>Per-group offsets</strong>: partition the columns into the contiguous groups of
+<code class="docutils literal notranslate"><span class="pre">cfg.standalone_informative_groups</span></code> (declaration order, laid out at the
+front of the matrix), and for each group add the class-wise offsets
+derived from that group’s <code class="docutils literal notranslate"><span class="pre">class_sep</span></code> to its column range.</p></li>
+</ol>
+<dl class="simple">
+<dt>Draw/offset order (load-bearing for reproducibility):</dt><dd><p>The base draw is performed <strong>class-by-class over the full block width</strong>,
+identical to the pre-groups implementation. Because offsets are pure mean
+shifts that consume no randomness, the RNG draw count and order are a pure
+function of <code class="docutils literal notranslate"><span class="pre">(config,</span> <span class="pre">seed)</span></code> and are <em>independent of how the block is
+partitioned into groups</em>. For a single group spanning the whole block this
+reproduces the previous behavior byte-for-byte: the only difference from
+the old code is that the constant offset is added after the draw rather
+than inside the per-class loop, which cannot change RNG consumption.</p>
+</dd>
+</dl>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
@@ -143,7 +166,7 @@ distribution shape is preserved.</p>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p><dl class="simple">
-<dt>x_informative: Array of shape (n_samples, n_informative_free) with</dt><dd><p>free informative features.</p>
+<dt>x_informative: Array of shape (n_samples, n_standalone_informative) with</dt><dd><p>standalone informative features.</p>
 </dd>
 </dl>
 <p>y: Array of shape (n_samples,) with class labels in {0, …, K-1}.</p>
@@ -151,6 +174,31 @@ distribution shape is preserved.</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.14)">tuple</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="biomedical_data_generator.features.informative.resolve_standalone_groups">
+<span class="sig-prename descclassname"><span class="pre">biomedical_data_generator.features.informative.</span></span><span class="sig-name descname"><span class="pre">resolve_standalone_groups</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cfg</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/biomedical_data_generator/features/informative.html#resolve_standalone_groups"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#biomedical_data_generator.features.informative.resolve_standalone_groups" title="Link to this definition"></a></dt>
+<dd><p>Resolve the column layout and centered per-class offsets of each group.</p>
+<p>Mirrors exactly the contiguous, declaration-order layout and the per-class
+mean shifts applied by <a class="reference internal" href="#biomedical_data_generator.features.informative.generate_informative_features" title="biomedical_data_generator.features.informative.generate_informative_features"><code class="xref py py-func docutils literal notranslate"><span class="pre">generate_informative_features()</span></code></a>: group <code class="docutils literal notranslate"><span class="pre">g</span></code>
+occupies the next <code class="docutils literal notranslate"><span class="pre">n_features</span></code> columns at the front of the matrix, and its
+offset vector (length <code class="docutils literal notranslate"><span class="pre">n_classes</span></code>) is derived from the group’s <code class="docutils literal notranslate"><span class="pre">class_sep</span></code>
+by the same <code class="docutils literal notranslate"><span class="pre">_resolve_group_sep</span></code> / <code class="docutils literal notranslate"><span class="pre">_class_offsets_from_sep</span></code> path. Because
+every value is read from the resolved config, the result is reproducible
+without the feature matrix.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>cfg</strong> (<a class="reference internal" href="biomedical_data_generator.config.DatasetConfig.html#biomedical_data_generator.config.DatasetConfig" title="biomedical_data_generator.config.DatasetConfig"><em>DatasetConfig</em></a>) – Resolved DatasetConfig.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>One <code class="docutils literal notranslate"><span class="pre">(column_indices,</span> <span class="pre">per_class_offset)</span></code> pair per group in
+<code class="docutils literal notranslate"><span class="pre">cfg.standalone_informative_groups</span></code>, in declaration order.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.14)">list</a>[<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.14)">tuple</a>[<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.14)">tuple</a>[<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)">int</a>, …], <a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.14)">tuple</a>[<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)">float</a>, …]]]</p>
 </dd>
 </dl>
 </dd></dl>

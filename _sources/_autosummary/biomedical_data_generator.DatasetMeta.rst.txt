@@ -33,12 +33,14 @@
       ~DatasetMeta.noise_idx
       ~DatasetMeta.corr_cluster_indices
       ~DatasetMeta.anchor_idx
-      ~DatasetMeta.anchor_role
-      ~DatasetMeta.anchor_effect_size
-      ~DatasetMeta.anchor_class
+      ~DatasetMeta.standalone_informative_groups
+      ~DatasetMeta.standalone_noise_range
+      ~DatasetMeta.mean_per_class_effect
+      ~DatasetMeta.covariance_per_class_correlation
+      ~DatasetMeta.baseline_correlation
       ~DatasetMeta.cluster_label
       ~DatasetMeta.cluster_structure
-      ~DatasetMeta.cluster_correlation
+      ~DatasetMeta.cluster_proxy_attenuation
       ~DatasetMeta.n_classes
       ~DatasetMeta.class_names
       ~DatasetMeta.samples_per_class

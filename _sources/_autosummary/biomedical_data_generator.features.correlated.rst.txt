@@ -8,7 +8,6 @@
 
    .. autosummary::
    
-      apply_anchor_effects
       build_correlation_matrix
       sample_all_correlated_clusters
       sample_correlated_data

@@ -17,10 +17,10 @@
       ~CorrClusterConfig.construct
       ~CorrClusterConfig.copy
       ~CorrClusterConfig.dict
+      ~CorrClusterConfig.effective_correlation_for_class
       ~CorrClusterConfig.from_orm
-      ~CorrClusterConfig.get_correlation_for_class
-      ~CorrClusterConfig.is_class_specific
       ~CorrClusterConfig.json
+      ~CorrClusterConfig.mean_effect_for_class
       ~CorrClusterConfig.model_construct
       ~CorrClusterConfig.model_copy
       ~CorrClusterConfig.model_dump
@@ -35,7 +35,6 @@
       ~CorrClusterConfig.parse_file
       ~CorrClusterConfig.parse_obj
       ~CorrClusterConfig.parse_raw
-      ~CorrClusterConfig.resolve_anchor_effect_size
       ~CorrClusterConfig.schema
       ~CorrClusterConfig.schema_json
       ~CorrClusterConfig.update_forward_refs
@@ -55,11 +54,12 @@
       ~CorrClusterConfig.model_fields
       ~CorrClusterConfig.model_fields_set
       ~CorrClusterConfig.n_cluster_features
-      ~CorrClusterConfig.structure
-      ~CorrClusterConfig.correlation
-      ~CorrClusterConfig.anchor_role
-      ~CorrClusterConfig.anchor_effect_size
-      ~CorrClusterConfig.anchor_class
+      ~CorrClusterConfig.correlation_structure
+      ~CorrClusterConfig.baseline_correlation
+      ~CorrClusterConfig.anchor_index
+      ~CorrClusterConfig.proxy_attenuation
+      ~CorrClusterConfig.mean_channel
+      ~CorrClusterConfig.covariance_channel
       ~CorrClusterConfig.label
    
    

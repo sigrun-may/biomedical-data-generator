@@ -15,10 +15,9 @@
    
       ~DatasetConfig.__init__
       ~DatasetConfig.breakdown
+      ~DatasetConfig.cluster_informative_flags
       ~DatasetConfig.construct
       ~DatasetConfig.copy
-      ~DatasetConfig.count_informative_anchors
-      ~DatasetConfig.count_noise_anchors
       ~DatasetConfig.dict
       ~DatasetConfig.from_orm
       ~DatasetConfig.from_yaml
@@ -59,13 +58,13 @@
       ~DatasetConfig.model_fields_set
       ~DatasetConfig.n_classes
       ~DatasetConfig.n_features
-      ~DatasetConfig.n_informative_free
-      ~DatasetConfig.n_noise_free
-      ~DatasetConfig.n_samples
       ~DatasetConfig.n_informative
       ~DatasetConfig.n_noise
+      ~DatasetConfig.n_samples
+      ~DatasetConfig.n_standalone_informative
+      ~DatasetConfig.standalone_informative_groups
+      ~DatasetConfig.n_standalone_noise
       ~DatasetConfig.class_configs
-      ~DatasetConfig.class_sep
       ~DatasetConfig.noise_distribution
       ~DatasetConfig.noise_distribution_params
       ~DatasetConfig.prefixed_feature_naming

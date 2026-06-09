@@ -6,7 +6,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Biomedical Data Generator &mdash; Biomedical Data Generator 1.0.0 documentation</title>
+  <title>Biomedical Data Generator &mdash; Biomedical Data Generator 2.0.0 documentation</title>
       <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=b86133f3" />
       <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
       <link rel="stylesheet" type="text/css" href="_static/copybutton.css?v=76b2166b" />
@@ -15,7 +15,7 @@
   
       <script src="_static/jquery.js?v=5d32c60e"></script>
       <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="_static/documentation_options.js?v=8d563738"></script>
+      <script src="_static/documentation_options.js?v=51b770b3"></script>
       <script src="_static/doctools.js?v=9bcbadda"></script>
       <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
       <script src="_static/clipboard.min.js?v=a7894cd8"></script>
@@ -95,30 +95,57 @@
 <section id="key-features">
 <h2>Key Features<a class="headerlink" href="#key-features" title="Link to this heading"></a></h2>
 <ul class="simple">
-<li><p><strong>Correlated feature clusters</strong> with equicorrelated and Toeplitz structures</p></li>
-<li><p><strong>Class-specific correlation patterns</strong> (e.g., pathways active only in diseased class)</p></li>
-<li><p><strong>Batch effects simulation</strong> with controllable confounding</p></li>
-<li><p><strong>Ground-truth metadata</strong> capturing complete generative process</p></li>
+<li><p><strong>Role-aware ground truth</strong>: every column is traceable to the mechanism that
+generated it (<code class="docutils literal notranslate"><span class="pre">FeatureRoles</span></code> and <code class="docutils literal notranslate"><span class="pre">FeatureStrengths</span></code> derived from metadata)</p></li>
+<li><p><strong>Channel-based signal</strong>: informativeness is expressed structurally and <em>derived</em>,
+never declared — a <code class="docutils literal notranslate"><span class="pre">MeanChannel</span></code> (first moment) or <code class="docutils literal notranslate"><span class="pre">CovarianceChannel</span></code> (second
+moment / differential co-expression)</p></li>
+<li><p><strong>Correlated feature clusters</strong> with equicorrelated and Toeplitz structures, plus
+attenuated anchor-to-proxy propagation</p></li>
+<li><p><strong>Signal-strength gradients</strong> via lists of <code class="docutils literal notranslate"><span class="pre">StandaloneInformativeGroup</span></code></p></li>
+<li><p><strong>Class–batch confounding</strong>: batch effects with a controllable degree of
+correlation between batch assignment and class label</p></li>
 <li><p><strong>Scikit-learn compatible</strong> output for seamless integration</p></li>
-<li><p><strong>Configurable feature roles</strong> (informative, noise, proxy)</p></li>
 </ul>
 </section>
 <section id="quick-example">
 <h2>Quick Example<a class="headerlink" href="#quick-example" title="Link to this heading"></a></h2>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">biomedical_data_generator</span><span class="w"> </span><span class="kn">import</span> <span class="n">DatasetConfig</span><span class="p">,</span> <span class="n">ClassConfig</span><span class="p">,</span> <span class="n">generate_dataset</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">biomedical_data_generator</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">DatasetConfig</span><span class="p">,</span>
+    <span class="n">ClassConfig</span><span class="p">,</span>
+    <span class="n">CorrClusterConfig</span><span class="p">,</span>
+    <span class="n">MeanChannel</span><span class="p">,</span>
+    <span class="n">StandaloneInformativeGroup</span><span class="p">,</span>
+    <span class="n">generate_dataset</span><span class="p">,</span>
+    <span class="n">compute_feature_roles</span><span class="p">,</span>
+<span class="p">)</span>
 
 <span class="n">cfg</span> <span class="o">=</span> <span class="n">DatasetConfig</span><span class="p">(</span>
-    <span class="n">n_informative</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span>
-    <span class="n">n_noise</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span>
+    <span class="c1"># A signal-strength gradient: strong, medium, weak groups.</span>
+    <span class="n">standalone_informative_groups</span><span class="o">=</span><span class="p">[</span>
+        <span class="n">StandaloneInformativeGroup</span><span class="p">(</span><span class="n">n_features</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">class_sep</span><span class="o">=</span><span class="mf">2.0</span><span class="p">),</span>
+        <span class="n">StandaloneInformativeGroup</span><span class="p">(</span><span class="n">n_features</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">class_sep</span><span class="o">=</span><span class="mf">1.0</span><span class="p">),</span>
+        <span class="n">StandaloneInformativeGroup</span><span class="p">(</span><span class="n">n_features</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">class_sep</span><span class="o">=</span><span class="mf">0.4</span><span class="p">),</span>
+    <span class="p">],</span>
+    <span class="n">n_standalone_noise</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span>
     <span class="n">class_configs</span><span class="o">=</span><span class="p">[</span>
         <span class="n">ClassConfig</span><span class="p">(</span><span class="n">n_samples</span><span class="o">=</span><span class="mi">50</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;healthy&quot;</span><span class="p">),</span>
         <span class="n">ClassConfig</span><span class="p">(</span><span class="n">n_samples</span><span class="o">=</span><span class="mi">50</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;diseased&quot;</span><span class="p">),</span>
     <span class="p">],</span>
-    <span class="n">class_sep</span><span class="o">=</span><span class="mf">1.5</span><span class="p">,</span>
+    <span class="n">corr_clusters</span><span class="o">=</span><span class="p">[</span>
+        <span class="c1"># Made informative through a mean shift on the diseased class.</span>
+        <span class="n">CorrClusterConfig</span><span class="p">(</span>
+            <span class="n">n_cluster_features</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span>
+            <span class="n">baseline_correlation</span><span class="o">=</span><span class="mf">0.6</span><span class="p">,</span>
+            <span class="n">mean_channel</span><span class="o">=</span><span class="n">MeanChannel</span><span class="p">(</span><span class="n">per_class_effect</span><span class="o">=</span><span class="p">{</span><span class="mi">1</span><span class="p">:</span> <span class="mf">1.5</span><span class="p">}),</span>
+            <span class="n">label</span><span class="o">=</span><span class="s2">&quot;Pathway_A&quot;</span><span class="p">,</span>
+        <span class="p">),</span>
+    <span class="p">],</span>
     <span class="n">random_state</span><span class="o">=</span><span class="mi">42</span><span class="p">,</span>
 <span class="p">)</span>
 
 <span class="n">X</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">meta</span> <span class="o">=</span> <span class="n">generate_dataset</span><span class="p">(</span><span class="n">cfg</span><span class="p">)</span>
+<span class="n">roles</span> <span class="o">=</span> <span class="n">compute_feature_roles</span><span class="p">(</span><span class="n">meta</span><span class="p">)</span>  <span class="c1"># derived six-way column partition</span>
 </pre></div>
 </div>
 </section>
@@ -169,33 +196,39 @@
 <h2>Use Cases<a class="headerlink" href="#use-cases" title="Link to this heading"></a></h2>
 <p>This package is designed for:</p>
 <ul class="simple">
-<li><p>Generating reproducible datasets</p></li>
-<li><p>Simulating high-dimensional data with known ground truth feature roles</p></li>
+<li><p>Validating feature-importance and feature-selection methods against known,
+role-aware ground truth (which columns carry signal, and through which channel)</p></li>
+<li><p>Separating first-moment (mean) from second-moment (differential co-expression)
+signal when evaluating detectors</p></li>
 <li><p>Simulating multi-class problems with class-specific correlation structures</p></li>
-<li><p>Creating datasets with controlled signal-to-noise ratios</p></li>
-<li><p>Benchmarking feature selection and classification methods</p></li>
-<li><p>Evaluating methods for handling small sample sizes in high dimensions</p></li>
-<li><p>Testing robustness under correlation and non-causal variation</p></li>
-<li><p>Validating feature importance metrics against known ground truth</p></li>
+<li><p>Creating datasets with controlled, derived signal-to-noise structure</p></li>
+<li><p>Benchmarking batch-correction methods under controllable <strong>class–batch
+confounding</strong>, where non-causal variation correlates with the label</p></li>
+<li><p>Exposing models that latch onto batch or correlated proxies rather than the
+causal anchor</p></li>
 <li><p>Studying stability of selected features across resamples</p></li>
-<li><p>Exploring effects of batch confounding on model performance</p></li>
-<li><p>Illustrating impact of correlated features on model interpretability</p></li>
+<li><p>Illustrating the impact of correlated proxies on model interpretability</p></li>
 <li><p>Prototyping new algorithms for biomedical data</p></li>
-<li><p>Generating data for domain adaptation experiments with batch effects</p></li>
-<li><p>Teaching machine learning concepts with transparent ground truth</p></li>
-<li><p>Demonstrating cross-validation pitfalls in high-dimensional settings</p></li>
+<li><p>Generating data for domain-adaptation experiments with batch effects</p></li>
+<li><p>Teaching machine learning concepts with transparent, traceable ground truth</p></li>
 </ul>
 </section>
 <section id="scientific-context">
 <h2>Scientific Context<a class="headerlink" href="#scientific-context" title="Link to this heading"></a></h2>
-<p>Many biomedical machine learning problems operate in <strong>p &gt;&gt; n</strong> settings: thousands of variables but only dozens of samples. In these regimes, model performance and feature selection stability are heavily influenced by:</p>
+<p>Biomedical machine learning typically operates in <strong>p ≫ n</strong> settings: many
+variables (genes, proteins, metabolites) measured on comparatively few samples.
+This is the <em>domain context</em> the generator targets — not a feature it sells. In
+these settings, model behavior and feature-selection stability are shaped by:</p>
 <ul class="simple">
 <li><p>Correlated feature clusters (e.g., pathways or co-expressed genes)</p></li>
-<li><p>Non-causal variation (batch effects, site differences)</p></li>
-<li><p>Noise features appearing discriminative by chance</p></li>
-<li><p>Small changes in class balance or effect size</p></li>
+<li><p>Non-causal variation (batch effects, site differences) that may confound with class</p></li>
+<li><p>First- vs. second-moment signal (mean shifts vs. differential co-expression)</p></li>
+<li><p>Correlated proxies that mimic a causal anchor</p></li>
 </ul>
-<p>This generator provides a configurable, transparent way to simulate such scenarios with complete ground truth for validation.</p>
+<p>What sets this generator apart is <strong>role-aware ground truth</strong> — every column is
+traceable to the mechanism that generated it — and <strong>explicit class–batch
+confounding</strong>, so non-causal variation can be dialed in and measured against the
+truth rather than inferred.</p>
 </section>
 <section id="architecture">
 <h2>Architecture<a class="headerlink" href="#architecture" title="Link to this heading"></a></h2>

@@ -6,7 +6,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>biomedical_data_generator.features.correlated &mdash; Biomedical Data Generator 1.0.0 documentation</title>
+  <title>biomedical_data_generator.features.correlated &mdash; Biomedical Data Generator 2.0.0 documentation</title>
       <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=b86133f3" />
       <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=9edc463e" />
       <link rel="stylesheet" type="text/css" href="../_static/copybutton.css?v=76b2166b" />
@@ -15,7 +15,7 @@
   
       <script src="../_static/jquery.js?v=5d32c60e"></script>
       <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="../_static/documentation_options.js?v=8d563738"></script>
+      <script src="../_static/documentation_options.js?v=51b770b3"></script>
       <script src="../_static/doctools.js?v=9bcbadda"></script>
       <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
       <script src="../_static/clipboard.min.js?v=a7894cd8"></script>
@@ -151,18 +151,29 @@ Correlation decays with distance:</p>
 </li>
 </ul>
 </section>
-<section id="anchor-effects-mean-shifts">
-<h2>Anchor effects (mean shifts)<a class="headerlink" href="#anchor-effects-mean-shifts" title="Link to this heading"></a></h2>
-<p>When <code class="docutils literal notranslate"><span class="pre">anchor_role=&quot;informative&quot;</span></code> and <code class="docutils literal notranslate"><span class="pre">anchor_effect_size</span></code> is specified,
-the anchor feature receives a class-specific mean shift:</p>
+<section id="anchor-effects-mean-channel">
+<h2>Anchor effects (mean channel)<a class="headerlink" href="#anchor-effects-mean-channel" title="Link to this heading"></a></h2>
+<p>First-moment signal is carried by the optional <code class="docutils literal notranslate"><span class="pre">mean_channel</span></code>. When present,
+the anchor feature receives the channel’s per-class mean shift:</p>
 <div class="math notranslate nohighlight">
-\[\mu_{anchor, c} = \text{anchor_effect_size} \cdot \mathbb{1}_{c = anchor\_class}.\]</div>
-<p>Proxy features inherit this shift through correlation but with attenuated
-magnitude proportional to their correlation with the anchor.</p>
+\[\mu_{anchor, c} = \text{mean\_channel.per\_class\_effect}[c],\]</div>
+<p>with absent classes receiving <code class="docutils literal notranslate"><span class="pre">0.0</span></code> (baseline). A proxy at block column
+<code class="docutils literal notranslate"><span class="pre">j</span></code> inherits this shift structurally: the anchor’s per-class effect is
+propagated as <code class="docutils literal notranslate"><span class="pre">effect</span> <span class="pre">*</span> <span class="pre">proxy_attenuation</span> <span class="pre">*</span> <span class="pre">sigma[anchor_index,</span> <span class="pre">j]</span></code>, where
+<code class="docutils literal notranslate"><span class="pre">sigma</span></code> is the structural correlation matrix built from
+<code class="docutils literal notranslate"><span class="pre">correlation_structure</span></code> and that class’s effective correlation (the same
+correlation that samples the block). The proxy shift is therefore deterministic
+and decays with structural distance from the anchor under a Toeplitz structure.</p>
 <dl class="simple">
-<dt><strong>Configuration semantics</strong> (enforced by CorrClusterConfig validation):</dt><dd><ul class="simple">
-<li><p><code class="docutils literal notranslate"><span class="pre">anchor_role=&quot;noise&quot;</span></code> → no mean shift (effect_size ignored if present)</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">anchor_role=&quot;informative&quot;</span></code> → MUST have anchor_effect_size &gt; 0</p></li>
+<dt><strong>Configuration semantics</strong> (channel model):</dt><dd><ul class="simple">
+<li><p>Relevance is <strong>derived</strong>, never declared – there is no declared anchor
+role. A cluster is informative iff its mean channel varies across classes
+(first moment) or its effective per-class correlation varies across classes
+(second moment, via the <code class="docutils literal notranslate"><span class="pre">covariance_channel</span></code>).</p></li>
+<li><p>No <code class="docutils literal notranslate"><span class="pre">mean_channel</span></code> → no class-dependent mean shift on the anchor or its
+proxies.</p></li>
+<li><p>A <code class="docutils literal notranslate"><span class="pre">mean_channel</span></code> whose effects are equal across classes contributes no
+first-moment signal (the cluster is informative only if some channel varies).</p></li>
 </ul>
 </dd>
 </dl>
@@ -187,73 +198,17 @@ generative model for complex omics data.</p>
 <p class="rubric">Functions</p>
 <table class="autosummary longtable docutils align-default">
 <tbody>
-<tr class="row-odd"><td><p><a class="reference internal" href="#biomedical_data_generator.features.correlated.apply_anchor_effects" title="biomedical_data_generator.features.correlated.apply_anchor_effects"><code class="xref py py-obj docutils literal notranslate"><span class="pre">apply_anchor_effects</span></code></a>(x, y, cluster_configs)</p></td>
-<td><p>Apply class-specific mean shifts to anchor features.</p></td>
-</tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#biomedical_data_generator.features.correlated.build_correlation_matrix" title="biomedical_data_generator.features.correlated.build_correlation_matrix"><code class="xref py py-obj docutils literal notranslate"><span class="pre">build_correlation_matrix</span></code></a>(n_features, correlation)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#biomedical_data_generator.features.correlated.build_correlation_matrix" title="biomedical_data_generator.features.correlated.build_correlation_matrix"><code class="xref py py-obj docutils literal notranslate"><span class="pre">build_correlation_matrix</span></code></a>(n_features, correlation)</p></td>
 <td><p>Build a correlation matrix with specified structure.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#biomedical_data_generator.features.correlated.sample_all_correlated_clusters" title="biomedical_data_generator.features.correlated.sample_all_correlated_clusters"><code class="xref py py-obj docutils literal notranslate"><span class="pre">sample_all_correlated_clusters</span></code></a>(cfg, y[, rng])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#biomedical_data_generator.features.correlated.sample_all_correlated_clusters" title="biomedical_data_generator.features.correlated.sample_all_correlated_clusters"><code class="xref py py-obj docutils literal notranslate"><span class="pre">sample_all_correlated_clusters</span></code></a>(cfg, y[, rng])</p></td>
 <td><p>Generate and assemble all correlated feature clusters for a dataset.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#biomedical_data_generator.features.correlated.sample_correlated_data" title="biomedical_data_generator.features.correlated.sample_correlated_data"><code class="xref py py-obj docutils literal notranslate"><span class="pre">sample_correlated_data</span></code></a>(n_samples, ...[, ...])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#biomedical_data_generator.features.correlated.sample_correlated_data" title="biomedical_data_generator.features.correlated.sample_correlated_data"><code class="xref py py-obj docutils literal notranslate"><span class="pre">sample_correlated_data</span></code></a>(n_samples, ...[, ...])</p></td>
 <td><p>Sample correlated Gaussian data with zero mean and unit variance.</p></td>
 </tr>
 </tbody>
 </table>
-<dl class="py function">
-<dt class="sig sig-object py" id="biomedical_data_generator.features.correlated.apply_anchor_effects">
-<span class="sig-prename descclassname"><span class="pre">biomedical_data_generator.features.correlated.</span></span><span class="sig-name descname"><span class="pre">apply_anchor_effects</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cluster_configs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/biomedical_data_generator/features/correlated.html#apply_anchor_effects"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#biomedical_data_generator.features.correlated.apply_anchor_effects" title="Link to this definition"></a></dt>
-<dd><p>Apply class-specific mean shifts to anchor features.</p>
-<p>This function modifies the data matrix in-place by adding mean shifts to
-anchor features based on their configured effect sizes and target classes.</p>
-<p>The anchor feature (typically the first feature in each cluster) receives
-the full effect size, while correlated proxy features receive attenuated
-shifts equal to <code class="docutils literal notranslate"><span class="pre">effect_size</span> <span class="pre">*</span> <span class="pre">rho</span></code>, where <code class="docutils literal notranslate"><span class="pre">rho</span></code> is the <em>configured</em>
-structural correlation between anchor and proxy (<code class="docutils literal notranslate"><span class="pre">rho</span></code> for equicorrelated,
-<code class="docutils literal notranslate"><span class="pre">rho**i</span></code> for toeplitz). Using the configured correlation matrix instead of
-the empirical correlation of the already-shifted data keeps the proxy shift
-deterministic and independent of sample size, and makes the anchor the
-unique carrier of the Bayes-optimal discriminant direction. For
-class-specific clusters, <code class="docutils literal notranslate"><span class="pre">rho</span></code> is resolved and applied per class, so each
-class’s proxies are attenuated by that class’s own correlation even when the
-anchor shift covers all classes (<code class="docutils literal notranslate"><span class="pre">anchor_class=None</span></code>).</p>
-<dl class="simple">
-<dt><strong>Effect application logic</strong>:</dt><dd><ul class="simple">
-<li><p>anchor_role=”noise” → no shift (effect_size ignored)</p></li>
-<li><p>anchor_role=”informative” + anchor_effect_size &gt; 0 → apply shift</p></li>
-<li><p>Due to CorrClusterConfig validation, informative anchors always have
-anchor_effect_size != None</p></li>
-</ul>
-</dd>
-</dl>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>x</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.4)"><em>ndarray</em></a>) – Feature matrix of shape (n_samples, n_features). Modified in-place.</p></li>
-<li><p><strong>y</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.4)"><em>ndarray</em></a>) – Class labels of shape (n_samples,).</p></li>
-<li><p><strong>cluster_configs</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.14)"><em>list</em></a><em>[</em><a class="reference internal" href="biomedical_data_generator.config.CorrClusterConfig.html#biomedical_data_generator.config.CorrClusterConfig" title="biomedical_data_generator.config.CorrClusterConfig"><em>CorrClusterConfig</em></a><em>]</em>) – List of cluster configurations with anchor metadata.</p></li>
-</ul>
-</dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>The modified feature matrix (same object as input x).</p>
-</dd>
-<dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.4)"><em>ndarray</em></a></p>
-</dd>
-</dl>
-<div class="admonition note">
-<p class="admonition-title">Note</p>
-<p>For class-specific clusters whose anchor shift targets all classes
-(<code class="docutils literal notranslate"><span class="pre">anchor_class=None</span></code>), the proxy attenuation is computed separately
-per class using each class’s configured correlation. A class without an
-entry in the correlation mapping resolves to <code class="docutils literal notranslate"><span class="pre">rho=0</span></code> via
-<code class="docutils literal notranslate"><span class="pre">get_correlation_for_class</span></code>, so its anchor still shifts while its
-proxies stay unshifted (consistent with an anchor that is uncorrelated
-with its proxies in that class).</p>
-</div>
-</dd></dl>
-
 <dl class="py function">
 <dt class="sig sig-object py" id="biomedical_data_generator.features.correlated.build_correlation_matrix">
 <span class="sig-prename descclassname"><span class="pre">biomedical_data_generator.features.correlated.</span></span><span class="sig-name descname"><span class="pre">build_correlation_matrix</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">n_features</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">correlation</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">structure</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'equicorrelated'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/biomedical_data_generator/features/correlated.html#build_correlation_matrix"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#biomedical_data_generator.features.correlated.build_correlation_matrix" title="Link to this definition"></a></dt>
@@ -282,42 +237,36 @@ with its proxies in that class).</p>
 <dt class="sig sig-object py" id="biomedical_data_generator.features.correlated.sample_all_correlated_clusters">
 <span class="sig-prename descclassname"><span class="pre">biomedical_data_generator.features.correlated.</span></span><span class="sig-name descname"><span class="pre">sample_all_correlated_clusters</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cfg</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rng</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/biomedical_data_generator/features/correlated.html#sample_all_correlated_clusters"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#biomedical_data_generator.features.correlated.sample_all_correlated_clusters" title="Link to this definition"></a></dt>
 <dd><p>Generate and assemble all correlated feature clusters for a dataset.</p>
-<p>This function connects the abstract configuration with the actual data
-matrix and cluster-level metadata. It supports both global and class-specific
-correlation modes, and automatically applies anchor effects based on
-cluster configuration.</p>
-<dl>
-<dt><strong>Anchor effect application</strong>:</dt><dd><p>Anchor effects are applied automatically based on cluster configuration:
-- If anchor_role=”noise” → no mean shift
-- If anchor_role=”informative” → mean shift applied (effect_size validated to be != None)</p>
-<p>No separate parameter is needed because the semantics are enforced by
-CorrClusterConfig validation.</p>
-</dd>
-</dl>
+<p>For each cluster, a Gaussian block is sampled per class from that class’s
+effective within-block correlation (the covariance channel value for the
+class, or the cluster’s <code class="docutils literal notranslate"><span class="pre">baseline_correlation</span></code> when absent), then the mean
+channel adds the per-class anchor shift with its structurally derived proxy
+propagation. Relevance is never declared; it is derived from these channels.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>cfg</strong> (<a class="reference internal" href="biomedical_data_generator.config.DatasetConfig.html#biomedical_data_generator.config.DatasetConfig" title="biomedical_data_generator.config.DatasetConfig"><em>DatasetConfig</em></a>) – Dataset configuration with corr_clusters field.</p></li>
+<li><p><strong>cfg</strong> (<a class="reference internal" href="biomedical_data_generator.config.DatasetConfig.html#biomedical_data_generator.config.DatasetConfig" title="biomedical_data_generator.config.DatasetConfig"><em>DatasetConfig</em></a>) – Dataset configuration with the <code class="docutils literal notranslate"><span class="pre">corr_clusters</span></code> field.</p></li>
 <li><p><strong>y</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.4)"><em>ndarray</em></a>) – Class labels as a 1D NumPy array of length n_samples.</p></li>
 <li><p><strong>rng</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/random/generator.html#numpy.random.Generator" title="(in NumPy v2.4)"><em>Generator</em></a><em> | </em><em>None</em>) – Optional random number generator. If None, creates a new one.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p><ul class="simple">
-<li><p>x_clusters: Array of shape (n_samples, n_corr_features) with
-correlated clusters including anchor effects where configured.</p></li>
-<li><dl class="simple">
-<dt>cluster_meta: Dictionary with cluster-level metadata:</dt><dd><ul>
-<li><p>”anchor_role”: cluster_id -&gt; anchor_role</p></li>
-<li><p>”anchor_effect_size”: cluster_id -&gt; effect_size</p></li>
-<li><p>”anchor_class”: cluster_id -&gt; target_class</p></li>
+<dd class="field-even"><p><ul>
+<li><p>x_clusters: Array of shape (n_samples, n_corr_features) with the
+assembled correlated blocks including channel effects.</p></li>
+<li><p>cluster_meta: Dictionary with cluster-level metadata, keyed by field
+name then cluster id:</p>
+<blockquote>
+<div><ul class="simple">
+<li><p>”mean_per_class_effect”: cluster_id -&gt; mean channel mapping or None</p></li>
+<li><p>”covariance_per_class_correlation”: cluster_id -&gt; covariance mapping or None</p></li>
+<li><p>”baseline_correlation”: cluster_id -&gt; structural baseline correlation</p></li>
 <li><p>”label”: cluster_id -&gt; human-readable label</p></li>
-<li><p>”structure”: cluster_id -&gt; correlation structure
-(“equicorrelated” or “toeplitz”)</p></li>
-<li><p>”correlation”: cluster_id -&gt; raw correlation (float or per-class dict)</p></li>
+<li><p>”structure”: cluster_id -&gt; correlation structure (“equicorrelated” or “toeplitz”)</p></li>
+<li><p>”proxy_attenuation”: cluster_id -&gt; anchor-to-proxy mean-propagation multiplier</p></li>
+<li><p>”anchor_index”: cluster_id -&gt; structural anchor column within the block</p></li>
 </ul>
-</dd>
-</dl>
+</div></blockquote>
 </li>
 </ul>
 </p>
@@ -326,44 +275,6 @@ correlated clusters including anchor effects where configured.</p></li>
 <dd class="field-odd"><p>A tuple (x_clusters, cluster_meta) where</p>
 </dd>
 </dl>
-<p class="rubric">Examples</p>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="c1"># Pure correlation (noise anchor, no mean shift)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">cfg</span> <span class="o">=</span> <span class="n">DatasetConfig</span><span class="p">(</span>
-<span class="gp">... </span>    <span class="n">class_configs</span><span class="o">=</span><span class="p">[</span><span class="n">ClassConfig</span><span class="p">(</span><span class="mi">50</span><span class="p">),</span> <span class="n">ClassConfig</span><span class="p">(</span><span class="mi">50</span><span class="p">)],</span>
-<span class="gp">... </span>    <span class="n">corr_clusters</span><span class="o">=</span><span class="p">[</span>
-<span class="gp">... </span>        <span class="n">CorrClusterConfig</span><span class="p">(</span>
-<span class="gp">... </span>            <span class="n">n_cluster_features</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span>
-<span class="gp">... </span>            <span class="n">correlation</span><span class="o">=</span><span class="mf">0.8</span><span class="p">,</span>
-<span class="gp">... </span>            <span class="n">anchor_role</span><span class="o">=</span><span class="s2">&quot;noise&quot;</span>  <span class="c1"># No shift</span>
-<span class="gp">... </span>        <span class="p">)</span>
-<span class="gp">... </span>    <span class="p">]</span>
-<span class="gp">... </span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">y</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">repeat</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span> <span class="mi">50</span><span class="p">)</span>  <span class="c1"># 50 samples per class</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">x</span><span class="p">,</span> <span class="n">meta</span> <span class="o">=</span> <span class="n">sample_all_correlated_clusters</span><span class="p">(</span><span class="n">cfg</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">rng</span><span class="o">=</span><span class="n">rng</span><span class="p">)</span>
-</pre></div>
-</div>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="c1"># Correlation + diagnostic signal (informative anchor with shift)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">cfg</span> <span class="o">=</span> <span class="n">DatasetConfig</span><span class="p">(</span>
-<span class="gp">... </span>    <span class="n">class_configs</span><span class="o">=</span><span class="p">[</span><span class="n">ClassConfig</span><span class="p">(</span><span class="mi">50</span><span class="p">),</span> <span class="n">ClassConfig</span><span class="p">(</span><span class="mi">50</span><span class="p">)],</span>
-<span class="gp">... </span>    <span class="n">corr_clusters</span><span class="o">=</span><span class="p">[</span>
-<span class="gp">... </span>        <span class="n">CorrClusterConfig</span><span class="p">(</span>
-<span class="gp">... </span>            <span class="n">n_cluster_features</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span>
-<span class="gp">... </span>            <span class="n">correlation</span><span class="o">=</span><span class="mf">0.8</span><span class="p">,</span>
-<span class="gp">... </span>            <span class="n">anchor_role</span><span class="o">=</span><span class="s2">&quot;informative&quot;</span><span class="p">,</span>
-<span class="gp">... </span>            <span class="n">anchor_effect_size</span><span class="o">=</span><span class="s2">&quot;medium&quot;</span><span class="p">,</span>  <span class="c1"># Required for informative</span>
-<span class="gp">... </span>            <span class="n">anchor_class</span><span class="o">=</span><span class="mi">1</span>
-<span class="gp">... </span>        <span class="p">)</span>
-<span class="gp">... </span>    <span class="p">]</span>
-<span class="gp">... </span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">y</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">repeat</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span> <span class="mi">50</span><span class="p">)</span>  <span class="c1"># 50 samples per class</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">x</span><span class="p">,</span> <span class="n">meta</span> <span class="o">=</span> <span class="n">sample_all_correlated_clusters</span><span class="p">(</span><span class="n">cfg</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">rng</span><span class="o">=</span><span class="n">rng</span><span class="p">)</span>
-</pre></div>
-</div>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="c1"># Advanced: provide custom labels</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">y_custom</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="o">...</span><span class="p">])</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">x</span><span class="p">,</span> <span class="n">meta</span> <span class="o">=</span> <span class="n">sample_all_correlated_clusters</span><span class="p">(</span><span class="n">cfg</span><span class="p">,</span> <span class="n">y_custom</span><span class="p">,</span> <span class="n">rng</span><span class="p">)</span>
-</pre></div>
-</div>
 </dd></dl>
 
 <dl class="py function">

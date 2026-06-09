@@ -9,4 +9,5 @@
    .. autosummary::
    
       generate_informative_features
+      resolve_standalone_groups
    

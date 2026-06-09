@@ -5,7 +5,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>biomedical_data_generator.features.correlated &mdash; Biomedical Data Generator 1.0.0 documentation</title>
+  <title>biomedical_data_generator.features.correlated &mdash; Biomedical Data Generator 2.0.0 documentation</title>
       <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=b86133f3" />
       <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=9edc463e" />
       <link rel="stylesheet" type="text/css" href="../../../_static/copybutton.css?v=76b2166b" />
@@ -14,7 +14,7 @@
   
       <script src="../../../_static/jquery.js?v=5d32c60e"></script>
       <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="../../../_static/documentation_options.js?v=8d563738"></script>
+      <script src="../../../_static/documentation_options.js?v=51b770b3"></script>
       <script src="../../../_static/doctools.js?v=9bcbadda"></script>
       <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
       <script src="../../../_static/clipboard.min.js?v=a7894cd8"></script>
@@ -142,21 +142,32 @@
 
 <span class="sd">    where :math:`\rho` is the correlation parameter.</span>
 
-<span class="sd">Anchor effects (mean shifts)</span>
+<span class="sd">Anchor effects (mean channel)</span>
 <span class="sd">-----------------------------</span>
-<span class="sd">When ``anchor_role=&quot;informative&quot;`` and ``anchor_effect_size`` is specified,</span>
-<span class="sd">the anchor feature receives a class-specific mean shift:</span>
+<span class="sd">First-moment signal is carried by the optional ``mean_channel``. When present,</span>
+<span class="sd">the anchor feature receives the channel&#39;s per-class mean shift:</span>
 
 <span class="sd">.. math::</span>
 
-<span class="sd">    \mu_{anchor, c} = \text{anchor_effect_size} \cdot \mathbb{1}_{c = anchor\_class}.</span>
+<span class="sd">    \mu_{anchor, c} = \text{mean\_channel.per\_class\_effect}[c],</span>
 
-<span class="sd">Proxy features inherit this shift through correlation but with attenuated</span>
-<span class="sd">magnitude proportional to their correlation with the anchor.</span>
+<span class="sd">with absent classes receiving ``0.0`` (baseline). A proxy at block column</span>
+<span class="sd">``j`` inherits this shift structurally: the anchor&#39;s per-class effect is</span>
+<span class="sd">propagated as ``effect * proxy_attenuation * sigma[anchor_index, j]``, where</span>
+<span class="sd">``sigma`` is the structural correlation matrix built from</span>
+<span class="sd">``correlation_structure`` and that class&#39;s effective correlation (the same</span>
+<span class="sd">correlation that samples the block). The proxy shift is therefore deterministic</span>
+<span class="sd">and decays with structural distance from the anchor under a Toeplitz structure.</span>
 
-<span class="sd">**Configuration semantics** (enforced by CorrClusterConfig validation):</span>
-<span class="sd">  - ``anchor_role=&quot;noise&quot;`` → no mean shift (effect_size ignored if present)</span>
-<span class="sd">  - ``anchor_role=&quot;informative&quot;`` → MUST have anchor_effect_size &gt; 0</span>
+<span class="sd">**Configuration semantics** (channel model):</span>
+<span class="sd">  - Relevance is **derived**, never declared -- there is no declared anchor</span>
+<span class="sd">    role. A cluster is informative iff its mean channel varies across classes</span>
+<span class="sd">    (first moment) or its effective per-class correlation varies across classes</span>
+<span class="sd">    (second moment, via the ``covariance_channel``).</span>
+<span class="sd">  - No ``mean_channel`` → no class-dependent mean shift on the anchor or its</span>
+<span class="sd">    proxies.</span>
+<span class="sd">  - A ``mean_channel`` whose effects are equal across classes contributes no</span>
+<span class="sd">    first-moment signal (the cluster is informative only if some channel varies).</span>
 
 <span class="sd">Limitations and biological realism</span>
 <span class="sd">----------------------------------</span>
@@ -182,11 +193,11 @@
 <span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">biomedical_data_generator.config</span><span class="w"> </span><span class="kn">import</span> <span class="n">CorrClusterConfig</span><span class="p">,</span> <span class="n">DatasetConfig</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">biomedical_data_generator.meta</span><span class="w"> </span><span class="kn">import</span> <span class="n">_proxy_mean_offset</span>
 
 <span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span>
     <span class="s2">&quot;build_correlation_matrix&quot;</span><span class="p">,</span>
     <span class="s2">&quot;sample_correlated_data&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;apply_anchor_effects&quot;</span><span class="p">,</span>
     <span class="s2">&quot;sample_all_correlated_clusters&quot;</span><span class="p">,</span>
 <span class="p">]</span>
 
@@ -355,161 +366,104 @@
 <span class="c1"># ============================================================================</span>
 <span class="c1"># Anchor effect application</span>
 <span class="c1"># ============================================================================</span>
-<div class="viewcode-block" id="apply_anchor_effects">
-<a class="viewcode-back" href="../../../_autosummary/biomedical_data_generator.features.correlated.html#biomedical_data_generator.features.correlated.apply_anchor_effects">[docs]</a>
-<span class="k">def</span><span class="w"> </span><span class="nf">apply_anchor_effects</span><span class="p">(</span>
-    <span class="n">x</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_apply_mean_channel</span><span class="p">(</span>
+    <span class="n">block</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
     <span class="n">y</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
-    <span class="n">cluster_configs</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">CorrClusterConfig</span><span class="p">],</span>
-<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Apply class-specific mean shifts to anchor features.</span>
+    <span class="n">cluster_cfg</span><span class="p">:</span> <span class="n">CorrClusterConfig</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Apply the per-class anchor mean shift and its proxy propagation in-place.</span>
 
-<span class="sd">    This function modifies the data matrix in-place by adding mean shifts to</span>
-<span class="sd">    anchor features based on their configured effect sizes and target classes.</span>
-
-<span class="sd">    The anchor feature (typically the first feature in each cluster) receives</span>
-<span class="sd">    the full effect size, while correlated proxy features receive attenuated</span>
-<span class="sd">    shifts equal to ``effect_size * rho``, where ``rho`` is the *configured*</span>
-<span class="sd">    structural correlation between anchor and proxy (``rho`` for equicorrelated,</span>
-<span class="sd">    ``rho**i`` for toeplitz). Using the configured correlation matrix instead of</span>
-<span class="sd">    the empirical correlation of the already-shifted data keeps the proxy shift</span>
-<span class="sd">    deterministic and independent of sample size, and makes the anchor the</span>
-<span class="sd">    unique carrier of the Bayes-optimal discriminant direction. For</span>
-<span class="sd">    class-specific clusters, ``rho`` is resolved and applied per class, so each</span>
-<span class="sd">    class&#39;s proxies are attenuated by that class&#39;s own correlation even when the</span>
-<span class="sd">    anchor shift covers all classes (``anchor_class=None``).</span>
-
-<span class="sd">    **Effect application logic**:</span>
-<span class="sd">      - anchor_role=&quot;noise&quot; → no shift (effect_size ignored)</span>
-<span class="sd">      - anchor_role=&quot;informative&quot; + anchor_effect_size &gt; 0 → apply shift</span>
-<span class="sd">      - Due to CorrClusterConfig validation, informative anchors always have</span>
-<span class="sd">        anchor_effect_size != None</span>
+<span class="sd">    The anchor at ``anchor_index`` receives the full per-class effect. A proxy at</span>
+<span class="sd">    block column ``j`` inherits ``effect * proxy_attenuation * sigma[anchor_index, j]``,</span>
+<span class="sd">    where ``sigma`` is the structural correlation matrix built from</span>
+<span class="sd">    ``correlation_structure`` and that class&#39;s effective correlation -- the same</span>
+<span class="sd">    correlation that sampled the class&#39;s block. Using the structural correlation</span>
+<span class="sd">    (rather than the empirical correlation of the shifted data) keeps the proxy</span>
+<span class="sd">    shift deterministic and makes the anchor the unique carrier of the</span>
+<span class="sd">    Bayes-optimal discriminant direction.</span>
 
 <span class="sd">    Args:</span>
-<span class="sd">        x: Feature matrix of shape (n_samples, n_features). Modified in-place.</span>
+<span class="sd">        block: Cluster block of shape (n_samples, n_cluster_features). Modified in-place.</span>
 <span class="sd">        y: Class labels of shape (n_samples,).</span>
-<span class="sd">        cluster_configs: List of cluster configurations with anchor metadata.</span>
-
-<span class="sd">    Returns:</span>
-<span class="sd">        The modified feature matrix (same object as input x).</span>
-
-<span class="sd">    Note:</span>
-<span class="sd">        For class-specific clusters whose anchor shift targets all classes</span>
-<span class="sd">        (``anchor_class=None``), the proxy attenuation is computed separately</span>
-<span class="sd">        per class using each class&#39;s configured correlation. A class without an</span>
-<span class="sd">        entry in the correlation mapping resolves to ``rho=0`` via</span>
-<span class="sd">        ``get_correlation_for_class``, so its anchor still shifts while its</span>
-<span class="sd">        proxies stay unshifted (consistent with an anchor that is uncorrelated</span>
-<span class="sd">        with its proxies in that class).</span>
+<span class="sd">        cluster_cfg: Cluster configuration.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">x</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
-    <span class="n">y</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">y</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">cluster_cfg</span><span class="o">.</span><span class="n">mean_channel</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">return</span>
 
-    <span class="n">feature_offset</span> <span class="o">=</span> <span class="mi">0</span>
-    <span class="k">for</span> <span class="n">cluster_cfg</span> <span class="ow">in</span> <span class="n">cluster_configs</span><span class="p">:</span>
-        <span class="n">n_cluster_features</span> <span class="o">=</span> <span class="n">cluster_cfg</span><span class="o">.</span><span class="n">n_cluster_features</span>
+    <span class="n">n_features</span> <span class="o">=</span> <span class="n">cluster_cfg</span><span class="o">.</span><span class="n">n_cluster_features</span>
+    <span class="n">anchor_index</span> <span class="o">=</span> <span class="n">cluster_cfg</span><span class="o">.</span><span class="n">anchor_index</span>
 
-        <span class="c1"># Resolve numeric effect size (returns 0.0 for noise anchors)</span>
-        <span class="n">effect_size</span> <span class="o">=</span> <span class="n">cluster_cfg</span><span class="o">.</span><span class="n">resolve_anchor_effect_size</span><span class="p">()</span>
-        <span class="n">target_class</span> <span class="o">=</span> <span class="n">cluster_cfg</span><span class="o">.</span><span class="n">anchor_class</span>
-
-        <span class="c1"># Skip if no effect (noise anchor or zero effect)</span>
-        <span class="k">if</span> <span class="n">effect_size</span> <span class="o">==</span> <span class="mf">0.0</span><span class="p">:</span>
-            <span class="n">feature_offset</span> <span class="o">+=</span> <span class="n">n_cluster_features</span>
+    <span class="k">for</span> <span class="n">class_value</span> <span class="ow">in</span> <span class="n">np</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="n">y</span><span class="p">):</span>
+        <span class="n">class_index</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">class_value</span><span class="p">)</span>
+        <span class="n">effect</span> <span class="o">=</span> <span class="n">cluster_cfg</span><span class="o">.</span><span class="n">mean_effect_for_class</span><span class="p">(</span><span class="n">class_index</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">effect</span> <span class="o">==</span> <span class="mf">0.0</span><span class="p">:</span>
             <span class="k">continue</span>
 
-        <span class="c1"># Identify samples in target class (None → all classes)</span>
-        <span class="k">if</span> <span class="n">target_class</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">target_mask</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">y</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">bool</span><span class="p">)</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="n">target_mask</span> <span class="o">=</span> <span class="n">y</span> <span class="o">==</span> <span class="n">target_class</span>
+        <span class="n">class_mask</span> <span class="o">=</span> <span class="n">y</span> <span class="o">==</span> <span class="n">class_index</span>
+        <span class="n">block</span><span class="p">[</span><span class="n">class_mask</span><span class="p">,</span> <span class="n">anchor_index</span><span class="p">]</span> <span class="o">+=</span> <span class="n">effect</span>
 
-        <span class="c1"># Apply full shift to anchor feature (first in cluster)</span>
-        <span class="n">anchor_idx</span> <span class="o">=</span> <span class="n">feature_offset</span>
-        <span class="n">x</span><span class="p">[</span><span class="n">target_mask</span><span class="p">,</span> <span class="n">anchor_idx</span><span class="p">]</span> <span class="o">+=</span> <span class="n">effect_size</span>
-
-        <span class="c1"># Apply attenuated shifts to proxies using the *configured* structural</span>
-        <span class="c1"># correlation, not the empirical correlation of the shifted data.</span>
-        <span class="k">if</span> <span class="n">n_cluster_features</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
-            <span class="k">if</span> <span class="n">cluster_cfg</span><span class="o">.</span><span class="n">is_class_specific</span><span class="p">():</span>
-                <span class="c1"># Class-specific mode: each class has its own correlation</span>
-                <span class="c1"># structure, so the proxy attenuation is resolved and applied</span>
-                <span class="c1"># separately per class. Iterating over the distinct shifted</span>
-                <span class="c1"># classes attenuates each class&#39;s proxies with its own</span>
-                <span class="c1"># configured correlation, which is exact even when the anchor</span>
-                <span class="c1"># shift covers all classes (anchor_class=None).</span>
-                <span class="n">shifted_classes</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="n">y</span><span class="p">[</span><span class="n">target_mask</span><span class="p">])</span>
-                <span class="k">for</span> <span class="n">class_label</span> <span class="ow">in</span> <span class="n">shifted_classes</span><span class="p">:</span>
-                    <span class="n">class_mask</span> <span class="o">=</span> <span class="n">target_mask</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">y</span> <span class="o">==</span> <span class="n">class_label</span><span class="p">)</span>
-                    <span class="n">rho</span> <span class="o">=</span> <span class="n">cluster_cfg</span><span class="o">.</span><span class="n">get_correlation_for_class</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">class_label</span><span class="p">))</span>
-                    <span class="n">sigma</span> <span class="o">=</span> <span class="n">build_correlation_matrix</span><span class="p">(</span><span class="n">n_cluster_features</span><span class="p">,</span> <span class="n">rho</span><span class="p">,</span> <span class="n">cluster_cfg</span><span class="o">.</span><span class="n">structure</span><span class="p">)</span>
-                    <span class="n">anchor_correlations</span> <span class="o">=</span> <span class="n">sigma</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">:]</span>  <span class="c1"># theoretical, not empirical</span>
-                    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">corr_with_anchor</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">anchor_correlations</span><span class="p">,</span> <span class="n">start</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
-                        <span class="n">proxy_idx</span> <span class="o">=</span> <span class="n">feature_offset</span> <span class="o">+</span> <span class="n">i</span>
-                        <span class="n">x</span><span class="p">[</span><span class="n">class_mask</span><span class="p">,</span> <span class="n">proxy_idx</span><span class="p">]</span> <span class="o">+=</span> <span class="n">effect_size</span> <span class="o">*</span> <span class="n">corr_with_anchor</span>
-            <span class="k">else</span><span class="p">:</span>
-                <span class="c1"># Global mode: a single correlation value governs proxy</span>
-                <span class="c1"># attenuation for all samples, regardless of the class index.</span>
-                <span class="n">rho</span> <span class="o">=</span> <span class="n">cluster_cfg</span><span class="o">.</span><span class="n">get_correlation_for_class</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
-                <span class="n">sigma</span> <span class="o">=</span> <span class="n">build_correlation_matrix</span><span class="p">(</span><span class="n">n_cluster_features</span><span class="p">,</span> <span class="n">rho</span><span class="p">,</span> <span class="n">cluster_cfg</span><span class="o">.</span><span class="n">structure</span><span class="p">)</span>
-                <span class="n">anchor_correlations</span> <span class="o">=</span> <span class="n">sigma</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">:]</span>  <span class="c1"># theoretical, not empirical</span>
-                <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">corr_with_anchor</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">anchor_correlations</span><span class="p">,</span> <span class="n">start</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
-                    <span class="n">proxy_idx</span> <span class="o">=</span> <span class="n">feature_offset</span> <span class="o">+</span> <span class="n">i</span>
-                    <span class="n">x</span><span class="p">[</span><span class="n">target_mask</span><span class="p">,</span> <span class="n">proxy_idx</span><span class="p">]</span> <span class="o">+=</span> <span class="n">effect_size</span> <span class="o">*</span> <span class="n">corr_with_anchor</span>
-
-        <span class="n">feature_offset</span> <span class="o">+=</span> <span class="n">n_cluster_features</span>
-
-    <span class="k">return</span> <span class="n">x</span></div>
-
+        <span class="k">if</span> <span class="n">n_features</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="n">rho</span> <span class="o">=</span> <span class="n">cluster_cfg</span><span class="o">.</span><span class="n">effective_correlation_for_class</span><span class="p">(</span><span class="n">class_index</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">proxy_index</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_features</span><span class="p">):</span>
+                <span class="k">if</span> <span class="n">proxy_index</span> <span class="o">==</span> <span class="n">anchor_index</span><span class="p">:</span>
+                    <span class="k">continue</span>
+                <span class="n">block</span><span class="p">[</span><span class="n">class_mask</span><span class="p">,</span> <span class="n">proxy_index</span><span class="p">]</span> <span class="o">+=</span> <span class="n">_proxy_mean_offset</span><span class="p">(</span>
+                    <span class="n">anchor_per_class_offset</span><span class="o">=</span><span class="n">effect</span><span class="p">,</span>
+                    <span class="n">distance</span><span class="o">=</span><span class="nb">abs</span><span class="p">(</span><span class="n">proxy_index</span> <span class="o">-</span> <span class="n">anchor_index</span><span class="p">),</span>
+                    <span class="n">correlation_structure</span><span class="o">=</span><span class="n">cluster_cfg</span><span class="o">.</span><span class="n">correlation_structure</span><span class="p">,</span>
+                    <span class="n">effective_per_class_correlation</span><span class="o">=</span><span class="n">rho</span><span class="p">,</span>
+                    <span class="n">proxy_attenuation</span><span class="o">=</span><span class="n">cluster_cfg</span><span class="o">.</span><span class="n">proxy_attenuation</span><span class="p">,</span>
+                <span class="p">)</span>
 
 
 <span class="c1"># ============================================================================</span>
 <span class="c1"># High-level cluster generation</span>
 <span class="c1"># ============================================================================</span>
-<span class="k">def</span><span class="w"> </span><span class="nf">_sample_class_specific_cluster</span><span class="p">(</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_sample_cluster_block</span><span class="p">(</span>
     <span class="n">y</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
-    <span class="n">n_features</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
     <span class="n">cluster_cfg</span><span class="p">:</span> <span class="n">CorrClusterConfig</span><span class="p">,</span>
-    <span class="n">structure</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
     <span class="n">rng</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">Generator</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Generate a cluster with per-class correlation strengths.</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Sample one correlated block, per class, from its effective correlation.</span>
+
+<span class="sd">    Each class&#39;s rows are drawn with that class&#39;s effective within-block</span>
+<span class="sd">    correlation (the covariance channel value for the class, or the cluster&#39;s</span>
+<span class="sd">    ``baseline_correlation`` when absent), so differential co-expression is</span>
+<span class="sd">    expressed directly in the sampled second moments. A class whose effective</span>
+<span class="sd">    correlation is (near) zero is drawn as independent standard normals.</span>
 
 <span class="sd">    Args:</span>
 <span class="sd">        y: Class labels as 1D array of length n_samples.</span>
-<span class="sd">        n_features: Number of features in this cluster.</span>
-<span class="sd">        cluster_cfg: Cluster configuration with class-specific correlations.</span>
-<span class="sd">        structure: Correlation structure (&#39;equicorrelated&#39; or &#39;toeplitz&#39;).</span>
+<span class="sd">        cluster_cfg: Cluster configuration.</span>
 <span class="sd">        rng: Random number generator.</span>
 
 <span class="sd">    Returns:</span>
-<span class="sd">        Feature block of shape (n_samples, n_features) with class-specific</span>
-<span class="sd">        correlation patterns.</span>
+<span class="sd">        Feature block of shape (n_samples, n_cluster_features).</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">n_samples</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">y</span><span class="p">)</span>
+    <span class="n">n_features</span> <span class="o">=</span> <span class="n">cluster_cfg</span><span class="o">.</span><span class="n">n_cluster_features</span>
     <span class="n">block</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">((</span><span class="n">n_samples</span><span class="p">,</span> <span class="n">n_features</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
 
-    <span class="k">for</span> <span class="bp">cls</span> <span class="ow">in</span> <span class="n">np</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="n">y</span><span class="p">):</span>
-        <span class="n">cls_int</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="bp">cls</span><span class="p">)</span>
-        <span class="n">cls_mask</span> <span class="o">=</span> <span class="n">y</span> <span class="o">==</span> <span class="n">cls_int</span>
-        <span class="n">n_cls</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">cls_mask</span><span class="o">.</span><span class="n">sum</span><span class="p">())</span>
-        <span class="k">if</span> <span class="n">n_cls</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+    <span class="k">for</span> <span class="n">class_value</span> <span class="ow">in</span> <span class="n">np</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="n">y</span><span class="p">):</span>
+        <span class="n">class_index</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">class_value</span><span class="p">)</span>
+        <span class="n">class_mask</span> <span class="o">=</span> <span class="n">y</span> <span class="o">==</span> <span class="n">class_index</span>
+        <span class="n">n_class</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">class_mask</span><span class="o">.</span><span class="n">sum</span><span class="p">())</span>
+        <span class="k">if</span> <span class="n">n_class</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
             <span class="k">continue</span>
 
-        <span class="n">corr_cls</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">cluster_cfg</span><span class="o">.</span><span class="n">get_correlation_for_class</span><span class="p">(</span><span class="n">cls_int</span><span class="p">))</span>
-
-        <span class="k">if</span> <span class="nb">abs</span><span class="p">(</span><span class="n">corr_cls</span><span class="p">)</span> <span class="o">&lt;</span> <span class="n">CORRELATION_ZERO_THRESHOLD</span><span class="p">:</span>
-            <span class="n">cls_block</span> <span class="o">=</span> <span class="n">rng</span><span class="o">.</span><span class="n">standard_normal</span><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="n">n_cls</span><span class="p">,</span> <span class="n">n_features</span><span class="p">))</span>
+        <span class="n">rho</span> <span class="o">=</span> <span class="n">cluster_cfg</span><span class="o">.</span><span class="n">effective_correlation_for_class</span><span class="p">(</span><span class="n">class_index</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">abs</span><span class="p">(</span><span class="n">rho</span><span class="p">)</span> <span class="o">&lt;</span> <span class="n">CORRELATION_ZERO_THRESHOLD</span><span class="p">:</span>
+            <span class="n">class_block</span> <span class="o">=</span> <span class="n">rng</span><span class="o">.</span><span class="n">standard_normal</span><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="n">n_class</span><span class="p">,</span> <span class="n">n_features</span><span class="p">))</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="n">cls_block</span> <span class="o">=</span> <span class="n">sample_correlated_data</span><span class="p">(</span>
-                <span class="n">n_cls</span><span class="p">,</span>
+            <span class="n">class_block</span> <span class="o">=</span> <span class="n">sample_correlated_data</span><span class="p">(</span>
+                <span class="n">n_class</span><span class="p">,</span>
                 <span class="n">n_features</span><span class="p">,</span>
-                <span class="n">corr_cls</span><span class="p">,</span>
-                <span class="n">structure</span><span class="o">=</span><span class="n">structure</span><span class="p">,</span>
+                <span class="n">rho</span><span class="p">,</span>
+                <span class="n">structure</span><span class="o">=</span><span class="n">cluster_cfg</span><span class="o">.</span><span class="n">correlation_structure</span><span class="p">,</span>
                 <span class="n">rng</span><span class="o">=</span><span class="n">rng</span><span class="p">,</span>
             <span class="p">)</span>
 
-        <span class="n">block</span><span class="p">[</span><span class="n">cls_mask</span><span class="p">,</span> <span class="p">:]</span> <span class="o">=</span> <span class="n">cls_block</span>
+        <span class="n">block</span><span class="p">[</span><span class="n">class_mask</span><span class="p">,</span> <span class="p">:]</span> <span class="o">=</span> <span class="n">class_block</span>
 
     <span class="k">return</span> <span class="n">block</span>
 
@@ -523,72 +477,31 @@
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]]:</span>
 <span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Generate and assemble all correlated feature clusters for a dataset.</span>
 
-<span class="sd">    This function connects the abstract configuration with the actual data</span>
-<span class="sd">    matrix and cluster-level metadata. It supports both global and class-specific</span>
-<span class="sd">    correlation modes, and automatically applies anchor effects based on</span>
-<span class="sd">    cluster configuration.</span>
-
-<span class="sd">    **Anchor effect application**:</span>
-<span class="sd">      Anchor effects are applied automatically based on cluster configuration:</span>
-<span class="sd">      - If anchor_role=&quot;noise&quot; → no mean shift</span>
-<span class="sd">      - If anchor_role=&quot;informative&quot; → mean shift applied (effect_size validated to be != None)</span>
-
-<span class="sd">      No separate parameter is needed because the semantics are enforced by</span>
-<span class="sd">      CorrClusterConfig validation.</span>
+<span class="sd">    For each cluster, a Gaussian block is sampled per class from that class&#39;s</span>
+<span class="sd">    effective within-block correlation (the covariance channel value for the</span>
+<span class="sd">    class, or the cluster&#39;s ``baseline_correlation`` when absent), then the mean</span>
+<span class="sd">    channel adds the per-class anchor shift with its structurally derived proxy</span>
+<span class="sd">    propagation. Relevance is never declared; it is derived from these channels.</span>
 
 <span class="sd">    Args:</span>
-<span class="sd">        cfg: Dataset configuration with corr_clusters field.</span>
+<span class="sd">        cfg: Dataset configuration with the ``corr_clusters`` field.</span>
 <span class="sd">        y: Class labels as a 1D NumPy array of length n_samples.</span>
 <span class="sd">        rng: Optional random number generator. If None, creates a new one.</span>
 
 <span class="sd">    Returns:</span>
 <span class="sd">        A tuple (x_clusters, cluster_meta) where:</span>
 
-<span class="sd">        * x_clusters: Array of shape (n_samples, n_corr_features) with</span>
-<span class="sd">          correlated clusters including anchor effects where configured.</span>
-<span class="sd">        * cluster_meta: Dictionary with cluster-level metadata:</span>
-<span class="sd">            - &quot;anchor_role&quot;: cluster_id -&gt; anchor_role</span>
-<span class="sd">            - &quot;anchor_effect_size&quot;: cluster_id -&gt; effect_size</span>
-<span class="sd">            - &quot;anchor_class&quot;: cluster_id -&gt; target_class</span>
+<span class="sd">        * x_clusters: Array of shape (n_samples, n_corr_features) with the</span>
+<span class="sd">          assembled correlated blocks including channel effects.</span>
+<span class="sd">        * cluster_meta: Dictionary with cluster-level metadata, keyed by field</span>
+<span class="sd">          name then cluster id:</span>
+<span class="sd">            - &quot;mean_per_class_effect&quot;: cluster_id -&gt; mean channel mapping or None</span>
+<span class="sd">            - &quot;covariance_per_class_correlation&quot;: cluster_id -&gt; covariance mapping or None</span>
+<span class="sd">            - &quot;baseline_correlation&quot;: cluster_id -&gt; structural baseline correlation</span>
 <span class="sd">            - &quot;label&quot;: cluster_id -&gt; human-readable label</span>
-<span class="sd">            - &quot;structure&quot;: cluster_id -&gt; correlation structure</span>
-<span class="sd">              (&quot;equicorrelated&quot; or &quot;toeplitz&quot;)</span>
-<span class="sd">            - &quot;correlation&quot;: cluster_id -&gt; raw correlation (float or per-class dict)</span>
-
-<span class="sd">    Examples:</span>
-<span class="sd">        &gt;&gt;&gt; # Pure correlation (noise anchor, no mean shift)</span>
-<span class="sd">        &gt;&gt;&gt; cfg = DatasetConfig(</span>
-<span class="sd">        ...     class_configs=[ClassConfig(50), ClassConfig(50)],</span>
-<span class="sd">        ...     corr_clusters=[</span>
-<span class="sd">        ...         CorrClusterConfig(</span>
-<span class="sd">        ...             n_cluster_features=5,</span>
-<span class="sd">        ...             correlation=0.8,</span>
-<span class="sd">        ...             anchor_role=&quot;noise&quot;  # No shift</span>
-<span class="sd">        ...         )</span>
-<span class="sd">        ...     ]</span>
-<span class="sd">        ... )</span>
-<span class="sd">        &gt;&gt;&gt; y = np.repeat([0, 1], 50)  # 50 samples per class</span>
-<span class="sd">        &gt;&gt;&gt; x, meta = sample_all_correlated_clusters(cfg, y, rng=rng)</span>
-
-<span class="sd">        &gt;&gt;&gt; # Correlation + diagnostic signal (informative anchor with shift)</span>
-<span class="sd">        &gt;&gt;&gt; cfg = DatasetConfig(</span>
-<span class="sd">        ...     class_configs=[ClassConfig(50), ClassConfig(50)],</span>
-<span class="sd">        ...     corr_clusters=[</span>
-<span class="sd">        ...         CorrClusterConfig(</span>
-<span class="sd">        ...             n_cluster_features=5,</span>
-<span class="sd">        ...             correlation=0.8,</span>
-<span class="sd">        ...             anchor_role=&quot;informative&quot;,</span>
-<span class="sd">        ...             anchor_effect_size=&quot;medium&quot;,  # Required for informative</span>
-<span class="sd">        ...             anchor_class=1</span>
-<span class="sd">        ...         )</span>
-<span class="sd">        ...     ]</span>
-<span class="sd">        ... )</span>
-<span class="sd">        &gt;&gt;&gt; y = np.repeat([0, 1], 50)  # 50 samples per class</span>
-<span class="sd">        &gt;&gt;&gt; x, meta = sample_all_correlated_clusters(cfg, y, rng=rng)</span>
-
-<span class="sd">        &gt;&gt;&gt; # Advanced: provide custom labels</span>
-<span class="sd">        &gt;&gt;&gt; y_custom = np.array([...])</span>
-<span class="sd">        &gt;&gt;&gt; x, meta = sample_all_correlated_clusters(cfg, y_custom, rng)</span>
+<span class="sd">            - &quot;structure&quot;: cluster_id -&gt; correlation structure (&quot;equicorrelated&quot; or &quot;toeplitz&quot;)</span>
+<span class="sd">            - &quot;proxy_attenuation&quot;: cluster_id -&gt; anchor-to-proxy mean-propagation multiplier</span>
+<span class="sd">            - &quot;anchor_index&quot;: cluster_id -&gt; structural anchor column within the block</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">if</span> <span class="n">rng</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
         <span class="n">rng</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">default_rng</span><span class="p">()</span>
@@ -601,42 +514,9 @@
     <span class="n">cluster_cfgs</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">CorrClusterConfig</span><span class="p">]</span> <span class="o">=</span> <span class="n">cfg</span><span class="o">.</span><span class="n">corr_clusters</span> <span class="ow">or</span> <span class="p">[]</span>
 
     <span class="n">cluster_array_list</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
-
-    <span class="k">for</span> <span class="n">cluster_id</span><span class="p">,</span> <span class="n">cluster_cfg</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">cluster_cfgs</span><span class="p">):</span>
-        <span class="n">n_features</span> <span class="o">=</span> <span class="n">cluster_cfg</span><span class="o">.</span><span class="n">n_cluster_features</span>
-
-        <span class="k">if</span> <span class="ow">not</span> <span class="n">cluster_cfg</span><span class="o">.</span><span class="n">is_class_specific</span><span class="p">():</span>
-            <span class="c1"># Global mode: one correlation value for all samples</span>
-            <span class="n">corr_raw</span> <span class="o">=</span> <span class="n">cluster_cfg</span><span class="o">.</span><span class="n">correlation</span>
-
-            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">corr_raw</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
-                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                    <span class="s2">&quot;Non class-specific CorrClusterConfig must have a scalar &quot;</span> <span class="s2">&quot;correlation, got a dict instead.&quot;</span>
-                <span class="p">)</span>
-
-            <span class="n">corr_global</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">corr_raw</span><span class="p">)</span>
-
-            <span class="k">if</span> <span class="nb">abs</span><span class="p">(</span><span class="n">corr_global</span><span class="p">)</span> <span class="o">&lt;</span> <span class="n">CORRELATION_ZERO_THRESHOLD</span><span class="p">:</span>
-                <span class="n">block</span> <span class="o">=</span> <span class="n">rng</span><span class="o">.</span><span class="n">standard_normal</span><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="n">n_samples</span><span class="p">,</span> <span class="n">n_features</span><span class="p">))</span>
-            <span class="k">else</span><span class="p">:</span>
-                <span class="n">block</span> <span class="o">=</span> <span class="n">sample_correlated_data</span><span class="p">(</span>
-                    <span class="n">n_samples</span><span class="p">,</span>
-                    <span class="n">n_features</span><span class="p">,</span>
-                    <span class="n">corr_global</span><span class="p">,</span>
-                    <span class="n">structure</span><span class="o">=</span><span class="n">cluster_cfg</span><span class="o">.</span><span class="n">structure</span><span class="p">,</span>
-                    <span class="n">rng</span><span class="o">=</span><span class="n">rng</span><span class="p">,</span>
-                <span class="p">)</span>
-
-        <span class="k">else</span><span class="p">:</span>
-            <span class="c1"># Class-specific mode: correlation depends on class label</span>
-            <span class="n">block</span> <span class="o">=</span> <span class="n">_sample_class_specific_cluster</span><span class="p">(</span>
-                <span class="n">y</span><span class="o">=</span><span class="n">y</span><span class="p">,</span>
-                <span class="n">n_features</span><span class="o">=</span><span class="n">n_features</span><span class="p">,</span>
-                <span class="n">cluster_cfg</span><span class="o">=</span><span class="n">cluster_cfg</span><span class="p">,</span>
-                <span class="n">structure</span><span class="o">=</span><span class="n">cluster_cfg</span><span class="o">.</span><span class="n">structure</span><span class="p">,</span>
-                <span class="n">rng</span><span class="o">=</span><span class="n">rng</span><span class="p">,</span>
-            <span class="p">)</span>
-
+    <span class="k">for</span> <span class="n">cluster_cfg</span> <span class="ow">in</span> <span class="n">cluster_cfgs</span><span class="p">:</span>
+        <span class="n">block</span> <span class="o">=</span> <span class="n">_sample_cluster_block</span><span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="n">cluster_cfg</span><span class="p">,</span> <span class="n">rng</span><span class="p">)</span>
+        <span class="n">_apply_mean_channel</span><span class="p">(</span><span class="n">block</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">cluster_cfg</span><span class="p">)</span>
         <span class="n">cluster_array_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">block</span><span class="p">)</span>
 
     <span class="k">if</span> <span class="n">cluster_array_list</span><span class="p">:</span>
@@ -644,19 +524,20 @@
     <span class="k">else</span><span class="p">:</span>
         <span class="n">x_clusters</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">((</span><span class="n">n_samples</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
 
-    <span class="c1"># Apply anchor effects (automatically skips noise anchors via resolve_anchor_effect_size)</span>
-    <span class="n">x_clusters</span> <span class="o">=</span> <span class="n">apply_anchor_effects</span><span class="p">(</span><span class="n">x_clusters</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">cluster_cfgs</span><span class="p">)</span>
-
-    <span class="c1"># Build cluster-level metadata</span>
-    <span class="n">cluster_meta</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">object</span><span class="p">]]</span> <span class="o">=</span> <span class="p">{</span>
-        <span class="s2">&quot;anchor_role&quot;</span><span class="p">:</span> <span class="p">{</span><span class="n">cluster_id</span><span class="p">:</span> <span class="n">cluster_cfg</span><span class="o">.</span><span class="n">anchor_role</span> <span class="k">for</span> <span class="n">cluster_id</span><span class="p">,</span> <span class="n">cluster_cfg</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">cluster_cfgs</span><span class="p">)},</span>
-        <span class="s2">&quot;anchor_effect_size&quot;</span><span class="p">:</span> <span class="p">{</span>
-            <span class="n">cluster_id</span><span class="p">:</span> <span class="n">cluster_cfg</span><span class="o">.</span><span class="n">resolve_anchor_effect_size</span><span class="p">()</span> <span class="k">for</span> <span class="n">cluster_id</span><span class="p">,</span> <span class="n">cluster_cfg</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">cluster_cfgs</span><span class="p">)</span>
+    <span class="n">cluster_meta</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s2">&quot;mean_per_class_effect&quot;</span><span class="p">:</span> <span class="p">{</span>
+            <span class="n">cluster_id</span><span class="p">:</span> <span class="p">(</span><span class="n">c</span><span class="o">.</span><span class="n">mean_channel</span><span class="o">.</span><span class="n">per_class_effect</span> <span class="k">if</span> <span class="n">c</span><span class="o">.</span><span class="n">mean_channel</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="kc">None</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">cluster_id</span><span class="p">,</span> <span class="n">c</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">cluster_cfgs</span><span class="p">)</span>
         <span class="p">},</span>
-        <span class="s2">&quot;anchor_class&quot;</span><span class="p">:</span> <span class="p">{</span><span class="n">cluster_id</span><span class="p">:</span> <span class="n">cluster_cfg</span><span class="o">.</span><span class="n">anchor_class</span> <span class="k">for</span> <span class="n">cluster_id</span><span class="p">,</span> <span class="n">cluster_cfg</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">cluster_cfgs</span><span class="p">)},</span>
-        <span class="s2">&quot;label&quot;</span><span class="p">:</span> <span class="p">{</span><span class="n">cluster_id</span><span class="p">:</span> <span class="n">cluster_cfg</span><span class="o">.</span><span class="n">label</span> <span class="k">for</span> <span class="n">cluster_id</span><span class="p">,</span> <span class="n">cluster_cfg</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">cluster_cfgs</span><span class="p">)},</span>
-        <span class="s2">&quot;structure&quot;</span><span class="p">:</span> <span class="p">{</span><span class="n">cluster_id</span><span class="p">:</span> <span class="n">cluster_cfg</span><span class="o">.</span><span class="n">structure</span> <span class="k">for</span> <span class="n">cluster_id</span><span class="p">,</span> <span class="n">cluster_cfg</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">cluster_cfgs</span><span class="p">)},</span>
-        <span class="s2">&quot;correlation&quot;</span><span class="p">:</span> <span class="p">{</span><span class="n">cluster_id</span><span class="p">:</span> <span class="n">cluster_cfg</span><span class="o">.</span><span class="n">correlation</span> <span class="k">for</span> <span class="n">cluster_id</span><span class="p">,</span> <span class="n">cluster_cfg</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">cluster_cfgs</span><span class="p">)},</span>
+        <span class="s2">&quot;covariance_per_class_correlation&quot;</span><span class="p">:</span> <span class="p">{</span>
+            <span class="n">cluster_id</span><span class="p">:</span> <span class="p">(</span><span class="n">c</span><span class="o">.</span><span class="n">covariance_channel</span><span class="o">.</span><span class="n">per_class_correlation</span> <span class="k">if</span> <span class="n">c</span><span class="o">.</span><span class="n">covariance_channel</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="kc">None</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">cluster_id</span><span class="p">,</span> <span class="n">c</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">cluster_cfgs</span><span class="p">)</span>
+        <span class="p">},</span>
+        <span class="s2">&quot;baseline_correlation&quot;</span><span class="p">:</span> <span class="p">{</span><span class="n">cluster_id</span><span class="p">:</span> <span class="n">c</span><span class="o">.</span><span class="n">baseline_correlation</span> <span class="k">for</span> <span class="n">cluster_id</span><span class="p">,</span> <span class="n">c</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">cluster_cfgs</span><span class="p">)},</span>
+        <span class="s2">&quot;label&quot;</span><span class="p">:</span> <span class="p">{</span><span class="n">cluster_id</span><span class="p">:</span> <span class="n">c</span><span class="o">.</span><span class="n">label</span> <span class="k">for</span> <span class="n">cluster_id</span><span class="p">,</span> <span class="n">c</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">cluster_cfgs</span><span class="p">)},</span>
+        <span class="s2">&quot;structure&quot;</span><span class="p">:</span> <span class="p">{</span><span class="n">cluster_id</span><span class="p">:</span> <span class="n">c</span><span class="o">.</span><span class="n">correlation_structure</span> <span class="k">for</span> <span class="n">cluster_id</span><span class="p">,</span> <span class="n">c</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">cluster_cfgs</span><span class="p">)},</span>
+        <span class="s2">&quot;proxy_attenuation&quot;</span><span class="p">:</span> <span class="p">{</span><span class="n">cluster_id</span><span class="p">:</span> <span class="n">c</span><span class="o">.</span><span class="n">proxy_attenuation</span> <span class="k">for</span> <span class="n">cluster_id</span><span class="p">,</span> <span class="n">c</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">cluster_cfgs</span><span class="p">)},</span>
+        <span class="s2">&quot;anchor_index&quot;</span><span class="p">:</span> <span class="p">{</span><span class="n">cluster_id</span><span class="p">:</span> <span class="n">c</span><span class="o">.</span><span class="n">anchor_index</span> <span class="k">for</span> <span class="n">cluster_id</span><span class="p">,</span> <span class="n">c</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">cluster_cfgs</span><span class="p">)},</span>
     <span class="p">}</span>
 
     <span class="k">return</span> <span class="n">x_clusters</span><span class="p">,</span> <span class="n">cluster_meta</span></div>

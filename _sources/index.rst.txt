@@ -22,32 +22,59 @@ Generate reproducible, labeled synthetic datasets for machine learning with a fo
 Key Features
 ------------
 
-* **Correlated feature clusters** with equicorrelated and Toeplitz structures
-* **Class-specific correlation patterns** (e.g., pathways active only in diseased class)
-* **Batch effects simulation** with controllable confounding
-* **Ground-truth metadata** capturing complete generative process
+* **Role-aware ground truth**: every column is traceable to the mechanism that
+  generated it (``FeatureRoles`` and ``FeatureStrengths`` derived from metadata)
+* **Channel-based signal**: informativeness is expressed structurally and *derived*,
+  never declared — a ``MeanChannel`` (first moment) or ``CovarianceChannel`` (second
+  moment / differential co-expression)
+* **Correlated feature clusters** with equicorrelated and Toeplitz structures, plus
+  attenuated anchor-to-proxy propagation
+* **Signal-strength gradients** via lists of ``StandaloneInformativeGroup``
+* **Class–batch confounding**: batch effects with a controllable degree of
+  correlation between batch assignment and class label
 * **Scikit-learn compatible** output for seamless integration
-* **Configurable feature roles** (informative, noise, proxy)
 
 Quick Example
 -------------
 
 .. code-block:: python
 
-   from biomedical_data_generator import DatasetConfig, ClassConfig, generate_dataset
+   from biomedical_data_generator import (
+       DatasetConfig,
+       ClassConfig,
+       CorrClusterConfig,
+       MeanChannel,
+       StandaloneInformativeGroup,
+       generate_dataset,
+       compute_feature_roles,
+   )
 
    cfg = DatasetConfig(
-       n_informative=5,
-       n_noise=10,
+       # A signal-strength gradient: strong, medium, weak groups.
+       standalone_informative_groups=[
+           StandaloneInformativeGroup(n_features=3, class_sep=2.0),
+           StandaloneInformativeGroup(n_features=3, class_sep=1.0),
+           StandaloneInformativeGroup(n_features=3, class_sep=0.4),
+       ],
+       n_standalone_noise=10,
        class_configs=[
            ClassConfig(n_samples=50, label="healthy"),
            ClassConfig(n_samples=50, label="diseased"),
        ],
-       class_sep=1.5,
+       corr_clusters=[
+           # Made informative through a mean shift on the diseased class.
+           CorrClusterConfig(
+               n_cluster_features=4,
+               baseline_correlation=0.6,
+               mean_channel=MeanChannel(per_class_effect={1: 1.5}),
+               label="Pathway_A",
+           ),
+       ],
        random_state=42,
    )
 
    X, y, meta = generate_dataset(cfg)
+   roles = compute_feature_roles(meta)  # derived six-way column partition
 
 Installation
 ------------
@@ -87,36 +114,41 @@ Use Cases
 
 This package is designed for:
 
-* Generating reproducible datasets
-* Simulating high-dimensional data with known ground truth feature roles
+* Validating feature-importance and feature-selection methods against known,
+  role-aware ground truth (which columns carry signal, and through which channel)
+* Separating first-moment (mean) from second-moment (differential co-expression)
+  signal when evaluating detectors
 * Simulating multi-class problems with class-specific correlation structures
-* Creating datasets with controlled signal-to-noise ratios
+* Creating datasets with controlled, derived signal-to-noise structure
 
-* Benchmarking feature selection and classification methods
-* Evaluating methods for handling small sample sizes in high dimensions
-* Testing robustness under correlation and non-causal variation
-* Validating feature importance metrics against known ground truth
+* Benchmarking batch-correction methods under controllable **class–batch
+  confounding**, where non-causal variation correlates with the label
+* Exposing models that latch onto batch or correlated proxies rather than the
+  causal anchor
 * Studying stability of selected features across resamples
-* Exploring effects of batch confounding on model performance
-* Illustrating impact of correlated features on model interpretability
+* Illustrating the impact of correlated proxies on model interpretability
 
 * Prototyping new algorithms for biomedical data
-* Generating data for domain adaptation experiments with batch effects
-
-* Teaching machine learning concepts with transparent ground truth
-* Demonstrating cross-validation pitfalls in high-dimensional settings
+* Generating data for domain-adaptation experiments with batch effects
+* Teaching machine learning concepts with transparent, traceable ground truth
 
 Scientific Context
 ------------------
 
-Many biomedical machine learning problems operate in **p >> n** settings: thousands of variables but only dozens of samples. In these regimes, model performance and feature selection stability are heavily influenced by:
+Biomedical machine learning typically operates in **p ≫ n** settings: many
+variables (genes, proteins, metabolites) measured on comparatively few samples.
+This is the *domain context* the generator targets — not a feature it sells. In
+these settings, model behavior and feature-selection stability are shaped by:
 
 * Correlated feature clusters (e.g., pathways or co-expressed genes)
-* Non-causal variation (batch effects, site differences)
-* Noise features appearing discriminative by chance
-* Small changes in class balance or effect size
+* Non-causal variation (batch effects, site differences) that may confound with class
+* First- vs. second-moment signal (mean shifts vs. differential co-expression)
+* Correlated proxies that mimic a causal anchor
 
-This generator provides a configurable, transparent way to simulate such scenarios with complete ground truth for validation.
+What sets this generator apart is **role-aware ground truth** — every column is
+traceable to the mechanism that generated it — and **explicit class–batch
+confounding**, so non-causal variation can be dialed in and measured against the
+truth rather than inferred.
 
 Architecture
 ------------
