@@ -55,6 +55,15 @@
 <li class="toctree-l3"><a class="reference internal" href="_autosummary/biomedical_data_generator.config.BatchEffectsConfig.html">biomedical_data_generator.config.BatchEffectsConfig</a></li>
 <li class="toctree-l3"><a class="reference internal" href="_autosummary/biomedical_data_generator.config.CorrClusterConfig.html">biomedical_data_generator.config.CorrClusterConfig</a></li>
 <li class="toctree-l3"><a class="reference internal" href="_autosummary/biomedical_data_generator.config.DatasetConfig.html">biomedical_data_generator.config.DatasetConfig</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#cluster-signal-channels">Cluster signal channels</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="_autosummary/biomedical_data_generator.config.MeanChannel.html">biomedical_data_generator.config.MeanChannel</a></li>
+<li class="toctree-l4"><a class="reference internal" href="_autosummary/biomedical_data_generator.config.CovarianceChannel.html">biomedical_data_generator.config.CovarianceChannel</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#standalone-informative-groups">Standalone informative groups</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="_autosummary/biomedical_data_generator.config.StandaloneInformativeGroup.html">biomedical_data_generator.config.StandaloneInformativeGroup</a></li>
+</ul>
+</li>
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="#dataset-generator">Dataset Generator</a><ul>
@@ -81,6 +90,11 @@
 <li class="toctree-l3"><a class="reference internal" href="_autosummary/biomedical_data_generator.meta.DatasetMeta.html">biomedical_data_generator.meta.DatasetMeta</a></li>
 <li class="toctree-l3"><a class="reference internal" href="_autosummary/biomedical_data_generator.meta.FeatureRoles.html">biomedical_data_generator.meta.FeatureRoles</a></li>
 <li class="toctree-l3"><a class="reference internal" href="_autosummary/biomedical_data_generator.meta.compute_feature_roles.html">biomedical_data_generator.meta.compute_feature_roles</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#per-feature-signal-strengths">Per-feature signal strengths</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="_autosummary/biomedical_data_generator.meta.FeatureStrengths.html">biomedical_data_generator.meta.FeatureStrengths</a></li>
+<li class="toctree-l4"><a class="reference internal" href="_autosummary/biomedical_data_generator.meta.compute_feature_strengths.html">biomedical_data_generator.meta.compute_feature_strengths</a></li>
+</ul>
+</li>
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="#utility-modules-optional">Utility Modules (Optional)</a><ul>
@@ -157,7 +171,39 @@ batch effects.</p>
 </tr>
 </tbody>
 </table>
+<section id="cluster-signal-channels">
+<h3>Cluster signal channels<a class="headerlink" href="#cluster-signal-channels" title="Link to this heading"></a></h3>
+<p>A correlated cluster carries class-discriminating signal only through its
+optional channels. The <strong>mean channel</strong> encodes a first-moment (per-class
+mean shift on the anchor); the <strong>covariance channel</strong> encodes a second-moment
+(per-class within-cluster correlation, i.e. differential co-expression).
+Both are resolved per class by <a class="reference internal" href="_autosummary/biomedical_data_generator.config.CorrClusterConfig.html#biomedical_data_generator.config.CorrClusterConfig" title="biomedical_data_generator.config.CorrClusterConfig"><code class="xref py py-class docutils literal notranslate"><span class="pre">CorrClusterConfig</span></code></a>,
+falling back to a baseline when a class is absent.</p>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="_autosummary/biomedical_data_generator.config.MeanChannel.html#biomedical_data_generator.config.MeanChannel" title="biomedical_data_generator.config.MeanChannel"><code class="xref py py-obj docutils literal notranslate"><span class="pre">biomedical_data_generator.config.MeanChannel</span></code></a></p></td>
+<td><p>First-moment signal: a per-class mean shift applied to the cluster anchor.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="_autosummary/biomedical_data_generator.config.CovarianceChannel.html#biomedical_data_generator.config.CovarianceChannel" title="biomedical_data_generator.config.CovarianceChannel"><code class="xref py py-obj docutils literal notranslate"><span class="pre">biomedical_data_generator.config.CovarianceChannel</span></code></a></p></td>
+<td><p>Second-moment signal: a per-class within-cluster correlation.</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="standalone-informative-groups">
+<h3>Standalone informative groups<a class="headerlink" href="#standalone-informative-groups" title="Link to this heading"></a></h3>
+<p>Groups of cluster-free informative features that share one separation
+strength. A list of groups with decreasing <code class="docutils literal notranslate"><span class="pre">class_sep</span></code> realizes a
+signal-strength gradient across the standalone-informative block.</p>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="_autosummary/biomedical_data_generator.config.StandaloneInformativeGroup.html#biomedical_data_generator.config.StandaloneInformativeGroup" title="biomedical_data_generator.config.StandaloneInformativeGroup"><code class="xref py py-obj docutils literal notranslate"><span class="pre">biomedical_data_generator.config.StandaloneInformativeGroup</span></code></a></p></td>
+<td><p>A group of standalone informative features sharing one separation strength.</p></td>
+</tr>
+</tbody>
+</table>
 <p>—</p>
+</section>
 </section>
 <section id="dataset-generator">
 <h2>Dataset Generator<a class="headerlink" href="#dataset-generator" title="Link to this heading"></a></h2>
@@ -234,7 +280,24 @@ and derived dataset properties.</p>
 </tr>
 </tbody>
 </table>
+<section id="per-feature-signal-strengths">
+<h3>Per-feature signal strengths<a class="headerlink" href="#per-feature-signal-strengths" title="Link to this heading"></a></h3>
+<p>Derived, per-column assessment of how strongly each feature separates the
+classes. <a class="reference internal" href="_autosummary/biomedical_data_generator.meta.compute_feature_strengths.html#biomedical_data_generator.meta.compute_feature_strengths" title="biomedical_data_generator.meta.compute_feature_strengths"><code class="xref py py-func docutils literal notranslate"><span class="pre">compute_feature_strengths()</span></code></a>
+reads a <a class="reference internal" href="_autosummary/biomedical_data_generator.meta.DatasetMeta.html#biomedical_data_generator.meta.DatasetMeta" title="biomedical_data_generator.meta.DatasetMeta"><code class="xref py py-class docutils literal notranslate"><span class="pre">DatasetMeta</span></code></a> record and
+returns a <a class="reference internal" href="_autosummary/biomedical_data_generator.meta.FeatureStrengths.html#biomedical_data_generator.meta.FeatureStrengths" title="biomedical_data_generator.meta.FeatureStrengths"><code class="xref py py-class docutils literal notranslate"><span class="pre">FeatureStrengths</span></code></a> summary.</p>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="_autosummary/biomedical_data_generator.meta.FeatureStrengths.html#biomedical_data_generator.meta.FeatureStrengths" title="biomedical_data_generator.meta.FeatureStrengths"><code class="xref py py-obj docutils literal notranslate"><span class="pre">biomedical_data_generator.meta.FeatureStrengths</span></code></a></p></td>
+<td><p>Derived per-feature signal-strength annotation.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="_autosummary/biomedical_data_generator.meta.compute_feature_strengths.html#biomedical_data_generator.meta.compute_feature_strengths" title="biomedical_data_generator.meta.compute_feature_strengths"><code class="xref py py-obj docutils literal notranslate"><span class="pre">biomedical_data_generator.meta.compute_feature_strengths</span></code></a></p></td>
+<td><p>Derive per-feature signal strengths from a DatasetMeta.</p></td>
+</tr>
+</tbody>
+</table>
 <p>—</p>
+</section>
 </section>
 <section id="utility-modules-optional">
 <h2>Utility Modules (Optional)<a class="headerlink" href="#utility-modules-optional" title="Link to this heading"></a></h2>

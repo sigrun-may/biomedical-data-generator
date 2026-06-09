@@ -29,6 +29,36 @@ batch effects.
    biomedical_data_generator.config.CorrClusterConfig
    biomedical_data_generator.config.DatasetConfig
 
+Cluster signal channels
+~~~~~~~~~~~~~~~~~~~~~~~~~
+
+A correlated cluster carries class-discriminating signal only through its
+optional channels. The **mean channel** encodes a first-moment (per-class
+mean shift on the anchor); the **covariance channel** encodes a second-moment
+(per-class within-cluster correlation, i.e. differential co-expression).
+Both are resolved per class by :class:`~biomedical_data_generator.config.CorrClusterConfig`,
+falling back to a baseline when a class is absent.
+
+.. autosummary::
+   :toctree: _autosummary
+   :nosignatures:
+
+   biomedical_data_generator.config.MeanChannel
+   biomedical_data_generator.config.CovarianceChannel
+
+Standalone informative groups
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Groups of cluster-free informative features that share one separation
+strength. A list of groups with decreasing ``class_sep`` realizes a
+signal-strength gradient across the standalone-informative block.
+
+.. autosummary::
+   :toctree: _autosummary
+   :nosignatures:
+
+   biomedical_data_generator.config.StandaloneInformativeGroup
+
 ---
 
 Dataset Generator
@@ -105,6 +135,21 @@ and derived dataset properties.
    biomedical_data_generator.meta.DatasetMeta
    biomedical_data_generator.meta.FeatureRoles
    biomedical_data_generator.meta.compute_feature_roles
+
+Per-feature signal strengths
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Derived, per-column assessment of how strongly each feature separates the
+classes. :func:`~biomedical_data_generator.meta.compute_feature_strengths`
+reads a :class:`~biomedical_data_generator.meta.DatasetMeta` record and
+returns a :class:`~biomedical_data_generator.meta.FeatureStrengths` summary.
+
+.. autosummary::
+   :toctree: _autosummary
+   :nosignatures:
+
+   biomedical_data_generator.meta.FeatureStrengths
+   biomedical_data_generator.meta.compute_feature_strengths
 
 ---
 

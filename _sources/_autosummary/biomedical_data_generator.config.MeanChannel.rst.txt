@@ -1,0 +1,56 @@
+﻿biomedical\_data\_generator.config.MeanChannel
+==============================================
+
+.. currentmodule:: biomedical_data_generator.config
+
+.. autoclass:: MeanChannel
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~MeanChannel.__init__
+      ~MeanChannel.construct
+      ~MeanChannel.copy
+      ~MeanChannel.dict
+      ~MeanChannel.from_orm
+      ~MeanChannel.json
+      ~MeanChannel.model_construct
+      ~MeanChannel.model_copy
+      ~MeanChannel.model_dump
+      ~MeanChannel.model_dump_json
+      ~MeanChannel.model_json_schema
+      ~MeanChannel.model_parametrized_name
+      ~MeanChannel.model_post_init
+      ~MeanChannel.model_rebuild
+      ~MeanChannel.model_validate
+      ~MeanChannel.model_validate_json
+      ~MeanChannel.model_validate_strings
+      ~MeanChannel.parse_file
+      ~MeanChannel.parse_obj
+      ~MeanChannel.parse_raw
+      ~MeanChannel.schema
+      ~MeanChannel.schema_json
+      ~MeanChannel.update_forward_refs
+      ~MeanChannel.validate
+   
+   
+
+   
+   
+   .. rubric:: Attributes
+
+   .. autosummary::
+   
+      ~MeanChannel.model_computed_fields
+      ~MeanChannel.model_config
+      ~MeanChannel.model_extra
+      ~MeanChannel.model_fields
+      ~MeanChannel.model_fields_set
+      ~MeanChannel.per_class_effect
+   
+   

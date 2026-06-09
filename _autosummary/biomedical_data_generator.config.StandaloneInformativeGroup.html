@@ -6,7 +6,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>biomedical_data_generator.config.ClassConfig &mdash; Biomedical Data Generator 2.0.0 documentation</title>
+  <title>biomedical_data_generator.config.StandaloneInformativeGroup &mdash; Biomedical Data Generator 2.0.0 documentation</title>
       <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=b86133f3" />
       <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=9edc463e" />
       <link rel="stylesheet" type="text/css" href="../_static/copybutton.css?v=76b2166b" />
@@ -23,8 +23,8 @@
     <script src="../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
-    <link rel="next" title="biomedical_data_generator.config.BatchEffectsConfig" href="biomedical_data_generator.config.BatchEffectsConfig.html" />
-    <link rel="prev" title="Code Documentation" href="../code-doc.html" /> 
+    <link rel="next" title="biomedical_data_generator.features.informative" href="biomedical_data_generator.features.informative.html" />
+    <link rel="prev" title="biomedical_data_generator.config.CovarianceChannel" href="biomedical_data_generator.config.CovarianceChannel.html" /> 
 </head>
 
 <body class="wy-body-for-nav"> 
@@ -51,15 +51,15 @@
 <li class="toctree-l1"><a class="reference internal" href="../api.html">API Reference</a></li>
 <li class="toctree-l1 current"><a class="reference internal" href="../code-doc.html">Code Documentation</a><ul class="current">
 <li class="toctree-l2 current"><a class="reference internal" href="../code-doc.html#configuration-models">Configuration Models</a><ul class="current">
-<li class="toctree-l3 current"><a class="current reference internal" href="#">biomedical_data_generator.config.ClassConfig</a><ul>
-<li class="toctree-l4"><a class="reference internal" href="#biomedical_data_generator.config.ClassConfig"><code class="docutils literal notranslate"><span class="pre">ClassConfig</span></code></a></li>
-</ul>
-</li>
+<li class="toctree-l3"><a class="reference internal" href="biomedical_data_generator.config.ClassConfig.html">biomedical_data_generator.config.ClassConfig</a></li>
 <li class="toctree-l3"><a class="reference internal" href="biomedical_data_generator.config.BatchEffectsConfig.html">biomedical_data_generator.config.BatchEffectsConfig</a></li>
 <li class="toctree-l3"><a class="reference internal" href="biomedical_data_generator.config.CorrClusterConfig.html">biomedical_data_generator.config.CorrClusterConfig</a></li>
 <li class="toctree-l3"><a class="reference internal" href="biomedical_data_generator.config.DatasetConfig.html">biomedical_data_generator.config.DatasetConfig</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../code-doc.html#cluster-signal-channels">Cluster signal channels</a></li>
-<li class="toctree-l3"><a class="reference internal" href="../code-doc.html#standalone-informative-groups">Standalone informative groups</a></li>
+<li class="toctree-l3 current"><a class="reference internal" href="../code-doc.html#standalone-informative-groups">Standalone informative groups</a><ul class="current">
+<li class="toctree-l4 current"><a class="current reference internal" href="#">biomedical_data_generator.config.StandaloneInformativeGroup</a></li>
+</ul>
+</li>
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="../code-doc.html#dataset-generator">Dataset Generator</a></li>
@@ -92,9 +92,9 @@
   <ul class="wy-breadcrumbs">
       <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
           <li class="breadcrumb-item"><a href="../code-doc.html">Code Documentation</a></li>
-      <li class="breadcrumb-item active">biomedical_data_generator.config.ClassConfig</li>
+      <li class="breadcrumb-item active">biomedical_data_generator.config.StandaloneInformativeGroup</li>
       <li class="wy-breadcrumbs-aside">
-              <a href="https://github.com/sigrun-may/biomedical-data-generator/blob/main/docs/_autosummary/biomedical_data_generator.config.ClassConfig.rst" class="fa fa-github"> Edit on GitHub</a>
+              <a href="https://github.com/sigrun-may/biomedical-data-generator/blob/main/docs/_autosummary/biomedical_data_generator.config.StandaloneInformativeGroup.rst" class="fa fa-github"> Edit on GitHub</a>
       </li>
   </ul>
   <hr/>
@@ -102,69 +102,58 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
              
-  <section id="biomedical-data-generator-config-classconfig">
-<h1>biomedical_data_generator.config.ClassConfig<a class="headerlink" href="#biomedical-data-generator-config-classconfig" title="Link to this heading"></a></h1>
+  <section id="biomedical-data-generator-config-standaloneinformativegroup">
+<h1>biomedical_data_generator.config.StandaloneInformativeGroup<a class="headerlink" href="#biomedical-data-generator-config-standaloneinformativegroup" title="Link to this heading"></a></h1>
 <dl class="py class">
-<dt class="sig sig-object py" id="biomedical_data_generator.config.ClassConfig">
-<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">biomedical_data_generator.config.</span></span><span class="sig-name descname"><span class="pre">ClassConfig</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_samples</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">30</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">class_distribution</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'normal'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">class_distribution_params</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">label</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/biomedical_data_generator/config.html#ClassConfig"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#biomedical_data_generator.config.ClassConfig" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="biomedical_data_generator.config.StandaloneInformativeGroup">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">biomedical_data_generator.config.</span></span><span class="sig-name descname"><span class="pre">StandaloneInformativeGroup</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_features</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">class_sep</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/biomedical_data_generator/config.html#StandaloneInformativeGroup"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#biomedical_data_generator.config.StandaloneInformativeGroup" title="Link to this definition"></a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">BaseModel</span></code></p>
-<p>Configuration for a single class in the dataset.</p>
-<p>Each class is defined by its sample count, distribution, and optional label.
-Class indices (0, 1, 2, …) are assigned by position in the list.
-Auto-generated labels follow pattern “class_{idx}”.</p>
+<p>A group of standalone informative features sharing one separation strength.</p>
+<p>All members are independent (cluster-free) informative features. They share
+the per-class base distribution defined globally on <code class="docutils literal notranslate"><span class="pre">ClassConfig</span></code> and differ
+only in the magnitude of the class-wise mean offset, set by <code class="docutils literal notranslate"><span class="pre">class_sep</span></code>.
+A list of groups with decreasing <code class="docutils literal notranslate"><span class="pre">class_sep</span></code> realizes a signal-strength
+gradient across the standalone-informative block.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>n_samples</strong> (<a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Annotated" title="(in Python v3.14)"><em>Annotated</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a><em>, </em><em>Ge</em><em>(</em><em>ge=1</em><em>)</em><em>]</em>) – Number of samples for this class (must be &gt;= 1).</p></li>
-<li><p><strong>class_distribution</strong> (<a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Literal" title="(in Python v3.14)"><em>Literal</em></a><em>[</em><em>'normal'</em><em>, </em><em>'lognormal'</em><em>, </em><em>'exp_normal'</em><em>, </em><em>'uniform'</em><em>, </em><em>'exponential'</em><em>, </em><em>'laplace'</em><em>]</em>) – <p>Distribution type for feature generation. Supported numpy random generator distributions:
-- “normal”, “lognormal”, “uniform”, “exponential”, “laplace”. Additionally, “exp_normal” for direct control</p>
-<blockquote>
-<div><p>over lognormal parameters.</p>
-</div></blockquote>
-</p></li>
-<li><p><strong>class_distribution_params</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><em>dict</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a><em>, </em><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.14)"><em>Any</em></a><em>] </em><em>| </em><em>None</em>) – Parameters for the chosen distribution.</p></li>
-<li><p><strong>label</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a><em> | </em><em>None</em>) – Optional descriptive name. Auto-generated as “class_0”, “class_1”, etc. if not provided.</p></li>
+<li><p><strong>n_features</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a>)</p></li>
+<li><p><strong>class_sep</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a><em> | </em><a class="reference external" href="https://docs.python.org/3/library/collections.abc.html#collections.abc.Sequence" title="(in Python v3.14)"><em>Sequence</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a><em>]</em>)</p></li>
 </ul>
 </dd>
 </dl>
-<p class="rubric">Examples</p>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="c1"># Auto-generated labels</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">configs</span> <span class="o">=</span> <span class="p">[</span>
-<span class="gp">... </span>    <span class="n">ClassConfig</span><span class="p">(</span><span class="n">n_samples</span><span class="o">=</span><span class="mi">100</span><span class="p">),</span>  <span class="c1"># label → &quot;class_0&quot;</span>
-<span class="gp">... </span>    <span class="n">ClassConfig</span><span class="p">(</span><span class="n">n_samples</span><span class="o">=</span><span class="mi">50</span><span class="p">)</span>    <span class="c1"># label → &quot;class_1&quot;</span>
-<span class="gp">... </span><span class="p">]</span>
-</pre></div>
-</div>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="c1"># Explicit semantic labels</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">configs</span> <span class="o">=</span> <span class="p">[</span>
-<span class="gp">... </span>    <span class="n">ClassConfig</span><span class="p">(</span><span class="n">n_samples</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;healthy&quot;</span><span class="p">),</span>
-<span class="gp">... </span>    <span class="n">ClassConfig</span><span class="p">(</span><span class="n">n_samples</span><span class="o">=</span><span class="mi">50</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;diseased&quot;</span><span class="p">)</span>
-<span class="gp">... </span><span class="p">]</span>
-</pre></div>
-</div>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="c1"># Different distributions per class</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">configs</span> <span class="o">=</span> <span class="p">[</span>
-<span class="gp">... </span>    <span class="n">ClassConfig</span><span class="p">(</span>
-<span class="gp">... </span>        <span class="n">n_samples</span><span class="o">=</span><span class="mi">50</span><span class="p">,</span>
-<span class="gp">... </span>        <span class="n">label</span><span class="o">=</span><span class="s2">&quot;control&quot;</span><span class="p">,</span>
-<span class="gp">... </span>        <span class="n">class_distribution</span><span class="o">=</span><span class="s2">&quot;normal&quot;</span>
-<span class="gp">... </span>    <span class="p">),</span>
-<span class="gp">... </span>    <span class="n">ClassConfig</span><span class="p">(</span>
-<span class="gp">... </span>        <span class="n">n_samples</span><span class="o">=</span><span class="mi">30</span><span class="p">,</span>
-<span class="gp">... </span>        <span class="n">label</span><span class="o">=</span><span class="s2">&quot;diseased&quot;</span><span class="p">,</span>
-<span class="gp">... </span>        <span class="n">class_distribution</span><span class="o">=</span><span class="s2">&quot;lognormal&quot;</span><span class="p">,</span>
-<span class="gp">... </span>        <span class="n">class_distribution_params</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;mean&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> <span class="s2">&quot;sigma&quot;</span><span class="p">:</span> <span class="mf">0.5</span><span class="p">}</span>
-<span class="gp">... </span>    <span class="p">)</span>
-<span class="gp">... </span><span class="p">]</span>
-</pre></div>
-</div>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="biomedical_data_generator.config.StandaloneInformativeGroup.n_features">
+<span class="sig-name descname"><span class="pre">n_features</span></span><a class="headerlink" href="#biomedical_data_generator.config.StandaloneInformativeGroup.n_features" title="Link to this definition"></a></dt>
+<dd><p>Number of standalone informative features in this group (&gt;= 1).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)">int</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="biomedical_data_generator.config.StandaloneInformativeGroup.class_sep">
+<span class="sig-name descname"><span class="pre">class_sep</span></span><a class="headerlink" href="#biomedical_data_generator.config.StandaloneInformativeGroup.class_sep" title="Link to this definition"></a></dt>
+<dd><p>Per-class separation. A scalar broadcasts to a length
+<code class="docutils literal notranslate"><span class="pre">n_classes</span> <span class="pre">-</span> <span class="pre">1</span></code> vector of equal pairwise separations; a sequence
+gives the pairwise separations directly. Offsets are formed exactly as
+for the existing standalone mechanism (centered cumulative sums).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)">float</a> | <a class="reference external" href="https://docs.python.org/3/library/collections.abc.html#collections.abc.Sequence" title="(in Python v3.14)">collections.abc.Sequence</a>[<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)">float</a>]</p>
+</dd>
+</dl>
+</dd></dl>
+
 <p>Create a new model by parsing and validating input data from keyword arguments.</p>
 <p>Raises [<cite>ValidationError</cite>][pydantic_core.ValidationError] if the input data cannot be
 validated to form a valid model.</p>
 <p><cite>self</cite> is explicitly positional-only to allow <cite>self</cite> as a field name.</p>
 <dl class="py method">
-<dt class="sig sig-object py" id="biomedical_data_generator.config.ClassConfig.__init__">
-<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">data</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#biomedical_data_generator.config.ClassConfig.__init__" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="biomedical_data_generator.config.StandaloneInformativeGroup.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">data</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#biomedical_data_generator.config.StandaloneInformativeGroup.__init__" title="Link to this definition"></a></dt>
 <dd><p>Create a new model by parsing and validating input data from keyword arguments.</p>
 <p>Raises [<cite>ValidationError</cite>][pydantic_core.ValidationError] if the input data cannot be
 validated to form a valid model.</p>
@@ -182,7 +171,7 @@ validated to form a valid model.</p>
 <p class="rubric">Methods</p>
 <table class="autosummary longtable docutils align-default">
 <tbody>
-<tr class="row-odd"><td><p><a class="reference internal" href="#biomedical_data_generator.config.ClassConfig.__init__" title="biomedical_data_generator.config.ClassConfig.__init__"><code class="xref py py-obj docutils literal notranslate"><span class="pre">__init__</span></code></a>(**data)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#biomedical_data_generator.config.StandaloneInformativeGroup.__init__" title="biomedical_data_generator.config.StandaloneInformativeGroup.__init__"><code class="xref py py-obj docutils literal notranslate"><span class="pre">__init__</span></code></a>(**data)</p></td>
 <td><p>Create a new model by parsing and validating input data from keyword arguments.</p></td>
 </tr>
 <tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">construct</span></code>([_fields_set])</p></td>
@@ -262,7 +251,7 @@ validated to form a valid model.</p>
 <tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">model_computed_fields</span></code></p></td>
 <td><p></p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#biomedical_data_generator.config.ClassConfig.model_config" title="biomedical_data_generator.config.ClassConfig.model_config"><code class="xref py py-obj docutils literal notranslate"><span class="pre">model_config</span></code></a></p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#biomedical_data_generator.config.StandaloneInformativeGroup.model_config" title="biomedical_data_generator.config.StandaloneInformativeGroup.model_config"><code class="xref py py-obj docutils literal notranslate"><span class="pre">model_config</span></code></a></p></td>
 <td><p>Configuration for the model, should be a dictionary conforming to [<cite>ConfigDict</cite>][pydantic.config.ConfigDict].</p></td>
 </tr>
 <tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">model_extra</span></code></p></td>
@@ -274,23 +263,17 @@ validated to form a valid model.</p>
 <tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">model_fields_set</span></code></p></td>
 <td><p>Returns the set of fields that have been explicitly set on this model instance.</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">n_samples</span></code></p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#biomedical_data_generator.config.StandaloneInformativeGroup.n_features" title="biomedical_data_generator.config.StandaloneInformativeGroup.n_features"><code class="xref py py-obj docutils literal notranslate"><span class="pre">n_features</span></code></a></p></td>
 <td><p></p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">class_distribution</span></code></p></td>
-<td><p></p></td>
-</tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">class_distribution_params</span></code></p></td>
-<td><p></p></td>
-</tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">label</span></code></p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#biomedical_data_generator.config.StandaloneInformativeGroup.class_sep" title="biomedical_data_generator.config.StandaloneInformativeGroup.class_sep"><code class="xref py py-obj docutils literal notranslate"><span class="pre">class_sep</span></code></a></p></td>
 <td><p></p></td>
 </tr>
 </tbody>
 </table>
 <dl class="py attribute">
-<dt class="sig sig-object py" id="biomedical_data_generator.config.ClassConfig.model_config">
-<span class="sig-name descname"><span class="pre">model_config</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">ClassVar</span><span class="p"><span class="pre">[</span></span><span class="pre">ConfigDict</span><span class="p"><span class="pre">]</span></span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{'extra':</span> <span class="pre">'forbid'}</span></em><a class="headerlink" href="#biomedical_data_generator.config.ClassConfig.model_config" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="biomedical_data_generator.config.StandaloneInformativeGroup.model_config">
+<span class="sig-name descname"><span class="pre">model_config</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">ClassVar</span><span class="p"><span class="pre">[</span></span><span class="pre">ConfigDict</span><span class="p"><span class="pre">]</span></span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{'extra':</span> <span class="pre">'forbid'}</span></em><a class="headerlink" href="#biomedical_data_generator.config.StandaloneInformativeGroup.model_config" title="Link to this definition"></a></dt>
 <dd><p>Configuration for the model, should be a dictionary conforming to [<cite>ConfigDict</cite>][pydantic.config.ConfigDict].</p>
 </dd></dl>
 
@@ -302,8 +285,8 @@ validated to form a valid model.</p>
            </div>
           </div>
           <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
-        <a href="../code-doc.html" class="btn btn-neutral float-left" title="Code Documentation" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
-        <a href="biomedical_data_generator.config.BatchEffectsConfig.html" class="btn btn-neutral float-right" title="biomedical_data_generator.config.BatchEffectsConfig" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+        <a href="biomedical_data_generator.config.CovarianceChannel.html" class="btn btn-neutral float-left" title="biomedical_data_generator.config.CovarianceChannel" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="biomedical_data_generator.features.informative.html" class="btn btn-neutral float-right" title="biomedical_data_generator.features.informative" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
 
   <hr/>

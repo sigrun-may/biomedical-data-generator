@@ -276,6 +276,8 @@
 <span class="c1"># =========================</span>
 <span class="c1"># Derived per-feature strengths</span>
 <span class="c1"># =========================</span>
+<div class="viewcode-block" id="FeatureStrengths">
+<a class="viewcode-back" href="../../_autosummary/biomedical_data_generator.meta.FeatureStrengths.html#biomedical_data_generator.FeatureStrengths">[docs]</a>
 <span class="nd">@dataclass</span><span class="p">(</span><span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 <span class="k">class</span><span class="w"> </span><span class="nc">FeatureStrengths</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Derived per-feature signal-strength annotation.</span>
@@ -296,7 +298,8 @@
 
     <span class="n">mean_strength</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span>
     <span class="n">covariance_strength</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span>
-    <span class="n">signal_channels</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="o">...</span><span class="p">],</span> <span class="o">...</span><span class="p">]</span>
+    <span class="n">signal_channels</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="o">...</span><span class="p">],</span> <span class="o">...</span><span class="p">]</span></div>
+
 
 
 <span class="c1"># =========================</span>
@@ -587,6 +590,8 @@
     <span class="k">return</span> <span class="n">mean_strength</span> <span class="o">&gt;</span> <span class="n">tol</span> <span class="ow">or</span> <span class="n">covariance_strength</span> <span class="o">&gt;</span> <span class="n">tol</span>
 
 
+<div class="viewcode-block" id="compute_feature_strengths">
+<a class="viewcode-back" href="../../_autosummary/biomedical_data_generator.meta.compute_feature_strengths.html#biomedical_data_generator.compute_feature_strengths">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">compute_feature_strengths</span><span class="p">(</span><span class="n">meta</span><span class="p">:</span> <span class="n">DatasetMeta</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">FeatureStrengths</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Derive per-feature signal strengths from a DatasetMeta.</span>
 
@@ -664,7 +669,8 @@
         <span class="n">mean_strength</span><span class="o">=</span><span class="nb">tuple</span><span class="p">(</span><span class="n">mean_strength_list</span><span class="p">),</span>
         <span class="n">covariance_strength</span><span class="o">=</span><span class="nb">tuple</span><span class="p">(</span><span class="n">covariance_strength_list</span><span class="p">),</span>
         <span class="n">signal_channels</span><span class="o">=</span><span class="nb">tuple</span><span class="p">(</span><span class="n">signal_channels_list</span><span class="p">),</span>
-    <span class="p">)</span>
+    <span class="p">)</span></div>
+
 
 
 <div class="viewcode-block" id="compute_feature_roles">

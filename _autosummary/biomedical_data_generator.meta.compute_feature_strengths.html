@@ -6,7 +6,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>biomedical_data_generator.meta.compute_feature_roles &mdash; Biomedical Data Generator 2.0.0 documentation</title>
+  <title>biomedical_data_generator.meta.compute_feature_strengths &mdash; Biomedical Data Generator 2.0.0 documentation</title>
       <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=b86133f3" />
       <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=9edc463e" />
       <link rel="stylesheet" type="text/css" href="../_static/copybutton.css?v=76b2166b" />
@@ -23,8 +23,8 @@
     <script src="../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
-    <link rel="next" title="biomedical_data_generator.meta.FeatureStrengths" href="biomedical_data_generator.meta.FeatureStrengths.html" />
-    <link rel="prev" title="biomedical_data_generator.meta.FeatureRoles" href="biomedical_data_generator.meta.FeatureRoles.html" /> 
+    <link rel="next" title="biomedical_data_generator.utils.correlation_tools" href="biomedical_data_generator.utils.correlation_tools.html" />
+    <link rel="prev" title="biomedical_data_generator.meta.FeatureStrengths" href="biomedical_data_generator.meta.FeatureStrengths.html" /> 
 </head>
 
 <body class="wy-body-for-nav"> 
@@ -57,11 +57,12 @@
 <li class="toctree-l2 current"><a class="reference internal" href="../code-doc.html#metadata">Metadata</a><ul class="current">
 <li class="toctree-l3"><a class="reference internal" href="biomedical_data_generator.meta.DatasetMeta.html">biomedical_data_generator.meta.DatasetMeta</a></li>
 <li class="toctree-l3"><a class="reference internal" href="biomedical_data_generator.meta.FeatureRoles.html">biomedical_data_generator.meta.FeatureRoles</a></li>
-<li class="toctree-l3 current"><a class="current reference internal" href="#">biomedical_data_generator.meta.compute_feature_roles</a><ul>
-<li class="toctree-l4"><a class="reference internal" href="#biomedical_data_generator.meta.compute_feature_roles"><code class="docutils literal notranslate"><span class="pre">compute_feature_roles()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="biomedical_data_generator.meta.compute_feature_roles.html">biomedical_data_generator.meta.compute_feature_roles</a></li>
+<li class="toctree-l3 current"><a class="reference internal" href="../code-doc.html#per-feature-signal-strengths">Per-feature signal strengths</a><ul class="current">
+<li class="toctree-l4"><a class="reference internal" href="biomedical_data_generator.meta.FeatureStrengths.html">biomedical_data_generator.meta.FeatureStrengths</a></li>
+<li class="toctree-l4 current"><a class="current reference internal" href="#">biomedical_data_generator.meta.compute_feature_strengths</a></li>
 </ul>
 </li>
-<li class="toctree-l3"><a class="reference internal" href="../code-doc.html#per-feature-signal-strengths">Per-feature signal strengths</a></li>
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="../code-doc.html#utility-modules-optional">Utility Modules (Optional)</a></li>
@@ -90,9 +91,9 @@
   <ul class="wy-breadcrumbs">
       <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
           <li class="breadcrumb-item"><a href="../code-doc.html">Code Documentation</a></li>
-      <li class="breadcrumb-item active">biomedical_data_generator.meta.compute_feature_roles</li>
+      <li class="breadcrumb-item active">biomedical_data_generator.meta.compute_feature_strengths</li>
       <li class="wy-breadcrumbs-aside">
-              <a href="https://github.com/sigrun-may/biomedical-data-generator/blob/main/docs/_autosummary/biomedical_data_generator.meta.compute_feature_roles.rst" class="fa fa-github"> Edit on GitHub</a>
+              <a href="https://github.com/sigrun-may/biomedical-data-generator/blob/main/docs/_autosummary/biomedical_data_generator.meta.compute_feature_strengths.rst" class="fa fa-github"> Edit on GitHub</a>
       </li>
   </ul>
   <hr/>
@@ -100,36 +101,33 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
              
-  <section id="biomedical-data-generator-meta-compute-feature-roles">
-<h1>biomedical_data_generator.meta.compute_feature_roles<a class="headerlink" href="#biomedical-data-generator-meta-compute-feature-roles" title="Link to this heading"></a></h1>
+  <section id="biomedical-data-generator-meta-compute-feature-strengths">
+<h1>biomedical_data_generator.meta.compute_feature_strengths<a class="headerlink" href="#biomedical-data-generator-meta-compute-feature-strengths" title="Link to this heading"></a></h1>
 <dl class="py function">
-<dt class="sig sig-object py" id="biomedical_data_generator.meta.compute_feature_roles">
-<span class="sig-prename descclassname"><span class="pre">biomedical_data_generator.meta.</span></span><span class="sig-name descname"><span class="pre">compute_feature_roles</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">meta</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/biomedical_data_generator/meta.html#compute_feature_roles"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#biomedical_data_generator.meta.compute_feature_roles" title="Link to this definition"></a></dt>
-<dd><p>Derive the six-way generative feature-role partition from a DatasetMeta.</p>
-<p>The partition is reconstructed purely from the structural block ranges that
-the generator records on <code class="docutils literal notranslate"><span class="pre">meta</span></code> (the per-group standalone-informative
-column indices, the standalone-noise column range, each cluster’s columns,
-and its structural anchor column) together with the per-cluster channel
-mappings. Relevance is <strong>derived per column</strong>, not per cluster: a cluster
-column is informative iff it carries a class-dependent mean shift (the
-anchor’s shift, or a proxy’s attenuated propagation) or participates in a
-class-dependent within-cluster correlation — never read from a declared role.
-Because the predicate is per column, a single cluster may be split across
-informative and noise roles (an informative anchor with noise proxies is
-expected for a mean-only cluster with zero within-cluster correlation). No
-feature matrix is required.</p>
+<dt class="sig sig-object py" id="biomedical_data_generator.meta.compute_feature_strengths">
+<span class="sig-prename descclassname"><span class="pre">biomedical_data_generator.meta.</span></span><span class="sig-name descname"><span class="pre">compute_feature_strengths</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">meta</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/biomedical_data_generator/meta.html#compute_feature_strengths"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#biomedical_data_generator.meta.compute_feature_strengths" title="Link to this definition"></a></dt>
+<dd><p>Derive per-feature signal strengths from a DatasetMeta.</p>
+<p>Returns three parallel length-n_features sequences: mean_strength (first-moment
+separation in standardized units), covariance_strength (range of per-class
+within-cluster correlation), and signal_channels (the active channels per
+feature).</p>
+<p>A feature carries a signal iff at least one channel is active. Cluster
+columns are resolved one at a time via <code class="xref py py-func docutils literal notranslate"><span class="pre">_cluster_column_strengths()</span></code>
+(keyed on the column’s structural distance from its anchor), so the predicate
+on channels agrees with <a class="reference internal" href="biomedical_data_generator.meta.compute_feature_roles.html#biomedical_data_generator.meta.compute_feature_roles" title="biomedical_data_generator.meta.compute_feature_roles"><code class="xref py py-func docutils literal notranslate"><span class="pre">compute_feature_roles()</span></code></a> <strong>per column</strong> — a
+feature is placed in an informative role iff its channels are non-empty, and
+in a noise role iff its channels are empty. A single cluster may therefore
+yield both kinds of column.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><p><strong>meta</strong> (<a class="reference internal" href="biomedical_data_generator.meta.DatasetMeta.html#biomedical_data_generator.meta.DatasetMeta" title="biomedical_data_generator.meta.DatasetMeta"><em>DatasetMeta</em></a>) – Resolved dataset metadata produced by
 <a class="reference internal" href="biomedical_data_generator.generate_dataset.html#biomedical_data_generator.generate_dataset" title="biomedical_data_generator.generate_dataset"><code class="xref py py-func docutils literal notranslate"><span class="pre">biomedical_data_generator.generate_dataset()</span></code></a>.</p>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>A <a class="reference internal" href="biomedical_data_generator.meta.FeatureRoles.html#biomedical_data_generator.meta.FeatureRoles" title="biomedical_data_generator.meta.FeatureRoles"><code class="xref py py-class docutils literal notranslate"><span class="pre">FeatureRoles</span></code></a> instance assigning every feature column to
-exactly one of the six generative roles, together with a
-column-to-cluster membership map.</p>
+<dd class="field-even"><p>A <a class="reference internal" href="biomedical_data_generator.meta.FeatureStrengths.html#biomedical_data_generator.meta.FeatureStrengths" title="biomedical_data_generator.meta.FeatureStrengths"><code class="xref py py-class docutils literal notranslate"><span class="pre">FeatureStrengths</span></code></a> instance with per-feature signal annotations.</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><a class="reference internal" href="biomedical_data_generator.meta.FeatureRoles.html#biomedical_data_generator.meta.FeatureRoles" title="biomedical_data_generator.meta.FeatureRoles"><em>FeatureRoles</em></a></p>
+<dd class="field-odd"><p><a class="reference internal" href="biomedical_data_generator.meta.FeatureStrengths.html#biomedical_data_generator.meta.FeatureStrengths" title="biomedical_data_generator.meta.FeatureStrengths"><em>FeatureStrengths</em></a></p>
 </dd>
 </dl>
 </dd></dl>
@@ -140,8 +138,8 @@ column-to-cluster membership map.</p>
            </div>
           </div>
           <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
-        <a href="biomedical_data_generator.meta.FeatureRoles.html" class="btn btn-neutral float-left" title="biomedical_data_generator.meta.FeatureRoles" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
-        <a href="biomedical_data_generator.meta.FeatureStrengths.html" class="btn btn-neutral float-right" title="biomedical_data_generator.meta.FeatureStrengths" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+        <a href="biomedical_data_generator.meta.FeatureStrengths.html" class="btn btn-neutral float-left" title="biomedical_data_generator.meta.FeatureStrengths" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="biomedical_data_generator.utils.correlation_tools.html" class="btn btn-neutral float-right" title="biomedical_data_generator.utils.correlation_tools" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
 
   <hr/>

@@ -1,0 +1,56 @@
+﻿biomedical\_data\_generator.config.CovarianceChannel
+====================================================
+
+.. currentmodule:: biomedical_data_generator.config
+
+.. autoclass:: CovarianceChannel
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~CovarianceChannel.__init__
+      ~CovarianceChannel.construct
+      ~CovarianceChannel.copy
+      ~CovarianceChannel.dict
+      ~CovarianceChannel.from_orm
+      ~CovarianceChannel.json
+      ~CovarianceChannel.model_construct
+      ~CovarianceChannel.model_copy
+      ~CovarianceChannel.model_dump
+      ~CovarianceChannel.model_dump_json
+      ~CovarianceChannel.model_json_schema
+      ~CovarianceChannel.model_parametrized_name
+      ~CovarianceChannel.model_post_init
+      ~CovarianceChannel.model_rebuild
+      ~CovarianceChannel.model_validate
+      ~CovarianceChannel.model_validate_json
+      ~CovarianceChannel.model_validate_strings
+      ~CovarianceChannel.parse_file
+      ~CovarianceChannel.parse_obj
+      ~CovarianceChannel.parse_raw
+      ~CovarianceChannel.schema
+      ~CovarianceChannel.schema_json
+      ~CovarianceChannel.update_forward_refs
+      ~CovarianceChannel.validate
+   
+   
+
+   
+   
+   .. rubric:: Attributes
+
+   .. autosummary::
+   
+      ~CovarianceChannel.model_computed_fields
+      ~CovarianceChannel.model_config
+      ~CovarianceChannel.model_extra
+      ~CovarianceChannel.model_fields
+      ~CovarianceChannel.model_fields_set
+      ~CovarianceChannel.per_class_correlation
+   
+   

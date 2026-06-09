@@ -1,0 +1,57 @@
+﻿biomedical\_data\_generator.config.StandaloneInformativeGroup
+=============================================================
+
+.. currentmodule:: biomedical_data_generator.config
+
+.. autoclass:: StandaloneInformativeGroup
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~StandaloneInformativeGroup.__init__
+      ~StandaloneInformativeGroup.construct
+      ~StandaloneInformativeGroup.copy
+      ~StandaloneInformativeGroup.dict
+      ~StandaloneInformativeGroup.from_orm
+      ~StandaloneInformativeGroup.json
+      ~StandaloneInformativeGroup.model_construct
+      ~StandaloneInformativeGroup.model_copy
+      ~StandaloneInformativeGroup.model_dump
+      ~StandaloneInformativeGroup.model_dump_json
+      ~StandaloneInformativeGroup.model_json_schema
+      ~StandaloneInformativeGroup.model_parametrized_name
+      ~StandaloneInformativeGroup.model_post_init
+      ~StandaloneInformativeGroup.model_rebuild
+      ~StandaloneInformativeGroup.model_validate
+      ~StandaloneInformativeGroup.model_validate_json
+      ~StandaloneInformativeGroup.model_validate_strings
+      ~StandaloneInformativeGroup.parse_file
+      ~StandaloneInformativeGroup.parse_obj
+      ~StandaloneInformativeGroup.parse_raw
+      ~StandaloneInformativeGroup.schema
+      ~StandaloneInformativeGroup.schema_json
+      ~StandaloneInformativeGroup.update_forward_refs
+      ~StandaloneInformativeGroup.validate
+   
+   
+
+   
+   
+   .. rubric:: Attributes
+
+   .. autosummary::
+   
+      ~StandaloneInformativeGroup.model_computed_fields
+      ~StandaloneInformativeGroup.model_config
+      ~StandaloneInformativeGroup.model_extra
+      ~StandaloneInformativeGroup.model_fields
+      ~StandaloneInformativeGroup.model_fields_set
+      ~StandaloneInformativeGroup.n_features
+      ~StandaloneInformativeGroup.class_sep
+   
+   

@@ -1,0 +1,30 @@
+﻿biomedical\_data\_generator.meta.FeatureStrengths
+=================================================
+
+.. currentmodule:: biomedical_data_generator.meta
+
+.. autoclass:: FeatureStrengths
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~FeatureStrengths.__init__
+   
+   
+
+   
+   
+   .. rubric:: Attributes
+
+   .. autosummary::
+   
+      ~FeatureStrengths.mean_strength
+      ~FeatureStrengths.covariance_strength
+      ~FeatureStrengths.signal_channels
+   
+   

@@ -23,7 +23,7 @@
     <script src="../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
-    <link rel="next" title="biomedical_data_generator.features.informative" href="biomedical_data_generator.features.informative.html" />
+    <link rel="next" title="biomedical_data_generator.config.MeanChannel" href="biomedical_data_generator.config.MeanChannel.html" />
     <link rel="prev" title="biomedical_data_generator.config.CorrClusterConfig" href="biomedical_data_generator.config.CorrClusterConfig.html" /> 
 </head>
 
@@ -58,6 +58,8 @@
 <li class="toctree-l4"><a class="reference internal" href="#biomedical_data_generator.config.DatasetConfig"><code class="docutils literal notranslate"><span class="pre">DatasetConfig</span></code></a></li>
 </ul>
 </li>
+<li class="toctree-l3"><a class="reference internal" href="../code-doc.html#cluster-signal-channels">Cluster signal channels</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../code-doc.html#standalone-informative-groups">Standalone informative groups</a></li>
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="../code-doc.html#dataset-generator">Dataset Generator</a></li>
@@ -113,7 +115,7 @@ relevance. The inputs are:</p>
 <blockquote>
 <div><ul class="simple">
 <li><p>Standalone informative block: <code class="docutils literal notranslate"><span class="pre">standalone_informative_groups</span></code> – a list of
-<code class="xref py py-class docutils literal notranslate"><span class="pre">StandaloneInformativeGroup</span></code>, each contributing independent
+<a class="reference internal" href="biomedical_data_generator.config.StandaloneInformativeGroup.html#biomedical_data_generator.config.StandaloneInformativeGroup" title="biomedical_data_generator.config.StandaloneInformativeGroup"><code class="xref py py-class docutils literal notranslate"><span class="pre">StandaloneInformativeGroup</span></code></a>, each contributing independent
 informative features that share one separation strength (<code class="docutils literal notranslate"><span class="pre">class_sep</span></code>).</p></li>
 <li><p>Standalone noise block: <code class="docutils literal notranslate"><span class="pre">n_standalone_noise</span></code> independent noise features.</p></li>
 <li><p>Correlated clusters: <code class="docutils literal notranslate"><span class="pre">corr_clusters</span></code> – a list of
@@ -242,7 +244,7 @@ is a valid class index in <code class="docutils literal notranslate"><span class
 </dd>
 <dt class="field-even">Parameters<span class="colon">:</span></dt>
 <dd class="field-even"><ul class="simple">
-<li><p><strong>standalone_informative_groups</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.14)"><em>list</em></a><em>[</em><em>StandaloneInformativeGroup</em><em>]</em>)</p></li>
+<li><p><strong>standalone_informative_groups</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.14)"><em>list</em></a><em>[</em><a class="reference internal" href="biomedical_data_generator.config.StandaloneInformativeGroup.html#biomedical_data_generator.config.StandaloneInformativeGroup" title="biomedical_data_generator.config.StandaloneInformativeGroup"><em>StandaloneInformativeGroup</em></a><em>]</em>)</p></li>
 <li><p><strong>n_standalone_noise</strong> (<a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Annotated" title="(in Python v3.14)"><em>Annotated</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a><em>, </em><em>Ge</em><em>(</em><em>ge=0</em><em>)</em><em>]</em>)</p></li>
 <li><p><strong>class_configs</strong> (<a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Annotated" title="(in Python v3.14)"><em>Annotated</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.14)"><em>list</em></a><em>[</em><a class="reference internal" href="biomedical_data_generator.config.ClassConfig.html#biomedical_data_generator.config.ClassConfig" title="biomedical_data_generator.config.ClassConfig"><em>ClassConfig</em></a><em>]</em><em>, </em><em>MinLen</em><em>(</em><em>min_length=2</em><em>)</em><em>]</em>)</p></li>
 <li><p><strong>noise_distribution</strong> (<a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Literal" title="(in Python v3.14)"><em>Literal</em></a><em>[</em><em>'normal'</em><em>, </em><em>'lognormal'</em><em>, </em><em>'exp_normal'</em><em>, </em><em>'uniform'</em><em>, </em><em>'exponential'</em><em>, </em><em>'laplace'</em><em>]</em>)</p></li>
@@ -641,7 +643,7 @@ signal predicate marks informative.</p>
           </div>
           <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
         <a href="biomedical_data_generator.config.CorrClusterConfig.html" class="btn btn-neutral float-left" title="biomedical_data_generator.config.CorrClusterConfig" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
-        <a href="biomedical_data_generator.features.informative.html" class="btn btn-neutral float-right" title="biomedical_data_generator.features.informative" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+        <a href="biomedical_data_generator.config.MeanChannel.html" class="btn btn-neutral float-right" title="biomedical_data_generator.config.MeanChannel" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
 
   <hr/>
