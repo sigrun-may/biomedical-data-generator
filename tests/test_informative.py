@@ -9,10 +9,11 @@
 import numpy as np
 from scipy import stats
 
-from biomedical_data_generator import ClassConfig, DatasetConfig
+from biomedical_data_generator import ClassConfig, DatasetConfig, StandaloneInformativeGroup
 from biomedical_data_generator.features.informative import (
     _build_class_labels,
     _class_offsets_from_sep,
+    _resolve_group_sep,
     generate_informative_features,
 )
 
@@ -66,14 +67,13 @@ def test_class_offsets_from_sep():
 def test_build_class_labels():
     """Test building class labels from config."""
     cfg = DatasetConfig(
-        n_informative=1,
-        n_noise=0,
+        standalone_informative_groups=[StandaloneInformativeGroup(n_features=1, class_sep=[1.0, 1.5])],
+        n_standalone_noise=0,
         class_configs=[
             ClassConfig(n_samples=5),
             ClassConfig(n_samples=3),
             ClassConfig(n_samples=7),
         ],
-        class_sep=[1.0, 1.5],  # Need n_classes - 1 = 2 values
     )
 
     y = _build_class_labels(cfg)
@@ -87,8 +87,8 @@ def test_build_class_labels():
 def test_generate_informative_features_basic():
     """Test basic informative feature generation."""
     cfg = DatasetConfig(
-        n_informative=3,
-        n_noise=0,
+        standalone_informative_groups=[StandaloneInformativeGroup(n_features=3, class_sep=1.0)],
+        n_standalone_noise=0,
         class_configs=[
             ClassConfig(n_samples=50),
             ClassConfig(n_samples=50),
@@ -108,8 +108,8 @@ def test_generate_informative_features_basic():
 def test_generate_informative_features_no_informative():
     """Test generation with n_informative_free=0."""
     cfg = DatasetConfig(
-        n_informative=0,
-        n_noise=5,
+        standalone_informative_groups=[],
+        n_standalone_noise=5,
         class_configs=[
             ClassConfig(n_samples=20),
             ClassConfig(n_samples=30),
@@ -128,14 +128,13 @@ def test_generate_informative_features_no_informative():
 def test_generate_informative_features_multiclass():
     """Test generation with multiple classes."""
     cfg = DatasetConfig(
-        n_informative=5,
-        n_noise=0,
+        standalone_informative_groups=[StandaloneInformativeGroup(n_features=5, class_sep=[1.5, 2.0])],
+        n_standalone_noise=0,
         class_configs=[
             ClassConfig(n_samples=30),
             ClassConfig(n_samples=40),
             ClassConfig(n_samples=30),
         ],
-        class_sep=[1.5, 2.0],
         random_state=42,
     )
 
@@ -160,8 +159,8 @@ def test_generate_informative_features_multiclass():
 def test_generate_informative_features_different_distributions():
     """Test generation with different per-class distributions."""
     cfg = DatasetConfig(
-        n_informative=3,
-        n_noise=0,
+        standalone_informative_groups=[StandaloneInformativeGroup(n_features=3, class_sep=2.0)],
+        n_standalone_noise=0,
         class_configs=[
             ClassConfig(
                 n_samples=50,
@@ -174,7 +173,6 @@ def test_generate_informative_features_different_distributions():
                 class_distribution_params={"low": 5.0, "high": 10.0},
             ),
         ],
-        class_sep=2.0,
         random_state=42,
     )
 
@@ -198,8 +196,7 @@ def test_generate_informative_features_different_distributions_statistical():
     n_per_class = 5000
 
     cfg = DatasetConfig(
-        n_informative=3,
-        n_noise=0,
+        n_standalone_noise=0,
         class_configs=[
             ClassConfig(
                 n_samples=n_per_class,
@@ -212,15 +209,16 @@ def test_generate_informative_features_different_distributions_statistical():
                 class_distribution_params={"mean": 0.0, "sigma": 1.0},
             ),
         ],
-        class_sep=[1.5],  # disable shifting so we test the raw sampled distributions
+        standalone_informative_groups=[StandaloneInformativeGroup(n_features=3, class_sep=[1.5])],
         random_state=42,
     )
 
     rng = np.random.default_rng(42)
     X, y = generate_informative_features(cfg, rng)
 
-    # Undo class-wise offsets
-    offsets = _class_offsets_from_sep(cfg.class_sep)
+    # Undo class-wise offsets (resolved from the single group's class_sep)
+    group_sep = cfg.standalone_informative_groups[0].class_sep
+    offsets = _class_offsets_from_sep(_resolve_group_sep(group_sep, cfg.n_classes))
     assert offsets.size == len(cfg.class_configs)
 
     # Pick the first informative column for each class
@@ -254,8 +252,8 @@ def test_generate_informative_features_all_supported_distributions_statistical()
 
     for dist_name, params in dist_cases.items():
         cfg = DatasetConfig(
-            n_informative=1,
-            n_noise=0,
+            standalone_informative_groups=[StandaloneInformativeGroup(n_features=1, class_sep=1.0)],
+            n_standalone_noise=0,
             class_configs=[
                 ClassConfig(
                     n_samples=n_per_class,
@@ -268,7 +266,6 @@ def test_generate_informative_features_all_supported_distributions_statistical()
                     class_distribution_params={"loc": 0.0, "scale": 1.0},
                 ),
             ],
-            class_sep=1.0,
             random_state=42,
         )
 
@@ -276,7 +273,8 @@ def test_generate_informative_features_all_supported_distributions_statistical()
         X, y = generate_informative_features(cfg, rng)
 
         # Remove the applied class offsets to recover base samples before KS test
-        offsets = _class_offsets_from_sep(cfg.class_sep)
+        group_sep = cfg.standalone_informative_groups[0].class_sep
+        offsets = _class_offsets_from_sep(_resolve_group_sep(group_sep, cfg.n_classes))
         x_class0 = X[y == 0, 0] - offsets[0]
 
         scipy_name, args = _scipy_dist_and_args(dist_name, params)
@@ -291,8 +289,8 @@ def test_generate_informative_features_shift_preserves_distribution_shape():
 
     # Two identical classes sampled from standard normal, apply class_sep to shift means
     cfg = DatasetConfig(
-        n_informative=1,
-        n_noise=0,
+        standalone_informative_groups=[StandaloneInformativeGroup(n_features=1, class_sep=0.8)],  # non-zero shifts
+        n_standalone_noise=0,
         class_configs=[
             ClassConfig(
                 n_samples=n_per_class, class_distribution="normal", class_distribution_params={"loc": 0, "scale": 1}
@@ -301,7 +299,6 @@ def test_generate_informative_features_shift_preserves_distribution_shape():
                 n_samples=n_per_class, class_distribution="normal", class_distribution_params={"loc": 0, "scale": 1}
             ),
         ],
-        class_sep=0.8,  # non-zero to trigger shifts
         random_state=42,
     )
 
@@ -309,7 +306,8 @@ def test_generate_informative_features_shift_preserves_distribution_shape():
     X, y = generate_informative_features(cfg, rng)  # returns shifted features
 
     # Recompute the offsets used by shift_classes and remove them to recover base samples
-    offsets = _class_offsets_from_sep(cfg.class_sep)
+    group_sep = cfg.standalone_informative_groups[0].class_sep
+    offsets = _class_offsets_from_sep(_resolve_group_sep(group_sep, cfg.n_classes))
 
     # For each class, subtract the applied offset and KS-test against the original distribution
     for k in range(cfg.n_classes):

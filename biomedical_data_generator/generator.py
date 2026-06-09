@@ -14,8 +14,8 @@ import pandas as pd
 from .config import DatasetConfig
 from .effects.batch import apply_batch_effects_from_config
 from .features.correlated import sample_all_correlated_clusters
-from .features.informative import generate_informative_features
-from .meta import BatchMeta, DatasetMeta, _cluster_is_informative
+from .features.informative import generate_informative_features, resolve_standalone_groups
+from .meta import BatchMeta, DatasetMeta, StandaloneGroupMeta
 from .utils.sampling import sample_distribution
 
 
@@ -27,45 +27,41 @@ def _make_names_and_roles(
     n_noise_cols: int,
 ) -> tuple[
     list[str],  # names
-    list[int],  # informative_idx (anchors + free informative)
-    list[int],  # noise_idx (independent/free noise only)
+    list[int],  # informative_idx (exhaustive informative partition)
+    list[int],  # noise_idx (exhaustive noise partition)
     dict[int, list[int]],  # cluster_indices[cid] -> list of column indices
-    dict[int, int],  # anchor_idx[cid] -> anchor column (always the first column of the block)
+    dict[int, int],  # anchor_idx[cid] -> structural anchor column (block start + anchor_index)
+    tuple[int, int],  # standalone_noise_range (half-open)
 ]:
-    """Build feature names and role indices for the final concatenated matrix.
+    """Build feature names, role indices, and block ranges for the final matrix.
 
     We assume that :func:`generate_dataset` has constructed the feature
     matrix ``x`` by horizontal concatenation in the following order::
 
-        x = [x_informative | x_clusters | x_noise]
+        x = [x_standalone_informative | x_clusters | x_standalone_noise]
 
     where
 
-    * ``x_informative`` contains **only free informative features**
-      (no cluster anchors),
-    * ``x_clusters`` contains, for each :class:`CorrClusterConfig`,
-      the **anchor** (first column of the block) followed by its
-      **proxy features**,
-    * ``x_noise`` contains **only independent/free noise features**
-      (no cluster anchors).
+    * ``x_standalone_informative`` contains only standalone informative features,
+    * ``x_clusters`` contains, for each :class:`CorrClusterConfig`, the block's
+      columns (anchor at ``anchor_index``, the others proxies),
+    * ``x_standalone_noise`` contains only standalone noise features.
 
-    This function is purely book-keeping:
-
-    * it assigns human-readable feature names,
-    * it returns index lists for informative and (independent) noise
-      features,
-    * it provides cluster layouts via ``cluster_indices`` and
-      ``anchor_idx`` so that proxy indices can be derived later as
-      ``set(cluster_indices[cid]) - {anchor_idx[cid]}``.
+    Relevance is derived per cluster from its channels (via the shared
+    predicate, exposed as :meth:`DatasetConfig.cluster_informative_flags`): a
+    derived-informative cluster contributes all its columns to ``informative_idx``;
+    a derived-noise cluster contributes all its columns to ``noise_idx``. The two
+    index lists are therefore an exhaustive, disjoint two-way partition.
 
     Args:
         cfg: Resolved :class:`DatasetConfig` used for generation.
         n_cluster_cols: Number of columns in ``x_clusters``.
-        n_inf_cols: Number of columns in ``x_informative``.
-        n_noise_cols: Number of columns in ``x_noise``.
+        n_inf_cols: Number of columns in ``x_standalone_informative``.
+        n_noise_cols: Number of columns in ``x_standalone_noise``.
 
     Returns:
-        names, informative_idx, noise_idx, cluster_indices, anchor_idx
+        names, informative_idx, noise_idx, cluster_indices, anchor_idx,
+        standalone_noise_range.
     """
     names: list[str] = []
     informative_idx: list[int] = []
@@ -85,21 +81,17 @@ def _make_names_and_roles(
             f"{expected_cluster_cols} columns."
         )
 
-    # Expected number of free informative / noise features from config
-    n_inf_free_expected = cfg.n_informative_free
-    n_noise_free_expected = cfg.n_noise_free
-
-    if n_inf_cols != n_inf_free_expected:
+    if n_inf_cols != cfg.n_standalone_informative:
         raise ValueError(
             "generate_informative_features must produce exactly "
-            f"cfg.n_informative_free={n_inf_free_expected} columns, "
+            f"cfg.n_standalone_informative={cfg.n_standalone_informative} columns, "
             f"but returned {n_inf_cols}."
         )
 
-    if n_noise_cols != n_noise_free_expected:
+    if n_noise_cols != cfg.n_standalone_noise:
         raise ValueError(
-            "The noise block must contain exactly cfg.n_noise_free "
-            f"={n_noise_free_expected} independent noise features, "
+            "The noise block must contain exactly cfg.n_standalone_noise "
+            f"={cfg.n_standalone_noise} standalone noise features, "
             f"but x_noise has {n_noise_cols} columns."
         )
 
@@ -112,66 +104,48 @@ def _make_names_and_roles(
         )
 
     # -------------------------------------------------------------
-    # 1) Free informative features: block [0, n_inf_cols)
+    # 1) Standalone informative features: block [0, n_inf_cols)
     # -------------------------------------------------------------
     for j in range(n_inf_cols):
-        col = j
         if cfg.prefixed_feature_naming:
             names.append(f"{cfg.prefix_informative}{j + 1}")
         else:
             names.append(f"feature_{len(names) + 1}")
-        # All columns in x_informative are informative
-        informative_idx.append(col)
+        informative_idx.append(j)
 
     # -------------------------------------------------------------
-    # 2) Correlated clusters: block [n_inf_cols, n_inf_cols + n_cluster_cols)
-    #    One contiguous block per CorrClusterConfig, in config order.
+    # 2) Correlated clusters: one contiguous block per CorrClusterConfig.
     # -------------------------------------------------------------
+    informative_flags = cfg.cluster_informative_flags()
     current = n_inf_cols
     for cid, cluster_cfg in enumerate(clusters):
         k = int(cluster_cfg.n_cluster_features)
         cols = list(range(current, current + k))
         cluster_indices[cid] = cols
+        anchor_idx[cid] = current + cluster_cfg.anchor_index
 
-        # Anchor is always the first column of the block
-        anchor_col = cols[0]
-        anchor_idx[cid] = anchor_col
-
-        # Name anchor (display: 1-based with cid+1)
-        if cfg.prefixed_feature_naming:
-            if cluster_cfg.anchor_role == "informative":
-                anchor_name = f"{cfg.prefix_corr}{cid + 1}_anchor"  # corr1_anchor, corr2_anchor, ...
-            else:
-                anchor_name = f"{cfg.prefix_corr}{cid + 1}_1"  # corr1_1, corr2_1, ...
-        else:
-            anchor_name = f"feature_{len(names) + 1}"
-        names.append(anchor_name)
-
-        # Mark anchor as informative when the cluster carries class-discriminative
-        # signal (derived from the generated mean/covariance, not the declared role).
-        if _cluster_is_informative(
-            anchor_role=cluster_cfg.anchor_role,
-            anchor_class=cluster_cfg.anchor_class,
-            effect_size=cluster_cfg.resolve_anchor_effect_size(),
-            correlation=cluster_cfg.correlation,
-            n_classes=cfg.n_classes,
-        ):
-            informative_idx.append(anchor_col)
-
-        # Name proxy features (never added to informative_idx / noise_idx)
-        for offset, col in enumerate(cols[1:], start=2):
+        for position, _col in enumerate(cols):
             if cfg.prefixed_feature_naming:
-                proxy_name = f"{cfg.prefix_corr}{cid + 1}_{offset}"  # corr1_2, corr1_3, ...
+                if position == cluster_cfg.anchor_index:
+                    names.append(f"{cfg.prefix_corr}{cid + 1}_anchor")
+                else:
+                    names.append(f"{cfg.prefix_corr}{cid + 1}_{position + 1}")
             else:
-                proxy_name = f"feature_{len(names) + 1}"
-            names.append(proxy_name)
+                names.append(f"feature_{len(names) + 1}")
+
+        # Derived relevance assigns the whole cluster to one side of the partition.
+        if informative_flags[cid]:
+            informative_idx.extend(cols)
+        else:
+            noise_idx.extend(cols)
 
         current += k
 
     # -------------------------------------------------------------
-    # 3) Independent / free noise: block at the end
+    # 3) Standalone noise: block at the end
     # -------------------------------------------------------------
     noise_start = n_inf_cols + n_cluster_cols
+    standalone_noise_range = (noise_start, noise_start + n_noise_cols)
     for j in range(n_noise_cols):
         col = noise_start + j
         if cfg.prefixed_feature_naming:
@@ -187,15 +161,21 @@ def _make_names_and_roles(
             f"{len(names)} names, but expected {total_cols}."
         )
 
-    # Informative and noise labels must never overlap.
-    if set(informative_idx) & set(noise_idx):
+    # informative_idx and noise_idx must be an exhaustive, disjoint partition.
+    if sorted(informative_idx + noise_idx) != list(range(total_cols)):
         raise AssertionError(
             "Internal inconsistency in _make_names_and_roles: informative_idx and "
-            "noise_idx must be disjoint, but share columns "
-            f"{sorted(set(informative_idx) & set(noise_idx))}."
+            "noise_idx must partition range(n_features) exactly."
         )
 
-    return names, informative_idx, noise_idx, cluster_indices, anchor_idx
+    return (
+        names,
+        sorted(informative_idx),
+        sorted(noise_idx),
+        cluster_indices,
+        anchor_idx,
+        standalone_noise_range,
+    )
 
 
 # =================
@@ -236,10 +216,14 @@ def generate_dataset(
               and complete generation configuration.
 
     Examples:
-        >>> from biomedical_data_generator.config import DatasetConfig, ClassConfig
+        >>> from biomedical_data_generator.config import (
+        ...     DatasetConfig, ClassConfig, StandaloneInformativeGroup
+        ... )
         >>> data_cfg_1 = DatasetConfig(
-        ...     n_informative=5,
-        ...     n_noise=10,
+        ...     standalone_informative_groups=[
+        ...         StandaloneInformativeGroup(n_features=5, class_sep=1.0)
+        ...     ],
+        ...     n_standalone_noise=10,
         ...     class_configs=[ClassConfig(n_samples=100, label="healthy"),
         ...                    ClassConfig(n_samples=100, label="diseased")],
         ...     random_state=42
@@ -263,13 +247,13 @@ def generate_dataset(
     # ================================================================
     # STEP 3: Generate noise features
     # ================================================================
-    # Only free noise features are produced here; noise anchors (and their
-    # proxies) already live inside the correlated-cluster block.
+    # Only standalone noise features are produced here; cluster members (anchors
+    # and proxies) already live inside the correlated-cluster block.
     x_noise = sample_distribution(
         distribution=cfg.noise_distribution,
         params=cfg.noise_distribution_params,
         rng=rng_global,
-        size=(cfg.n_samples, cfg.n_noise_free),
+        size=(cfg.n_samples, cfg.n_standalone_noise),
     )
 
     # ================================================================
@@ -307,33 +291,57 @@ def generate_dataset(
     # ================================================================
     # STEP 6: Build names and role indices (knows final structure)
     # ================================================================
-    names, inf_idx, noi_idx, cluster_idx, anch_idx = _make_names_and_roles(
+    (
+        names,
+        inf_idx,
+        noi_idx,
+        cluster_idx,
+        anch_idx,
+        standalone_noise_range,
+    ) = _make_names_and_roles(
         cfg,
         n_cluster_cols=x_clusters.shape[1],
         n_inf_cols=x_informative.shape[1],
         n_noise_cols=x_noise.shape[1],
     )
 
+    # Per-group records for the standalone-informative block: column layout and
+    # centered per-class offsets resolved straight from the config (no matrix).
+    standalone_informative_groups = tuple(
+        StandaloneGroupMeta(column_indices=column_indices, per_class_offset=per_class_offset)
+        for column_indices, per_class_offset in resolve_standalone_groups(cfg)
+    )
+
     # ================================================================
     # STEP 7: Build metadata
     # ================================================================
     counts = np.bincount(y, minlength=cfg.n_classes)
+    # Per-boundary class separation is now declared per standalone-informative
+    # group; the legacy scalar field reports the first group's resolved boundaries
+    # (recoverable as successive differences of its centered offsets), or zeros
+    # when no standalone-informative group is present.
+    if standalone_informative_groups:
+        class_sep = [float(d) for d in np.diff(standalone_informative_groups[0].per_class_offset)]
+    else:
+        class_sep = [0.0] * (cfg.n_classes - 1)
     meta = DatasetMeta(
         feature_names=names,
         informative_idx=inf_idx,
         noise_idx=noi_idx,
         corr_cluster_indices=cluster_idx,
         anchor_idx=anch_idx,
-        anchor_role=cluster_meta["anchor_role"],
-        anchor_effect_size=cluster_meta["anchor_effect_size"],
-        anchor_class=cluster_meta["anchor_class"],
+        standalone_informative_groups=standalone_informative_groups,
+        standalone_noise_range=standalone_noise_range,
+        mean_per_class_effect=cluster_meta["mean_per_class_effect"],
+        covariance_per_class_correlation=cluster_meta["covariance_per_class_correlation"],
+        baseline_correlation=cluster_meta["baseline_correlation"],
         cluster_label=cluster_meta["label"],
         cluster_structure=cluster_meta["structure"],
-        cluster_correlation=cluster_meta["correlation"],
+        cluster_proxy_attenuation=cluster_meta["proxy_attenuation"],
         n_classes=cfg.n_classes,
         class_names=cfg.class_labels,
         samples_per_class={int(k): int(counts[k]) for k in range(cfg.n_classes)},
-        class_sep=cfg.class_sep,
+        class_sep=class_sep,
         batch=batch_meta,
         random_state=cfg.random_state,
         resolved_config=cfg.model_dump(),

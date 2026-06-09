@@ -8,7 +8,14 @@
 
 import pytest
 
-from biomedical_data_generator import ClassConfig, CorrClusterConfig, DatasetConfig
+from biomedical_data_generator import (
+    ClassConfig,
+    CorrClusterConfig,
+    CovarianceChannel,
+    DatasetConfig,
+    MeanChannel,
+    StandaloneInformativeGroup,
+)
 from biomedical_data_generator.config import (
     BatchEffectsConfig,
     validate_distribution_params,
@@ -189,13 +196,15 @@ def test_class_config_str_with_non_default_distribution():
 # ============================================================================
 def test_corr_cluster_config_defaults():
     """Test CorrClusterConfig with default values."""
-    cfg = CorrClusterConfig(n_cluster_features=5, correlation=0.7)
+    cfg = CorrClusterConfig(n_cluster_features=5)
 
     assert cfg.n_cluster_features == 5
-    assert cfg.correlation == 0.7
-    assert cfg.structure == "equicorrelated"
-    assert cfg.anchor_role == "informative"
-    assert cfg.anchor_effect_size is None
+    assert cfg.baseline_correlation == 0.0
+    assert cfg.correlation_structure == "equicorrelated"
+    assert cfg.anchor_index == 0
+    assert cfg.proxy_attenuation == 1.0
+    assert cfg.mean_channel is None
+    assert cfg.covariance_channel is None
 
 
 def test_corr_cluster_config_single_feature_rejected():
@@ -203,49 +212,56 @@ def test_corr_cluster_config_single_feature_rejected():
     from pydantic import ValidationError
 
     with pytest.raises(ValidationError, match="greater than or equal to 2"):
-        CorrClusterConfig(n_cluster_features=1, correlation=0.5)
+        CorrClusterConfig(n_cluster_features=1)
 
 
-def test_corr_cluster_config_correlation_class_specific():
-    """Test class-specific correlation dict."""
+def test_corr_cluster_config_covariance_channel_class_specific():
+    """A covariance channel resolves a per-class within-cluster correlation."""
     cfg = CorrClusterConfig(
         n_cluster_features=5,
-        correlation={0: 0.8, 1: 0.6},
+        baseline_correlation=0.1,
+        covariance_channel=CovarianceChannel(per_class_correlation={0: 0.8, 1: 0.6}),
     )
 
-    assert cfg.is_class_specific()
-    assert cfg.get_correlation_for_class(0) == 0.8
-    assert cfg.get_correlation_for_class(1) == 0.6
-    assert cfg.get_correlation_for_class(2) == 0.0  # Default for unspecified
+    assert cfg.effective_correlation_for_class(0) == 0.8
+    assert cfg.effective_correlation_for_class(1) == 0.6
+    # Unspecified class falls back to baseline_correlation.
+    assert cfg.effective_correlation_for_class(2) == 0.1
 
 
-def test_corr_cluster_config_correlation_invalid_negative_key():
-    """Test that negative class index in correlation dict raises error."""
-    with pytest.raises(ValueError, match="correlation keys must be >= 0"):
+def test_corr_cluster_config_covariance_channel_out_of_range():
+    """A covariance channel correlation outside the valid range raises an error."""
+    from pydantic import ValidationError
+
+    with pytest.raises(ValidationError, match="covariance_channel"):
         CorrClusterConfig(
             n_cluster_features=5,
-            correlation={-1: 0.8},
+            covariance_channel=CovarianceChannel(per_class_correlation={0: 0.0, 1: 1.4}),
         )
 
 
-def test_corr_cluster_config_correlation_out_of_range():
-    """Test that correlation outside [-1, 1] raises error."""
-    with pytest.raises(ValueError, match="correlation=1.5 invalid"):
+def test_corr_cluster_config_baseline_correlation_out_of_range():
+    """Test that baseline_correlation outside [-1, 1] raises error."""
+    from pydantic import ValidationError
+
+    with pytest.raises(ValidationError, match="baseline_correlation"):
         CorrClusterConfig(
             n_cluster_features=5,
-            correlation=1.5,
+            baseline_correlation=1.5,
         )
 
 
 def test_corr_cluster_config_correlation_equicorrelated_boundary():
     """Test boundary check for equicorrelated structure."""
-    # For equicorrelated, correlation must be > -1/(n-1)
-    # For n=5, lower bound is -1/4 = -0.25
-    with pytest.raises(ValueError, match="require .* < correlation < 1"):
+    from pydantic import ValidationError
+
+    # For equicorrelated, correlation must be > -1/(n-1).
+    # For n=5, lower bound is -1/4 = -0.25, so -0.3 is too negative.
+    with pytest.raises(ValidationError, match="baseline_correlation"):
         CorrClusterConfig(
             n_cluster_features=5,
-            correlation=-0.3,  # Too negative
-            structure="equicorrelated",
+            baseline_correlation=-0.3,  # Too negative
+            correlation_structure="equicorrelated",
         )
 
 
@@ -253,147 +269,66 @@ def test_corr_cluster_config_toeplitz_structure():
     """Test toeplitz structure validation."""
     cfg = CorrClusterConfig(
         n_cluster_features=5,
-        correlation=0.7,
-        structure="toeplitz",
+        baseline_correlation=0.7,
+        correlation_structure="toeplitz",
     )
 
-    assert cfg.structure == "toeplitz"
+    assert cfg.correlation_structure == "toeplitz"
 
 
 def test_corr_cluster_config_toeplitz_correlation_boundary():
     """Test that correlation at boundary for toeplitz raises error."""
-    with pytest.raises(ValueError, match="require \\|correlation\\| < 1"):
+    from pydantic import ValidationError
+
+    with pytest.raises(ValidationError, match="baseline_correlation"):
         CorrClusterConfig(
             n_cluster_features=5,
-            correlation=1.0,
-            structure="toeplitz",
+            baseline_correlation=1.0,
+            correlation_structure="toeplitz",
         )
 
 
-def test_corr_cluster_config_anchor_effect_size_small():
-    """Test anchor_effect_size preset 'small'."""
+def test_corr_cluster_config_mean_channel_resolution():
+    """A mean channel resolves a per-class anchor mean shift."""
     cfg = CorrClusterConfig(
         n_cluster_features=5,
-        correlation=0.7,
-        anchor_effect_size="small",
+        baseline_correlation=0.7,
+        mean_channel=MeanChannel(per_class_effect={1: 1.5}),
     )
 
-    assert cfg.resolve_anchor_effect_size() == 0.5
+    assert cfg.mean_effect_for_class(1) == 1.5
+    # Absent classes get the 0.0 baseline shift.
+    assert cfg.mean_effect_for_class(0) == 0.0
 
 
-def test_corr_cluster_config_anchor_effect_size_medium():
-    """Test anchor_effect_size preset 'medium'."""
-    cfg = CorrClusterConfig(
-        n_cluster_features=5,
-        correlation=0.7,
-        anchor_effect_size="medium",
-    )
-
-    assert cfg.resolve_anchor_effect_size() == 1.0
-
-
-def test_corr_cluster_config_anchor_effect_size_large():
-    """Test anchor_effect_size preset 'large'."""
-    cfg = CorrClusterConfig(
-        n_cluster_features=5,
-        correlation=0.7,
-        anchor_effect_size="large",
-    )
-
-    assert cfg.resolve_anchor_effect_size() == 1.5
-
-
-def test_corr_cluster_config_anchor_effect_size_numeric():
-    """Test numeric anchor_effect_size."""
-    cfg = CorrClusterConfig(
-        n_cluster_features=5,
-        correlation=0.7,
-        anchor_effect_size=2.5,
-    )
-
-    assert cfg.resolve_anchor_effect_size() == 2.5
-
-
-def test_corr_cluster_config_anchor_effect_size_none():
-    """Test that None anchor_effect_size resolves to 1.0."""
-    cfg = CorrClusterConfig(
-        n_cluster_features=5,
-        correlation=0.7,
-        anchor_effect_size=None,
-    )
-
-    assert cfg.resolve_anchor_effect_size() == 1.0
-
-
-def test_noise_anchor_resolves_to_zero_effect():
-    """A noise anchor never carries a shift, so its effect size resolves to 0.0."""
+def test_corr_cluster_config_no_mean_channel_resolves_to_zero():
+    """Without a mean channel, every class resolves to a 0.0 mean shift."""
     cfg = CorrClusterConfig(
         n_cluster_features=3,
-        correlation=0.8,
-        anchor_role="noise",
+        baseline_correlation=0.8,
     )
-    assert cfg.resolve_anchor_effect_size() == 0.0
+    assert cfg.mean_effect_for_class(0) == 0.0
+    assert cfg.mean_effect_for_class(1) == 0.0
 
 
-def test_noise_anchor_rejects_effect_size():
-    """Setting anchor_effect_size on a noise anchor is contradictory and rejected."""
+def test_corr_cluster_config_proxy_attenuation_custom():
+    """proxy_attenuation is a neutral multiplier with a custom value accepted."""
+    cfg = CorrClusterConfig(
+        n_cluster_features=4,
+        baseline_correlation=0.5,
+        proxy_attenuation=0.25,
+    )
+    assert cfg.proxy_attenuation == 0.25
+
+
+def test_corr_cluster_config_anchor_index_out_of_range():
+    """Test that an anchor_index outside the block raises error."""
     from pydantic import ValidationError
 
-    with pytest.raises(ValidationError):
-        CorrClusterConfig(
-            n_cluster_features=3,
-            correlation=0.8,
-            anchor_role="noise",
-            anchor_effect_size="large",
-        )
-
-
-def test_noise_anchor_rejects_anchor_class():
-    """Setting anchor_class on a noise anchor is contradictory and rejected."""
-    from pydantic import ValidationError
-
-    with pytest.raises(ValidationError):
-        CorrClusterConfig(
-            n_cluster_features=3,
-            correlation=0.8,
-            anchor_role="noise",
-            anchor_class=1,
-        )
-
-
-def test_corr_cluster_config_anchor_effect_size_invalid_string():
-    """Test that invalid string for anchor_effect_size raises error."""
-    # Pydantic will raise ValidationError, not ValueError
-    from pydantic import ValidationError
-
-    with pytest.raises(ValidationError):
+    with pytest.raises(ValidationError, match="anchor_index"):
         CorrClusterConfig(
             n_cluster_features=5,
-            correlation=0.7,
-            anchor_effect_size="invalid",
-        )
-
-
-def test_corr_cluster_config_anchor_effect_size_negative():
-    """Test that negative anchor_effect_size raises error."""
-    # Pydantic will raise ValidationError
-    from pydantic import ValidationError
-
-    with pytest.raises(ValidationError):
-        CorrClusterConfig(
-            n_cluster_features=5,
-            correlation=0.7,
-            anchor_effect_size=-1.0,
-        )
-
-
-def test_corr_cluster_config_anchor_class_negative():
-    """Test that negative anchor_class raises error."""
-    with pytest.raises(ValueError, match="anchor_class must be >= 0"):
-        CorrClusterConfig(
-            n_cluster_features=5,
-            correlation=0.7,
-            anchor_class=-1,
+            anchor_index=5,  # valid indices are 0..4
         )
 
 
@@ -444,8 +379,8 @@ def test_batch_effects_config_proportions():
 def test_dataset_config_with_batch_effects():
     """Test DatasetConfig with batch effects."""
     cfg = DatasetConfig(
-        n_informative=5,
-        n_noise=3,
+        standalone_informative_groups=[StandaloneInformativeGroup(n_features=5, class_sep=1.0)],
+        n_standalone_noise=3,
         class_configs=[ClassConfig(n_samples=50), ClassConfig(n_samples=50)],
         batch_effects=BatchEffectsConfig(n_batches=2),
     )
@@ -457,23 +392,27 @@ def test_dataset_config_with_batch_effects():
 def test_dataset_config_breakdown():
     """Test breakdown() method returns correct structure."""
     cfg = DatasetConfig(
-        n_informative=5,
-        n_noise=3,
+        standalone_informative_groups=[StandaloneInformativeGroup(n_features=5, class_sep=1.0)],
+        n_standalone_noise=3,
         class_configs=[ClassConfig(n_samples=50), ClassConfig(n_samples=50)],
     )
 
     breakdown = cfg.breakdown()
     assert "n_features" in breakdown
-    assert "n_informative_total" in breakdown
-    assert "n_noise_total" in breakdown
+    assert "n_informative" in breakdown
+    assert "n_noise" in breakdown
+    # No clusters here, so derived counts equal the standalone counts.
+    assert breakdown["n_informative"] == 5
+    assert breakdown["n_noise"] == 3
+    assert breakdown["n_features"] == 8
 
 
 def test_dataset_config_extra_fields_forbidden():
     """Test that extra fields are rejected."""
     with pytest.raises(ValueError):
         DatasetConfig(
-            n_informative=5,
-            n_noise=3,
-            class_configs=[ClassConfig(n_samples=50)],
+            standalone_informative_groups=[StandaloneInformativeGroup(n_features=5, class_sep=1.0)],
+            n_standalone_noise=3,
+            class_configs=[ClassConfig(n_samples=50), ClassConfig(n_samples=50)],
             unknown_field="value",
         )

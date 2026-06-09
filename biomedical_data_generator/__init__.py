@@ -8,18 +8,38 @@
 
 """Data generator main package."""
 
-from .config import BatchEffectsConfig, ClassConfig, CorrClusterConfig, DatasetConfig
+from .config import (
+    BatchEffectsConfig,
+    ClassConfig,
+    CorrClusterConfig,
+    CovarianceChannel,
+    DatasetConfig,
+    MeanChannel,
+    StandaloneInformativeGroup,
+)
 from .generator import generate_dataset
-from .meta import BatchMeta, DatasetMeta, FeatureRoles, compute_feature_roles
+from .meta import (
+    BatchMeta,
+    DatasetMeta,
+    FeatureRoles,
+    FeatureStrengths,
+    compute_feature_roles,
+    compute_feature_strengths,
+)
 
 __all__ = [
     "DatasetConfig",
     "DatasetMeta",
     "CorrClusterConfig",
+    "MeanChannel",
+    "CovarianceChannel",
+    "StandaloneInformativeGroup",
     "BatchEffectsConfig",
     "ClassConfig",
     "FeatureRoles",
+    "FeatureStrengths",
     "BatchMeta",
     "generate_dataset",
     "compute_feature_roles",
+    "compute_feature_strengths",
 ]

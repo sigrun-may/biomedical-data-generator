@@ -60,21 +60,32 @@ At the core, each cluster implements a multivariate Gaussian model:
 
     where :math:`\rho` is the correlation parameter.
 
-Anchor effects (mean shifts)
+Anchor effects (mean channel)
 -----------------------------
-When ``anchor_role="informative"`` and ``anchor_effect_size`` is specified,
-the anchor feature receives a class-specific mean shift:
+First-moment signal is carried by the optional ``mean_channel``. When present,
+the anchor feature receives the channel's per-class mean shift:
 
 .. math::
 
-    \mu_{anchor, c} = \text{anchor_effect_size} \cdot \mathbb{1}_{c = anchor\_class}.
+    \mu_{anchor, c} = \text{mean\_channel.per\_class\_effect}[c],
 
-Proxy features inherit this shift through correlation but with attenuated
-magnitude proportional to their correlation with the anchor.
+with absent classes receiving ``0.0`` (baseline). A proxy at block column
+``j`` inherits this shift structurally: the anchor's per-class effect is
+propagated as ``effect * proxy_attenuation * sigma[anchor_index, j]``, where
+``sigma`` is the structural correlation matrix built from
+``correlation_structure`` and that class's effective correlation (the same
+correlation that samples the block). The proxy shift is therefore deterministic
+and decays with structural distance from the anchor under a Toeplitz structure.
 
-**Configuration semantics** (enforced by CorrClusterConfig validation):
-  - ``anchor_role="noise"`` → no mean shift (effect_size ignored if present)
-  - ``anchor_role="informative"`` → MUST have anchor_effect_size > 0
+**Configuration semantics** (channel model):
+  - Relevance is **derived**, never declared -- there is no declared anchor
+    role. A cluster is informative iff its mean channel varies across classes
+    (first moment) or its effective per-class correlation varies across classes
+    (second moment, via the ``covariance_channel``).
+  - No ``mean_channel`` → no class-dependent mean shift on the anchor or its
+    proxies.
+  - A ``mean_channel`` whose effects are equal across classes contributes no
+    first-moment signal (the cluster is informative only if some channel varies).
 
 Limitations and biological realism
 ----------------------------------
@@ -100,11 +111,11 @@ from typing import Any
 import numpy as np
 
 from biomedical_data_generator.config import CorrClusterConfig, DatasetConfig
+from biomedical_data_generator.meta import _proxy_mean_offset
 
 __all__ = [
     "build_correlation_matrix",
     "sample_correlated_data",
-    "apply_anchor_effects",
     "sample_all_correlated_clusters",
 ]
 
@@ -267,158 +278,104 @@ def sample_correlated_data(
 # ============================================================================
 # Anchor effect application
 # ============================================================================
-def apply_anchor_effects(
-    x: np.ndarray,
+def _apply_mean_channel(
+    block: np.ndarray,
     y: np.ndarray,
-    cluster_configs: list[CorrClusterConfig],
-) -> np.ndarray:
-    """Apply class-specific mean shifts to anchor features.
+    cluster_cfg: CorrClusterConfig,
+) -> None:
+    """Apply the per-class anchor mean shift and its proxy propagation in-place.
 
-    This function modifies the data matrix in-place by adding mean shifts to
-    anchor features based on their configured effect sizes and target classes.
-
-    The anchor feature (typically the first feature in each cluster) receives
-    the full effect size, while correlated proxy features receive attenuated
-    shifts equal to ``effect_size * rho``, where ``rho`` is the *configured*
-    structural correlation between anchor and proxy (``rho`` for equicorrelated,
-    ``rho**i`` for toeplitz). Using the configured correlation matrix instead of
-    the empirical correlation of the already-shifted data keeps the proxy shift
-    deterministic and independent of sample size, and makes the anchor the
-    unique carrier of the Bayes-optimal discriminant direction. For
-    class-specific clusters, ``rho`` is resolved and applied per class, so each
-    class's proxies are attenuated by that class's own correlation even when the
-    anchor shift covers all classes (``anchor_class=None``).
-
-    **Effect application logic**:
-      - anchor_role="noise" → no shift (effect_size ignored)
-      - anchor_role="informative" + anchor_effect_size > 0 → apply shift
-      - Due to CorrClusterConfig validation, informative anchors always have
-        anchor_effect_size != None
+    The anchor at ``anchor_index`` receives the full per-class effect. A proxy at
+    block column ``j`` inherits ``effect * proxy_attenuation * sigma[anchor_index, j]``,
+    where ``sigma`` is the structural correlation matrix built from
+    ``correlation_structure`` and that class's effective correlation -- the same
+    correlation that sampled the class's block. Using the structural correlation
+    (rather than the empirical correlation of the shifted data) keeps the proxy
+    shift deterministic and makes the anchor the unique carrier of the
+    Bayes-optimal discriminant direction.
 
     Args:
-        x: Feature matrix of shape (n_samples, n_features). Modified in-place.
+        block: Cluster block of shape (n_samples, n_cluster_features). Modified in-place.
         y: Class labels of shape (n_samples,).
-        cluster_configs: List of cluster configurations with anchor metadata.
-
-    Returns:
-        The modified feature matrix (same object as input x).
-
-    Note:
-        For class-specific clusters whose anchor shift targets all classes
-        (``anchor_class=None``), the proxy attenuation is computed separately
-        per class using each class's configured correlation. A class without an
-        entry in the correlation mapping resolves to ``rho=0`` via
-        ``get_correlation_for_class``, so its anchor still shifts while its
-        proxies stay unshifted (consistent with an anchor that is uncorrelated
-        with its proxies in that class).
+        cluster_cfg: Cluster configuration.
     """
-    x = np.asarray(x, dtype=float)
-    y = np.asarray(y)
+    if cluster_cfg.mean_channel is None:
+        return
 
-    feature_offset = 0
-    for cluster_cfg in cluster_configs:
-        n_cluster_features = cluster_cfg.n_cluster_features
+    n_features = cluster_cfg.n_cluster_features
+    anchor_index = cluster_cfg.anchor_index
 
-        # Resolve numeric effect size (returns 0.0 for noise anchors)
-        effect_size = cluster_cfg.resolve_anchor_effect_size()
-        target_class = cluster_cfg.anchor_class
-
-        # Skip if no effect (noise anchor or zero effect)
-        if effect_size == 0.0:
-            feature_offset += n_cluster_features
+    for class_value in np.unique(y):
+        class_index = int(class_value)
+        effect = cluster_cfg.mean_effect_for_class(class_index)
+        if effect == 0.0:
             continue
 
-        # Identify samples in target class (None → all classes)
-        if target_class is None:
-            target_mask = np.ones(len(y), dtype=bool)
-        else:
-            target_mask = y == target_class
+        class_mask = y == class_index
+        block[class_mask, anchor_index] += effect
 
-        # Apply full shift to anchor feature (first in cluster)
-        anchor_idx = feature_offset
-        x[target_mask, anchor_idx] += effect_size
-
-        # Apply attenuated shifts to proxies using the *configured* structural
-        # correlation, not the empirical correlation of the shifted data.
-        if n_cluster_features > 1:
-            if cluster_cfg.is_class_specific():
-                # Class-specific mode: each class has its own correlation
-                # structure, so the proxy attenuation is resolved and applied
-                # separately per class. Iterating over the distinct shifted
-                # classes attenuates each class's proxies with its own
-                # configured correlation, which is exact even when the anchor
-                # shift covers all classes (anchor_class=None).
-                shifted_classes = np.unique(y[target_mask])
-                for class_label in shifted_classes:
-                    class_mask = target_mask & (y == class_label)
-                    rho = cluster_cfg.get_correlation_for_class(int(class_label))
-                    sigma = build_correlation_matrix(n_cluster_features, rho, cluster_cfg.structure)
-                    anchor_correlations = sigma[0, 1:]  # theoretical, not empirical
-                    for i, corr_with_anchor in enumerate(anchor_correlations, start=1):
-                        proxy_idx = feature_offset + i
-                        x[class_mask, proxy_idx] += effect_size * corr_with_anchor
-            else:
-                # Global mode: a single correlation value governs proxy
-                # attenuation for all samples, regardless of the class index.
-                rho = cluster_cfg.get_correlation_for_class(0)
-                sigma = build_correlation_matrix(n_cluster_features, rho, cluster_cfg.structure)
-                anchor_correlations = sigma[0, 1:]  # theoretical, not empirical
-                for i, corr_with_anchor in enumerate(anchor_correlations, start=1):
-                    proxy_idx = feature_offset + i
-                    x[target_mask, proxy_idx] += effect_size * corr_with_anchor
-
-        feature_offset += n_cluster_features
-
-    return x
+        if n_features > 1:
+            rho = cluster_cfg.effective_correlation_for_class(class_index)
+            for proxy_index in range(n_features):
+                if proxy_index == anchor_index:
+                    continue
+                block[class_mask, proxy_index] += _proxy_mean_offset(
+                    anchor_per_class_offset=effect,
+                    distance=abs(proxy_index - anchor_index),
+                    correlation_structure=cluster_cfg.correlation_structure,
+                    effective_per_class_correlation=rho,
+                    proxy_attenuation=cluster_cfg.proxy_attenuation,
+                )
 
 
 # ============================================================================
 # High-level cluster generation
 # ============================================================================
-def _sample_class_specific_cluster(
+def _sample_cluster_block(
     y: np.ndarray,
-    n_features: int,
     cluster_cfg: CorrClusterConfig,
-    structure: str,
     rng: np.random.Generator,
 ) -> np.ndarray:
-    """Generate a cluster with per-class correlation strengths.
+    """Sample one correlated block, per class, from its effective correlation.
+
+    Each class's rows are drawn with that class's effective within-block
+    correlation (the covariance channel value for the class, or the cluster's
+    ``baseline_correlation`` when absent), so differential co-expression is
+    expressed directly in the sampled second moments. A class whose effective
+    correlation is (near) zero is drawn as independent standard normals.
 
     Args:
         y: Class labels as 1D array of length n_samples.
-        n_features: Number of features in this cluster.
-        cluster_cfg: Cluster configuration with class-specific correlations.
-        structure: Correlation structure ('equicorrelated' or 'toeplitz').
+        cluster_cfg: Cluster configuration.
         rng: Random number generator.
 
     Returns:
-        Feature block of shape (n_samples, n_features) with class-specific
-        correlation patterns.
+        Feature block of shape (n_samples, n_cluster_features).
     """
     n_samples = len(y)
+    n_features = cluster_cfg.n_cluster_features
     block = np.empty((n_samples, n_features), dtype=float)
 
-    for cls in np.unique(y):
-        cls_int = int(cls)
-        cls_mask = y == cls_int
-        n_cls = int(cls_mask.sum())
-        if n_cls == 0:
+    for class_value in np.unique(y):
+        class_index = int(class_value)
+        class_mask = y == class_index
+        n_class = int(class_mask.sum())
+        if n_class == 0:
             continue
 
-        corr_cls = float(cluster_cfg.get_correlation_for_class(cls_int))
-
-        if abs(corr_cls) < CORRELATION_ZERO_THRESHOLD:
-            cls_block = rng.standard_normal(size=(n_cls, n_features))
+        rho = cluster_cfg.effective_correlation_for_class(class_index)
+        if abs(rho) < CORRELATION_ZERO_THRESHOLD:
+            class_block = rng.standard_normal(size=(n_class, n_features))
         else:
-            cls_block = sample_correlated_data(
-                n_cls,
+            class_block = sample_correlated_data(
+                n_class,
                 n_features,
-                corr_cls,
-                structure=structure,
+                rho,
+                structure=cluster_cfg.correlation_structure,
                 rng=rng,
             )
 
-        block[cls_mask, :] = cls_block
+        block[class_mask, :] = class_block
 
     return block
 
@@ -430,72 +387,31 @@ def sample_all_correlated_clusters(
 ) -> tuple[np.ndarray, dict[str, dict[int, Any]]]:
     r"""Generate and assemble all correlated feature clusters for a dataset.
 
-    This function connects the abstract configuration with the actual data
-    matrix and cluster-level metadata. It supports both global and class-specific
-    correlation modes, and automatically applies anchor effects based on
-    cluster configuration.
-
-    **Anchor effect application**:
-      Anchor effects are applied automatically based on cluster configuration:
-      - If anchor_role="noise" → no mean shift
-      - If anchor_role="informative" → mean shift applied (effect_size validated to be != None)
-
-      No separate parameter is needed because the semantics are enforced by
-      CorrClusterConfig validation.
+    For each cluster, a Gaussian block is sampled per class from that class's
+    effective within-block correlation (the covariance channel value for the
+    class, or the cluster's ``baseline_correlation`` when absent), then the mean
+    channel adds the per-class anchor shift with its structurally derived proxy
+    propagation. Relevance is never declared; it is derived from these channels.
 
     Args:
-        cfg: Dataset configuration with corr_clusters field.
+        cfg: Dataset configuration with the ``corr_clusters`` field.
         y: Class labels as a 1D NumPy array of length n_samples.
         rng: Optional random number generator. If None, creates a new one.
 
     Returns:
         A tuple (x_clusters, cluster_meta) where:
 
-        * x_clusters: Array of shape (n_samples, n_corr_features) with
-          correlated clusters including anchor effects where configured.
-        * cluster_meta: Dictionary with cluster-level metadata:
-            - "anchor_role": cluster_id -> anchor_role
-            - "anchor_effect_size": cluster_id -> effect_size
-            - "anchor_class": cluster_id -> target_class
+        * x_clusters: Array of shape (n_samples, n_corr_features) with the
+          assembled correlated blocks including channel effects.
+        * cluster_meta: Dictionary with cluster-level metadata, keyed by field
+          name then cluster id:
+            - "mean_per_class_effect": cluster_id -> mean channel mapping or None
+            - "covariance_per_class_correlation": cluster_id -> covariance mapping or None
+            - "baseline_correlation": cluster_id -> structural baseline correlation
             - "label": cluster_id -> human-readable label
-            - "structure": cluster_id -> correlation structure
-              ("equicorrelated" or "toeplitz")
-            - "correlation": cluster_id -> raw correlation (float or per-class dict)
-
-    Examples:
-        >>> # Pure correlation (noise anchor, no mean shift)
-        >>> cfg = DatasetConfig(
-        ...     class_configs=[ClassConfig(50), ClassConfig(50)],
-        ...     corr_clusters=[
-        ...         CorrClusterConfig(
-        ...             n_cluster_features=5,
-        ...             correlation=0.8,
-        ...             anchor_role="noise"  # No shift
-        ...         )
-        ...     ]
-        ... )
-        >>> y = np.repeat([0, 1], 50)  # 50 samples per class
-        >>> x, meta = sample_all_correlated_clusters(cfg, y, rng=rng)
-
-        >>> # Correlation + diagnostic signal (informative anchor with shift)
-        >>> cfg = DatasetConfig(
-        ...     class_configs=[ClassConfig(50), ClassConfig(50)],
-        ...     corr_clusters=[
-        ...         CorrClusterConfig(
-        ...             n_cluster_features=5,
-        ...             correlation=0.8,
-        ...             anchor_role="informative",
-        ...             anchor_effect_size="medium",  # Required for informative
-        ...             anchor_class=1
-        ...         )
-        ...     ]
-        ... )
-        >>> y = np.repeat([0, 1], 50)  # 50 samples per class
-        >>> x, meta = sample_all_correlated_clusters(cfg, y, rng=rng)
-
-        >>> # Advanced: provide custom labels
-        >>> y_custom = np.array([...])
-        >>> x, meta = sample_all_correlated_clusters(cfg, y_custom, rng)
+            - "structure": cluster_id -> correlation structure ("equicorrelated" or "toeplitz")
+            - "proxy_attenuation": cluster_id -> anchor-to-proxy mean-propagation multiplier
+            - "anchor_index": cluster_id -> structural anchor column within the block
     """
     if rng is None:
         rng = np.random.default_rng()
@@ -508,42 +424,9 @@ def sample_all_correlated_clusters(
     cluster_cfgs: list[CorrClusterConfig] = cfg.corr_clusters or []
 
     cluster_array_list: list[np.ndarray] = []
-
-    for cluster_id, cluster_cfg in enumerate(cluster_cfgs):
-        n_features = cluster_cfg.n_cluster_features
-
-        if not cluster_cfg.is_class_specific():
-            # Global mode: one correlation value for all samples
-            corr_raw = cluster_cfg.correlation
-
-            if isinstance(corr_raw, dict):
-                raise ValueError(
-                    "Non class-specific CorrClusterConfig must have a scalar " "correlation, got a dict instead."
-                )
-
-            corr_global = float(corr_raw)
-
-            if abs(corr_global) < CORRELATION_ZERO_THRESHOLD:
-                block = rng.standard_normal(size=(n_samples, n_features))
-            else:
-                block = sample_correlated_data(
-                    n_samples,
-                    n_features,
-                    corr_global,
-                    structure=cluster_cfg.structure,
-                    rng=rng,
-                )
-
-        else:
-            # Class-specific mode: correlation depends on class label
-            block = _sample_class_specific_cluster(
-                y=y,
-                n_features=n_features,
-                cluster_cfg=cluster_cfg,
-                structure=cluster_cfg.structure,
-                rng=rng,
-            )
-
+    for cluster_cfg in cluster_cfgs:
+        block = _sample_cluster_block(y, cluster_cfg, rng)
+        _apply_mean_channel(block, y, cluster_cfg)
         cluster_array_list.append(block)
 
     if cluster_array_list:
@@ -551,19 +434,20 @@ def sample_all_correlated_clusters(
     else:
         x_clusters = np.empty((n_samples, 0), dtype=float)
 
-    # Apply anchor effects (automatically skips noise anchors via resolve_anchor_effect_size)
-    x_clusters = apply_anchor_effects(x_clusters, y, cluster_cfgs)
-
-    # Build cluster-level metadata
-    cluster_meta: dict[str, dict[int, object]] = {
-        "anchor_role": {cluster_id: cluster_cfg.anchor_role for cluster_id, cluster_cfg in enumerate(cluster_cfgs)},
-        "anchor_effect_size": {
-            cluster_id: cluster_cfg.resolve_anchor_effect_size() for cluster_id, cluster_cfg in enumerate(cluster_cfgs)
+    cluster_meta: dict[str, dict[int, Any]] = {
+        "mean_per_class_effect": {
+            cluster_id: (c.mean_channel.per_class_effect if c.mean_channel is not None else None)
+            for cluster_id, c in enumerate(cluster_cfgs)
         },
-        "anchor_class": {cluster_id: cluster_cfg.anchor_class for cluster_id, cluster_cfg in enumerate(cluster_cfgs)},
-        "label": {cluster_id: cluster_cfg.label for cluster_id, cluster_cfg in enumerate(cluster_cfgs)},
-        "structure": {cluster_id: cluster_cfg.structure for cluster_id, cluster_cfg in enumerate(cluster_cfgs)},
-        "correlation": {cluster_id: cluster_cfg.correlation for cluster_id, cluster_cfg in enumerate(cluster_cfgs)},
+        "covariance_per_class_correlation": {
+            cluster_id: (c.covariance_channel.per_class_correlation if c.covariance_channel is not None else None)
+            for cluster_id, c in enumerate(cluster_cfgs)
+        },
+        "baseline_correlation": {cluster_id: c.baseline_correlation for cluster_id, c in enumerate(cluster_cfgs)},
+        "label": {cluster_id: c.label for cluster_id, c in enumerate(cluster_cfgs)},
+        "structure": {cluster_id: c.correlation_structure for cluster_id, c in enumerate(cluster_cfgs)},
+        "proxy_attenuation": {cluster_id: c.proxy_attenuation for cluster_id, c in enumerate(cluster_cfgs)},
+        "anchor_index": {cluster_id: c.anchor_index for cluster_id, c in enumerate(cluster_cfgs)},
     }
 
     return x_clusters, cluster_meta

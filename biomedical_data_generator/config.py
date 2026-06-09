@@ -8,11 +8,13 @@
 
 from __future__ import annotations
 
-from collections.abc import Iterable, Mapping, Sequence
-from typing import Any, Literal, cast
+from collections.abc import Mapping, Sequence
+from typing import Any, Literal
 
 import numpy as np
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
+
+from .meta import _cluster_is_informative
 
 DistributionType = Literal[
     "normal",
@@ -336,234 +338,182 @@ class BatchEffectsConfig(BaseModel):
         return [p / total for p in v]
 
 
-class CorrClusterConfig(BaseModel):
-    """Correlated feature cluster simulating coordinated biomarker patterns.
-
-    A cluster represents a group of biomarkers that move together, such as
-    markers in a metabolic pathway or proteins in a signaling cascade. One
-    marker acts as the "anchor" (driver), while the others are "proxies"
-    (followers).
-
-    **Two correlation modes are supported:**
-
-        1) Global correlation (most common):
-            correlation: float
-            structure:   "equicorrelated" or "toeplitz"
-
-    Example:
-                correlation = 0.7
-                structure   = "equicorrelated"
-
-            All samples share the same correlation pattern.
-
-    2) Class-specific correlation:
-        correlation: dict[int, float]
-
-        Example (pathway only active in class 1):
-            correlation = {0: 0.0, 1: 0.8}
-
-        Classes not listed in the dict default to 0.0 (independent cluster).
-
-        The correlation *structure* is global for the cluster and applies
-        to all classes.
+def _correlation_in_range(correlation: float, n_features: int, structure: str) -> bool:
+    """Return whether a correlation is admissible for a block of the given shape.
 
     Args:
-        n_cluster_features:
-            Number of biomarkers in the cluster (including anchor). Must be > 1.
-        structure:
-            Correlation structure for this cluster:
-              - "equicorrelated": all pairwise correlations are equal.
-              - "toeplitz": correlation decays with feature distance.
-        correlation:
-            Either a single global correlation strength (float) or a mapping
-            {class_index -> correlation} for class-specific correlations.
-            Typical magnitudes:
-              - 0.0   = independent
-              - 0.3   ≈ weak correlation
-              - 0.5   ≈ moderate correlation
-              - 0.8+  ≈ strong correlation
-        anchor_role:
-            "informative" or "noise".
-        anchor_effect_size:
-            "small" (0.5), "medium" (1.0), "large" (1.5), custom > 0, or None.
-        anchor_class:
-            Class index the anchor predicts (if informative). None → all classes.
-        label:
-            Descriptive name for documentation.
+        correlation: Candidate within-block correlation.
+        n_features: Number of features in the block.
+        structure: Either ``"equicorrelated"`` or ``"toeplitz"``.
+
+    Returns:
+        True if the correlation yields a valid (positive-definite) block.
+    """
+    if structure == "equicorrelated":
+        lower = -1.0 / (n_features - 1)
+        return lower < correlation < 1.0
+    return -1.0 < correlation < 1.0
+
+
+class MeanChannel(BaseModel):
+    """First-moment signal: a per-class mean shift applied to the cluster anchor.
+
+    Absent classes receive a 0.0 shift (baseline). Shifts are in standard-
+    deviation units of the standardized feature baseline.
+
+    Attributes:
+        per_class_effect: Mapping from class index to mean shift in sigma units.
     """
 
     model_config = ConfigDict(extra="forbid")
 
-    # Core cluster structure and correlation settings -------------------------
-    n_cluster_features: int = Field(
-        ...,
-        ge=2,
-        description="Number of biomarkers in cluster (including anchor).",
-    )
+    per_class_effect: dict[int, float]
 
-    structure: Literal["equicorrelated", "toeplitz"] = Field(
-        default="equicorrelated",
-        description="Correlation structure shared by all classes.",
-    )
 
-    # Either a global correlation or a per-class mapping
-    correlation: float | dict[int, float] = Field(
-        default=0.8,
-        description=(
-            "Global correlation strength (float) or per-class mapping "
-            "{class_index: correlation}. Values must satisfy PD constraints."
-        ),
-    )
+class CovarianceChannel(BaseModel):
+    """Second-moment signal: a per-class within-cluster correlation.
 
-    anchor_role: Literal["informative", "noise"] = "informative"
-    anchor_effect_size: Literal["small", "medium", "large"] | float | None = None
-    anchor_class: int | None = None
+    Absent classes fall back to the cluster's ``baseline_correlation``. This
+    models differential co-expression.
+
+    Attributes:
+        per_class_correlation: Mapping from class index to within-cluster correlation.
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    per_class_correlation: dict[int, float]
+
+
+class CorrClusterConfig(BaseModel):
+    """A correlated block with optional, independent mean and covariance channels.
+
+    The block geometry and the structural anchor are always present; signal is
+    expressed only through the optional channels. Relevance is derived (a cluster
+    is informative iff a channel varies across classes), never declared.
+
+    Anchor-to-proxy mean propagation is not configured directly: a proxy at block
+    column ``j`` inherits ``effect * proxy_attenuation * structural_correlation[anchor_index, j]``,
+    where the structural correlation matrix is built from ``correlation_structure``
+    and the effective per-class correlation (the covariance channel value for that
+    class, or ``baseline_correlation`` when absent). With the default
+    ``proxy_attenuation=1.0`` this reproduces the v1 propagation model exactly, and
+    uses the same correlation that samples the block.
+
+    Attributes:
+        n_cluster_features: Number of features in the block (>= 2): one anchor plus proxies.
+        correlation_structure: Within-block correlation pattern.
+        baseline_correlation: Structural correlation used when no covariance channel
+            overrides a given class. ``0.0`` means independence.
+        anchor_index: Index (within the block) of the structural anchor.
+        proxy_attenuation: Neutral multiplier on the structurally derived anchor-to-proxy
+            mean propagation. ``1.0`` reproduces the v1 model (no extra attenuation).
+        mean_channel: Optional first-moment signal.
+        covariance_channel: Optional second-moment signal.
+        label: Optional descriptive name for documentation.
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    n_cluster_features: int = Field(..., ge=2)
+    correlation_structure: Literal["equicorrelated", "toeplitz"] = "equicorrelated"
+    baseline_correlation: float = 0.0
+    anchor_index: int = 0
+    proxy_attenuation: float = 1.0
+    mean_channel: MeanChannel | None = None
+    covariance_channel: CovarianceChannel | None = None
     label: str | None = None
 
-    @field_validator("correlation")
-    @classmethod
-    def _validate_correlation(cls, v, info):
-        """Validate correlation values against structure constraints.
-
-        For equicorrelated clusters with p features:
-            -1/(p-1) < rho < 1   (for p > 1)
-        For toeplitz clusters:
-            |rho| < 1
-        Where rho is the correlation coefficient between two features.
-        """
-        n_features = int(info.data.get("n_cluster_features", 0))
-        if n_features <= 0:
-            return v
-        structure = info.data.get("structure", "equicorrelated")
-
-        def check_one(correlation: float) -> None:
-            if structure == "equicorrelated":
-                lower = -1.0 / (n_features - 1)
-                if not (lower < correlation < 1.0):
-                    raise ValueError(
-                        f"correlation={correlation} invalid for equicorrelated with "
-                        f"n_cluster_features={n_features}; "
-                        f"require {lower:.6f} < correlation < 1."
-                    )
-            else:  # toeplitz
-                if not (-1.0 < correlation < 1.0):
-                    raise ValueError(f"correlation={correlation} invalid for toeplitz; require |correlation| < 1.")
-
-        if isinstance(v, dict):
-            for cls_idx, rho_val in v.items():
-                if cls_idx < 0:
-                    raise ValueError(f"correlation keys must be >= 0, got {cls_idx}.")
-                check_one(float(rho_val))
-        else:
-            check_one(float(v))
-        return v
-
-    @field_validator("anchor_effect_size")
-    @classmethod
-    def _validate_effect_size(cls, v) -> Literal["small", "medium", "large"] | float | None:
-        """Validate effect size is either a preset or positive float."""
-        if v is None:
-            return v
-
-        if isinstance(v, str):
-            if v not in ("small", "medium", "large"):
-                raise ValueError("anchor_effect_size must be 'small', 'medium', or 'large', " f"got '{v}'.")
-            return v
-
-        try:
-            val = float(v)
-            if val <= 0:
-                raise ValueError(f"anchor_effect_size must be > 0, got {val}.")
-            return val
-        except (TypeError, ValueError) as e:
-            raise ValueError(
-                "anchor_effect_size must be 'small'/'medium'/'large' or positive float, " f"got {v}."
-            ) from e
-
-    @field_validator("anchor_class")
-    @classmethod
-    def _validate_anchor_class(cls, v: int | None) -> int | None:
-        """Ensure disease class is non-negative if specified."""
-        if v is not None and v < 0:
-            raise ValueError(f"anchor_class must be >= 0 or None, got {v}.")
-        return v
-
     @model_validator(mode="after")
-    def _check_noise_anchor_consistency(self):
-        """Reject signal-related settings on a noise anchor.
+    def _validate_structure(self):
+        """Validate anchor index and all correlations against the block shape."""
+        if not (0 <= self.anchor_index < self.n_cluster_features):
+            raise ValueError(f"anchor_index must be in [0, {self.n_cluster_features}), got {self.anchor_index}.")
 
-        A noise anchor seeds correlation structure only; it must not carry a
-        class-specific mean shift. Setting anchor_effect_size or anchor_class on
-        a noise anchor is contradictory and almost always a configuration mistake.
-        """
-        if self.anchor_role == "noise":
-            if self.anchor_effect_size is not None:
-                raise ValueError(
-                    "anchor_role='noise' must not set anchor_effect_size "
-                    f"(got {self.anchor_effect_size!r}); a noise anchor carries no shift."
-                )
-            if self.anchor_class is not None:
-                raise ValueError(
-                    "anchor_role='noise' must not set anchor_class "
-                    f"(got {self.anchor_class!r}); a noise anchor carries no class signal."
-                )
+        if not _correlation_in_range(self.baseline_correlation, self.n_cluster_features, self.correlation_structure):
+            raise ValueError(
+                f"baseline_correlation={self.baseline_correlation} invalid for "
+                f"{self.correlation_structure} with n_cluster_features={self.n_cluster_features}."
+            )
+
+        if self.covariance_channel is not None:
+            for class_index, rho in self.covariance_channel.per_class_correlation.items():
+                if not _correlation_in_range(float(rho), self.n_cluster_features, self.correlation_structure):
+                    raise ValueError(
+                        f"covariance_channel correlation for class {class_index} is {rho}, "
+                        f"invalid for {self.correlation_structure} with "
+                        f"n_cluster_features={self.n_cluster_features}."
+                    )
         return self
 
-    # Convenience methods -----------------------------------------------------
+    # Channel resolution -------------------------------------------------------
 
-    def is_class_specific(self) -> bool:
-        """Return True if this cluster uses class-specific correlations."""
-        return isinstance(self.correlation, dict)
+    def effective_correlation_for_class(self, class_index: int) -> float:
+        """Resolve the within-block correlation for a class.
 
-    def get_correlation_for_class(self, class_idx: int) -> float:
-        """Resolve correlation for a specific class.
-
-        - Global mode: return the single correlation value.
-        - Class-specific mode: return mapping value or 0.0 if not specified.
+        The covariance channel value for ``class_index`` if present, otherwise the
+        cluster's ``baseline_correlation``.
         """
-        if not self.is_class_specific():
-            return float(self.correlation)  # type: ignore[arg-type]
+        if self.covariance_channel is None:
+            return float(self.baseline_correlation)
+        return float(self.covariance_channel.per_class_correlation.get(class_index, self.baseline_correlation))
 
-        mapping = cast(dict[int, float], self.correlation)
-        return float(mapping.get(class_idx, 0.0))
-
-    def resolve_anchor_effect_size(self) -> float:
-        """Convert anchor_effect_size to a numeric effect size.
-
-        Returns:
-            The numeric effect size. A noise anchor always returns ``0.0`` because
-            it seeds correlation structure only and never carries a mean shift,
-            regardless of any ``anchor_effect_size`` value.
-        """
-        if self.anchor_role == "noise":
+    def mean_effect_for_class(self, class_index: int) -> float:
+        """Resolve the anchor mean shift for a class (0.0 when absent or no channel)."""
+        if self.mean_channel is None:
             return 0.0
-        if self.anchor_effect_size is None:
-            return 1.0  # default to medium
-        if isinstance(self.anchor_effect_size, str):
-            effect_map = {
-                "small": 0.5,
-                "medium": 1.0,
-                "large": 1.5,
-            }
-            return effect_map[self.anchor_effect_size]
-        return float(self.anchor_effect_size)
+        return float(self.mean_channel.per_class_effect.get(class_index, 0.0))
 
-    def __str__(self) -> str:
-        """Concise representation for quick reference."""
-        parts = [f"n_cluster_features={self.n_cluster_features}"]
 
-        if isinstance(self.correlation, dict):
-            parts.append("correlation=class-specific")
-        else:
-            parts.append(f"correlation={self.correlation}")
+class StandaloneInformativeGroup(BaseModel):
+    """A group of standalone informative features sharing one separation strength.
 
-        if self.anchor_role != "informative":
-            parts.append(self.anchor_role)
-        if self.anchor_effect_size:
-            parts.append(f"effect={self.anchor_effect_size}")
-        if self.label:
-            parts.append(f"'{self.label}'")
-        return f"CorrCluster({', '.join(parts)})"
+    All members are independent (cluster-free) informative features. They share
+    the per-class base distribution defined globally on ``ClassConfig`` and differ
+    only in the magnitude of the class-wise mean offset, set by ``class_sep``.
+    A list of groups with decreasing ``class_sep`` realizes a signal-strength
+    gradient across the standalone-informative block.
+
+    Attributes:
+        n_features: Number of standalone informative features in this group (>= 1).
+        class_sep: Per-class separation. A scalar broadcasts to a length
+            ``n_classes - 1`` vector of equal pairwise separations; a sequence
+            gives the pairwise separations directly. Offsets are formed exactly as
+            for the existing standalone mechanism (centered cumulative sums).
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    n_features: int = Field(..., ge=1, description="Number of standalone informative features in this group.")
+    class_sep: float | Sequence[float] = Field(
+        ...,
+        description="Per-class separation (scalar broadcast, or sequence of length n_classes - 1).",
+    )
+
+    @field_validator("class_sep")
+    @classmethod
+    def _validate_class_sep_finite(cls, v: float | Sequence[float]) -> float | Sequence[float]:
+        """Validate finiteness only; the length-vs-n_classes check lives on DatasetConfig.
+
+        A scalar ``class_sep`` must be finite; every entry of a sequence
+        ``class_sep`` must be finite. The length validation against
+        ``n_classes - 1`` requires ``n_classes`` and is therefore deferred to
+        ``DatasetConfig``.
+        """
+        if isinstance(v, (int, float)) and not isinstance(v, bool):
+            if not np.isfinite(float(v)):
+                raise ValueError(f"class_sep must be finite, got {v!r}.")
+            return v
+        if isinstance(v, Sequence) and not isinstance(v, (str, bytes)):
+            for entry in v:
+                try:
+                    fentry = float(entry)
+                except (TypeError, ValueError) as e:
+                    raise TypeError(f"class_sep entries must be numeric, got {entry!r}.") from e
+                if not np.isfinite(fentry):
+                    raise ValueError(f"class_sep entries must be finite, got {entry!r}.")
+            return v
+        raise TypeError(f"class_sep must be a number or sequence of numbers, got {type(v).__name__}.")
 
 
 # ---------------------------------------------------------------------------
@@ -573,52 +523,58 @@ class DatasetConfig(BaseModel):
     """Configuration for synthetic dataset generation.
 
     This model defines the *input-level* controls for building a synthetic dataset.
-    It combines:
-      - Base role counts: `n_informative` and `n_noise`
-      - Correlated clusters: `corr_clusters` (each 1 anchor + (k−1) proxies)
-      - Class definitions: `class_configs` (with per-class n_samples and labels)
-      - Optional batch effects
+    Signal is expressed structurally through channels, never through declared
+    relevance. The inputs are:
 
-    *Examples (counting)*:
-        1) One cluster k=4 with an informative anchor, plus n_informative=3, n_noise=2
-           proxies_from_clusters = (4−1) = 3
-           n_features_expected   = 3 + 2 + 3 = 8
-           Breakdown:
-             - informative_anchors = 1  → free_informative = 3 − 1 = 2
-             - noise_anchors = 0        → free_noise       = 2 − 0 = 2
+      - Standalone informative block: ``standalone_informative_groups`` -- a list of
+        :class:`StandaloneInformativeGroup`, each contributing independent
+        informative features that share one separation strength (``class_sep``).
+      - Standalone noise block: ``n_standalone_noise`` independent noise features.
+      - Correlated clusters: ``corr_clusters`` -- a list of
+        :class:`CorrClusterConfig`. Each cluster is a correlated block (anchor plus
+        proxies) whose signal is carried by optional channels: a ``mean_channel``
+        (per-class anchor mean shift, first moment), a ``covariance_channel``
+        (per-class within-cluster correlation, second moment), and a structural
+        ``baseline_correlation`` used when no covariance channel overrides a class.
+      - Class definitions: ``class_configs`` -- per-class sample counts, base
+        distributions, and labels.
+      - Optional batch effects: ``batch_effects``.
+      - Reproducibility: ``random_state``.
 
-        2) Two clusters: k=5 (informative anchor), k=3 ("noise" anchor), base n_informative=4, n_noise=3
-           proxies_from_clusters = (5−1) + (3−1) = 6
-           n_features_expected   = 4 + 3 + 6 = 13
-           Breakdown:
-             - informative_anchors = 1  → free_informative = 4 − 1 = 3
-             - noise_anchors = 1        → free_noise       = 3 − 1 = 2
+    *Derived properties* (computed from the inputs above, never set by the user):
 
-    *Derived quantities*:
-        These attributes are **derived** and must not be passed by the user:
+        - ``n_samples`` (int): Total samples (from ``class_configs``).
+        - ``n_classes`` (int): Number of classes (from ``class_configs``).
+        - ``n_features`` (int): Standalone informative + standalone noise +
+          cluster members.
+        - ``n_standalone_informative`` (int): Sum of ``n_features`` over all
+          ``standalone_informative_groups``.
+        - ``n_informative`` (int): Standalone informative features plus all members
+          of clusters that the signal predicate derives as informative (a cluster
+          is informative iff its mean channel varies across classes or its
+          effective per-class correlation varies across classes).
+        - ``n_noise`` (int): Complement of ``n_informative``.
 
-        - ``n_samples`` (int): Total samples (derived from `class_configs`).
-        - ``n_features`` (int): Total number of features of the complete the dataset
-                (derived from n_informative, n_noise, and corr_clusters).
-        - ``n_classes`` (int): Number of classes (derived from `class_configs`).
-        - ``n_informative_free`` (int): Informative features not used as anchors.
-        - ``n_noise_free`` (int): Noise features not used as anchors.
+        Setting any of ``n_samples``, ``n_classes``, ``n_features``,
+        ``n_informative``, ``n_noise``, or ``n_standalone_informative`` manually is
+        rejected.
 
     Args:
-        n_informative (int): Number of base informative features (not in clusters).
-        n_noise (int): Number of base noise features (not in clusters).
-        class_configs (list[ClassConfig]): List of class definitions.
-        class_sep (float | Sequence[float]): Class separation values (length n_classes - 1); scalar is broadcast.
-        corr_clusters (list[CorrClusterConfig]): List of CorrClusterConfig defining correlated feature clusters.
-        noise_distribution: (str): Distribution for noise features. Can be any supported `DistributionType`.
-        noise_distribution_params (dict): Parameters for noise distribution.
+        standalone_informative_groups (list[StandaloneInformativeGroup]): Groups of
+            standalone informative features, each with its own ``class_sep``.
+        n_standalone_noise (int): Number of standalone (cluster-free) noise features.
+        class_configs (list[ClassConfig]): List of class definitions (>= 2).
+        corr_clusters (list[CorrClusterConfig]): Correlated feature clusters with
+            optional mean/covariance channels and a structural baseline correlation.
+        noise_distribution (str): Distribution for noise features. Any supported
+            ``DistributionType``.
+        noise_distribution_params (dict): Parameters for the noise distribution.
         prefixed_feature_naming (bool):
             If True, role-based prefixed feature names:
-                * Free informative:  i1, i2, ...
-                * Free noise:        n1, n2, ...
-                * Correlated:        corr{cid}_anchor, corr{cid}_2, ..., corr{cid}_k
-            If False, use generic feature_{i} naming.
-            Default: True.
+                * Standalone informative: i1, i2, ...
+                * Standalone noise:       n1, n2, ...
+                * Correlated:             corr{cid}_anchor, corr{cid}_2, ..., corr{cid}_k
+            If False, use generic feature_{i} naming. Default: True.
         prefix_informative (str): Prefix for informative features (if prefixed_feature_naming=True). Default: "i".
         prefix_noise (str): Prefix for noise features (if prefixed_feature_naming=True). Default: "n".
         prefix_corr (str): Prefix for correlated cluster features (if prefixed_feature_naming=True). Default: "corr".
@@ -626,29 +582,40 @@ class DatasetConfig(BaseModel):
         random_state (int | None): Global random seed for dataset generation.
 
     Methods:
-        count_informative_anchors(): Return number of informative anchors across all clusters.
-        count_noise_anchors(): Return number of noise anchors across all clusters.
-        breakdown(): Return dict with detailed feature/class counts.
+        breakdown(): Return dict with derived feature counts (standalone/cluster
+            members and the derived informative/noise totals).
+        cluster_informative_flags(): Per-cluster booleans for derived informativeness.
+        from_yaml(path): Load and validate a config from a YAML file.
 
     Validation:
         Before model construction:
-            - Forbid manual `n_samples`, `n_classes`, `n_features`.
-            - Normalize `class_sep`: broadcast scalar to length `n_classes - 1` or validate sequence length.
+            - Forbid manual ``n_samples``, ``n_classes``, ``n_features``,
+              ``n_informative``, ``n_noise``, ``n_standalone_informative``.
+            - Require at least two classes.
         After model construction:
-            - Ensure `n_informative >= #informative_anchors` and `n_noise >= #noise_anchors`.
-            - Ensure `anchor_class` indices < `n_classes`.
-            - Require at least one non-zero `class_sep` if `n_informative_free > 0`.
+            - Validate sequence ``class_sep`` lengths on each group against
+              ``n_classes - 1``.
+            - Validate that every per-class channel key (mean and covariance)
+              is a valid class index in ``range(n_classes)``.
             - Auto-generate missing class labels as ``class_{idx}``.
 
     Raises:
         ValueError: On invalid numeric ranges or inconsistent counts.
-        TypeError: For invalid types in `class_configs` or `class_sep`.
+        TypeError: For invalid types in ``class_configs`` or ``class_sep``.
 
     Examples:
-        >>> # Basic dataset with two classes
+        >>> from biomedical_data_generator.config import (
+        ...     ClassConfig,
+        ...     CorrClusterConfig,
+        ...     DatasetConfig,
+        ...     MeanChannel,
+        ...     StandaloneInformativeGroup,
+        ... )
         >>> cfg = DatasetConfig(
-        ...     n_informative=5,
-        ...     n_noise=3,
+        ...     standalone_informative_groups=[
+        ...         StandaloneInformativeGroup(n_features=5, class_sep=1.0),
+        ...     ],
+        ...     n_standalone_noise=3,
         ...     class_configs=[
         ...         ClassConfig(n_samples=50, label="healthy"),
         ...         ClassConfig(n_samples=50, label="diseased"),
@@ -656,39 +623,35 @@ class DatasetConfig(BaseModel):
         ...     corr_clusters=[
         ...         CorrClusterConfig(
         ...             n_cluster_features=4,
-        ...             correlation=0.8,
-        ...             anchor_role="informative",
-        ...             anchor_effect_size="medium",
-        ...             anchor_class=1,
-        ...             label="Metabolic Pathway A"
+        ...             baseline_correlation=0.8,
+        ...             mean_channel=MeanChannel(per_class_effect={1: 1.5}),
+        ...             label="Metabolic Pathway A",
         ...         ),
         ...         CorrClusterConfig(
         ...             n_cluster_features=3,
-        ...             correlation=0.5,
-        ...             anchor_role="noise",
-        ...             label="Random Noise Cluster"
-        ...         )
+        ...             baseline_correlation=0.5,
+        ...             label="Structural Correlated Block",
+        ...         ),
         ...     ],
         ...     noise_distribution="normal",
         ...     noise_distribution_params={"loc": 0, "scale": 1},
         ...     prefixed_feature_naming=True,
-        ...     random_state=42
+        ...     random_state=42,
         ... )
     """
 
     model_config = ConfigDict(extra="forbid")
 
-    # Core dataset structure
-    n_informative: int = Field(default=2, ge=0)
-    n_noise: int = Field(default=0, ge=0)
+    # Core dataset structure (standalone, non-cluster features)
+    standalone_informative_groups: list[StandaloneInformativeGroup] = Field(
+        default_factory=list,
+        description="Groups of standalone informative features, each with its own separation strength.",
+    )
+    n_standalone_noise: int = Field(default=0, ge=0)
 
     # Multi-class controls
     class_configs: list[ClassConfig] = Field(
         [ClassConfig(n_samples=30, label="healthy"), ClassConfig(n_samples=30, label="diseased")], min_length=2
-    )
-    class_sep: list[float] = Field(
-        default_factory=lambda: [1.5],
-        description="Class separation values (normalized to length n_classes - 1).",
     )
 
     # Noise distribution (NumPy Generator API)
@@ -714,26 +677,17 @@ class DatasetConfig(BaseModel):
     # Global seed
     random_state: int | None = None
 
-    @classmethod
-    def _validate_sep_value(cls, class_separation: Any) -> float:
-        """Validate a single class separation value (numeric & finite)."""
-        try:
-            fv = float(class_separation)
-        except (TypeError, ValueError) as e:
-            raise TypeError(f"class_sep entries must be numeric, got {class_separation!r}") from e
-        if not np.isfinite(fv):
-            raise ValueError(f"class_sep entries must be finite numbers, got {class_separation!r}")
-        return fv
-
     # ------------------------------------------------------ before validator
 
     @model_validator(mode="before")
     @classmethod
     def _normalize_and_validate(cls, data: Any) -> Any:
-        """Normalize incoming data BEFORE model construction.
+        """Validate incoming data BEFORE model construction.
 
-        - Forbids manual `n_samples`, `n_classes`, `n_features`.
-        - Normalizes `class_sep` to a list of length `n_classes - 1`.
+        Forbids manual setting of derived counts and requires at least two
+        classes. Per-class separation now lives on each
+        ``StandaloneInformativeGroup`` (``class_sep``); there is no top-level
+        ``class_sep`` to normalize here.
         """
         if isinstance(data, cls):
             return data
@@ -744,11 +698,18 @@ class DatasetConfig(BaseModel):
         d: dict[str, Any] = dict(data)
 
         # Forbid manual override of derived attributes
-        for forbidden in ("n_samples", "n_classes", "n_features"):
+        for forbidden in (
+            "n_samples",
+            "n_classes",
+            "n_features",
+            "n_informative",
+            "n_noise",
+            "n_standalone_informative",
+        ):
             if forbidden in d:
                 raise ValueError(
-                    f"{forbidden} is derived from class_configs/corr_clusters and "
-                    "must not be set manually on DatasetConfig."
+                    f"{forbidden} is derived from class_configs/corr_clusters/"
+                    "standalone_informative_groups and must not be set manually on DatasetConfig."
                 )
 
         classes = d.get("class_configs")
@@ -759,21 +720,6 @@ class DatasetConfig(BaseModel):
         if n_classes < 2:
             raise ValueError(f"At least two classes are required, got {n_classes}.")
 
-        # Normalize class_sep:
-        # - scalar → broadcast
-        # - sequence → validate entries and length
-        raw_sep = d.get("class_sep", [1.5])
-        if isinstance(raw_sep, (int, float)):
-            sep_list = [cls._validate_sep_value(raw_sep)] * (n_classes - 1)
-        elif isinstance(raw_sep, Sequence) and not isinstance(raw_sep, (str, bytes)):
-            sep_list = [cls._validate_sep_value(v) for v in raw_sep]
-        else:
-            raise TypeError(f"class_sep must be a number or sequence, got {type(raw_sep).__name__}")
-
-        if len(sep_list) != n_classes - 1:
-            raise ValueError(f"class_sep length must be n_classes - 1 ({n_classes - 1}), " f"got {len(sep_list)}.")
-
-        d["class_sep"] = sep_list
         return d
 
     # ------------------------------------------------------ field validation
@@ -814,54 +760,56 @@ class DatasetConfig(BaseModel):
         return self
 
     @model_validator(mode="after")
-    def _enforce_nonzero_class_sep(self):
-        if self.n_informative_free > 0:
-            if all(abs(s) < 1e-12 for s in self.class_sep):
-                raise ValueError(
-                    "class_sep must contain at least one non-zero value when "
-                    "n_informative_free > 0; otherwise informative features "
-                    "carry no class signal."
-                )
+    def _validate_group_class_sep_lengths(self):
+        """Validate sequence ``class_sep`` lengths on standalone informative groups.
+
+        A scalar ``class_sep`` is always valid (it broadcasts). A sequence must
+        have length ``n_classes - 1``. Finiteness is already enforced on
+        ``StandaloneInformativeGroup``; only the length check needs ``n_classes``
+        and therefore lives here.
+
+        Raises:
+            ValueError: If a group's sequence ``class_sep`` has the wrong length.
+        """
+        expected = self.n_classes - 1
+        for group_id, group in enumerate(self.standalone_informative_groups):
+            sep = group.class_sep
+            if isinstance(sep, Sequence) and not isinstance(sep, (str, bytes)):
+                if len(sep) != expected:
+                    raise ValueError(
+                        f"standalone_informative_groups[{group_id}].class_sep has length "
+                        f"{len(sep)}, but must be n_classes - 1 ({expected})."
+                    )
         return self
 
     @model_validator(mode="after")
-    def _validate_anchor_count_consistency(self):
-        """Validate that feature counts can accommodate all declared anchors.
+    def _validate_channel_class_keys(self):
+        """Validate that every per-class channel key is a valid class index.
 
-        Each correlated cluster reserves one feature of its ``anchor_role`` from
-        the corresponding global budget. Informative and noise anchors are
-        treated identically: an under-budget configuration is a structural
-        impossibility and is rejected rather than silently repaired.
+        The channels are the only place class indices are referenced now; their
+        keys must lie in ``range(n_classes)``. This is the cross-cutting check
+        that needs ``n_classes`` and therefore lives on ``DatasetConfig`` rather
+        than on the channel models.
 
         Raises:
-            ValueError: If ``n_informative``/``n_noise`` cannot cover their
-                respective anchors, or if any ``anchor_class`` index exceeds the
-                number of classes.
+            ValueError: If a mean- or covariance-channel key is out of range.
         """
-        inf_anchors = self.count_informative_anchors()
-        noise_anchors = self.count_noise_anchors()
-        if self.n_informative < inf_anchors:
-            raise ValueError(
-                f"n_informative ({self.n_informative}) must be >= number of "
-                f"informative anchors ({inf_anchors}); each informative cluster "
-                f"anchor consumes one informative feature."
-            )
-        if self.n_noise < noise_anchors:
-            raise ValueError(
-                f"n_noise ({self.n_noise}) must be >= number of noise anchors "
-                f"({noise_anchors}); each noise cluster anchor consumes one noise "
-                f"feature."
-            )
-
-        # anchor_class indices must be < n_classes
-        max_idx = self.n_classes - 1
-        for cluster in self.corr_clusters or []:
-            if cluster.anchor_class is not None and cluster.anchor_class > max_idx:
-                raise ValueError(
-                    f"CorrClusterConfig.anchor_class={cluster.anchor_class} "
-                    f"but only {self.n_classes} classes are defined (max index {max_idx})."
-                )
-
+        n_classes = self.n_classes
+        for cluster_id, cluster in enumerate(self.corr_clusters or []):
+            if cluster.mean_channel is not None:
+                for class_index in cluster.mean_channel.per_class_effect:
+                    if not (0 <= class_index < n_classes):
+                        raise ValueError(
+                            f"corr_clusters[{cluster_id}].mean_channel has class index "
+                            f"{class_index}, but only {n_classes} classes are defined."
+                        )
+            if cluster.covariance_channel is not None:
+                for class_index in cluster.covariance_channel.per_class_correlation:
+                    if not (0 <= class_index < n_classes):
+                        raise ValueError(
+                            f"corr_clusters[{cluster_id}].covariance_channel has class index "
+                            f"{class_index}, but only {n_classes} classes are defined."
+                        )
         return self
 
     @classmethod
@@ -873,49 +821,60 @@ class DatasetConfig(BaseModel):
             raw_config: dict[str, Any] = yaml.safe_load(f) or {}
         return cls.model_validate(raw_config)
 
-    def count_informative_anchors(self) -> int:
-        """Count clusters whose anchor contributes as 'informative'.
+    def cluster_informative_flags(self) -> list[bool]:
+        """Per-cluster booleans: whether each cluster is *derived* informative.
 
-        Note: This is a subset of n_informative, not a separate count.
-
-        Returns:
-            The number of clusters with anchor_role == "informative".
-
-        Note:
-            If you want the number of *additional* features contributed by clusters,
-            use `self._proxies_from_clusters(self.corr_clusters)`.
-        """
-        return sum(1 for c in (self.corr_clusters or []) if c.anchor_role == "informative")
-
-    def count_noise_anchors(self) -> int:
-        """Count clusters whose anchor is 'noise' (non-informative anchor).
+        Relevance is derived from the channel mappings via the shared predicate,
+        never declared. A cluster is informative iff its mean channel varies
+        across classes or its effective per-class correlation varies across
+        classes.
 
         Returns:
-            The number of clusters with anchor_role == "noise".
+            One boolean per cluster, in ``corr_clusters`` order.
         """
-        return sum(1 for c in (self.corr_clusters or []) if c.anchor_role == "noise")
-
-    @staticmethod
-    def _proxies_from_clusters(
-        clusters: Iterable[CorrClusterConfig] | None,
-    ) -> int:
-        """Number of additional features contributed by all clusters.
-
-        For a cluster of size k, proxies = max(0, k - 1) regardless of anchor_role.
-        """
-        if not clusters:
-            return 0
-        return sum(max(0, int(c.n_cluster_features) - 1) for c in clusters)
+        flags: list[bool] = []
+        for cluster in self.corr_clusters or []:
+            mean_per_class = cluster.mean_channel.per_class_effect if cluster.mean_channel is not None else None
+            covariance_per_class = (
+                cluster.covariance_channel.per_class_correlation if cluster.covariance_channel is not None else None
+            )
+            flags.append(
+                _cluster_is_informative(
+                    mean_per_class=mean_per_class,
+                    covariance_per_class=covariance_per_class,
+                    baseline_correlation=cluster.baseline_correlation,
+                    n_classes=self.n_classes,
+                )
+            )
+        return flags
 
     @property
-    def n_informative_free(self) -> int:
-        """Informative features outside clusters (excludes informative anchors)."""
-        return max(self.n_informative - self.count_informative_anchors(), 0)
+    def n_standalone_informative(self) -> int:
+        """Derived count of standalone (cluster-free) informative features.
+
+        Sum of ``n_features`` across all :attr:`standalone_informative_groups`.
+        """
+        return int(sum(group.n_features for group in self.standalone_informative_groups))
 
     @property
-    def n_noise_free(self) -> int:
-        """Independent noise features (excludes noise anchors)."""
-        return max(self.n_noise - self.count_noise_anchors(), 0)
+    def n_informative(self) -> int:
+        """Derived informative feature count.
+
+        Standalone informative features plus all members of clusters that the
+        signal predicate marks informative.
+        """
+        clusters = self.corr_clusters or []
+        cluster_informative = sum(
+            int(cluster.n_cluster_features)
+            for cluster, is_informative in zip(clusters, self.cluster_informative_flags(), strict=True)
+            if is_informative
+        )
+        return int(self.n_standalone_informative + cluster_informative)
+
+    @property
+    def n_noise(self) -> int:
+        """Derived noise feature count: the complement of :attr:`n_informative`."""
+        return int(self.n_features - self.n_informative)
 
     # ------------------------------ derived global counts ---------------------
 
@@ -931,9 +890,9 @@ class DatasetConfig(BaseModel):
 
     @property
     def n_features(self) -> int:
-        """Total number of features (informative + noise + cluster proxies)."""
-        proxies = self._proxies_from_clusters(self.corr_clusters)
-        return int(self.n_informative + self.n_noise + proxies)
+        """Total number of features: standalone informative + standalone noise + cluster members."""
+        cluster_members = sum(int(c.n_cluster_features) for c in (self.corr_clusters or []))
+        return int(self.n_standalone_informative + self.n_standalone_noise + cluster_members)
 
     # ------------------------------ class-level helpers ----------------------
 
@@ -951,29 +910,23 @@ class DatasetConfig(BaseModel):
         return {idx: c.n_samples for idx, c in enumerate(self.class_configs)}
 
     def breakdown(self) -> dict[str, int]:
-        """Structured feature counts incl. cluster proxies and anchor split.
+        """Structured, derived feature counts.
 
         Returns:
             A dict with keys:
-            - n_informative_total
-            - n_informative_anchors
-            - n_informative_free
-            - n_noise_total
-            - n_noise_anchors
-            - n_noise_free
-            - proxies_from_clusters
+            - n_standalone_informative
+            - n_standalone_noise
+            - n_cluster_members
+            - n_informative (derived)
+            - n_noise (derived)
             - n_features
         """
-        proxies = self._proxies_from_clusters(self.corr_clusters)
-        n_inf_anchors = self.count_informative_anchors()
-        n_noise_anchors = self.count_noise_anchors()
+        cluster_members = sum(int(c.n_cluster_features) for c in (self.corr_clusters or []))
         return {
-            "n_informative_total": int(self.n_informative),
-            "n_informative_anchors": int(n_inf_anchors),
-            "n_informative_free": int(max(self.n_informative - n_inf_anchors, 0)),
-            "n_noise_total": int(self.n_noise),
-            "n_noise_anchors": int(n_noise_anchors),
-            "n_noise_free": int(max(self.n_noise - n_noise_anchors, 0)),
-            "proxies_from_clusters": int(proxies),
+            "n_standalone_informative": int(self.n_standalone_informative),
+            "n_standalone_noise": int(self.n_standalone_noise),
+            "n_cluster_members": int(cluster_members),
+            "n_informative": int(self.n_informative),
+            "n_noise": int(self.n_noise),
             "n_features": int(self.n_features),
         }

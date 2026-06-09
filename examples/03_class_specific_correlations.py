@@ -6,11 +6,17 @@
 
 """Class-specific correlations example for biomedical-data-generator.
 
-This example demonstrates:
-- Creating feature clusters with class-specific correlation patterns
+This example demonstrates the **covariance channel** — the channel-based way to
+express class-specific within-cluster correlation (differential co-expression):
+- Creating feature clusters whose correlation pattern depends on the class
 - Simulating pathway activation that differs between disease states
 - Modeling biomarker relationships that only exist in certain conditions
 - Comparing correlation matrices across classes
+
+A ``CovarianceChannel`` maps each class index to a within-cluster correlation.
+When that correlation varies across classes, the cluster is *derived-informative*
+purely from its second moment — no mean shift required. Classes absent from the
+mapping fall back to the cluster's ``baseline_correlation``.
 """
 
 from __future__ import annotations
@@ -20,7 +26,14 @@ import numpy as np
 import pandas as pd
 import seaborn as sns
 
-from biomedical_data_generator.config import ClassConfig, CorrClusterConfig, DatasetConfig
+from biomedical_data_generator.config import (
+    ClassConfig,
+    CorrClusterConfig,
+    CovarianceChannel,
+    DatasetConfig,
+    MeanChannel,
+    StandaloneInformativeGroup,
+)
 from biomedical_data_generator.generator import generate_dataset
 from biomedical_data_generator.utils.export_utils import to_csv
 
@@ -65,16 +78,17 @@ def main() -> None:
     print()
 
     cfg1 = DatasetConfig(
-        n_informative=3,
-        n_noise=2,
+        n_standalone_noise=2,
         corr_clusters=[
             CorrClusterConfig(
                 n_cluster_features=4,
-                correlation={0: 0.0, 1: 0.85},  # No correlation in class 0, strong in class 1
-                structure="equicorrelated",
-                anchor_role="informative",
-                anchor_effect_size="large",
-                anchor_class=1,
+                correlation_structure="equicorrelated",
+                baseline_correlation=0.0,
+                # Differential co-expression: uncorrelated in healthy, strongly
+                # co-expressed in diseased -> derived-informative via covariance.
+                covariance_channel=CovarianceChannel(per_class_correlation={0: 0.0, 1: 0.85}),
+                # A mean shift on the anchor adds a first-moment signal too.
+                mean_channel=MeanChannel(per_class_effect={1: 2.0}),
                 label="Disease-Activated Immune Pathway",
             )
         ],
@@ -82,7 +96,6 @@ def main() -> None:
             ClassConfig(n_samples=100, label="healthy"),
             ClassConfig(n_samples=100, label="diseased"),
         ],
-        class_sep=[1.5],
         random_state=42,
     )
     x1, y1, meta1 = generate_dataset(cfg1)
@@ -108,15 +121,21 @@ def main() -> None:
     print()
 
     cfg2 = DatasetConfig(
-        n_informative=4,
-        n_noise=3,
+        # Standalone informative block with per-boundary separation.
+        standalone_informative_groups=[
+            StandaloneInformativeGroup(n_features=4, class_sep=[1.0, 1.5]),
+        ],
+        n_standalone_noise=3,
         corr_clusters=[
             CorrClusterConfig(
                 n_cluster_features=5,
-                correlation={0: 0.3, 1: 0.7, 2: 0.9},  # Increasing correlation strength
-                structure="equicorrelated",
-                anchor_role="informative",
-                anchor_effect_size="medium",
+                correlation_structure="equicorrelated",
+                baseline_correlation=0.0,
+                # Increasing co-expression across severity -> derived-informative
+                # via the covariance channel (second moment).
+                covariance_channel=CovarianceChannel(per_class_correlation={0: 0.3, 1: 0.7, 2: 0.9}),
+                # A graded anchor mean shift adds a first-moment signal too.
+                mean_channel=MeanChannel(per_class_effect={1: 1.0, 2: 2.0}),
                 label="Metabolic Dysregulation Pathway",
             )
         ],
@@ -125,7 +144,6 @@ def main() -> None:
             ClassConfig(n_samples=80, label="mild_disease"),
             ClassConfig(n_samples=80, label="severe_disease"),
         ],
-        class_sep=[1.0, 1.5],  # Separation between consecutive classes
         random_state=42,
     )
 
@@ -156,25 +174,27 @@ def main() -> None:
     print()
 
     cfg3 = DatasetConfig(
-        n_informative=6,
-        n_noise=4,
+        standalone_informative_groups=[
+            StandaloneInformativeGroup(n_features=6, class_sep=[2.0]),
+        ],
+        n_standalone_noise=4,
         corr_clusters=[
             CorrClusterConfig(
                 n_cluster_features=3,
-                correlation={0: 0.8, 1: 0.0},  # Pathway A: active in class 0
-                structure="equicorrelated",
-                anchor_role="informative",
-                anchor_effect_size="medium",
-                anchor_class=0,
+                correlation_structure="equicorrelated",
+                baseline_correlation=0.0,
+                # Pathway A co-expressed only in class 0, with a class-0 mean shift.
+                covariance_channel=CovarianceChannel(per_class_correlation={0: 0.8, 1: 0.0}),
+                mean_channel=MeanChannel(per_class_effect={0: 1.5}),
                 label="Pathway A (Class 0 Specific)",
             ),
             CorrClusterConfig(
                 n_cluster_features=3,
-                correlation={0: 0.0, 1: 0.8},  # Pathway B: active in class 1
-                structure="equicorrelated",
-                anchor_role="informative",
-                anchor_effect_size="medium",
-                anchor_class=1,
+                correlation_structure="equicorrelated",
+                baseline_correlation=0.0,
+                # Pathway B co-expressed only in class 1, with a class-1 mean shift.
+                covariance_channel=CovarianceChannel(per_class_correlation={0: 0.0, 1: 0.8}),
+                mean_channel=MeanChannel(per_class_effect={1: 1.5}),
                 label="Pathway B (Class 1 Specific)",
             ),
         ],
@@ -182,7 +202,6 @@ def main() -> None:
             ClassConfig(n_samples=100, label="subtype_A"),
             ClassConfig(n_samples=100, label="subtype_B"),
         ],
-        class_sep=[2.0],
         random_state=42,
     )
 

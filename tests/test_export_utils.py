@@ -13,7 +13,7 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from biomedical_data_generator.meta import DatasetMeta
+from biomedical_data_generator.meta import DatasetMeta, StandaloneGroupMeta
 from biomedical_data_generator.utils.export_utils import (
     to_csv,
     to_labeled_dataframe,
@@ -35,12 +35,14 @@ def sample_data():
         noise_idx=[2],
         corr_cluster_indices={},
         anchor_idx={},
-        anchor_role={},
-        anchor_effect_size={},
-        anchor_class={},
+        standalone_informative_groups=(StandaloneGroupMeta(column_indices=(0, 1), per_class_offset=(-0.5, 0.5)),),
+        standalone_noise_range=(2, 3),
+        mean_per_class_effect={},
+        covariance_per_class_correlation={},
+        baseline_correlation={},
         cluster_label={},
         cluster_structure={},
-        cluster_correlation={},
+        cluster_proxy_attenuation={},
         n_classes=2,
         class_names=class_labels,
         samples_per_class={0: 2, 1: 1},
@@ -167,12 +169,14 @@ def test_to_labeled_dataframe_without_string_labels(sample_data):
         noise_idx=[1, 2],
         corr_cluster_indices={},
         anchor_idx={},
-        anchor_role={},
-        anchor_effect_size={},
-        anchor_class={},
+        standalone_informative_groups=(StandaloneGroupMeta(column_indices=(0,), per_class_offset=(-0.5, 0.5)),),
+        standalone_noise_range=(1, 3),
+        mean_per_class_effect={},
+        covariance_per_class_correlation={},
+        baseline_correlation={},
         cluster_label={},
         cluster_structure={},
-        cluster_correlation={},
+        cluster_proxy_attenuation={},
         n_classes=2,
         class_names=[],  # Empty list
         samples_per_class={0: 2, 1: 1},

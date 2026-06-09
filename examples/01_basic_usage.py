@@ -7,15 +7,30 @@
 """Basic usage example for biomedical-data-generator.
 
 This example demonstrates:
-- Creating a simple dataset configuration
+- Creating a simple dataset configuration with the channel-based API
 - Generating synthetic biomedical data
 - Understanding the structure of informative, noise, and correlated features
 - Exploring the metadata and feature roles
+
+The channel-based API expresses signal explicitly:
+- Standalone informative features live in ``StandaloneInformativeGroup`` blocks,
+  each carrying its own ``class_sep`` (per-class mean separation).
+- Correlated clusters are structural by default. A cluster only becomes
+  *informative* when a channel varies across classes: a ``MeanChannel``
+  (first-moment / mean shift on the anchor) or a ``CovarianceChannel``
+  (second-moment / within-cluster correlation). Relevance is therefore
+  derived from the channels, never declared.
 """
 
 from __future__ import annotations
 
-from biomedical_data_generator.config import ClassConfig, CorrClusterConfig, DatasetConfig
+from biomedical_data_generator.config import (
+    ClassConfig,
+    CorrClusterConfig,
+    DatasetConfig,
+    MeanChannel,
+    StandaloneInformativeGroup,
+)
 from biomedical_data_generator.generator import generate_dataset
 from biomedical_data_generator.utils.export_utils import to_csv
 
@@ -27,17 +42,22 @@ def main() -> None:
     print("=" * 70)
     print()
 
-    # Configure dataset with informative features, noise, and correlated cluster
+    # Configure dataset with standalone informative features, standalone noise,
+    # and one correlated cluster made informative through a mean channel.
     cfg = DatasetConfig(
-        n_informative=3,
-        n_noise=2,
+        # 3 standalone informative features sharing a class separation of 1.0 sigma.
+        standalone_informative_groups=[
+            StandaloneInformativeGroup(n_features=3, class_sep=1.0),
+        ],
+        # 2 standalone noise features (no class signal).
+        n_standalone_noise=2,
         corr_clusters=[
             CorrClusterConfig(
                 n_cluster_features=3,
-                correlation=0.7,
-                structure="equicorrelated",
-                anchor_role="informative",
-                anchor_effect_size="medium",
+                correlation_structure="equicorrelated",
+                baseline_correlation=0.7,
+                # A mean shift on class 1 makes this cluster derived-informative.
+                mean_channel=MeanChannel(per_class_effect={1: 1.0}),
                 label="Metabolic Pathway",
             )
         ],
@@ -45,7 +65,6 @@ def main() -> None:
             ClassConfig(n_samples=100, label="healthy"),
             ClassConfig(n_samples=50, label="diseased"),
         ],
-        class_sep=[1.0],  # separation between classes
         random_state=42,
     )
 

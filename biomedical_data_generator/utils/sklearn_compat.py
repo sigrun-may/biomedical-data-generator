@@ -33,6 +33,8 @@ from biomedical_data_generator.config import (
     ClassConfig,
     CorrClusterConfig,
     DatasetConfig,
+    MeanChannel,
+    StandaloneInformativeGroup,
 )
 from biomedical_data_generator.generator import generate_dataset
 
@@ -249,6 +251,7 @@ def make_biomedical_dataset(
     # 4) Optional correlated cluster for redundant features
     # ------------------------------------------------------------------
     corr_clusters: list[CorrClusterConfig] = []
+    n_standalone_informative = int(n_informative)
     if not explicit_corr_clusters and n_redundant > 0:
         if n_informative < 1:
             raise ValueError(
@@ -258,27 +261,44 @@ def make_biomedical_dataset(
 
         # One informative anchor + n_redundant proxies → total cluster size
         n_cluster_features = 1 + n_redundant
+        target_class = 1 if n_classes > 1 else 0
 
-        # Strong, but not perfect, equicorrelation to represent redundancy.
+        # Strong, but not perfect, equicorrelation to represent redundancy; a
+        # mean channel on the anchor makes the cluster derived-informative.
         redundant_cluster = CorrClusterConfig(
             n_cluster_features=n_cluster_features,
-            structure="equicorrelated",
-            correlation=0.9,
-            anchor_role="informative",
-            anchor_effect_size=None,  # use DatasetConfig / informative defaults
-            anchor_class=1 if n_classes > 1 else 0,
+            correlation_structure="equicorrelated",
+            baseline_correlation=0.9,
+            anchor_index=0,
+            mean_channel=MeanChannel(per_class_effect={target_class: 1.0}),
             label="sklearn_redundant_cluster",
         )
         corr_clusters.append(redundant_cluster)
+        # The anchor now lives inside the cluster, so it is not a standalone feature.
+        n_standalone_informative = int(n_informative) - 1
 
     # ------------------------------------------------------------------
     # 5) Construct DatasetConfig
     # ------------------------------------------------------------------
+    # The simple scalar interface (n_standalone_informative + scalar class_sep)
+    # maps onto a single StandaloneInformativeGroup. We deliberately do not
+    # expose the per-group signal gradient here; power users reach for the full
+    # DatasetConfig. When no standalone informative features remain (e.g. the
+    # lone informative feature became a redundant-cluster anchor), we add no
+    # group at all, since StandaloneInformativeGroup requires n_features >= 1.
+    standalone_groups: list[StandaloneInformativeGroup] = []
+    if n_standalone_informative > 0:
+        standalone_groups.append(
+            StandaloneInformativeGroup(
+                n_features=int(n_standalone_informative),
+                class_sep=class_sep,
+            )
+        )
+
     cfg_kwargs: dict[str, Any] = {
-        "n_informative": int(n_informative),
-        "n_noise": int(n_noise_effective),
+        "standalone_informative_groups": standalone_groups,
+        "n_standalone_noise": int(n_noise_effective),
         "class_configs": class_configs,
-        "class_sep": class_sep,  # scalar → normalized by DatasetConfig validator
         "noise_distribution": noise_distribution,
     }
 

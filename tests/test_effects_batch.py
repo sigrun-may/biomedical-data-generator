@@ -22,7 +22,9 @@ from biomedical_data_generator import BatchEffectsConfig
 from biomedical_data_generator.effects.batch import (
     apply_batch_effects,
     apply_batch_effects_from_config,
+    confounded_batch_assignment,
     generate_batch_assignments,
+    random_batch_assignment,
 )
 
 # Fixtures for RNG instances
@@ -772,3 +774,214 @@ class TestBatchEffectsValidation:
         assert set(np.unique(batch_assignments)) <= {0, 1}
         # ...yet the effect summary still covers all three configured batches.
         assert len(batch_effects) == 3
+
+
+# ============================================================================
+# Tests for low-level random_batch_assignment
+# ============================================================================
+
+
+class TestRandomBatchAssignmentLowLevel:
+    """Exercise random_batch_assignment directly (bypassing the orchestrator)."""
+
+    def test_negative_n_samples_raises(self, rng_general):
+        """Its own n_samples guard fires when called directly."""
+        with pytest.raises(ValueError, match="n_samples must be positive"):
+            random_batch_assignment(n_samples=0, n_batches=3, rng=rng_general)
+
+    def test_zero_n_batches_raises(self, rng_general):
+        """Its own n_batches guard fires when called directly."""
+        with pytest.raises(ValueError, match="n_batches must be >= 1"):
+            random_batch_assignment(n_samples=10, n_batches=0, rng=rng_general)
+
+    def test_proportions_rounding_is_corrected(self, rng_general):
+        """Imperfect rounding of proportions is fixed so counts sum to n_samples."""
+        # 10 * [0.5, 0.3, 0.2] -> [5, 3, 2] sums to 10, so use a case that rounds short:
+        # 7 * [0.5, 0.3, 0.2] = [3.5, 2.1, 1.4] -> round [4, 2, 1] = 7 exact;
+        # 8 * [0.5, 0.3, 0.2] = [4.0, 2.4, 1.6] -> round [4, 2, 2] = 8 exact.
+        # Use proportions that force a rounding correction:
+        batches = random_batch_assignment(
+            n_samples=10,
+            n_batches=3,
+            rng=rng_general,
+            proportions=[1.0, 1.0, 1.0],  # 10/3 each -> rounds to [3, 3, 3] = 9, needs +1
+        )
+        assert batches.shape == (10,)
+        counts = np.bincount(batches, minlength=3)
+        assert counts.sum() == 10
+
+
+# ============================================================================
+# Tests for low-level confounded_batch_assignment
+# ============================================================================
+
+
+class TestConfoundedBatchAssignmentLowLevel:
+    """Exercise confounded_batch_assignment directly (bypassing the orchestrator)."""
+
+    def test_two_dimensional_labels_are_raveled(self, rng_general):
+        """A 2-D class_labels array is flattened before processing."""
+        labels = np.array([[0, 0, 1, 1]]).reshape(4, 1)
+        batches = confounded_batch_assignment(
+            class_labels=labels,
+            n_batches=2,
+            confounding_with_class=0.8,
+            rng=rng_general,
+        )
+        assert batches.shape == (4,)
+
+    def test_empty_labels_raises(self, rng_general):
+        """No samples is an error."""
+        with pytest.raises(ValueError, match="at least one sample"):
+            confounded_batch_assignment(
+                class_labels=np.array([], dtype=int),
+                n_batches=2,
+                confounding_with_class=0.8,
+                rng=rng_general,
+            )
+
+    def test_single_batch_raises(self, rng_general):
+        """Confounding is undefined for a single batch."""
+        with pytest.raises(ValueError, match="requires n_batches >= 2"):
+            confounded_batch_assignment(
+                class_labels=np.array([0, 1, 0, 1]),
+                n_batches=1,
+                confounding_with_class=0.8,
+                rng=rng_general,
+            )
+
+    def test_confounding_out_of_range_raises(self, rng_general):
+        """Its own confounding bounds guard fires when called directly."""
+        with pytest.raises(ValueError, match="confounding_with_class must be in"):
+            confounded_batch_assignment(
+                class_labels=np.array([0, 1, 0, 1]),
+                n_batches=2,
+                confounding_with_class=1.5,
+                rng=rng_general,
+            )
+
+    def test_custom_proportions_branch(self, rng_general):
+        """Custom proportions seed the per-class base probabilities."""
+        labels = np.array([0] * 50 + [1] * 50)
+        batches = confounded_batch_assignment(
+            class_labels=labels,
+            n_batches=2,
+            confounding_with_class=0.6,
+            rng=rng_general,
+            proportions=[0.6, 0.4],
+        )
+        assert batches.shape == (100,)
+        assert set(np.unique(batches)) <= {0, 1}
+
+    def test_zero_confounding_skips_boost(self, rng_general):
+        """confounding_with_class=0 leaves base probabilities untouched (boost <= 0)."""
+        labels = np.array([0] * 50 + [1] * 50)
+        batches = confounded_batch_assignment(
+            class_labels=labels,
+            n_batches=2,
+            confounding_with_class=0.0,
+            rng=rng_general,
+        )
+        assert batches.shape == (100,)
+        assert set(np.unique(batches)) <= {0, 1}
+
+
+# ============================================================================
+# Tests for apply_batch_effects edge cases
+# ============================================================================
+
+
+class TestApplyBatchEffectsEdgeCases:
+    """Cover validation and special-case branches in apply_batch_effects."""
+
+    def test_mismatched_batch_assignments_length_raises(self, rng_effects):
+        """batch_assignments must align with the number of samples."""
+        feature_matrix = np.zeros((10, 3))
+        with pytest.raises(ValueError, match="must have length n_samples"):
+            apply_batch_effects(feature_matrix, np.zeros(5, dtype=int), rng=rng_effects)
+
+    def test_negative_batch_assignment_raises(self, rng_effects):
+        """Negative batch labels are rejected."""
+        feature_matrix = np.zeros((4, 3))
+        with pytest.raises(ValueError, match="must be non-negative"):
+            apply_batch_effects(feature_matrix, np.array([0, 1, -1, 0]), rng=rng_effects)
+
+    def test_two_dimensional_affected_features_are_raveled(self, rng_effects):
+        """A nested affected_features sequence is flattened to feature indices."""
+        feature_matrix = np.zeros((6, 4))
+        batches = np.array([0, 1, 0, 1, 0, 1])
+        result, effects = apply_batch_effects(
+            feature_matrix,
+            batches,
+            rng=rng_effects,
+            affected_features=[[0, 2]],
+            effect_strength=0.5,
+        )
+        assert result.shape == (6, 4)
+        # Untouched columns stay zero; affected ones change.
+        assert np.allclose(result[:, [1, 3]], 0.0)
+
+    def test_empty_affected_features_array(self, rng_effects):
+        """An empty affected_features list is a no-op on ndarray input."""
+        feature_matrix = np.ones((5, 3))
+        result, effects = apply_batch_effects(
+            feature_matrix,
+            np.array([0, 1, 0, 1, 0]),
+            rng=rng_effects,
+            affected_features=[],
+            n_batches=2,
+        )
+        assert_array_equal(result, feature_matrix)
+        assert_array_equal(effects, np.zeros(2))
+
+    def test_empty_affected_features_dataframe(self, rng_effects):
+        """An empty affected_features list is a no-op on DataFrame input."""
+        frame = pd.DataFrame(np.ones((5, 3)), columns=["a", "b", "c"])
+        result, effects = apply_batch_effects(
+            frame,
+            np.array([0, 1, 0, 1, 0]),
+            rng=rng_effects,
+            affected_features=[],
+            n_batches=2,
+        )
+        assert isinstance(result, pd.DataFrame)
+        assert list(result.columns) == ["a", "b", "c"]
+        assert_array_equal(effects, np.zeros(2))
+
+    def test_out_of_range_affected_features_raises(self, rng_effects):
+        """Feature indices outside the matrix raise IndexError."""
+        feature_matrix = np.zeros((5, 3))
+        with pytest.raises(IndexError, match="out of range"):
+            apply_batch_effects(
+                feature_matrix,
+                np.array([0, 1, 0, 1, 0]),
+                rng=rng_effects,
+                affected_features=[99],
+            )
+
+    def test_zero_effect_strength_dataframe(self, rng_effects):
+        """Zero strength on DataFrame input returns the data unchanged."""
+        frame = pd.DataFrame(np.ones((5, 3)), columns=["a", "b", "c"], index=[10, 11, 12, 13, 14])
+        result, effects = apply_batch_effects(
+            frame,
+            np.array([0, 1, 0, 1, 0]),
+            rng=rng_effects,
+            effect_strength=0.0,
+            n_batches=2,
+        )
+        assert isinstance(result, pd.DataFrame)
+        assert list(result.index) == [10, 11, 12, 13, 14]
+        assert_allclose(result.to_numpy(), frame.to_numpy())
+        assert_array_equal(effects, np.zeros(2))
+
+    def test_invalid_granularity_raises(self, rng_effects):
+        """effect_granularity must be a known value."""
+        feature_matrix = np.zeros((5, 3))
+        with pytest.raises(ValueError, match="effect_granularity must be"):
+            apply_batch_effects(
+                feature_matrix,
+                np.array([0, 1, 0, 1, 0]),
+                rng=rng_effects,
+                effect_strength=0.5,
+                effect_granularity="bogus",
+            )

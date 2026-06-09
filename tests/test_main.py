@@ -21,8 +21,10 @@ def test_main_with_config_file():
     """Test main function with valid config file."""
     # Create a minimal config YAML
     config_yaml = """
-    n_informative: 5
-    n_noise: 3
+    standalone_informative_groups:
+      - n_features: 5
+        class_sep: 1.0
+    n_standalone_noise: 3
     class_configs:
       - n_samples: 25
       - n_samples: 25
@@ -50,8 +52,10 @@ def test_main_with_config_file():
 def test_main_with_output_file():
     """Test main function with output CSV file."""
     config_yaml = """
-    n_informative: 3
-    n_noise: 2
+    standalone_informative_groups:
+      - n_features: 3
+        class_sep: 1.0
+    n_standalone_noise: 2
     class_configs:
       - n_samples: 10
       - n_samples: 10

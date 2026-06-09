@@ -25,11 +25,13 @@ ______________________________________________________________________
 
 ## Key Features
 
-✅ **Class-specific correlations** – Simulate pathway activation only in disease states\
-✅ **Batch effects** – Model technical variation with controllable confounding\
-✅ **Correlated feature clusters** – Equicorrelated and Toeplitz structures\
+✅ **Channel-based signal** – Informativeness is *derived*, never declared: a mean channel (first moment) or covariance channel (second moment / differential co-expression)\
+✅ **Class-specific correlations** – Simulate pathway co-expression that emerges only in disease states\
+✅ **Signal-strength gradients** – Stack `StandaloneInformativeGroup`s with decreasing separation\
+✅ **Batch effects** – Model technical variation with controllable class confounding\
+✅ **Correlated feature clusters** – Equicorrelated and Toeplitz structures with attenuated anchor-to-proxy propagation\
 ✅ **Flexible class balance** – Exact sample counts per class\
-✅ **Ground-truth metadata** – Complete generative process documentation\
+✅ **Role-aware ground truth** – Every column traceable to the mechanism that generated it (`FeatureRoles`, `FeatureStrengths`)\
 ✅ **scikit-learn compatible** – Seamless integration with ML pipelines
 
 ______________________________________________________________________
@@ -49,16 +51,24 @@ ______________________________________________________________________
 ### Basic Dataset
 
 ```python
-from biomedical_data_generator import DatasetConfig, ClassConfig, generate_dataset
+from biomedical_data_generator import (
+    DatasetConfig,
+    ClassConfig,
+    StandaloneInformativeGroup,
+    generate_dataset,
+)
 
 cfg = DatasetConfig(
-    n_informative=5,
-    n_noise=10,
+    # Signal is expressed structurally: a group of standalone informative
+    # features carrying a per-class mean separation (class_sep).
+    standalone_informative_groups=[
+        StandaloneInformativeGroup(n_features=5, class_sep=1.5),
+    ],
+    n_standalone_noise=10,
     class_configs=[
         ClassConfig(n_samples=50, label="healthy"),
         ClassConfig(n_samples=50, label="diseased"),
     ],
-    class_sep=1.5,
     random_state=42,
 )
 

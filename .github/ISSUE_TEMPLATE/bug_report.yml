@@ -51,7 +51,7 @@ body:
     id: package-version
     attributes:
       label: biomedical-data-generator version
-      placeholder: "e.g. 0.1.2"
+      placeholder: "e.g. 1.0.4"
     validations:
       required: true
 

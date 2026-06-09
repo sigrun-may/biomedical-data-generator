@@ -27,6 +27,8 @@ from biomedical_data_generator.config import (
     ClassConfig,
     CorrClusterConfig,
     DatasetConfig,
+    MeanChannel,
+    StandaloneInformativeGroup,
 )
 from biomedical_data_generator.generator import generate_dataset
 from biomedical_data_generator.utils.export_utils import to_csv
@@ -38,17 +40,26 @@ def create_dataset_with_batches(
     effect_type: Literal["additive", "multiplicative"] = "additive",
     effect_strength: float = 0.5,
 ) -> tuple:
-    """Create a dataset with specified batch effect configuration."""
+    """Create a dataset with specified batch effect configuration.
+
+    The biological signal is fixed across this helper's calls: 5 standalone
+    informative features (class_sep=1.5), 3 standalone noise features, and one
+    correlated cluster made informative through a mean shift on the treated
+    class. Only the ``batch_effects`` overlay varies, isolating the technical
+    artifact from the underlying class signal.
+    """
     cfg = DatasetConfig(
-        n_informative=5,
-        n_noise=3,
+        standalone_informative_groups=[
+            StandaloneInformativeGroup(n_features=5, class_sep=1.5),
+        ],
+        n_standalone_noise=3,
         corr_clusters=[
             CorrClusterConfig(
                 n_cluster_features=4,
-                correlation=0.8,
-                structure="equicorrelated",
-                anchor_role="informative",
-                anchor_effect_size="medium",
+                correlation_structure="equicorrelated",
+                baseline_correlation=0.8,
+                # Mean shift on the treated class -> derived-informative cluster.
+                mean_channel=MeanChannel(per_class_effect={1: 1.0}),
                 label="Immune Response",
             )
         ],
@@ -56,7 +67,6 @@ def create_dataset_with_batches(
             ClassConfig(n_samples=100, label="control"),
             ClassConfig(n_samples=100, label="treated"),
         ],
-        class_sep=[1.5],
         batch_effects=BatchEffectsConfig(
             n_batches=n_batches,
             effect_strength=effect_strength,

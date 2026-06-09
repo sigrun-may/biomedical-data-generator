@@ -261,8 +261,9 @@ def test_feature_accounting_with_redundant_cluster():
         n_noise_obs = len(meta.noise_idx)
         n_proxies = _count_redundant_proxies_from_meta(meta)
 
-        # Total number of features must decompose correctly.
-        assert n_inf_obs + n_noise_obs + n_proxies == n_features
+        # informative_idx / noise_idx are an exhaustive two-way partition; proxies
+        # are signal-carrying and now counted inside informative_idx.
+        assert n_inf_obs + n_noise_obs == n_features
         # The number of proxies should match n_redundant by design.
         assert n_proxies == n_redundant
 
@@ -363,7 +364,7 @@ def test_error_explicit_corr_clusters_with_n_redundant():
     """Test error when both corr_clusters and n_redundant are specified."""
     from biomedical_data_generator.config import CorrClusterConfig
 
-    cluster = CorrClusterConfig(n_cluster_features=3, correlation=0.8)
+    cluster = CorrClusterConfig(n_cluster_features=3, baseline_correlation=0.8)
     with pytest.raises(ValueError, match="n_redundant cannot be used together with an explicit"):
         make_biomedical_dataset(
             n_samples=100,

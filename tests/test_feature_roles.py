@@ -13,22 +13,24 @@ def test_compute_feature_roles_partitions_all_columns():
         ClassConfig,
         CorrClusterConfig,
         DatasetConfig,
+        MeanChannel,
+        StandaloneInformativeGroup,
         compute_feature_roles,
         generate_dataset,
     )
 
     cfg = DatasetConfig(
-        n_informative=2,  # 1 free informative + 1 informative anchor
-        n_noise=2,  # 1 noise anchor + 1 free noise
+        standalone_informative_groups=[
+            StandaloneInformativeGroup(n_features=1, class_sep=1.0)
+        ],  # one standalone informative feature
+        n_standalone_noise=1,  # one standalone noise feature
         corr_clusters=[
             CorrClusterConfig(
                 n_cluster_features=3,
-                correlation=0.7,
-                anchor_role="informative",
-                anchor_effect_size="medium",
-                anchor_class=1,
+                baseline_correlation=0.7,
+                mean_channel=MeanChannel(per_class_effect={1: 1.0}),
             ),
-            CorrClusterConfig(n_cluster_features=3, correlation=0.5, anchor_role="noise"),
+            CorrClusterConfig(n_cluster_features=3, baseline_correlation=0.5),
         ],
         class_configs=[ClassConfig(n_samples=50), ClassConfig(n_samples=50)],
         random_state=42,
@@ -38,20 +40,20 @@ def test_compute_feature_roles_partitions_all_columns():
     roles = compute_feature_roles(meta)
 
     # Matches the index layout asserted in test_generate_dataset_with_noise_anchor_cluster.
-    assert roles.free_informative_indices == [0]
+    assert roles.standalone_informative_indices == [0]
     assert roles.informative_anchor_indices == [1]
     assert roles.informative_proxy_indices == [2, 3]
     assert roles.noise_anchor_indices == [4]
     assert roles.noise_proxy_indices == [5, 6]
-    assert roles.free_noise_indices == [7]
+    assert roles.standalone_noise_indices == [7]
     assert roles.cluster_membership == {1: 0, 2: 0, 3: 0, 4: 1, 5: 1, 6: 1}
 
     # Every column appears in exactly one role bucket.
     all_role_columns = (
-        roles.free_informative_indices
+        roles.standalone_informative_indices
         + roles.informative_anchor_indices
         + roles.informative_proxy_indices
-        + roles.free_noise_indices
+        + roles.standalone_noise_indices
         + roles.noise_anchor_indices
         + roles.noise_proxy_indices
     )
