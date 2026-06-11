@@ -207,11 +207,13 @@ ______________________________________________________________________
 
 ## Architecture
 
-The generator is implemented as pipeline with single-responsibility modules:
+The generator pipeline:
 
-1. **Informative features + labels** → Class-separated informative signals and the class labels (exact per-class counts from `DatasetConfig.class_configs`)
-1. **Noise features**
-1. **Batch effects (optional)** → Additive or multiplicative technical overlays, optionally confounded with class
+1. **Informative features + labels**: Generate class-separated informative features and class labels (exact per-class counts)
+2. **Correlated clusters**: Create feature blocks with within-cluster correlations
+3. **Noise features**: Generate independent uninformative features
+4. **Assembly**: Concatenate all feature blocks in defined order
+5. **Batch effects** (optional): Apply additive or multiplicative technical overlays, optionally confounded with class
 
 Internally, the code is organized into dedicated modules for configuration, feature generation (informative, correlated, noise), batch effects, and metadata. A single random number generator drives the complete pipeline to ensure reproducibility.
 
