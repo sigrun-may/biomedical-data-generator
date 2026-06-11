@@ -137,8 +137,7 @@ Scientific Context
 
 Biomedical machine learning typically operates in **p ≫ n** settings: many
 variables (genes, proteins, metabolites) measured on comparatively few samples.
-This is the *domain context* the generator targets — not a feature it sells. In
-these settings, model behavior and feature-selection stability are shaped by:
+In these settings, model behavior and feature-selection stability are shaped by:
 
 * Correlated feature clusters (e.g., pathways or co-expressed genes)
 * Non-causal variation (batch effects, site differences) that may confound with class
