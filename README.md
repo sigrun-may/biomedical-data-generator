@@ -207,13 +207,10 @@ ______________________________________________________________________
 
 ## Architecture
 
-The generator is implemented as a six-phase pipeline with single-responsibility modules:
+The generator is implemented as pipeline with single-responsibility modules:
 
-1. **Label generation** → Exact class counts (`DatasetConfig.class_configs`)
-1. **Informative features** → Class-separated signals
-1. **Correlated clusters** → Pathway-like structures with configurable correlation patterns
-1. **Noise features** → Independent distractors
-1. **Assembly** → Concatenation of all feature blocks into a single matrix
+1. **Informative features + labels** → Class-separated informative signals and the class labels (exact per-class counts from `DatasetConfig.class_configs`)
+1. **Noise features**
 1. **Batch effects (optional)** → Additive or multiplicative technical overlays, optionally confounded with class
 
 Internally, the code is organized into dedicated modules for configuration, feature generation (informative, correlated, noise), batch effects, and metadata. A single random number generator drives the complete pipeline to ensure reproducibility.
