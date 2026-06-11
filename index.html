@@ -232,10 +232,9 @@ truth rather than inferred.</p>
 </section>
 <section id="architecture">
 <h2>Architecture<a class="headerlink" href="#architecture" title="Link to this heading"></a></h2>
-<p>The generator follows a clean 6-phase pipeline:</p>
+<p>The generator pipeline:</p>
 <ol class="arabic simple">
-<li><p><strong>Label generation</strong>: Create class labels with exact counts</p></li>
-<li><p><strong>Informative features</strong>: Generate features with class separation</p></li>
+<li><p><strong>Informative features + labels</strong>: Generate class-separated informative features and class labels (exact per-class counts)</p></li>
 <li><p><strong>Correlated clusters</strong>: Create feature blocks with within-cluster correlations</p></li>
 <li><p><strong>Noise features</strong>: Generate independent uninformative features</p></li>
 <li><p><strong>Assembly</strong>: Concatenate all feature blocks in defined order</p></li>
@@ -261,7 +260,7 @@ truth rather than inferred.</p>
 <span class="s">                  generator for benchmarking and teaching}</span><span class="p">,</span>
 <span class="w">  </span><span class="na">year</span><span class="w">         </span><span class="p">=</span><span class="w"> </span><span class="s">{2025}</span><span class="p">,</span>
 <span class="w">  </span><span class="na">url</span><span class="w">          </span><span class="p">=</span><span class="w"> </span><span class="s">{https://github.com/sigrun-may/biomedical-data-generator}</span><span class="p">,</span>
-<span class="w">  </span><span class="na">version</span><span class="w">      </span><span class="p">=</span><span class="w"> </span><span class="s">{1.0.0}</span>
+<span class="w">  </span><span class="na">version</span><span class="w">      </span><span class="p">=</span><span class="w"> </span><span class="s">{2.0.0}</span>
 <span class="p">}</span>
 </pre></div>
 </div>
