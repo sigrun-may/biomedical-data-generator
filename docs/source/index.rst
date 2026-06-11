@@ -153,14 +153,13 @@ truth rather than inferred.
 Architecture
 ------------
 
-The generator follows a clean 6-phase pipeline:
+The generator pipeline:
 
-1. **Label generation**: Create class labels with exact counts
-2. **Informative features**: Generate features with class separation
-3. **Correlated clusters**: Create feature blocks with within-cluster correlations
-4. **Noise features**: Generate independent uninformative features
-5. **Assembly**: Concatenate all feature blocks in defined order
-6. **Batch effects** (optional): Apply technical overlays
+1. **Informative features + labels**: Generate class-separated informative features and class labels (exact per-class counts)
+2. **Correlated clusters**: Create feature blocks with within-cluster correlations
+3. **Noise features**: Generate independent uninformative features
+4. **Assembly**: Concatenate all feature blocks in defined order
+5. **Batch effects** (optional): Apply technical overlays
 
 Each module has single responsibility:
 
@@ -185,7 +184,7 @@ If you use this package in a scientific publication, please cite:
                      generator for benchmarking and teaching},
      year         = {2025},
      url          = {https://github.com/sigrun-may/biomedical-data-generator},
-     version      = {1.0.0}
+     version      = {2.0.0}
    }
 
 Indices
