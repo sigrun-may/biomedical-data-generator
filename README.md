@@ -42,6 +42,9 @@ ______________________________________________________________________
 pip install biomedical-data-generator
 ```
 
+PyPI currently provides version 1.0.0 with a different API; the version documented here is installable with
+`pip install git+https://github.com/sigrun-may/biomedical-data-generator`.
+
 **Minimum Requirements:** Python 3.10+
 
 ______________________________________________________________________
