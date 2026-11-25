@@ -17,7 +17,6 @@ classifiers = [
     "Intended Audience :: Education",
     "Intended Audience :: Developers",
     "License :: OSI Approved :: MIT License",
-    "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
@@ -40,7 +39,7 @@ build-backend = "poetry.core.masonry.api"
 "Bug Tracker" = "https://github.com/sigrun-may/biomedical-data-generator/issues"
 
 [tool.poetry.dependencies]
-python = ">=3.10,<4.0"
+python = ">=3.11,<4.0"
 numpy = "*"
 pandas = "*"
 pydantic = "*"
@@ -88,12 +87,12 @@ bdg = "biomedical_data_generator.__main__:main"
 # ---- Black ----
 [tool.black]
 line-length = 120
-target-version = ["py310"]
+target-version = ["py311"]
 
 # ---- Ruff ----
 [tool.ruff]
 line-length = 120
-target-version = "py310"
+target-version = "py311"
 
 [tool.ruff.lint]
 # E,F: pycodestyle/pyflakes | I: isort | UP: pyupgrade | D: pydocstyle via Ruff
@@ -119,7 +118,7 @@ skip_empty = true
 
 # ---- MyPy ----
 [tool.mypy]
-python_version = "3.10"
+python_version = "3.11"
 warn_unused_ignores = true
 warn_redundant_casts = true
 strict_optional = true
