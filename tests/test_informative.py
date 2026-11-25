@@ -228,11 +228,11 @@ def test_generate_informative_features_different_distributions_statistical():
     alpha = 0.01
 
     # KS test for normal(0,1)
-    stat_norm, p_norm = stats.kstest(x_class0, "norm", args=(0.0, 1.0))
+    stat_norm, p_norm = stats.kstest(x_class0, stats.norm(loc=0.0, scale=1.0).cdf)
     assert p_norm > alpha, f"Normal KS test failed (p={p_norm:.5g})"
 
     # KS test for lognormal(0,1)
-    stat_unif, p_lognorm = stats.kstest(x_class1, "lognorm", args=(1.0, 0.0, np.exp(0.0)))
+    stat_unif, p_lognorm = stats.kstest(x_class1, stats.lognorm(1.0, loc=0.0, scale=np.exp(0.0)).cdf)
     assert p_lognorm > alpha, f"Lognormal KS test failed (p={p_lognorm:.5g})"
 
 
@@ -278,7 +278,8 @@ def test_generate_informative_features_all_supported_distributions_statistical()
         x_class0 = X[y == 0, 0] - offsets[0]
 
         scipy_name, args = _scipy_dist_and_args(dist_name, params)
-        stat, pval = stats.kstest(x_class0, scipy_name, args=args)
+        frozen_dist = getattr(stats, scipy_name)(*args)
+        stat, pval = stats.kstest(x_class0, frozen_dist.cdf)
         assert pval > alpha, f"{dist_name} KS test failed (p={pval:.5g})"
 
 
@@ -312,5 +313,5 @@ def test_generate_informative_features_shift_preserves_distribution_shape():
     # For each class, subtract the applied offset and KS-test against the original distribution
     for k in range(cfg.n_classes):
         xk = X[y == k, 0] - offsets[k]
-        stat, pval = stats.kstest(xk, "norm", args=(0.0, 1.0))
+        stat, pval = stats.kstest(xk, stats.norm(loc=0.0, scale=1.0).cdf)
         assert pval > alpha, f"class {k} distribution altered by shift (KS p={pval:.5g})"
