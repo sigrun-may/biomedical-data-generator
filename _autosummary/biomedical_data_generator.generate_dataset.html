@@ -110,7 +110,7 @@ correlated feature clusters (e.g., biological pathways), and optional batch effe
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>cfg</strong> (<a class="reference internal" href="biomedical_data_generator.config.DatasetConfig.html#biomedical_data_generator.config.DatasetConfig" title="biomedical_data_generator.config.DatasetConfig"><em>DatasetConfig</em></a>) – Configuration object defining the dataset structure. See
 <a class="reference internal" href="biomedical_data_generator.config.DatasetConfig.html#biomedical_data_generator.config.DatasetConfig" title="biomedical_data_generator.config.DatasetConfig"><code class="xref py py-class docutils literal notranslate"><span class="pre">DatasetConfig</span></code></a> for details.</p></li>
-<li><p><strong>return_dataframe</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a>) – If <code class="docutils literal notranslate"><span class="pre">True</span></code>, return features as a <code class="xref py py-class docutils literal notranslate"><span class="pre">pandas.DataFrame</span></code>
+<li><p><strong>return_dataframe</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/functions.html#bool" title="(in Python v3.15)"><em>bool</em></a>) – If <code class="docutils literal notranslate"><span class="pre">True</span></code>, return features as a <code class="xref py py-class docutils literal notranslate"><span class="pre">pandas.DataFrame</span></code>
 with named columns. If <code class="docutils literal notranslate"><span class="pre">False</span></code>, return as a NumPy array.</p></li>
 </ul>
 </dd>
@@ -118,7 +118,7 @@ with named columns. If <code class="docutils literal notranslate"><span class="p
 <dd class="field-even"><p><p>A 3-tuple containing:</p>
 <blockquote>
 <div><ul class="simple">
-<li><p><strong>x</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">pandas.DataFrame</span></code> or <a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.4)"><code class="xref py py-class docutils literal notranslate"><span class="pre">numpy.ndarray</span></code></a>):
+<li><p><strong>x</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">pandas.DataFrame</span></code> or <a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.5)"><code class="xref py py-class docutils literal notranslate"><span class="pre">numpy.ndarray</span></code></a>):
 Feature matrix of shape <code class="docutils literal notranslate"><span class="pre">(n_samples,</span> <span class="pre">n_features)</span></code>. Each row represents one sample (e.g., patient),
 each column represents one feature (e.g., biomarker, gene expression value). When returned
 as DataFrame, column names depend on <code class="docutils literal notranslate"><span class="pre">cfg.prefixed_feature_naming</span></code>:
@@ -127,7 +127,7 @@ when <code class="docutils literal notranslate"><span class="pre">True</span></c
 <code class="docutils literal notranslate"><span class="pre">cfg.prefix_corr</span></code> for correlated clusters, <code class="docutils literal notranslate"><span class="pre">cfg.prefix_noise</span></code>
 for noise), yielding names like <code class="docutils literal notranslate"><span class="pre">i1,</span> <span class="pre">corr1_anchor,</span> <span class="pre">n1</span></code>. When
 <code class="docutils literal notranslate"><span class="pre">False</span></code>, names use sequential numbering <code class="docutils literal notranslate"><span class="pre">feature_1,</span> <span class="pre">feature_2,</span> <span class="pre">...</span></code>.</p></li>
-<li><p><strong>y</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.4)"><code class="xref py py-class docutils literal notranslate"><span class="pre">numpy.ndarray</span></code></a>):
+<li><p><strong>y</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.5)"><code class="xref py py-class docutils literal notranslate"><span class="pre">numpy.ndarray</span></code></a>):
 Class labels of shape <code class="docutils literal notranslate"><span class="pre">(n_samples,)</span></code> with integer values
 <code class="docutils literal notranslate"><span class="pre">0,</span> <span class="pre">1,</span> <span class="pre">...,</span> <span class="pre">n_classes-1</span></code>.</p></li>
 <li><p><strong>meta</strong> (<a class="reference internal" href="biomedical_data_generator.DatasetMeta.html#biomedical_data_generator.DatasetMeta" title="biomedical_data_generator.DatasetMeta"><code class="xref py py-class docutils literal notranslate"><span class="pre">DatasetMeta</span></code></a>):
@@ -139,7 +139,7 @@ and complete generation configuration.</p></li>
 </p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.14)">tuple</a></p>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#tuple" title="(in Python v3.15)">tuple</a></p>
 </dd>
 </dl>
 <p class="rubric">Examples</p>
@@ -151,8 +151,8 @@ and complete generation configuration.</p></li>
 <span class="gp">... </span>        <span class="n">StandaloneInformativeGroup</span><span class="p">(</span><span class="n">n_features</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span> <span class="n">class_sep</span><span class="o">=</span><span class="mf">1.0</span><span class="p">)</span>
 <span class="gp">... </span>    <span class="p">],</span>
 <span class="gp">... </span>    <span class="n">n_standalone_noise</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span>
-<span class="gp">... </span>    <span class="n">class_configs</span><span class="o">=</span><span class="p">[</span><span class="n">ClassConfig</span><span class="p">(</span><span class="n">n_samples</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;healthy&quot;</span><span class="p">),</span>
-<span class="gp">... </span>                   <span class="n">ClassConfig</span><span class="p">(</span><span class="n">n_samples</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;diseased&quot;</span><span class="p">)],</span>
+<span class="gp">... </span>    <span class="n">class_configs</span><span class="o">=</span><span class="p">[</span><span class="n">ClassConfig</span><span class="p">(</span><span class="n">n_samples</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">"healthy"</span><span class="p">),</span>
+<span class="gp">... </span>                   <span class="n">ClassConfig</span><span class="p">(</span><span class="n">n_samples</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">"diseased"</span><span class="p">)],</span>
 <span class="gp">... </span>    <span class="n">random_state</span><span class="o">=</span><span class="mi">42</span>
 <span class="gp">... </span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">x1</span><span class="p">,</span> <span class="n">y1</span><span class="p">,</span> <span class="n">meta_data1</span> <span class="o">=</span> <span class="n">generate_dataset</span><span class="p">(</span><span class="n">data_cfg_1</span><span class="p">)</span>

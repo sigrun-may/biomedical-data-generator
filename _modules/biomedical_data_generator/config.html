@@ -86,7 +86,7 @@
 <span class="c1"># This software is distributed under the terms of the MIT license</span>
 <span class="c1"># which is available at https://opensource.org/licenses/MIT</span>
 
-<span class="sd">&quot;&quot;&quot;Configuration models for the dataset generator.&quot;&quot;&quot;</span>
+<span class="sd">"""Configuration models for the dataset generator."""</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">annotations</span>
 
@@ -99,12 +99,12 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">.meta</span><span class="w"> </span><span class="kn">import</span> <span class="n">_cluster_column_carries_signal</span><span class="p">,</span> <span class="n">_cluster_is_informative</span>
 
 <span class="n">DistributionType</span> <span class="o">=</span> <span class="n">Literal</span><span class="p">[</span>
-    <span class="s2">&quot;normal&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;lognormal&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;exp_normal&quot;</span><span class="p">,</span>  <span class="c1"># np.exp(rng.normal()) - direct control over underlying parameters for lognormal distribution</span>
-    <span class="s2">&quot;uniform&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;exponential&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;laplace&quot;</span><span class="p">,</span>
+    <span class="s2">"normal"</span><span class="p">,</span>
+    <span class="s2">"lognormal"</span><span class="p">,</span>
+    <span class="s2">"exp_normal"</span><span class="p">,</span>  <span class="c1"># np.exp(rng.normal()) - direct control over underlying parameters for lognormal distribution</span>
+    <span class="s2">"uniform"</span><span class="p">,</span>
+    <span class="s2">"exponential"</span><span class="p">,</span>
+    <span class="s2">"laplace"</span><span class="p">,</span>
 <span class="p">]</span>
 
 
@@ -112,52 +112,52 @@
 <span class="c1"># names and the canonical defaults used when no parameters are provided.</span>
 <span class="c1"># Defaults mirror the NumPy Generator API (e.g. uniform -&gt; [0, 1)).</span>
 <span class="n">_DISTRIBUTION_SCHEMA</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="p">{</span>
-    <span class="s2">&quot;normal&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;required&quot;</span><span class="p">:</span> <span class="nb">set</span><span class="p">(),</span> <span class="s2">&quot;optional&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;loc&quot;</span><span class="p">,</span> <span class="s2">&quot;scale&quot;</span><span class="p">},</span> <span class="s2">&quot;defaults&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;loc&quot;</span><span class="p">:</span> <span class="mf">0.0</span><span class="p">,</span> <span class="s2">&quot;scale&quot;</span><span class="p">:</span> <span class="mf">1.0</span><span class="p">}},</span>
-    <span class="s2">&quot;lognormal&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;required&quot;</span><span class="p">:</span> <span class="nb">set</span><span class="p">(),</span> <span class="s2">&quot;optional&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;mean&quot;</span><span class="p">,</span> <span class="s2">&quot;sigma&quot;</span><span class="p">},</span> <span class="s2">&quot;defaults&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;mean&quot;</span><span class="p">:</span> <span class="mf">0.0</span><span class="p">,</span> <span class="s2">&quot;sigma&quot;</span><span class="p">:</span> <span class="mf">1.0</span><span class="p">}},</span>
-    <span class="s2">&quot;exp_normal&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;required&quot;</span><span class="p">:</span> <span class="nb">set</span><span class="p">(),</span> <span class="s2">&quot;optional&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;loc&quot;</span><span class="p">,</span> <span class="s2">&quot;scale&quot;</span><span class="p">},</span> <span class="s2">&quot;defaults&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;loc&quot;</span><span class="p">:</span> <span class="mf">0.0</span><span class="p">,</span> <span class="s2">&quot;scale&quot;</span><span class="p">:</span> <span class="mf">1.0</span><span class="p">}},</span>
-    <span class="s2">&quot;uniform&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;required&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;low&quot;</span><span class="p">,</span> <span class="s2">&quot;high&quot;</span><span class="p">},</span> <span class="s2">&quot;optional&quot;</span><span class="p">:</span> <span class="nb">set</span><span class="p">(),</span> <span class="s2">&quot;defaults&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;low&quot;</span><span class="p">:</span> <span class="mf">0.0</span><span class="p">,</span> <span class="s2">&quot;high&quot;</span><span class="p">:</span> <span class="mf">1.0</span><span class="p">}},</span>
-    <span class="s2">&quot;exponential&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;required&quot;</span><span class="p">:</span> <span class="nb">set</span><span class="p">(),</span> <span class="s2">&quot;optional&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;scale&quot;</span><span class="p">},</span> <span class="s2">&quot;defaults&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;scale&quot;</span><span class="p">:</span> <span class="mf">1.0</span><span class="p">}},</span>
-    <span class="s2">&quot;laplace&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;required&quot;</span><span class="p">:</span> <span class="nb">set</span><span class="p">(),</span> <span class="s2">&quot;optional&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;loc&quot;</span><span class="p">,</span> <span class="s2">&quot;scale&quot;</span><span class="p">},</span> <span class="s2">&quot;defaults&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;loc&quot;</span><span class="p">:</span> <span class="mf">0.0</span><span class="p">,</span> <span class="s2">&quot;scale&quot;</span><span class="p">:</span> <span class="mf">1.0</span><span class="p">}},</span>
+    <span class="s2">"normal"</span><span class="p">:</span> <span class="p">{</span><span class="s2">"required"</span><span class="p">:</span> <span class="nb">set</span><span class="p">(),</span> <span class="s2">"optional"</span><span class="p">:</span> <span class="p">{</span><span class="s2">"loc"</span><span class="p">,</span> <span class="s2">"scale"</span><span class="p">},</span> <span class="s2">"defaults"</span><span class="p">:</span> <span class="p">{</span><span class="s2">"loc"</span><span class="p">:</span> <span class="mf">0.0</span><span class="p">,</span> <span class="s2">"scale"</span><span class="p">:</span> <span class="mf">1.0</span><span class="p">}},</span>
+    <span class="s2">"lognormal"</span><span class="p">:</span> <span class="p">{</span><span class="s2">"required"</span><span class="p">:</span> <span class="nb">set</span><span class="p">(),</span> <span class="s2">"optional"</span><span class="p">:</span> <span class="p">{</span><span class="s2">"mean"</span><span class="p">,</span> <span class="s2">"sigma"</span><span class="p">},</span> <span class="s2">"defaults"</span><span class="p">:</span> <span class="p">{</span><span class="s2">"mean"</span><span class="p">:</span> <span class="mf">0.0</span><span class="p">,</span> <span class="s2">"sigma"</span><span class="p">:</span> <span class="mf">1.0</span><span class="p">}},</span>
+    <span class="s2">"exp_normal"</span><span class="p">:</span> <span class="p">{</span><span class="s2">"required"</span><span class="p">:</span> <span class="nb">set</span><span class="p">(),</span> <span class="s2">"optional"</span><span class="p">:</span> <span class="p">{</span><span class="s2">"loc"</span><span class="p">,</span> <span class="s2">"scale"</span><span class="p">},</span> <span class="s2">"defaults"</span><span class="p">:</span> <span class="p">{</span><span class="s2">"loc"</span><span class="p">:</span> <span class="mf">0.0</span><span class="p">,</span> <span class="s2">"scale"</span><span class="p">:</span> <span class="mf">1.0</span><span class="p">}},</span>
+    <span class="s2">"uniform"</span><span class="p">:</span> <span class="p">{</span><span class="s2">"required"</span><span class="p">:</span> <span class="p">{</span><span class="s2">"low"</span><span class="p">,</span> <span class="s2">"high"</span><span class="p">},</span> <span class="s2">"optional"</span><span class="p">:</span> <span class="nb">set</span><span class="p">(),</span> <span class="s2">"defaults"</span><span class="p">:</span> <span class="p">{</span><span class="s2">"low"</span><span class="p">:</span> <span class="mf">0.0</span><span class="p">,</span> <span class="s2">"high"</span><span class="p">:</span> <span class="mf">1.0</span><span class="p">}},</span>
+    <span class="s2">"exponential"</span><span class="p">:</span> <span class="p">{</span><span class="s2">"required"</span><span class="p">:</span> <span class="nb">set</span><span class="p">(),</span> <span class="s2">"optional"</span><span class="p">:</span> <span class="p">{</span><span class="s2">"scale"</span><span class="p">},</span> <span class="s2">"defaults"</span><span class="p">:</span> <span class="p">{</span><span class="s2">"scale"</span><span class="p">:</span> <span class="mf">1.0</span><span class="p">}},</span>
+    <span class="s2">"laplace"</span><span class="p">:</span> <span class="p">{</span><span class="s2">"required"</span><span class="p">:</span> <span class="nb">set</span><span class="p">(),</span> <span class="s2">"optional"</span><span class="p">:</span> <span class="p">{</span><span class="s2">"loc"</span><span class="p">,</span> <span class="s2">"scale"</span><span class="p">},</span> <span class="s2">"defaults"</span><span class="p">:</span> <span class="p">{</span><span class="s2">"loc"</span><span class="p">:</span> <span class="mf">0.0</span><span class="p">,</span> <span class="s2">"scale"</span><span class="p">:</span> <span class="mf">1.0</span><span class="p">}},</span>
 <span class="p">}</span>
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">default_distribution_params</span><span class="p">(</span><span class="n">distribution</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">float</span><span class="p">]:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Return the canonical default parameters for a distribution.</span>
+<span class="w">    </span><span class="sd">"""Return the canonical default parameters for a distribution.</span>
 
 <span class="sd">    Defaults mirror the NumPy Generator API so that selecting a distribution</span>
-<span class="sd">    without explicit parameters yields the library&#39;s standard behavior (e.g.</span>
+<span class="sd">    without explicit parameters yields the library's standard behavior (e.g.</span>
 <span class="sd">    ``uniform`` over ``[0, 1)``, ``normal`` with ``loc=0, scale=1``).</span>
 
 <span class="sd">    Args:</span>
-<span class="sd">        distribution: Distribution type (e.g., &quot;normal&quot;, &quot;uniform&quot;).</span>
+<span class="sd">        distribution: Distribution type (e.g., "normal", "uniform").</span>
 
 <span class="sd">    Returns:</span>
 <span class="sd">        A fresh dict with the default parameters for the distribution. Returns</span>
 <span class="sd">        an empty dict for unknown distributions (no parameters assumed).</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="n">schema</span> <span class="o">=</span> <span class="n">_DISTRIBUTION_SCHEMA</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">distribution</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">schema</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
         <span class="k">return</span> <span class="p">{}</span>
     <span class="c1"># Return a copy so callers cannot mutate the shared schema template.</span>
-    <span class="k">return</span> <span class="nb">dict</span><span class="p">(</span><span class="n">schema</span><span class="p">[</span><span class="s2">&quot;defaults&quot;</span><span class="p">])</span>
+    <span class="k">return</span> <span class="nb">dict</span><span class="p">(</span><span class="n">schema</span><span class="p">[</span><span class="s2">"defaults"</span><span class="p">])</span>
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">validate_distribution_params</span><span class="p">(</span>
     <span class="n">params</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">float</span><span class="p">],</span>
     <span class="n">distribution</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">float</span><span class="p">]:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Shared validator for distribution parameters.</span>
+<span class="w">    </span><span class="sd">"""Shared validator for distribution parameters.</span>
 
 <span class="sd">    Args:</span>
 <span class="sd">        params: Parameter dict to validate.</span>
-<span class="sd">        distribution: Distribution type (e.g., &quot;normal&quot;, &quot;uniform&quot;).</span>
+<span class="sd">        distribution: Distribution type (e.g., "normal", "uniform").</span>
 
 <span class="sd">    Returns:</span>
 <span class="sd">        Validated parameter dict.</span>
 
 <span class="sd">    Raises:</span>
 <span class="sd">        ValueError: If parameters are invalid for the given distribution.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="n">params</span><span class="p">:</span>
         <span class="k">return</span> <span class="n">params</span>
 
@@ -165,56 +165,56 @@
     <span class="k">if</span> <span class="ow">not</span> <span class="n">schema</span><span class="p">:</span>
         <span class="k">return</span> <span class="n">params</span>
 
-    <span class="n">allowed</span> <span class="o">=</span> <span class="n">schema</span><span class="p">[</span><span class="s2">&quot;required&quot;</span><span class="p">]</span> <span class="o">|</span> <span class="n">schema</span><span class="p">[</span><span class="s2">&quot;optional&quot;</span><span class="p">]</span>
+    <span class="n">allowed</span> <span class="o">=</span> <span class="n">schema</span><span class="p">[</span><span class="s2">"required"</span><span class="p">]</span> <span class="o">|</span> <span class="n">schema</span><span class="p">[</span><span class="s2">"optional"</span><span class="p">]</span>
     <span class="n">provided</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">params</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
     <span class="n">invalid</span> <span class="o">=</span> <span class="n">provided</span> <span class="o">-</span> <span class="n">allowed</span>
     <span class="k">if</span> <span class="n">invalid</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Invalid parameters </span><span class="si">{</span><span class="n">invalid</span><span class="si">}</span><span class="s2"> for &#39;</span><span class="si">{</span><span class="n">distribution</span><span class="si">}</span><span class="s2">&#39;. Allowed: </span><span class="si">{</span><span class="n">allowed</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Invalid parameters </span><span class="si">{</span><span class="n">invalid</span><span class="si">}</span><span class="s2"> for '</span><span class="si">{</span><span class="n">distribution</span><span class="si">}</span><span class="s2">'. Allowed: </span><span class="si">{</span><span class="n">allowed</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 
-    <span class="n">missing</span> <span class="o">=</span> <span class="n">schema</span><span class="p">[</span><span class="s2">&quot;required&quot;</span><span class="p">]</span> <span class="o">-</span> <span class="n">provided</span>
+    <span class="n">missing</span> <span class="o">=</span> <span class="n">schema</span><span class="p">[</span><span class="s2">"required"</span><span class="p">]</span> <span class="o">-</span> <span class="n">provided</span>
     <span class="k">if</span> <span class="n">missing</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Missing required parameters </span><span class="si">{</span><span class="n">missing</span><span class="si">}</span><span class="s2"> for &#39;</span><span class="si">{</span><span class="n">distribution</span><span class="si">}</span><span class="s2">&#39;&quot;</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Missing required parameters </span><span class="si">{</span><span class="n">missing</span><span class="si">}</span><span class="s2"> for '</span><span class="si">{</span><span class="n">distribution</span><span class="si">}</span><span class="s2">'"</span><span class="p">)</span>
 
     <span class="c1"># Distribution-specific checks</span>
-    <span class="k">if</span> <span class="n">distribution</span> <span class="o">==</span> <span class="s2">&quot;uniform&quot;</span><span class="p">:</span>
+    <span class="k">if</span> <span class="n">distribution</span> <span class="o">==</span> <span class="s2">"uniform"</span><span class="p">:</span>
         <span class="k">try</span><span class="p">:</span>
-            <span class="n">low</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">params</span><span class="p">[</span><span class="s2">&quot;low&quot;</span><span class="p">])</span>
-            <span class="n">high</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">params</span><span class="p">[</span><span class="s2">&quot;high&quot;</span><span class="p">])</span>
+            <span class="n">low</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">params</span><span class="p">[</span><span class="s2">"low"</span><span class="p">])</span>
+            <span class="n">high</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">params</span><span class="p">[</span><span class="s2">"high"</span><span class="p">])</span>
         <span class="k">except</span> <span class="p">(</span><span class="ne">ValueError</span><span class="p">,</span> <span class="ne">TypeError</span><span class="p">)</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                <span class="sa">f</span><span class="s2">&quot;uniform parameters must be numeric, got low=</span><span class="si">{</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;low&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">, high=</span><span class="si">{</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;high&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span>
+                <span class="sa">f</span><span class="s2">"uniform parameters must be numeric, got low=</span><span class="si">{</span><span class="n">params</span><span class="p">[</span><span class="s1">'low'</span><span class="p">]</span><span class="si">}</span><span class="s2">, high=</span><span class="si">{</span><span class="n">params</span><span class="p">[</span><span class="s1">'high'</span><span class="p">]</span><span class="si">}</span><span class="s2">"</span>
             <span class="p">)</span> <span class="kn">from</span><span class="w"> </span><span class="nn">e</span>
 
         <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="n">low</span> <span class="o">&lt;</span> <span class="n">high</span><span class="p">):</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;uniform: &#39;high&#39; (</span><span class="si">{</span><span class="n">high</span><span class="si">}</span><span class="s2">) must be &gt; &#39;low&#39; (</span><span class="si">{</span><span class="n">low</span><span class="si">}</span><span class="s2">)&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"uniform: 'high' (</span><span class="si">{</span><span class="n">high</span><span class="si">}</span><span class="s2">) must be &gt; 'low' (</span><span class="si">{</span><span class="n">low</span><span class="si">}</span><span class="s2">)"</span><span class="p">)</span>
 
     <span class="c1"># Scale parameters must be positive (normal, laplace, exponential, exp_normal)</span>
-    <span class="k">if</span> <span class="s2">&quot;scale&quot;</span> <span class="ow">in</span> <span class="n">params</span><span class="p">:</span>
+    <span class="k">if</span> <span class="s2">"scale"</span> <span class="ow">in</span> <span class="n">params</span><span class="p">:</span>
         <span class="k">try</span><span class="p">:</span>
-            <span class="n">scale_val</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">params</span><span class="p">[</span><span class="s2">&quot;scale&quot;</span><span class="p">])</span>
+            <span class="n">scale_val</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">params</span><span class="p">[</span><span class="s2">"scale"</span><span class="p">])</span>
         <span class="k">except</span> <span class="p">(</span><span class="ne">ValueError</span><span class="p">,</span> <span class="ne">TypeError</span><span class="p">)</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;&#39;scale&#39; must be numeric, got </span><span class="si">{</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;scale&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span> <span class="kn">from</span><span class="w"> </span><span class="nn">e</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"'scale' must be numeric, got </span><span class="si">{</span><span class="n">params</span><span class="p">[</span><span class="s1">'scale'</span><span class="p">]</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span> <span class="kn">from</span><span class="w"> </span><span class="nn">e</span>
 
         <span class="k">if</span> <span class="n">scale_val</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;&#39;scale&#39; must be &gt; 0, got </span><span class="si">{</span><span class="n">scale_val</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"'scale' must be &gt; 0, got </span><span class="si">{</span><span class="n">scale_val</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 
     <span class="c1"># Sigma must be positive (lognormal)</span>
-    <span class="k">if</span> <span class="s2">&quot;sigma&quot;</span> <span class="ow">in</span> <span class="n">params</span><span class="p">:</span>
+    <span class="k">if</span> <span class="s2">"sigma"</span> <span class="ow">in</span> <span class="n">params</span><span class="p">:</span>
         <span class="k">try</span><span class="p">:</span>
-            <span class="n">sigma_val</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">params</span><span class="p">[</span><span class="s2">&quot;sigma&quot;</span><span class="p">])</span>
+            <span class="n">sigma_val</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">params</span><span class="p">[</span><span class="s2">"sigma"</span><span class="p">])</span>
         <span class="k">except</span> <span class="p">(</span><span class="ne">ValueError</span><span class="p">,</span> <span class="ne">TypeError</span><span class="p">)</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;&#39;sigma&#39; must be numeric, got </span><span class="si">{</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;sigma&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span> <span class="kn">from</span><span class="w"> </span><span class="nn">e</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"'sigma' must be numeric, got </span><span class="si">{</span><span class="n">params</span><span class="p">[</span><span class="s1">'sigma'</span><span class="p">]</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span> <span class="kn">from</span><span class="w"> </span><span class="nn">e</span>
 
         <span class="k">if</span> <span class="n">sigma_val</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;&#39;sigma&#39; must be &gt; 0, got </span><span class="si">{</span><span class="n">sigma_val</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"'sigma' must be &gt; 0, got </span><span class="si">{</span><span class="n">sigma_val</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 
     <span class="c1"># loc and mean must be numeric if present</span>
-    <span class="k">for</span> <span class="n">param_name</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;loc&quot;</span><span class="p">,</span> <span class="s2">&quot;mean&quot;</span><span class="p">]:</span>
+    <span class="k">for</span> <span class="n">param_name</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">"loc"</span><span class="p">,</span> <span class="s2">"mean"</span><span class="p">]:</span>
         <span class="k">if</span> <span class="n">param_name</span> <span class="ow">in</span> <span class="n">params</span><span class="p">:</span>
             <span class="k">try</span><span class="p">:</span>
                 <span class="nb">float</span><span class="p">(</span><span class="n">params</span><span class="p">[</span><span class="n">param_name</span><span class="p">])</span>
             <span class="k">except</span> <span class="p">(</span><span class="ne">ValueError</span><span class="p">,</span> <span class="ne">TypeError</span><span class="p">)</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;&#39;</span><span class="si">{</span><span class="n">param_name</span><span class="si">}</span><span class="s2">&#39; must be numeric, got </span><span class="si">{</span><span class="n">params</span><span class="p">[</span><span class="n">param_name</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span> <span class="kn">from</span><span class="w"> </span><span class="nn">e</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"'</span><span class="si">{</span><span class="n">param_name</span><span class="si">}</span><span class="s2">' must be numeric, got </span><span class="si">{</span><span class="n">params</span><span class="p">[</span><span class="n">param_name</span><span class="p">]</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span> <span class="kn">from</span><span class="w"> </span><span class="nn">e</span>
 
     <span class="k">return</span> <span class="n">params</span>
 
@@ -222,7 +222,7 @@
 <div class="viewcode-block" id="ClassConfig">
 <a class="viewcode-back" href="../../_autosummary/biomedical_data_generator.config.ClassConfig.html#biomedical_data_generator.ClassConfig">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">ClassConfig</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Configuration for a single class in the dataset.</span>
+<span class="w">    </span><span class="sd">"""Configuration for a single class in the dataset.</span>
 
 <span class="sd">    Each class is defined by its sample count, distribution, and optional label.</span>
 <span class="sd">    Class indices (0, 1, 2, ...) are assigned by position in the list.</span>
@@ -231,100 +231,100 @@
 <span class="sd">    Args:</span>
 <span class="sd">        n_samples: Number of samples for this class (must be &gt;= 1).</span>
 <span class="sd">        class_distribution: Distribution type for feature generation. Supported numpy random generator distributions:</span>
-<span class="sd">            - &quot;normal&quot;, &quot;lognormal&quot;, &quot;uniform&quot;, &quot;exponential&quot;, &quot;laplace&quot;. Additionally, &quot;exp_normal&quot; for direct control</span>
+<span class="sd">            - "normal", "lognormal", "uniform", "exponential", "laplace". Additionally, "exp_normal" for direct control</span>
 <span class="sd">                over lognormal parameters.</span>
 <span class="sd">        class_distribution_params: Parameters for the chosen distribution.</span>
-<span class="sd">        label: Optional descriptive name. Auto-generated as &quot;class_0&quot;, &quot;class_1&quot;, etc. if not provided.</span>
+<span class="sd">        label: Optional descriptive name. Auto-generated as "class_0", "class_1", etc. if not provided.</span>
 
 <span class="sd">    Examples:</span>
 <span class="sd">        &gt;&gt;&gt; # Auto-generated labels</span>
 <span class="sd">        &gt;&gt;&gt; configs = [</span>
-<span class="sd">        ...     ClassConfig(n_samples=100),  # label → &quot;class_0&quot;</span>
-<span class="sd">        ...     ClassConfig(n_samples=50)    # label → &quot;class_1&quot;</span>
+<span class="sd">        ...     ClassConfig(n_samples=100),  # label → "class_0"</span>
+<span class="sd">        ...     ClassConfig(n_samples=50)    # label → "class_1"</span>
 <span class="sd">        ... ]</span>
 
 <span class="sd">        &gt;&gt;&gt; # Explicit semantic labels</span>
 <span class="sd">        &gt;&gt;&gt; configs = [</span>
-<span class="sd">        ...     ClassConfig(n_samples=100, label=&quot;healthy&quot;),</span>
-<span class="sd">        ...     ClassConfig(n_samples=50, label=&quot;diseased&quot;)</span>
+<span class="sd">        ...     ClassConfig(n_samples=100, label="healthy"),</span>
+<span class="sd">        ...     ClassConfig(n_samples=50, label="diseased")</span>
 <span class="sd">        ... ]</span>
 
 <span class="sd">        &gt;&gt;&gt; # Different distributions per class</span>
 <span class="sd">        &gt;&gt;&gt; configs = [</span>
 <span class="sd">        ...     ClassConfig(</span>
 <span class="sd">        ...         n_samples=50,</span>
-<span class="sd">        ...         label=&quot;control&quot;,</span>
-<span class="sd">        ...         class_distribution=&quot;normal&quot;</span>
+<span class="sd">        ...         label="control",</span>
+<span class="sd">        ...         class_distribution="normal"</span>
 <span class="sd">        ...     ),</span>
 <span class="sd">        ...     ClassConfig(</span>
 <span class="sd">        ...         n_samples=30,</span>
-<span class="sd">        ...         label=&quot;diseased&quot;,</span>
-<span class="sd">        ...         class_distribution=&quot;lognormal&quot;,</span>
-<span class="sd">        ...         class_distribution_params={&quot;mean&quot;: 0, &quot;sigma&quot;: 0.5}</span>
+<span class="sd">        ...         label="diseased",</span>
+<span class="sd">        ...         class_distribution="lognormal",</span>
+<span class="sd">        ...         class_distribution_params={"mean": 0, "sigma": 0.5}</span>
 <span class="sd">        ...     )</span>
 <span class="sd">        ... ]</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
-    <span class="n">model_config</span> <span class="o">=</span> <span class="n">ConfigDict</span><span class="p">(</span><span class="n">extra</span><span class="o">=</span><span class="s2">&quot;forbid&quot;</span><span class="p">)</span>
+    <span class="n">model_config</span> <span class="o">=</span> <span class="n">ConfigDict</span><span class="p">(</span><span class="n">extra</span><span class="o">=</span><span class="s2">"forbid"</span><span class="p">)</span>
 
     <span class="n">n_samples</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span>
         <span class="n">default</span><span class="o">=</span><span class="mi">30</span><span class="p">,</span>
         <span class="n">ge</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
-        <span class="n">description</span><span class="o">=</span><span class="s2">&quot;Number of samples in this class.&quot;</span><span class="p">,</span>
+        <span class="n">description</span><span class="o">=</span><span class="s2">"Number of samples in this class."</span><span class="p">,</span>
     <span class="p">)</span>
     <span class="n">class_distribution</span><span class="p">:</span> <span class="n">DistributionType</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span>
-        <span class="n">default</span><span class="o">=</span><span class="s2">&quot;normal&quot;</span><span class="p">,</span>
-        <span class="n">description</span><span class="o">=</span><span class="s2">&quot;Distribution type for base feature generation.&quot;</span><span class="p">,</span>
+        <span class="n">default</span><span class="o">=</span><span class="s2">"normal"</span><span class="p">,</span>
+        <span class="n">description</span><span class="o">=</span><span class="s2">"Distribution type for base feature generation."</span><span class="p">,</span>
     <span class="p">)</span>
     <span class="n">class_distribution_params</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span>
         <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-        <span class="n">description</span><span class="o">=</span><span class="s2">&quot;Distribution parameters. If None, distribution-specific defaults are derived.&quot;</span><span class="p">,</span>
+        <span class="n">description</span><span class="o">=</span><span class="s2">"Distribution parameters. If None, distribution-specific defaults are derived."</span><span class="p">,</span>
     <span class="p">)</span>
     <span class="n">label</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span>
         <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-        <span class="n">description</span><span class="o">=</span><span class="s2">&quot;Label (auto-generated as &#39;class_</span><span class="si">{idx}</span><span class="s2">&#39; if None).&quot;</span><span class="p">,</span>
+        <span class="n">description</span><span class="o">=</span><span class="s2">"Label (auto-generated as 'class_</span><span class="si">{idx}</span><span class="s2">' if None)."</span><span class="p">,</span>
     <span class="p">)</span>
 
-    <span class="nd">@field_validator</span><span class="p">(</span><span class="s2">&quot;class_distribution_params&quot;</span><span class="p">)</span>
+    <span class="nd">@field_validator</span><span class="p">(</span><span class="s2">"class_distribution_params"</span><span class="p">)</span>
     <span class="nd">@classmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">_validate_class_params</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">v</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">float</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span><span class="p">,</span> <span class="n">info</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">float</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Validate distribution parameters match the chosen distribution.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""Validate distribution parameters match the chosen distribution."""</span>
         <span class="k">if</span> <span class="n">v</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">return</span> <span class="n">v</span>
-        <span class="n">distribution</span> <span class="o">=</span> <span class="n">info</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;class_distribution&quot;</span><span class="p">,</span> <span class="s2">&quot;normal&quot;</span><span class="p">)</span>
+        <span class="n">distribution</span> <span class="o">=</span> <span class="n">info</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"class_distribution"</span><span class="p">,</span> <span class="s2">"normal"</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">validate_distribution_params</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="n">distribution</span><span class="p">)</span>
 
-    <span class="nd">@model_validator</span><span class="p">(</span><span class="n">mode</span><span class="o">=</span><span class="s2">&quot;after&quot;</span><span class="p">)</span>
+    <span class="nd">@model_validator</span><span class="p">(</span><span class="n">mode</span><span class="o">=</span><span class="s2">"after"</span><span class="p">)</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">_resolve_distribution_params</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Derive distribution-specific default parameters when none are given.</span>
+<span class="w">        </span><span class="sd">"""Derive distribution-specific default parameters when none are given.</span>
 
 <span class="sd">        Keeping resolution at config time means the constructed config is always</span>
 <span class="sd">        complete and internally consistent: the parameters can never disagree</span>
 <span class="sd">        with the chosen distribution.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">class_distribution_params</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="nb">object</span><span class="o">.</span><span class="fm">__setattr__</span><span class="p">(</span>
                 <span class="bp">self</span><span class="p">,</span>
-                <span class="s2">&quot;class_distribution_params&quot;</span><span class="p">,</span>
+                <span class="s2">"class_distribution_params"</span><span class="p">,</span>
                 <span class="n">default_distribution_params</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">class_distribution</span><span class="p">),</span>
             <span class="p">)</span>
         <span class="k">return</span> <span class="bp">self</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Concise string representation.&quot;&quot;&quot;</span>
-        <span class="n">parts</span> <span class="o">=</span> <span class="p">[</span><span class="sa">f</span><span class="s2">&quot;n=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">n_samples</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">]</span>
+<span class="w">        </span><span class="sd">"""Concise string representation."""</span>
+        <span class="n">parts</span> <span class="o">=</span> <span class="p">[</span><span class="sa">f</span><span class="s2">"n=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">n_samples</span><span class="si">}</span><span class="s2">"</span><span class="p">]</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">label</span><span class="p">:</span>
-            <span class="n">parts</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;label=&#39;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">label</span><span class="si">}</span><span class="s2">&#39;&quot;</span><span class="p">)</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">class_distribution</span> <span class="o">!=</span> <span class="s2">&quot;normal&quot;</span><span class="p">:</span>
-            <span class="n">parts</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;dist=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">class_distribution</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;ClassConfig(</span><span class="si">{</span><span class="s1">&#39;, &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">parts</span><span class="p">)</span><span class="si">}</span><span class="s2">)&quot;</span></div>
+            <span class="n">parts</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">"label='</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">label</span><span class="si">}</span><span class="s2">'"</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">class_distribution</span> <span class="o">!=</span> <span class="s2">"normal"</span><span class="p">:</span>
+            <span class="n">parts</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">"dist=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">class_distribution</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+        <span class="k">return</span> <span class="sa">f</span><span class="s2">"ClassConfig(</span><span class="si">{</span><span class="s1">', '</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">parts</span><span class="p">)</span><span class="si">}</span><span class="s2">)"</span></div>
 
 
 
 <div class="viewcode-block" id="BatchEffectsConfig">
 <a class="viewcode-back" href="../../_autosummary/biomedical_data_generator.config.BatchEffectsConfig.html#biomedical_data_generator.BatchEffectsConfig">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">BatchEffectsConfig</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Configuration for simulating batch effects.</span>
+<span class="w">    </span><span class="sd">"""Configuration for simulating batch effects.</span>
 
 <span class="sd">    Simulate batch effects by adding random intercepts or scaling factors</span>
 <span class="sd">    to a subset of features. This can be used to mimic:</span>
@@ -344,18 +344,18 @@
 <span class="sd">        n_batches:</span>
 <span class="sd">            Number of batches. Value 0 effectively disables batch effects.</span>
 <span class="sd">        effect_strength: Scale of batch effects. Must be non-negative.</span>
-<span class="sd">            - For ``effect_type=&quot;additive&quot;``: standard deviation of the additive</span>
+<span class="sd">            - For ``effect_type="additive"``: standard deviation of the additive</span>
 <span class="sd">                batch effects, sampled as ``Normal(0, effect_strength)``.</span>
-<span class="sd">            - For ``effect_type=&quot;multiplicative&quot;``: standard deviation of the</span>
+<span class="sd">            - For ``effect_type="multiplicative"``: standard deviation of the</span>
 <span class="sd">                  multiplicative deviations around 1.0, sampled as</span>
 <span class="sd">                  ``1 + Normal(0, effect_strength)``.</span>
 <span class="sd">        effect_type: Type of batch effect.</span>
-<span class="sd">            - ``&quot;additive&quot;``: Additive intercepts (shifts in feature means).</span>
-<span class="sd">            - ``&quot;multiplicative&quot;``: Multiplicative scaling (changes in variance/scale).</span>
+<span class="sd">            - ``"additive"``: Additive intercepts (shifts in feature means).</span>
+<span class="sd">            - ``"multiplicative"``: Multiplicative scaling (changes in variance/scale).</span>
 <span class="sd">        effect_granularity: Granularity of batch effects across features:</span>
-<span class="sd">            - ``&quot;per_feature&quot;``: draw distinct effects per batch and affected</span>
+<span class="sd">            - ``"per_feature"``: draw distinct effects per batch and affected</span>
 <span class="sd">                    feature (shape ``(n_batches, n_affected_features)``).</span>
-<span class="sd">            - ``&quot;scalar&quot;``: draw a single effect per batch and apply it</span>
+<span class="sd">            - ``"scalar"``: draw a single effect per batch and apply it</span>
 <span class="sd">                uniformly to all affected features (global per-batch shift/scale).</span>
 <span class="sd">        confounding_with_class: Degree of confounding between batch and class in ``[0.0, 1.0]``.</span>
 <span class="sd">            Controls how strongly batch assignment correlates with class labels,</span>
@@ -369,13 +369,13 @@
 <span class="sd">                - 1.0 → perfect confounding: each class maps to one preferred</span>
 <span class="sd">                  batch (if ``n_batches &gt;= n_classes``).</span>
 <span class="sd">        affected_features: Which features should be affected:</span>
-<span class="sd">            - ``&quot;all&quot;``: apply batch effects to all features.</span>
+<span class="sd">            - ``"all"``: apply batch effects to all features.</span>
 <span class="sd">            - list of ints: explicit 0-based column indices of affected features.</span>
 <span class="sd">        proportions: Optional target proportions for batch sizes. Values are normalized</span>
 <span class="sd">            to sum to 1. If ``None``, batches are (approximately) equal in size.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
-    <span class="n">model_config</span> <span class="o">=</span> <span class="n">ConfigDict</span><span class="p">(</span><span class="n">extra</span><span class="o">=</span><span class="s2">&quot;forbid&quot;</span><span class="p">)</span>
+    <span class="n">model_config</span> <span class="o">=</span> <span class="n">ConfigDict</span><span class="p">(</span><span class="n">extra</span><span class="o">=</span><span class="s2">"forbid"</span><span class="p">)</span>
 
     <span class="c1"># 0 or 1 =&gt; effectively no batch effect</span>
     <span class="n">n_batches</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">default</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">ge</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
@@ -383,45 +383,45 @@
     <span class="c1"># std of batch effects (0.0 allowed =&gt; no effect)</span>
     <span class="n">effect_strength</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">default</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span> <span class="n">ge</span><span class="o">=</span><span class="mf">0.0</span><span class="p">)</span>
 
-    <span class="n">effect_type</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;additive&quot;</span><span class="p">,</span> <span class="s2">&quot;multiplicative&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;additive&quot;</span>
+    <span class="n">effect_type</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">"additive"</span><span class="p">,</span> <span class="s2">"multiplicative"</span><span class="p">]</span> <span class="o">=</span> <span class="s2">"additive"</span>
 
     <span class="c1"># how structured across features: per-feature vs scalar per batch</span>
-    <span class="n">effect_granularity</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;per_feature&quot;</span><span class="p">,</span> <span class="s2">&quot;scalar&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">default</span><span class="o">=</span><span class="s2">&quot;per_feature&quot;</span><span class="p">)</span>
+    <span class="n">effect_granularity</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">"per_feature"</span><span class="p">,</span> <span class="s2">"scalar"</span><span class="p">]</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">default</span><span class="o">=</span><span class="s2">"per_feature"</span><span class="p">)</span>
 
     <span class="c1"># in [0, 1], controls recruitment bias / confounding</span>
     <span class="n">confounding_with_class</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">default</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">ge</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">le</span><span class="o">=</span><span class="mf">1.0</span><span class="p">)</span>
 
-    <span class="c1"># 0-based column indices; &quot;all&quot; =&gt; all features</span>
-    <span class="n">affected_features</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">|</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;all&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;all&quot;</span>
+    <span class="c1"># 0-based column indices; "all" =&gt; all features</span>
+    <span class="n">affected_features</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">|</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">"all"</span><span class="p">]</span> <span class="o">=</span> <span class="s2">"all"</span>
 
     <span class="c1"># optional batch size proportions</span>
     <span class="n">proportions</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
 
 <div class="viewcode-block" id="BatchEffectsConfig.validate_proportions">
 <a class="viewcode-back" href="../../_autosummary/biomedical_data_generator.config.BatchEffectsConfig.html#biomedical_data_generator.BatchEffectsConfig.validate_proportions">[docs]</a>
-    <span class="nd">@field_validator</span><span class="p">(</span><span class="s2">&quot;proportions&quot;</span><span class="p">)</span>
+    <span class="nd">@field_validator</span><span class="p">(</span><span class="s2">"proportions"</span><span class="p">)</span>
     <span class="nd">@classmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">validate_proportions</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">v</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span><span class="p">,</span> <span class="n">info</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Ensure proportions are non-negative, match n_batches, and sum to 1.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""Ensure proportions are non-negative, match n_batches, and sum to 1."""</span>
         <span class="k">if</span> <span class="n">v</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">return</span> <span class="n">v</span>
 
         <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">v</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;proportions must not be empty if provided.&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"proportions must not be empty if provided."</span><span class="p">)</span>
 
         <span class="c1"># Non-negative entries</span>
         <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">v</span><span class="p">:</span>
             <span class="k">if</span> <span class="n">p</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
-                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;proportions must be non-negative, got </span><span class="si">{</span><span class="n">p</span><span class="si">}</span><span class="s2">.&quot;</span><span class="p">)</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"proportions must be non-negative, got </span><span class="si">{</span><span class="n">p</span><span class="si">}</span><span class="s2">."</span><span class="p">)</span>
 
         <span class="c1"># Check length vs n_batches (if &gt; 0)</span>
-        <span class="n">n_batches</span> <span class="o">=</span> <span class="n">info</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;n_batches&quot;</span><span class="p">)</span>
+        <span class="n">n_batches</span> <span class="o">=</span> <span class="n">info</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"n_batches"</span><span class="p">)</span>
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">n_batches</span><span class="p">,</span> <span class="nb">int</span><span class="p">)</span> <span class="ow">and</span> <span class="mi">0</span> <span class="o">&lt;</span> <span class="n">n_batches</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="n">v</span><span class="p">):</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;proportions length (</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">v</span><span class="p">)</span><span class="si">}</span><span class="s2">) must match n_batches (</span><span class="si">{</span><span class="n">n_batches</span><span class="si">}</span><span class="s2">).&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"proportions length (</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">v</span><span class="p">)</span><span class="si">}</span><span class="s2">) must match n_batches (</span><span class="si">{</span><span class="n">n_batches</span><span class="si">}</span><span class="s2">)."</span><span class="p">)</span>
 
         <span class="n">total</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="nb">sum</span><span class="p">(</span><span class="n">v</span><span class="p">))</span>
         <span class="k">if</span> <span class="n">total</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Sum of proportions must be &gt; 0, got </span><span class="si">{</span><span class="n">total</span><span class="si">}</span><span class="s2">.&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Sum of proportions must be &gt; 0, got </span><span class="si">{</span><span class="n">total</span><span class="si">}</span><span class="s2">."</span><span class="p">)</span>
 
         <span class="c1"># Normalize to sum to 1.0</span>
         <span class="k">return</span> <span class="p">[</span><span class="n">p</span> <span class="o">/</span> <span class="n">total</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">v</span><span class="p">]</span></div>
@@ -430,17 +430,17 @@
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">_correlation_in_range</span><span class="p">(</span><span class="n">correlation</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">n_features</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">structure</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Return whether a correlation is admissible for a block of the given shape.</span>
+<span class="w">    </span><span class="sd">"""Return whether a correlation is admissible for a block of the given shape.</span>
 
 <span class="sd">    Args:</span>
 <span class="sd">        correlation: Candidate within-block correlation.</span>
 <span class="sd">        n_features: Number of features in the block.</span>
-<span class="sd">        structure: Either ``&quot;equicorrelated&quot;`` or ``&quot;toeplitz&quot;``.</span>
+<span class="sd">        structure: Either ``"equicorrelated"`` or ``"toeplitz"``.</span>
 
 <span class="sd">    Returns:</span>
 <span class="sd">        True if the correlation yields a valid (positive-definite) block.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">if</span> <span class="n">structure</span> <span class="o">==</span> <span class="s2">&quot;equicorrelated&quot;</span><span class="p">:</span>
+<span class="sd">    """</span>
+    <span class="k">if</span> <span class="n">structure</span> <span class="o">==</span> <span class="s2">"equicorrelated"</span><span class="p">:</span>
         <span class="n">lower</span> <span class="o">=</span> <span class="o">-</span><span class="mf">1.0</span> <span class="o">/</span> <span class="p">(</span><span class="n">n_features</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">lower</span> <span class="o">&lt;</span> <span class="n">correlation</span> <span class="o">&lt;</span> <span class="mf">1.0</span>
     <span class="k">return</span> <span class="o">-</span><span class="mf">1.0</span> <span class="o">&lt;</span> <span class="n">correlation</span> <span class="o">&lt;</span> <span class="mf">1.0</span>
@@ -449,16 +449,16 @@
 <div class="viewcode-block" id="MeanChannel">
 <a class="viewcode-back" href="../../_autosummary/biomedical_data_generator.config.MeanChannel.html#biomedical_data_generator.MeanChannel">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">MeanChannel</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;First-moment signal: a per-class mean shift applied to the cluster anchor.</span>
+<span class="w">    </span><span class="sd">"""First-moment signal: a per-class mean shift applied to the cluster anchor.</span>
 
 <span class="sd">    Absent classes receive a 0.0 shift (baseline). Shifts are in standard-</span>
 <span class="sd">    deviation units of the standardized feature baseline.</span>
 
 <span class="sd">    Attributes:</span>
 <span class="sd">        per_class_effect: Mapping from class index to mean shift in sigma units.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
-    <span class="n">model_config</span> <span class="o">=</span> <span class="n">ConfigDict</span><span class="p">(</span><span class="n">extra</span><span class="o">=</span><span class="s2">&quot;forbid&quot;</span><span class="p">)</span>
+    <span class="n">model_config</span> <span class="o">=</span> <span class="n">ConfigDict</span><span class="p">(</span><span class="n">extra</span><span class="o">=</span><span class="s2">"forbid"</span><span class="p">)</span>
 
     <span class="n">per_class_effect</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">]</span></div>
 
@@ -467,16 +467,16 @@
 <div class="viewcode-block" id="CovarianceChannel">
 <a class="viewcode-back" href="../../_autosummary/biomedical_data_generator.config.CovarianceChannel.html#biomedical_data_generator.CovarianceChannel">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">CovarianceChannel</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Second-moment signal: a per-class within-cluster correlation.</span>
+<span class="w">    </span><span class="sd">"""Second-moment signal: a per-class within-cluster correlation.</span>
 
-<span class="sd">    Absent classes fall back to the cluster&#39;s ``baseline_correlation``. This</span>
+<span class="sd">    Absent classes fall back to the cluster's ``baseline_correlation``. This</span>
 <span class="sd">    models differential co-expression.</span>
 
 <span class="sd">    Attributes:</span>
 <span class="sd">        per_class_correlation: Mapping from class index to within-cluster correlation.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
-    <span class="n">model_config</span> <span class="o">=</span> <span class="n">ConfigDict</span><span class="p">(</span><span class="n">extra</span><span class="o">=</span><span class="s2">&quot;forbid&quot;</span><span class="p">)</span>
+    <span class="n">model_config</span> <span class="o">=</span> <span class="n">ConfigDict</span><span class="p">(</span><span class="n">extra</span><span class="o">=</span><span class="s2">"forbid"</span><span class="p">)</span>
 
     <span class="n">per_class_correlation</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">]</span></div>
 
@@ -485,7 +485,7 @@
 <div class="viewcode-block" id="CorrClusterConfig">
 <a class="viewcode-back" href="../../_autosummary/biomedical_data_generator.config.CorrClusterConfig.html#biomedical_data_generator.CorrClusterConfig">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">CorrClusterConfig</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;A correlated block with optional, independent mean and covariance channels.</span>
+<span class="w">    </span><span class="sd">"""A correlated block with optional, independent mean and covariance channels.</span>
 
 <span class="sd">    The block geometry and the structural anchor are always present; signal is</span>
 <span class="sd">    expressed only through the optional channels. Relevance is derived (a cluster</span>
@@ -510,12 +510,12 @@
 <span class="sd">        mean_channel: Optional first-moment signal.</span>
 <span class="sd">        covariance_channel: Optional second-moment signal.</span>
 <span class="sd">        label: Optional descriptive name for documentation.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
-    <span class="n">model_config</span> <span class="o">=</span> <span class="n">ConfigDict</span><span class="p">(</span><span class="n">extra</span><span class="o">=</span><span class="s2">&quot;forbid&quot;</span><span class="p">)</span>
+    <span class="n">model_config</span> <span class="o">=</span> <span class="n">ConfigDict</span><span class="p">(</span><span class="n">extra</span><span class="o">=</span><span class="s2">"forbid"</span><span class="p">)</span>
 
     <span class="n">n_cluster_features</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="o">...</span><span class="p">,</span> <span class="n">ge</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
-    <span class="n">correlation_structure</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;equicorrelated&quot;</span><span class="p">,</span> <span class="s2">&quot;toeplitz&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;equicorrelated&quot;</span>
+    <span class="n">correlation_structure</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">"equicorrelated"</span><span class="p">,</span> <span class="s2">"toeplitz"</span><span class="p">]</span> <span class="o">=</span> <span class="s2">"equicorrelated"</span>
     <span class="n">baseline_correlation</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.0</span>
     <span class="n">anchor_index</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span>
     <span class="n">proxy_attenuation</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1.0</span>
@@ -523,25 +523,25 @@
     <span class="n">covariance_channel</span><span class="p">:</span> <span class="n">CovarianceChannel</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
     <span class="n">label</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
 
-    <span class="nd">@model_validator</span><span class="p">(</span><span class="n">mode</span><span class="o">=</span><span class="s2">&quot;after&quot;</span><span class="p">)</span>
+    <span class="nd">@model_validator</span><span class="p">(</span><span class="n">mode</span><span class="o">=</span><span class="s2">"after"</span><span class="p">)</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">_validate_structure</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Validate anchor index and all correlations against the block shape.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""Validate anchor index and all correlations against the block shape."""</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="mi">0</span> <span class="o">&lt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">anchor_index</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_cluster_features</span><span class="p">):</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;anchor_index must be in [0, </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">n_cluster_features</span><span class="si">}</span><span class="s2">), got </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">anchor_index</span><span class="si">}</span><span class="s2">.&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"anchor_index must be in [0, </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">n_cluster_features</span><span class="si">}</span><span class="s2">), got </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">anchor_index</span><span class="si">}</span><span class="s2">."</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="ow">not</span> <span class="n">_correlation_in_range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">baseline_correlation</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_cluster_features</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">correlation_structure</span><span class="p">):</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                <span class="sa">f</span><span class="s2">&quot;baseline_correlation=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">baseline_correlation</span><span class="si">}</span><span class="s2"> invalid for &quot;</span>
-                <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">correlation_structure</span><span class="si">}</span><span class="s2"> with n_cluster_features=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">n_cluster_features</span><span class="si">}</span><span class="s2">.&quot;</span>
+                <span class="sa">f</span><span class="s2">"baseline_correlation=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">baseline_correlation</span><span class="si">}</span><span class="s2"> invalid for "</span>
+                <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">correlation_structure</span><span class="si">}</span><span class="s2"> with n_cluster_features=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">n_cluster_features</span><span class="si">}</span><span class="s2">."</span>
             <span class="p">)</span>
 
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">covariance_channel</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">for</span> <span class="n">class_index</span><span class="p">,</span> <span class="n">rho</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">covariance_channel</span><span class="o">.</span><span class="n">per_class_correlation</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
                 <span class="k">if</span> <span class="ow">not</span> <span class="n">_correlation_in_range</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">rho</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_cluster_features</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">correlation_structure</span><span class="p">):</span>
                     <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                        <span class="sa">f</span><span class="s2">&quot;covariance_channel correlation for class </span><span class="si">{</span><span class="n">class_index</span><span class="si">}</span><span class="s2"> is </span><span class="si">{</span><span class="n">rho</span><span class="si">}</span><span class="s2">, &quot;</span>
-                        <span class="sa">f</span><span class="s2">&quot;invalid for </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">correlation_structure</span><span class="si">}</span><span class="s2"> with &quot;</span>
-                        <span class="sa">f</span><span class="s2">&quot;n_cluster_features=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">n_cluster_features</span><span class="si">}</span><span class="s2">.&quot;</span>
+                        <span class="sa">f</span><span class="s2">"covariance_channel correlation for class </span><span class="si">{</span><span class="n">class_index</span><span class="si">}</span><span class="s2"> is </span><span class="si">{</span><span class="n">rho</span><span class="si">}</span><span class="s2">, "</span>
+                        <span class="sa">f</span><span class="s2">"invalid for </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">correlation_structure</span><span class="si">}</span><span class="s2"> with "</span>
+                        <span class="sa">f</span><span class="s2">"n_cluster_features=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">n_cluster_features</span><span class="si">}</span><span class="s2">."</span>
                     <span class="p">)</span>
         <span class="k">return</span> <span class="bp">self</span>
 
@@ -550,11 +550,11 @@
 <div class="viewcode-block" id="CorrClusterConfig.effective_correlation_for_class">
 <a class="viewcode-back" href="../../_autosummary/biomedical_data_generator.config.CorrClusterConfig.html#biomedical_data_generator.CorrClusterConfig.effective_correlation_for_class">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">effective_correlation_for_class</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">class_index</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Resolve the within-block correlation for a class.</span>
+<span class="w">        </span><span class="sd">"""Resolve the within-block correlation for a class.</span>
 
 <span class="sd">        The covariance channel value for ``class_index`` if present, otherwise the</span>
-<span class="sd">        cluster&#39;s ``baseline_correlation``.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        cluster's ``baseline_correlation``.</span>
+<span class="sd">        """</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">covariance_channel</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">baseline_correlation</span><span class="p">)</span>
         <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">covariance_channel</span><span class="o">.</span><span class="n">per_class_correlation</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">class_index</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">baseline_correlation</span><span class="p">))</span></div>
@@ -563,7 +563,7 @@
 <div class="viewcode-block" id="CorrClusterConfig.mean_effect_for_class">
 <a class="viewcode-back" href="../../_autosummary/biomedical_data_generator.config.CorrClusterConfig.html#biomedical_data_generator.CorrClusterConfig.mean_effect_for_class">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">mean_effect_for_class</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">class_index</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Resolve the anchor mean shift for a class (0.0 when absent or no channel).&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""Resolve the anchor mean shift for a class (0.0 when absent or no channel)."""</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">mean_channel</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">return</span> <span class="mf">0.0</span>
         <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">mean_channel</span><span class="o">.</span><span class="n">per_class_effect</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">class_index</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">))</span></div>
@@ -574,7 +574,7 @@
 <div class="viewcode-block" id="StandaloneInformativeGroup">
 <a class="viewcode-back" href="../../_autosummary/biomedical_data_generator.config.StandaloneInformativeGroup.html#biomedical_data_generator.StandaloneInformativeGroup">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">StandaloneInformativeGroup</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;A group of standalone informative features sharing one separation strength.</span>
+<span class="w">    </span><span class="sd">"""A group of standalone informative features sharing one separation strength.</span>
 
 <span class="sd">    All members are independent (cluster-free) informative features. They share</span>
 <span class="sd">    the per-class base distribution defined globally on ``ClassConfig`` and differ</span>
@@ -588,40 +588,40 @@
 <span class="sd">            ``n_classes - 1`` vector of equal pairwise separations; a sequence</span>
 <span class="sd">            gives the pairwise separations directly. Offsets are formed exactly as</span>
 <span class="sd">            for the existing standalone mechanism (centered cumulative sums).</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
-    <span class="n">model_config</span> <span class="o">=</span> <span class="n">ConfigDict</span><span class="p">(</span><span class="n">extra</span><span class="o">=</span><span class="s2">&quot;forbid&quot;</span><span class="p">)</span>
+    <span class="n">model_config</span> <span class="o">=</span> <span class="n">ConfigDict</span><span class="p">(</span><span class="n">extra</span><span class="o">=</span><span class="s2">"forbid"</span><span class="p">)</span>
 
-    <span class="n">n_features</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="o">...</span><span class="p">,</span> <span class="n">ge</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">description</span><span class="o">=</span><span class="s2">&quot;Number of standalone informative features in this group.&quot;</span><span class="p">)</span>
+    <span class="n">n_features</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="o">...</span><span class="p">,</span> <span class="n">ge</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">description</span><span class="o">=</span><span class="s2">"Number of standalone informative features in this group."</span><span class="p">)</span>
     <span class="n">class_sep</span><span class="p">:</span> <span class="nb">float</span> <span class="o">|</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span>
         <span class="o">...</span><span class="p">,</span>
-        <span class="n">description</span><span class="o">=</span><span class="s2">&quot;Per-class separation (scalar broadcast, or sequence of length n_classes - 1).&quot;</span><span class="p">,</span>
+        <span class="n">description</span><span class="o">=</span><span class="s2">"Per-class separation (scalar broadcast, or sequence of length n_classes - 1)."</span><span class="p">,</span>
     <span class="p">)</span>
 
-    <span class="nd">@field_validator</span><span class="p">(</span><span class="s2">&quot;class_sep&quot;</span><span class="p">)</span>
+    <span class="nd">@field_validator</span><span class="p">(</span><span class="s2">"class_sep"</span><span class="p">)</span>
     <span class="nd">@classmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">_validate_class_sep_finite</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">v</span><span class="p">:</span> <span class="nb">float</span> <span class="o">|</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">float</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">float</span> <span class="o">|</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">float</span><span class="p">]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Validate finiteness only; the length-vs-n_classes check lives on DatasetConfig.</span>
+<span class="w">        </span><span class="sd">"""Validate finiteness only; the length-vs-n_classes check lives on DatasetConfig.</span>
 
 <span class="sd">        A scalar ``class_sep`` must be finite; every entry of a sequence</span>
 <span class="sd">        ``class_sep`` must be finite. The length validation against</span>
 <span class="sd">        ``n_classes - 1`` requires ``n_classes`` and is therefore deferred to</span>
 <span class="sd">        ``DatasetConfig``.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">))</span> <span class="ow">and</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="nb">bool</span><span class="p">):</span>
             <span class="k">if</span> <span class="ow">not</span> <span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">v</span><span class="p">)):</span>
-                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;class_sep must be finite, got </span><span class="si">{</span><span class="n">v</span><span class="si">!r}</span><span class="s2">.&quot;</span><span class="p">)</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"class_sep must be finite, got </span><span class="si">{</span><span class="n">v</span><span class="si">!r}</span><span class="s2">."</span><span class="p">)</span>
             <span class="k">return</span> <span class="n">v</span>
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="n">Sequence</span><span class="p">)</span> <span class="ow">and</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="nb">bytes</span><span class="p">)):</span>
             <span class="k">for</span> <span class="n">entry</span> <span class="ow">in</span> <span class="n">v</span><span class="p">:</span>
                 <span class="k">try</span><span class="p">:</span>
                     <span class="n">fentry</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">entry</span><span class="p">)</span>
                 <span class="k">except</span> <span class="p">(</span><span class="ne">TypeError</span><span class="p">,</span> <span class="ne">ValueError</span><span class="p">)</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-                    <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;class_sep entries must be numeric, got </span><span class="si">{</span><span class="n">entry</span><span class="si">!r}</span><span class="s2">.&quot;</span><span class="p">)</span> <span class="kn">from</span><span class="w"> </span><span class="nn">e</span>
+                    <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"class_sep entries must be numeric, got </span><span class="si">{</span><span class="n">entry</span><span class="si">!r}</span><span class="s2">."</span><span class="p">)</span> <span class="kn">from</span><span class="w"> </span><span class="nn">e</span>
                 <span class="k">if</span> <span class="ow">not</span> <span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">fentry</span><span class="p">):</span>
-                    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;class_sep entries must be finite, got </span><span class="si">{</span><span class="n">entry</span><span class="si">!r}</span><span class="s2">.&quot;</span><span class="p">)</span>
+                    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"class_sep entries must be finite, got </span><span class="si">{</span><span class="n">entry</span><span class="si">!r}</span><span class="s2">."</span><span class="p">)</span>
             <span class="k">return</span> <span class="n">v</span>
-        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;class_sep must be a number or sequence of numbers, got </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">v</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">.&quot;</span><span class="p">)</span></div>
+        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"class_sep must be a number or sequence of numbers, got </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">v</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">."</span><span class="p">)</span></div>
 
 
 
@@ -631,7 +631,7 @@
 <div class="viewcode-block" id="DatasetConfig">
 <a class="viewcode-back" href="../../_autosummary/biomedical_data_generator.config.DatasetConfig.html#biomedical_data_generator.DatasetConfig">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">DatasetConfig</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Configuration for synthetic dataset generation.</span>
+<span class="w">    </span><span class="sd">"""Configuration for synthetic dataset generation.</span>
 
 <span class="sd">    This model defines the *input-level* controls for building a synthetic dataset.</span>
 <span class="sd">    Signal is expressed structurally through channels, never through declared</span>
@@ -686,9 +686,9 @@
 <span class="sd">                * Standalone noise:       n1, n2, ...</span>
 <span class="sd">                * Correlated:             corr{cid}_anchor, corr{cid}_2, ..., corr{cid}_k</span>
 <span class="sd">            If False, use generic feature_{i} naming. Default: True.</span>
-<span class="sd">        prefix_informative (str): Prefix for informative features (if prefixed_feature_naming=True). Default: &quot;i&quot;.</span>
-<span class="sd">        prefix_noise (str): Prefix for noise features (if prefixed_feature_naming=True). Default: &quot;n&quot;.</span>
-<span class="sd">        prefix_corr (str): Prefix for correlated cluster features (if prefixed_feature_naming=True). Default: &quot;corr&quot;.</span>
+<span class="sd">        prefix_informative (str): Prefix for informative features (if prefixed_feature_naming=True). Default: "i".</span>
+<span class="sd">        prefix_noise (str): Prefix for noise features (if prefixed_feature_naming=True). Default: "n".</span>
+<span class="sd">        prefix_corr (str): Prefix for correlated cluster features (if prefixed_feature_naming=True). Default: "corr".</span>
 <span class="sd">        batch_effects (BatchEffectsConfig): Optional BatchEffectsConfig for simulating batch effects.</span>
 <span class="sd">        random_state (int | None): Global random seed for dataset generation.</span>
 
@@ -728,56 +728,56 @@
 <span class="sd">        ...     ],</span>
 <span class="sd">        ...     n_standalone_noise=3,</span>
 <span class="sd">        ...     class_configs=[</span>
-<span class="sd">        ...         ClassConfig(n_samples=50, label=&quot;healthy&quot;),</span>
-<span class="sd">        ...         ClassConfig(n_samples=50, label=&quot;diseased&quot;),</span>
+<span class="sd">        ...         ClassConfig(n_samples=50, label="healthy"),</span>
+<span class="sd">        ...         ClassConfig(n_samples=50, label="diseased"),</span>
 <span class="sd">        ...     ],</span>
 <span class="sd">        ...     corr_clusters=[</span>
 <span class="sd">        ...         CorrClusterConfig(</span>
 <span class="sd">        ...             n_cluster_features=4,</span>
 <span class="sd">        ...             baseline_correlation=0.8,</span>
 <span class="sd">        ...             mean_channel=MeanChannel(per_class_effect={1: 1.5}),</span>
-<span class="sd">        ...             label=&quot;Metabolic Pathway A&quot;,</span>
+<span class="sd">        ...             label="Metabolic Pathway A",</span>
 <span class="sd">        ...         ),</span>
 <span class="sd">        ...         CorrClusterConfig(</span>
 <span class="sd">        ...             n_cluster_features=3,</span>
 <span class="sd">        ...             baseline_correlation=0.5,</span>
-<span class="sd">        ...             label=&quot;Structural Correlated Block&quot;,</span>
+<span class="sd">        ...             label="Structural Correlated Block",</span>
 <span class="sd">        ...         ),</span>
 <span class="sd">        ...     ],</span>
-<span class="sd">        ...     noise_distribution=&quot;normal&quot;,</span>
-<span class="sd">        ...     noise_distribution_params={&quot;loc&quot;: 0, &quot;scale&quot;: 1},</span>
+<span class="sd">        ...     noise_distribution="normal",</span>
+<span class="sd">        ...     noise_distribution_params={"loc": 0, "scale": 1},</span>
 <span class="sd">        ...     prefixed_feature_naming=True,</span>
 <span class="sd">        ...     random_state=42,</span>
 <span class="sd">        ... )</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
-    <span class="n">model_config</span> <span class="o">=</span> <span class="n">ConfigDict</span><span class="p">(</span><span class="n">extra</span><span class="o">=</span><span class="s2">&quot;forbid&quot;</span><span class="p">)</span>
+    <span class="n">model_config</span> <span class="o">=</span> <span class="n">ConfigDict</span><span class="p">(</span><span class="n">extra</span><span class="o">=</span><span class="s2">"forbid"</span><span class="p">)</span>
 
     <span class="c1"># Core dataset structure (standalone, non-cluster features)</span>
     <span class="n">standalone_informative_groups</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">StandaloneInformativeGroup</span><span class="p">]</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span>
         <span class="n">default_factory</span><span class="o">=</span><span class="nb">list</span><span class="p">,</span>
-        <span class="n">description</span><span class="o">=</span><span class="s2">&quot;Groups of standalone informative features, each with its own separation strength.&quot;</span><span class="p">,</span>
+        <span class="n">description</span><span class="o">=</span><span class="s2">"Groups of standalone informative features, each with its own separation strength."</span><span class="p">,</span>
     <span class="p">)</span>
     <span class="n">n_standalone_noise</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">default</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">ge</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
 
     <span class="c1"># Multi-class controls</span>
     <span class="n">class_configs</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">ClassConfig</span><span class="p">]</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span>
-        <span class="p">[</span><span class="n">ClassConfig</span><span class="p">(</span><span class="n">n_samples</span><span class="o">=</span><span class="mi">30</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;healthy&quot;</span><span class="p">),</span> <span class="n">ClassConfig</span><span class="p">(</span><span class="n">n_samples</span><span class="o">=</span><span class="mi">30</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;diseased&quot;</span><span class="p">)],</span> <span class="n">min_length</span><span class="o">=</span><span class="mi">2</span>
+        <span class="p">[</span><span class="n">ClassConfig</span><span class="p">(</span><span class="n">n_samples</span><span class="o">=</span><span class="mi">30</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">"healthy"</span><span class="p">),</span> <span class="n">ClassConfig</span><span class="p">(</span><span class="n">n_samples</span><span class="o">=</span><span class="mi">30</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">"diseased"</span><span class="p">)],</span> <span class="n">min_length</span><span class="o">=</span><span class="mi">2</span>
     <span class="p">)</span>
 
     <span class="c1"># Noise distribution (NumPy Generator API)</span>
-    <span class="n">noise_distribution</span><span class="p">:</span> <span class="n">DistributionType</span> <span class="o">=</span> <span class="s2">&quot;normal&quot;</span>
+    <span class="n">noise_distribution</span><span class="p">:</span> <span class="n">DistributionType</span> <span class="o">=</span> <span class="s2">"normal"</span>
     <span class="n">noise_distribution_params</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span>
         <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-        <span class="n">description</span><span class="o">=</span><span class="s2">&quot;Parameters for the noise distribution. If None, distribution-specific defaults are derived.&quot;</span><span class="p">,</span>
+        <span class="n">description</span><span class="o">=</span><span class="s2">"Parameters for the noise distribution. If None, distribution-specific defaults are derived."</span><span class="p">,</span>
     <span class="p">)</span>
 
     <span class="c1"># Naming</span>
     <span class="n">prefixed_feature_naming</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span>
-    <span class="n">prefix_informative</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;i&quot;</span>
-    <span class="n">prefix_noise</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;n&quot;</span>
+    <span class="n">prefix_informative</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"i"</span>
+    <span class="n">prefix_noise</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"n"</span>
 
-    <span class="n">prefix_corr</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;corr&quot;</span>
+    <span class="n">prefix_corr</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"corr"</span>
 
     <span class="c1"># Correlated structure</span>
     <span class="n">corr_clusters</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">CorrClusterConfig</span><span class="p">]</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="nb">list</span><span class="p">)</span>
@@ -790,89 +790,89 @@
 
     <span class="c1"># ------------------------------------------------------ before validator</span>
 
-    <span class="nd">@model_validator</span><span class="p">(</span><span class="n">mode</span><span class="o">=</span><span class="s2">&quot;before&quot;</span><span class="p">)</span>
+    <span class="nd">@model_validator</span><span class="p">(</span><span class="n">mode</span><span class="o">=</span><span class="s2">"before"</span><span class="p">)</span>
     <span class="nd">@classmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">_normalize_and_validate</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Validate incoming data BEFORE model construction.</span>
+<span class="w">        </span><span class="sd">"""Validate incoming data BEFORE model construction.</span>
 
 <span class="sd">        Forbids manual setting of derived counts and requires at least two</span>
 <span class="sd">        classes. Per-class separation now lives on each</span>
 <span class="sd">        ``StandaloneInformativeGroup`` (``class_sep``); there is no top-level</span>
 <span class="sd">        ``class_sep`` to normalize here.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="bp">cls</span><span class="p">):</span>
             <span class="k">return</span> <span class="n">data</span>
 
         <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">Mapping</span><span class="p">):</span>
-            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;DatasetConfig expects a mapping-like raw_config, got </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">data</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"DatasetConfig expects a mapping-like raw_config, got </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">data</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 
         <span class="n">d</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
 
         <span class="c1"># Forbid manual override of derived attributes</span>
         <span class="k">for</span> <span class="n">forbidden</span> <span class="ow">in</span> <span class="p">(</span>
-            <span class="s2">&quot;n_samples&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;n_classes&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;n_features&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;n_informative&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;n_noise&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;n_standalone_informative&quot;</span><span class="p">,</span>
+            <span class="s2">"n_samples"</span><span class="p">,</span>
+            <span class="s2">"n_classes"</span><span class="p">,</span>
+            <span class="s2">"n_features"</span><span class="p">,</span>
+            <span class="s2">"n_informative"</span><span class="p">,</span>
+            <span class="s2">"n_noise"</span><span class="p">,</span>
+            <span class="s2">"n_standalone_informative"</span><span class="p">,</span>
         <span class="p">):</span>
             <span class="k">if</span> <span class="n">forbidden</span> <span class="ow">in</span> <span class="n">d</span><span class="p">:</span>
                 <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                    <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">forbidden</span><span class="si">}</span><span class="s2"> is derived from class_configs/corr_clusters/&quot;</span>
-                    <span class="s2">&quot;standalone_informative_groups and must not be set manually on DatasetConfig.&quot;</span>
+                    <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">forbidden</span><span class="si">}</span><span class="s2"> is derived from class_configs/corr_clusters/"</span>
+                    <span class="s2">"standalone_informative_groups and must not be set manually on DatasetConfig."</span>
                 <span class="p">)</span>
 
-        <span class="n">classes</span> <span class="o">=</span> <span class="n">d</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;class_configs&quot;</span><span class="p">)</span>
+        <span class="n">classes</span> <span class="o">=</span> <span class="n">d</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"class_configs"</span><span class="p">)</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">classes</span><span class="p">,</span> <span class="n">Sequence</span><span class="p">)</span> <span class="ow">or</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">classes</span><span class="p">,</span> <span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="nb">bytes</span><span class="p">)):</span>
-            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;class_configs must be a non-string sequence of class definitions.&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">"class_configs must be a non-string sequence of class definitions."</span><span class="p">)</span>
 
         <span class="n">n_classes</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">classes</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">n_classes</span> <span class="o">&lt;</span> <span class="mi">2</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;At least two classes are required, got </span><span class="si">{</span><span class="n">n_classes</span><span class="si">}</span><span class="s2">.&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"At least two classes are required, got </span><span class="si">{</span><span class="n">n_classes</span><span class="si">}</span><span class="s2">."</span><span class="p">)</span>
 
         <span class="k">return</span> <span class="n">d</span>
 
     <span class="c1"># ------------------------------------------------------ field validation</span>
 
-    <span class="nd">@field_validator</span><span class="p">(</span><span class="s2">&quot;noise_distribution_params&quot;</span><span class="p">)</span>
+    <span class="nd">@field_validator</span><span class="p">(</span><span class="s2">"noise_distribution_params"</span><span class="p">)</span>
     <span class="nd">@classmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">_validate_noise_params</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">v</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">float</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span><span class="p">,</span> <span class="n">info</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">float</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Validate distribution parameters match the chosen noise distribution.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""Validate distribution parameters match the chosen noise distribution."""</span>
         <span class="k">if</span> <span class="n">v</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">return</span> <span class="n">v</span>
-        <span class="n">distribution</span> <span class="o">=</span> <span class="n">info</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;noise_distribution&quot;</span><span class="p">,</span> <span class="s2">&quot;normal&quot;</span><span class="p">)</span>
+        <span class="n">distribution</span> <span class="o">=</span> <span class="n">info</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"noise_distribution"</span><span class="p">,</span> <span class="s2">"normal"</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">validate_distribution_params</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="n">distribution</span><span class="p">)</span>
 
-    <span class="nd">@model_validator</span><span class="p">(</span><span class="n">mode</span><span class="o">=</span><span class="s2">&quot;after&quot;</span><span class="p">)</span>
+    <span class="nd">@model_validator</span><span class="p">(</span><span class="n">mode</span><span class="o">=</span><span class="s2">"after"</span><span class="p">)</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">_resolve_noise_distribution_params</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Derive distribution-specific default noise parameters when none are given.</span>
+<span class="w">        </span><span class="sd">"""Derive distribution-specific default noise parameters when none are given.</span>
 
 <span class="sd">        Without this, selecting a non-default ``noise_distribution`` (e.g.</span>
-<span class="sd">        &quot;uniform&quot;) and omitting parameters would either fail validation or leave</span>
+<span class="sd">        "uniform") and omitting parameters would either fail validation or leave</span>
 <span class="sd">        the config carrying parameters that do not match the distribution.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">noise_distribution_params</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="nb">object</span><span class="o">.</span><span class="fm">__setattr__</span><span class="p">(</span>
                 <span class="bp">self</span><span class="p">,</span>
-                <span class="s2">&quot;noise_distribution_params&quot;</span><span class="p">,</span>
+                <span class="s2">"noise_distribution_params"</span><span class="p">,</span>
                 <span class="n">default_distribution_params</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">noise_distribution</span><span class="p">),</span>
             <span class="p">)</span>
         <span class="k">return</span> <span class="bp">self</span>
 
     <span class="c1"># ------------------------------------------------------ after validators</span>
-    <span class="nd">@model_validator</span><span class="p">(</span><span class="n">mode</span><span class="o">=</span><span class="s2">&quot;after&quot;</span><span class="p">)</span>
+    <span class="nd">@model_validator</span><span class="p">(</span><span class="n">mode</span><span class="o">=</span><span class="s2">"after"</span><span class="p">)</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">_auto_generate_labels</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Auto-generate labels as &#39;class_{idx}&#39; if not provided.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""Auto-generate labels as 'class_{idx}' if not provided."""</span>
         <span class="k">for</span> <span class="n">idx</span><span class="p">,</span> <span class="n">cls_cfg</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">class_configs</span><span class="p">):</span>
-            <span class="k">if</span> <span class="n">cls_cfg</span><span class="o">.</span><span class="n">label</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">cls_cfg</span><span class="o">.</span><span class="n">label</span> <span class="o">==</span> <span class="s2">&quot;&quot;</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">cls_cfg</span><span class="o">.</span><span class="n">label</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">cls_cfg</span><span class="o">.</span><span class="n">label</span> <span class="o">==</span> <span class="s2">""</span><span class="p">:</span>
                 <span class="c1"># ClassConfig is a BaseModel, so we need object.__setattr__</span>
-                <span class="nb">object</span><span class="o">.</span><span class="fm">__setattr__</span><span class="p">(</span><span class="n">cls_cfg</span><span class="p">,</span> <span class="s2">&quot;label&quot;</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;class_</span><span class="si">{</span><span class="n">idx</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                <span class="nb">object</span><span class="o">.</span><span class="fm">__setattr__</span><span class="p">(</span><span class="n">cls_cfg</span><span class="p">,</span> <span class="s2">"label"</span><span class="p">,</span> <span class="sa">f</span><span class="s2">"class_</span><span class="si">{</span><span class="n">idx</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
         <span class="k">return</span> <span class="bp">self</span>
 
-    <span class="nd">@model_validator</span><span class="p">(</span><span class="n">mode</span><span class="o">=</span><span class="s2">&quot;after&quot;</span><span class="p">)</span>
+    <span class="nd">@model_validator</span><span class="p">(</span><span class="n">mode</span><span class="o">=</span><span class="s2">"after"</span><span class="p">)</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">_validate_group_class_sep_lengths</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Validate sequence ``class_sep`` lengths on standalone informative groups.</span>
+<span class="w">        </span><span class="sd">"""Validate sequence ``class_sep`` lengths on standalone informative groups.</span>
 
 <span class="sd">        A scalar ``class_sep`` is always valid (it broadcasts). A sequence must</span>
 <span class="sd">        have length ``n_classes - 1``. Finiteness is already enforced on</span>
@@ -880,22 +880,22 @@
 <span class="sd">        and therefore lives here.</span>
 
 <span class="sd">        Raises:</span>
-<span class="sd">            ValueError: If a group&#39;s sequence ``class_sep`` has the wrong length.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">            ValueError: If a group's sequence ``class_sep`` has the wrong length.</span>
+<span class="sd">        """</span>
         <span class="n">expected</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_classes</span> <span class="o">-</span> <span class="mi">1</span>
         <span class="k">for</span> <span class="n">group_id</span><span class="p">,</span> <span class="n">group</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">standalone_informative_groups</span><span class="p">):</span>
             <span class="n">sep</span> <span class="o">=</span> <span class="n">group</span><span class="o">.</span><span class="n">class_sep</span>
             <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">sep</span><span class="p">,</span> <span class="n">Sequence</span><span class="p">)</span> <span class="ow">and</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">sep</span><span class="p">,</span> <span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="nb">bytes</span><span class="p">)):</span>
                 <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">sep</span><span class="p">)</span> <span class="o">!=</span> <span class="n">expected</span><span class="p">:</span>
                     <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                        <span class="sa">f</span><span class="s2">&quot;standalone_informative_groups[</span><span class="si">{</span><span class="n">group_id</span><span class="si">}</span><span class="s2">].class_sep has length &quot;</span>
-                        <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">sep</span><span class="p">)</span><span class="si">}</span><span class="s2">, but must be n_classes - 1 (</span><span class="si">{</span><span class="n">expected</span><span class="si">}</span><span class="s2">).&quot;</span>
+                        <span class="sa">f</span><span class="s2">"standalone_informative_groups[</span><span class="si">{</span><span class="n">group_id</span><span class="si">}</span><span class="s2">].class_sep has length "</span>
+                        <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">sep</span><span class="p">)</span><span class="si">}</span><span class="s2">, but must be n_classes - 1 (</span><span class="si">{</span><span class="n">expected</span><span class="si">}</span><span class="s2">)."</span>
                     <span class="p">)</span>
         <span class="k">return</span> <span class="bp">self</span>
 
-    <span class="nd">@model_validator</span><span class="p">(</span><span class="n">mode</span><span class="o">=</span><span class="s2">&quot;after&quot;</span><span class="p">)</span>
+    <span class="nd">@model_validator</span><span class="p">(</span><span class="n">mode</span><span class="o">=</span><span class="s2">"after"</span><span class="p">)</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">_validate_channel_class_keys</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Validate that every per-class channel key is a valid class index.</span>
+<span class="w">        </span><span class="sd">"""Validate that every per-class channel key is a valid class index.</span>
 
 <span class="sd">        The channels are the only place class indices are referenced now; their</span>
 <span class="sd">        keys must lie in ``range(n_classes)``. This is the cross-cutting check</span>
@@ -904,22 +904,22 @@
 
 <span class="sd">        Raises:</span>
 <span class="sd">            ValueError: If a mean- or covariance-channel key is out of range.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="n">n_classes</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_classes</span>
         <span class="k">for</span> <span class="n">cluster_id</span><span class="p">,</span> <span class="n">cluster</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">corr_clusters</span> <span class="ow">or</span> <span class="p">[]):</span>
             <span class="k">if</span> <span class="n">cluster</span><span class="o">.</span><span class="n">mean_channel</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
                 <span class="k">for</span> <span class="n">class_index</span> <span class="ow">in</span> <span class="n">cluster</span><span class="o">.</span><span class="n">mean_channel</span><span class="o">.</span><span class="n">per_class_effect</span><span class="p">:</span>
                     <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="mi">0</span> <span class="o">&lt;=</span> <span class="n">class_index</span> <span class="o">&lt;</span> <span class="n">n_classes</span><span class="p">):</span>
                         <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                            <span class="sa">f</span><span class="s2">&quot;corr_clusters[</span><span class="si">{</span><span class="n">cluster_id</span><span class="si">}</span><span class="s2">].mean_channel has class index &quot;</span>
-                            <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">class_index</span><span class="si">}</span><span class="s2">, but only </span><span class="si">{</span><span class="n">n_classes</span><span class="si">}</span><span class="s2"> classes are defined.&quot;</span>
+                            <span class="sa">f</span><span class="s2">"corr_clusters[</span><span class="si">{</span><span class="n">cluster_id</span><span class="si">}</span><span class="s2">].mean_channel has class index "</span>
+                            <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">class_index</span><span class="si">}</span><span class="s2">, but only </span><span class="si">{</span><span class="n">n_classes</span><span class="si">}</span><span class="s2"> classes are defined."</span>
                         <span class="p">)</span>
             <span class="k">if</span> <span class="n">cluster</span><span class="o">.</span><span class="n">covariance_channel</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
                 <span class="k">for</span> <span class="n">class_index</span> <span class="ow">in</span> <span class="n">cluster</span><span class="o">.</span><span class="n">covariance_channel</span><span class="o">.</span><span class="n">per_class_correlation</span><span class="p">:</span>
                     <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="mi">0</span> <span class="o">&lt;=</span> <span class="n">class_index</span> <span class="o">&lt;</span> <span class="n">n_classes</span><span class="p">):</span>
                         <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                            <span class="sa">f</span><span class="s2">&quot;corr_clusters[</span><span class="si">{</span><span class="n">cluster_id</span><span class="si">}</span><span class="s2">].covariance_channel has class index &quot;</span>
-                            <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">class_index</span><span class="si">}</span><span class="s2">, but only </span><span class="si">{</span><span class="n">n_classes</span><span class="si">}</span><span class="s2"> classes are defined.&quot;</span>
+                            <span class="sa">f</span><span class="s2">"corr_clusters[</span><span class="si">{</span><span class="n">cluster_id</span><span class="si">}</span><span class="s2">].covariance_channel has class index "</span>
+                            <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">class_index</span><span class="si">}</span><span class="s2">, but only </span><span class="si">{</span><span class="n">n_classes</span><span class="si">}</span><span class="s2"> classes are defined."</span>
                         <span class="p">)</span>
         <span class="k">return</span> <span class="bp">self</span>
 
@@ -927,10 +927,10 @@
 <a class="viewcode-back" href="../../_autosummary/biomedical_data_generator.config.DatasetConfig.html#biomedical_data_generator.DatasetConfig.from_yaml">[docs]</a>
     <span class="nd">@classmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">from_yaml</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">path</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">DatasetConfig</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Load from YAML and validate via the same pipeline.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""Load from YAML and validate via the same pipeline."""</span>
         <span class="kn">import</span><span class="w"> </span><span class="nn">yaml</span>  <span class="c1"># local import to keep core dependencies lean</span>
 
-        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s2">&quot;utf-8&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s2">"utf-8"</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
             <span class="n">raw_config</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">=</span> <span class="n">yaml</span><span class="o">.</span><span class="n">safe_load</span><span class="p">(</span><span class="n">f</span><span class="p">)</span> <span class="ow">or</span> <span class="p">{}</span>
         <span class="k">return</span> <span class="bp">cls</span><span class="o">.</span><span class="n">model_validate</span><span class="p">(</span><span class="n">raw_config</span><span class="p">)</span></div>
 
@@ -938,7 +938,7 @@
 <div class="viewcode-block" id="DatasetConfig.cluster_informative_flags">
 <a class="viewcode-back" href="../../_autosummary/biomedical_data_generator.config.DatasetConfig.html#biomedical_data_generator.DatasetConfig.cluster_informative_flags">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">cluster_informative_flags</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">bool</span><span class="p">]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Per-cluster booleans: whether each cluster is *derived* informative.</span>
+<span class="w">        </span><span class="sd">"""Per-cluster booleans: whether each cluster is *derived* informative.</span>
 
 <span class="sd">        Relevance is derived from the channel mappings via the shared predicate,</span>
 <span class="sd">        never declared. A cluster is informative iff its mean channel varies</span>
@@ -947,7 +947,7 @@
 
 <span class="sd">        Returns:</span>
 <span class="sd">            One boolean per cluster, in ``corr_clusters`` order.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="n">flags</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">bool</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="k">for</span> <span class="n">cluster</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">corr_clusters</span> <span class="ow">or</span> <span class="p">[]:</span>
             <span class="n">mean_per_class</span> <span class="o">=</span> <span class="n">cluster</span><span class="o">.</span><span class="n">mean_channel</span><span class="o">.</span><span class="n">per_class_effect</span> <span class="k">if</span> <span class="n">cluster</span><span class="o">.</span><span class="n">mean_channel</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="kc">None</span>
@@ -968,12 +968,12 @@
 <div class="viewcode-block" id="DatasetConfig.cluster_column_informative_flags">
 <a class="viewcode-back" href="../../_autosummary/biomedical_data_generator.config.DatasetConfig.html#biomedical_data_generator.DatasetConfig.cluster_column_informative_flags">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">cluster_column_informative_flags</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">list</span><span class="p">[</span><span class="nb">bool</span><span class="p">]]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Per-column booleans: whether each cluster column is *derived* informative.</span>
+<span class="w">        </span><span class="sd">"""Per-column booleans: whether each cluster column is *derived* informative.</span>
 
 <span class="sd">        The per-column refinement of :meth:`cluster_informative_flags`. Relevance</span>
 <span class="sd">        is derived per column from the channel mappings via the shared predicate,</span>
 <span class="sd">        never declared. A cluster column is informative iff it carries a</span>
-<span class="sd">        class-dependent mean shift (the anchor&#39;s shift, or a proxy&#39;s attenuated</span>
+<span class="sd">        class-dependent mean shift (the anchor's shift, or a proxy's attenuated</span>
 <span class="sd">        propagation) or participates in a class-dependent within-cluster</span>
 <span class="sd">        correlation. A single cluster may therefore split across informative and</span>
 <span class="sd">        noise roles (e.g. an informative anchor with noise proxies).</span>
@@ -981,7 +981,7 @@
 <span class="sd">        Returns:</span>
 <span class="sd">            One inner list per cluster, in ``corr_clusters`` order, with one</span>
 <span class="sd">            boolean per column (anchor and proxies) in block-column order.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="n">flags</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">list</span><span class="p">[</span><span class="nb">bool</span><span class="p">]]</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="k">for</span> <span class="n">cluster</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">corr_clusters</span> <span class="ow">or</span> <span class="p">[]:</span>
             <span class="n">mean_per_class</span> <span class="o">=</span> <span class="n">cluster</span><span class="o">.</span><span class="n">mean_channel</span><span class="o">.</span><span class="n">per_class_effect</span> <span class="k">if</span> <span class="n">cluster</span><span class="o">.</span><span class="n">mean_channel</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="kc">None</span>
@@ -1006,42 +1006,42 @@
 
     <span class="nd">@property</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">n_standalone_informative</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Derived count of standalone (cluster-free) informative features.</span>
+<span class="w">        </span><span class="sd">"""Derived count of standalone (cluster-free) informative features.</span>
 
 <span class="sd">        Sum of ``n_features`` across all :attr:`standalone_informative_groups`.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">return</span> <span class="nb">int</span><span class="p">(</span><span class="nb">sum</span><span class="p">(</span><span class="n">group</span><span class="o">.</span><span class="n">n_features</span> <span class="k">for</span> <span class="n">group</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">standalone_informative_groups</span><span class="p">))</span>
 
     <span class="nd">@property</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">n_informative</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Derived informative feature count.</span>
+<span class="w">        </span><span class="sd">"""Derived informative feature count.</span>
 
 <span class="sd">        Standalone informative features plus all members of clusters that the</span>
 <span class="sd">        signal predicate marks informative.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="n">cluster_informative</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="nb">sum</span><span class="p">(</span><span class="n">column_flags</span><span class="p">)</span> <span class="k">for</span> <span class="n">column_flags</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">cluster_column_informative_flags</span><span class="p">())</span>
         <span class="k">return</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">n_standalone_informative</span> <span class="o">+</span> <span class="n">cluster_informative</span><span class="p">)</span>
 
     <span class="nd">@property</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">n_noise</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Derived noise feature count: the complement of :attr:`n_informative`.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""Derived noise feature count: the complement of :attr:`n_informative`."""</span>
         <span class="k">return</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">n_features</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_informative</span><span class="p">)</span>
 
     <span class="c1"># ------------------------------ derived global counts ---------------------</span>
 
     <span class="nd">@property</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">n_samples</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Total samples (derived from class_configs).&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""Total samples (derived from class_configs)."""</span>
         <span class="k">return</span> <span class="nb">sum</span><span class="p">(</span><span class="n">c</span><span class="o">.</span><span class="n">n_samples</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">class_configs</span><span class="p">)</span>
 
     <span class="nd">@property</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">n_classes</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Number of classes (derived from class_configs).&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""Number of classes (derived from class_configs)."""</span>
         <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">class_configs</span><span class="p">)</span>
 
     <span class="nd">@property</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">n_features</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Total number of features: standalone informative + standalone noise + cluster members.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""Total number of features: standalone informative + standalone noise + cluster members."""</span>
         <span class="n">cluster_members</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">c</span><span class="o">.</span><span class="n">n_cluster_features</span><span class="p">)</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">corr_clusters</span> <span class="ow">or</span> <span class="p">[]))</span>
         <span class="k">return</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">n_standalone_informative</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_standalone_noise</span> <span class="o">+</span> <span class="n">cluster_members</span><span class="p">)</span>
 
@@ -1049,21 +1049,21 @@
 
     <span class="nd">@property</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">class_labels</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;List of class labels (auto-generated or user-provided).&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""List of class labels (auto-generated or user-provided)."""</span>
         <span class="k">return</span> <span class="p">[</span>
-            <span class="n">c</span><span class="o">.</span><span class="n">label</span> <span class="k">if</span> <span class="p">(</span><span class="n">c</span><span class="o">.</span><span class="n">label</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">c</span><span class="o">.</span><span class="n">label</span> <span class="o">!=</span> <span class="s2">&quot;&quot;</span><span class="p">)</span> <span class="k">else</span> <span class="sa">f</span><span class="s2">&quot;class_</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="n">c</span><span class="o">.</span><span class="n">label</span> <span class="k">if</span> <span class="p">(</span><span class="n">c</span><span class="o">.</span><span class="n">label</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">c</span><span class="o">.</span><span class="n">label</span> <span class="o">!=</span> <span class="s2">""</span><span class="p">)</span> <span class="k">else</span> <span class="sa">f</span><span class="s2">"class_</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2">"</span>
             <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">c</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">class_configs</span><span class="p">)</span>
         <span class="p">]</span>
 
     <span class="nd">@property</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">class_counts</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Class counts as dict {class_idx: n_samples}.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""Class counts as dict {class_idx: n_samples}."""</span>
         <span class="k">return</span> <span class="p">{</span><span class="n">idx</span><span class="p">:</span> <span class="n">c</span><span class="o">.</span><span class="n">n_samples</span> <span class="k">for</span> <span class="n">idx</span><span class="p">,</span> <span class="n">c</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">class_configs</span><span class="p">)}</span>
 
 <div class="viewcode-block" id="DatasetConfig.breakdown">
 <a class="viewcode-back" href="../../_autosummary/biomedical_data_generator.config.DatasetConfig.html#biomedical_data_generator.DatasetConfig.breakdown">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">breakdown</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">int</span><span class="p">]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Structured, derived feature counts.</span>
+<span class="w">        </span><span class="sd">"""Structured, derived feature counts.</span>
 
 <span class="sd">        Returns:</span>
 <span class="sd">            A dict with keys:</span>
@@ -1073,15 +1073,15 @@
 <span class="sd">            - n_informative (derived)</span>
 <span class="sd">            - n_noise (derived)</span>
 <span class="sd">            - n_features</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="n">cluster_members</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">c</span><span class="o">.</span><span class="n">n_cluster_features</span><span class="p">)</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">corr_clusters</span> <span class="ow">or</span> <span class="p">[]))</span>
         <span class="k">return</span> <span class="p">{</span>
-            <span class="s2">&quot;n_standalone_informative&quot;</span><span class="p">:</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">n_standalone_informative</span><span class="p">),</span>
-            <span class="s2">&quot;n_standalone_noise&quot;</span><span class="p">:</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">n_standalone_noise</span><span class="p">),</span>
-            <span class="s2">&quot;n_cluster_members&quot;</span><span class="p">:</span> <span class="nb">int</span><span class="p">(</span><span class="n">cluster_members</span><span class="p">),</span>
-            <span class="s2">&quot;n_informative&quot;</span><span class="p">:</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">n_informative</span><span class="p">),</span>
-            <span class="s2">&quot;n_noise&quot;</span><span class="p">:</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">n_noise</span><span class="p">),</span>
-            <span class="s2">&quot;n_features&quot;</span><span class="p">:</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">n_features</span><span class="p">),</span>
+            <span class="s2">"n_standalone_informative"</span><span class="p">:</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">n_standalone_informative</span><span class="p">),</span>
+            <span class="s2">"n_standalone_noise"</span><span class="p">:</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">n_standalone_noise</span><span class="p">),</span>
+            <span class="s2">"n_cluster_members"</span><span class="p">:</span> <span class="nb">int</span><span class="p">(</span><span class="n">cluster_members</span><span class="p">),</span>
+            <span class="s2">"n_informative"</span><span class="p">:</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">n_informative</span><span class="p">),</span>
+            <span class="s2">"n_noise"</span><span class="p">:</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">n_noise</span><span class="p">),</span>
+            <span class="s2">"n_features"</span><span class="p">:</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">n_features</span><span class="p">),</span>
         <span class="p">}</span></div>
 </div>
 

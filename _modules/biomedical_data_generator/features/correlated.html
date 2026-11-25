@@ -86,12 +86,12 @@
 <span class="c1"># This software is distributed under the terms of the MIT license</span>
 <span class="c1"># which is available at https://opensource.org/licenses/MIT</span>
 
-<span class="sa">r</span><span class="sd">&quot;&quot;&quot;Generation of correlated feature clusters simulating pathway-like modules.</span>
+<span class="sa">r</span><span class="sd">"""Generation of correlated feature clusters simulating pathway-like modules.</span>
 
 <span class="sd">Overview</span>
 <span class="sd">--------</span>
 <span class="sd">This module generates *correlated Gaussian feature clusters* that can be</span>
-<span class="sd">interpreted as simplified &quot;pathway-like&quot; modules (e.g., sets of co-expressed</span>
+<span class="sd">interpreted as simplified "pathway-like" modules (e.g., sets of co-expressed</span>
 <span class="sd">genes or co-regulated proteins).</span>
 
 <span class="sd">Each cluster is defined by:</span>
@@ -145,17 +145,17 @@
 <span class="sd">Anchor effects (mean channel)</span>
 <span class="sd">-----------------------------</span>
 <span class="sd">First-moment signal is carried by the optional ``mean_channel``. When present,</span>
-<span class="sd">the anchor feature receives the channel&#39;s per-class mean shift:</span>
+<span class="sd">the anchor feature receives the channel's per-class mean shift:</span>
 
 <span class="sd">.. math::</span>
 
 <span class="sd">    \mu_{anchor, c} = \text{mean\_channel.per\_class\_effect}[c],</span>
 
 <span class="sd">with absent classes receiving ``0.0`` (baseline). A proxy at block column</span>
-<span class="sd">``j`` inherits this shift structurally: the anchor&#39;s per-class effect is</span>
+<span class="sd">``j`` inherits this shift structurally: the anchor's per-class effect is</span>
 <span class="sd">propagated as ``effect * proxy_attenuation * sigma[anchor_index, j]``, where</span>
 <span class="sd">``sigma`` is the structural correlation matrix built from</span>
-<span class="sd">``correlation_structure`` and that class&#39;s effective correlation (the same</span>
+<span class="sd">``correlation_structure`` and that class's effective correlation (the same</span>
 <span class="sd">correlation that samples the block). The proxy shift is therefore deterministic</span>
 <span class="sd">and decays with structural distance from the anchor under a Toeplitz structure.</span>
 
@@ -184,7 +184,7 @@
 <span class="sd">------------</span>
 <span class="sd">Realistic enough for teaching and benchmarking, but not a fully realistic</span>
 <span class="sd">generative model for complex omics data.</span>
-<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">"""</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">annotations</span>
 
@@ -196,9 +196,9 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">biomedical_data_generator.meta</span><span class="w"> </span><span class="kn">import</span> <span class="n">_proxy_mean_offset</span>
 
 <span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span>
-    <span class="s2">&quot;build_correlation_matrix&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;sample_correlated_data&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;sample_all_correlated_clusters&quot;</span><span class="p">,</span>
+    <span class="s2">"build_correlation_matrix"</span><span class="p">,</span>
+    <span class="s2">"sample_correlated_data"</span><span class="p">,</span>
+    <span class="s2">"sample_all_correlated_clusters"</span><span class="p">,</span>
 <span class="p">]</span>
 
 <span class="n">CORRELATION_ZERO_THRESHOLD</span> <span class="o">=</span> <span class="mf">1e-12</span>
@@ -212,47 +212,47 @@
 <span class="k">def</span><span class="w"> </span><span class="nf">build_correlation_matrix</span><span class="p">(</span>
     <span class="n">n_features</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
     <span class="n">correlation</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
-    <span class="n">structure</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;equicorrelated&quot;</span><span class="p">,</span>
+    <span class="n">structure</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"equicorrelated"</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Build a correlation matrix with specified structure.</span>
+<span class="w">    </span><span class="sd">"""Build a correlation matrix with specified structure.</span>
 
 <span class="sd">    Args:</span>
 <span class="sd">        n_features: Number of features (matrix dimension).</span>
 <span class="sd">        correlation: Correlation parameter.</span>
-<span class="sd">        structure: Either &#39;equicorrelated&#39; or &#39;toeplitz&#39;.</span>
+<span class="sd">        structure: Either 'equicorrelated' or 'toeplitz'.</span>
 
 <span class="sd">    Returns:</span>
 <span class="sd">        Correlation matrix of shape (n_features, n_features).</span>
 
 <span class="sd">    Raises:</span>
 <span class="sd">        ValueError: If structure is unknown or correlation is out of bounds.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">if</span> <span class="n">structure</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">{</span><span class="s2">&quot;equicorrelated&quot;</span><span class="p">,</span> <span class="s2">&quot;toeplitz&quot;</span><span class="p">}:</span>
-        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Unknown correlation structure: </span><span class="si">{</span><span class="n">structure</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="sd">    """</span>
+    <span class="k">if</span> <span class="n">structure</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">{</span><span class="s2">"equicorrelated"</span><span class="p">,</span> <span class="s2">"toeplitz"</span><span class="p">}:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Unknown correlation structure: </span><span class="si">{</span><span class="n">structure</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 
     <span class="k">if</span> <span class="n">n_features</span> <span class="o">&lt;</span> <span class="mi">2</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Correlation matrix requires at least two features, got </span><span class="si">{</span><span class="n">n_features</span><span class="si">}</span><span class="s2">.&quot;</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Correlation matrix requires at least two features, got </span><span class="si">{</span><span class="n">n_features</span><span class="si">}</span><span class="s2">."</span><span class="p">)</span>
 
-    <span class="k">if</span> <span class="n">structure</span> <span class="o">==</span> <span class="s2">&quot;equicorrelated&quot;</span><span class="p">:</span>
+    <span class="k">if</span> <span class="n">structure</span> <span class="o">==</span> <span class="s2">"equicorrelated"</span><span class="p">:</span>
         <span class="n">lower_bound</span> <span class="o">=</span> <span class="o">-</span><span class="mf">1.0</span> <span class="o">/</span> <span class="p">(</span><span class="n">n_features</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="n">lower_bound</span> <span class="o">&lt;</span> <span class="n">correlation</span> <span class="o">&lt;</span> <span class="mf">1.0</span><span class="p">):</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                <span class="sa">f</span><span class="s2">&quot;For equicorrelated with n_features=</span><span class="si">{</span><span class="n">n_features</span><span class="si">}</span><span class="s2">, correlation must be in &quot;</span>
-                <span class="sa">f</span><span class="s2">&quot;(</span><span class="si">{</span><span class="n">lower_bound</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">, 1.0), got </span><span class="si">{</span><span class="n">correlation</span><span class="si">}</span><span class="s2">.&quot;</span>
+                <span class="sa">f</span><span class="s2">"For equicorrelated with n_features=</span><span class="si">{</span><span class="n">n_features</span><span class="si">}</span><span class="s2">, correlation must be in "</span>
+                <span class="sa">f</span><span class="s2">"(</span><span class="si">{</span><span class="n">lower_bound</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">, 1.0), got </span><span class="si">{</span><span class="n">correlation</span><span class="si">}</span><span class="s2">."</span>
             <span class="p">)</span>
         <span class="n">r</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">full</span><span class="p">((</span><span class="n">n_features</span><span class="p">,</span> <span class="n">n_features</span><span class="p">),</span> <span class="n">correlation</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span>
         <span class="n">np</span><span class="o">.</span><span class="n">fill_diagonal</span><span class="p">(</span><span class="n">r</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">r</span>
 
-    <span class="k">elif</span> <span class="n">structure</span> <span class="o">==</span> <span class="s2">&quot;toeplitz&quot;</span><span class="p">:</span>
+    <span class="k">elif</span> <span class="n">structure</span> <span class="o">==</span> <span class="s2">"toeplitz"</span><span class="p">:</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="o">-</span><span class="mf">1.0</span> <span class="o">&lt;</span> <span class="n">correlation</span> <span class="o">&lt;</span> <span class="mf">1.0</span><span class="p">):</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;For toeplitz, correlation must be in (-1.0, 1.0), got </span><span class="si">{</span><span class="n">correlation</span><span class="si">}</span><span class="s2">.&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"For toeplitz, correlation must be in (-1.0, 1.0), got </span><span class="si">{</span><span class="n">correlation</span><span class="si">}</span><span class="s2">."</span><span class="p">)</span>
         <span class="n">exponents</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">n_features</span><span class="p">)[:,</span> <span class="kc">None</span><span class="p">]</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">n_features</span><span class="p">)[</span><span class="kc">None</span><span class="p">,</span> <span class="p">:])</span>
         <span class="n">r</span> <span class="o">=</span> <span class="n">correlation</span><span class="o">**</span><span class="n">exponents</span>
         <span class="k">return</span> <span class="n">r</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span>
 
     <span class="k">else</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Unknown correlation structure: </span><span class="si">{</span><span class="n">structure</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span></div>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Unknown correlation structure: </span><span class="si">{</span><span class="n">structure</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span></div>
 
 
 
@@ -262,7 +262,7 @@
     <span class="n">growth</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">10.0</span><span class="p">,</span>
     <span class="n">max_tries</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">8</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
-<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Compute a Cholesky factor with diagonal jitter fallback.</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">"""Compute a Cholesky factor with diagonal jitter fallback.</span>
 
 <span class="sd">    This helper is designed to be robust for nearly singular covariance or</span>
 <span class="sd">    correlation matrices that may arise from extreme parameter choices or</span>
@@ -299,7 +299,7 @@
 <span class="sd">        perturbations of the correlation structure for robust behavior in</span>
 <span class="sd">        ill-conditioned settings, which is typically acceptable for didactic</span>
 <span class="sd">        simulations.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="k">try</span><span class="p">:</span>
         <span class="c1"># Fast path: no jitter needed.</span>
         <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">cholesky</span><span class="p">(</span><span class="n">corr_matrix</span><span class="p">)</span>
@@ -317,8 +317,8 @@
 
     <span class="c1"># Should never reach here due to raise in loop</span>
     <span class="k">raise</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">LinAlgError</span><span class="p">(</span>
-        <span class="s2">&quot;Cholesky factorization failed even after adding diagonal jitter. &quot;</span>
-        <span class="s2">&quot;Check correlation parameters for near-singular configurations.&quot;</span>
+        <span class="s2">"Cholesky factorization failed even after adding diagonal jitter. "</span>
+        <span class="s2">"Check correlation parameters for near-singular configurations."</span>
     <span class="p">)</span>
 
 
@@ -329,10 +329,10 @@
     <span class="n">n_features</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
     <span class="n">correlation</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
     <span class="o">*</span><span class="p">,</span>
-    <span class="n">structure</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;equicorrelated&quot;</span><span class="p">,</span>
+    <span class="n">structure</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"equicorrelated"</span><span class="p">,</span>
     <span class="n">rng</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">Generator</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Sample correlated Gaussian data with zero mean and unit variance.</span>
+<span class="w">    </span><span class="sd">"""Sample correlated Gaussian data with zero mean and unit variance.</span>
 
 <span class="sd">    This function generates the Gaussian core for correlated feature clusters.</span>
 
@@ -340,7 +340,7 @@
 <span class="sd">        n_samples: Number of samples to generate.</span>
 <span class="sd">        n_features: Number of features.</span>
 <span class="sd">        correlation: Correlation parameter.</span>
-<span class="sd">        structure: Correlation structure (&#39;equicorrelated&#39; or &#39;toeplitz&#39;).</span>
+<span class="sd">        structure: Correlation structure ('equicorrelated' or 'toeplitz').</span>
 <span class="sd">        rng: Random number generator. If None, creates a new one.</span>
 
 <span class="sd">    Returns:</span>
@@ -349,7 +349,7 @@
 
 <span class="sd">    Raises:</span>
 <span class="sd">        ValueError: If structure is invalid or correlation out of bounds.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="k">if</span> <span class="n">rng</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
         <span class="n">rng</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">default_rng</span><span class="p">()</span>
 
@@ -371,13 +371,13 @@
     <span class="n">y</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
     <span class="n">cluster_cfg</span><span class="p">:</span> <span class="n">CorrClusterConfig</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Apply the per-class anchor mean shift and its proxy propagation in-place.</span>
+<span class="w">    </span><span class="sd">"""Apply the per-class anchor mean shift and its proxy propagation in-place.</span>
 
 <span class="sd">    The anchor at ``anchor_index`` receives the full per-class effect. A proxy at</span>
 <span class="sd">    block column ``j`` inherits ``effect * proxy_attenuation * sigma[anchor_index, j]``,</span>
 <span class="sd">    where ``sigma`` is the structural correlation matrix built from</span>
-<span class="sd">    ``correlation_structure`` and that class&#39;s effective correlation -- the same</span>
-<span class="sd">    correlation that sampled the class&#39;s block. Using the structural correlation</span>
+<span class="sd">    ``correlation_structure`` and that class's effective correlation -- the same</span>
+<span class="sd">    correlation that sampled the class's block. Using the structural correlation</span>
 <span class="sd">    (rather than the empirical correlation of the shifted data) keeps the proxy</span>
 <span class="sd">    shift deterministic and makes the anchor the unique carrier of the</span>
 <span class="sd">    Bayes-optimal discriminant direction.</span>
@@ -386,7 +386,7 @@
 <span class="sd">        block: Cluster block of shape (n_samples, n_cluster_features). Modified in-place.</span>
 <span class="sd">        y: Class labels of shape (n_samples,).</span>
 <span class="sd">        cluster_cfg: Cluster configuration.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="k">if</span> <span class="n">cluster_cfg</span><span class="o">.</span><span class="n">mean_channel</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
         <span class="k">return</span>
 
@@ -424,10 +424,10 @@
     <span class="n">cluster_cfg</span><span class="p">:</span> <span class="n">CorrClusterConfig</span><span class="p">,</span>
     <span class="n">rng</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">Generator</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Sample one correlated block, per class, from its effective correlation.</span>
+<span class="w">    </span><span class="sd">"""Sample one correlated block, per class, from its effective correlation.</span>
 
-<span class="sd">    Each class&#39;s rows are drawn with that class&#39;s effective within-block</span>
-<span class="sd">    correlation (the covariance channel value for the class, or the cluster&#39;s</span>
+<span class="sd">    Each class's rows are drawn with that class's effective within-block</span>
+<span class="sd">    correlation (the covariance channel value for the class, or the cluster's</span>
 <span class="sd">    ``baseline_correlation`` when absent), so differential co-expression is</span>
 <span class="sd">    expressed directly in the sampled second moments. A class whose effective</span>
 <span class="sd">    correlation is (near) zero is drawn as independent standard normals.</span>
@@ -439,7 +439,7 @@
 
 <span class="sd">    Returns:</span>
 <span class="sd">        Feature block of shape (n_samples, n_cluster_features).</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="n">n_samples</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">y</span><span class="p">)</span>
     <span class="n">n_features</span> <span class="o">=</span> <span class="n">cluster_cfg</span><span class="o">.</span><span class="n">n_cluster_features</span>
     <span class="n">block</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">((</span><span class="n">n_samples</span><span class="p">,</span> <span class="n">n_features</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
@@ -475,11 +475,11 @@
     <span class="n">y</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
     <span class="n">rng</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">Generator</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]]:</span>
-<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Generate and assemble all correlated feature clusters for a dataset.</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">"""Generate and assemble all correlated feature clusters for a dataset.</span>
 
-<span class="sd">    For each cluster, a Gaussian block is sampled per class from that class&#39;s</span>
+<span class="sd">    For each cluster, a Gaussian block is sampled per class from that class's</span>
 <span class="sd">    effective within-block correlation (the covariance channel value for the</span>
-<span class="sd">    class, or the cluster&#39;s ``baseline_correlation`` when absent), then the mean</span>
+<span class="sd">    class, or the cluster's ``baseline_correlation`` when absent), then the mean</span>
 <span class="sd">    channel adds the per-class anchor shift with its structurally derived proxy</span>
 <span class="sd">    propagation. Relevance is never declared; it is derived from these channels.</span>
 
@@ -495,20 +495,20 @@
 <span class="sd">          assembled correlated blocks including channel effects.</span>
 <span class="sd">        * cluster_meta: Dictionary with cluster-level metadata, keyed by field</span>
 <span class="sd">          name then cluster id:</span>
-<span class="sd">            - &quot;mean_per_class_effect&quot;: cluster_id -&gt; mean channel mapping or None</span>
-<span class="sd">            - &quot;covariance_per_class_correlation&quot;: cluster_id -&gt; covariance mapping or None</span>
-<span class="sd">            - &quot;baseline_correlation&quot;: cluster_id -&gt; structural baseline correlation</span>
-<span class="sd">            - &quot;label&quot;: cluster_id -&gt; human-readable label</span>
-<span class="sd">            - &quot;structure&quot;: cluster_id -&gt; correlation structure (&quot;equicorrelated&quot; or &quot;toeplitz&quot;)</span>
-<span class="sd">            - &quot;proxy_attenuation&quot;: cluster_id -&gt; anchor-to-proxy mean-propagation multiplier</span>
-<span class="sd">            - &quot;anchor_index&quot;: cluster_id -&gt; structural anchor column within the block</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">            - "mean_per_class_effect": cluster_id -&gt; mean channel mapping or None</span>
+<span class="sd">            - "covariance_per_class_correlation": cluster_id -&gt; covariance mapping or None</span>
+<span class="sd">            - "baseline_correlation": cluster_id -&gt; structural baseline correlation</span>
+<span class="sd">            - "label": cluster_id -&gt; human-readable label</span>
+<span class="sd">            - "structure": cluster_id -&gt; correlation structure ("equicorrelated" or "toeplitz")</span>
+<span class="sd">            - "proxy_attenuation": cluster_id -&gt; anchor-to-proxy mean-propagation multiplier</span>
+<span class="sd">            - "anchor_index": cluster_id -&gt; structural anchor column within the block</span>
+<span class="sd">    """</span>
     <span class="k">if</span> <span class="n">rng</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
         <span class="n">rng</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">default_rng</span><span class="p">()</span>
 
     <span class="n">y</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">y</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">y</span><span class="o">.</span><span class="n">ndim</span> <span class="o">!=</span> <span class="mi">1</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;y must be a 1D array of class labels, got shape </span><span class="si">{</span><span class="n">y</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s2">.&quot;</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"y must be a 1D array of class labels, got shape </span><span class="si">{</span><span class="n">y</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s2">."</span><span class="p">)</span>
 
     <span class="n">n_samples</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">y</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
     <span class="n">cluster_cfgs</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">CorrClusterConfig</span><span class="p">]</span> <span class="o">=</span> <span class="n">cfg</span><span class="o">.</span><span class="n">corr_clusters</span> <span class="ow">or</span> <span class="p">[]</span>
@@ -525,19 +525,19 @@
         <span class="n">x_clusters</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">((</span><span class="n">n_samples</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
 
     <span class="n">cluster_meta</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="p">{</span>
-        <span class="s2">&quot;mean_per_class_effect&quot;</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s2">"mean_per_class_effect"</span><span class="p">:</span> <span class="p">{</span>
             <span class="n">cluster_id</span><span class="p">:</span> <span class="p">(</span><span class="n">c</span><span class="o">.</span><span class="n">mean_channel</span><span class="o">.</span><span class="n">per_class_effect</span> <span class="k">if</span> <span class="n">c</span><span class="o">.</span><span class="n">mean_channel</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="kc">None</span><span class="p">)</span>
             <span class="k">for</span> <span class="n">cluster_id</span><span class="p">,</span> <span class="n">c</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">cluster_cfgs</span><span class="p">)</span>
         <span class="p">},</span>
-        <span class="s2">&quot;covariance_per_class_correlation&quot;</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s2">"covariance_per_class_correlation"</span><span class="p">:</span> <span class="p">{</span>
             <span class="n">cluster_id</span><span class="p">:</span> <span class="p">(</span><span class="n">c</span><span class="o">.</span><span class="n">covariance_channel</span><span class="o">.</span><span class="n">per_class_correlation</span> <span class="k">if</span> <span class="n">c</span><span class="o">.</span><span class="n">covariance_channel</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="kc">None</span><span class="p">)</span>
             <span class="k">for</span> <span class="n">cluster_id</span><span class="p">,</span> <span class="n">c</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">cluster_cfgs</span><span class="p">)</span>
         <span class="p">},</span>
-        <span class="s2">&quot;baseline_correlation&quot;</span><span class="p">:</span> <span class="p">{</span><span class="n">cluster_id</span><span class="p">:</span> <span class="n">c</span><span class="o">.</span><span class="n">baseline_correlation</span> <span class="k">for</span> <span class="n">cluster_id</span><span class="p">,</span> <span class="n">c</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">cluster_cfgs</span><span class="p">)},</span>
-        <span class="s2">&quot;label&quot;</span><span class="p">:</span> <span class="p">{</span><span class="n">cluster_id</span><span class="p">:</span> <span class="n">c</span><span class="o">.</span><span class="n">label</span> <span class="k">for</span> <span class="n">cluster_id</span><span class="p">,</span> <span class="n">c</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">cluster_cfgs</span><span class="p">)},</span>
-        <span class="s2">&quot;structure&quot;</span><span class="p">:</span> <span class="p">{</span><span class="n">cluster_id</span><span class="p">:</span> <span class="n">c</span><span class="o">.</span><span class="n">correlation_structure</span> <span class="k">for</span> <span class="n">cluster_id</span><span class="p">,</span> <span class="n">c</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">cluster_cfgs</span><span class="p">)},</span>
-        <span class="s2">&quot;proxy_attenuation&quot;</span><span class="p">:</span> <span class="p">{</span><span class="n">cluster_id</span><span class="p">:</span> <span class="n">c</span><span class="o">.</span><span class="n">proxy_attenuation</span> <span class="k">for</span> <span class="n">cluster_id</span><span class="p">,</span> <span class="n">c</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">cluster_cfgs</span><span class="p">)},</span>
-        <span class="s2">&quot;anchor_index&quot;</span><span class="p">:</span> <span class="p">{</span><span class="n">cluster_id</span><span class="p">:</span> <span class="n">c</span><span class="o">.</span><span class="n">anchor_index</span> <span class="k">for</span> <span class="n">cluster_id</span><span class="p">,</span> <span class="n">c</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">cluster_cfgs</span><span class="p">)},</span>
+        <span class="s2">"baseline_correlation"</span><span class="p">:</span> <span class="p">{</span><span class="n">cluster_id</span><span class="p">:</span> <span class="n">c</span><span class="o">.</span><span class="n">baseline_correlation</span> <span class="k">for</span> <span class="n">cluster_id</span><span class="p">,</span> <span class="n">c</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">cluster_cfgs</span><span class="p">)},</span>
+        <span class="s2">"label"</span><span class="p">:</span> <span class="p">{</span><span class="n">cluster_id</span><span class="p">:</span> <span class="n">c</span><span class="o">.</span><span class="n">label</span> <span class="k">for</span> <span class="n">cluster_id</span><span class="p">,</span> <span class="n">c</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">cluster_cfgs</span><span class="p">)},</span>
+        <span class="s2">"structure"</span><span class="p">:</span> <span class="p">{</span><span class="n">cluster_id</span><span class="p">:</span> <span class="n">c</span><span class="o">.</span><span class="n">correlation_structure</span> <span class="k">for</span> <span class="n">cluster_id</span><span class="p">,</span> <span class="n">c</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">cluster_cfgs</span><span class="p">)},</span>
+        <span class="s2">"proxy_attenuation"</span><span class="p">:</span> <span class="p">{</span><span class="n">cluster_id</span><span class="p">:</span> <span class="n">c</span><span class="o">.</span><span class="n">proxy_attenuation</span> <span class="k">for</span> <span class="n">cluster_id</span><span class="p">,</span> <span class="n">c</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">cluster_cfgs</span><span class="p">)},</span>
+        <span class="s2">"anchor_index"</span><span class="p">:</span> <span class="p">{</span><span class="n">cluster_id</span><span class="p">:</span> <span class="n">c</span><span class="o">.</span><span class="n">anchor_index</span> <span class="k">for</span> <span class="n">cluster_id</span><span class="p">,</span> <span class="n">c</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">cluster_cfgs</span><span class="p">)},</span>
     <span class="p">}</span>
 
     <span class="k">return</span> <span class="n">x_clusters</span><span class="p">,</span> <span class="n">cluster_meta</span></div>

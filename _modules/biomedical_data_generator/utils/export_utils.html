@@ -86,7 +86,7 @@
 <span class="c1"># This software is distributed under the terms of the MIT license</span>
 <span class="c1"># which is available at https://opensource.org/licenses/MIT</span>
 
-<span class="sd">&quot;&quot;&quot;Export utilities for saving generated datasets to various formats.&quot;&quot;&quot;</span>
+<span class="sd">"""Export utilities for saving generated datasets to various formats."""</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">annotations</span>
 
@@ -99,9 +99,9 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">biomedical_data_generator.meta</span><span class="w"> </span><span class="kn">import</span> <span class="n">DatasetMeta</span>
 
 <span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span>
-    <span class="s2">&quot;to_labeled_dataframe&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;to_csv&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;to_parquet&quot;</span><span class="p">,</span>
+    <span class="s2">"to_labeled_dataframe"</span><span class="p">,</span>
+    <span class="s2">"to_csv"</span><span class="p">,</span>
+    <span class="s2">"to_parquet"</span><span class="p">,</span>
 <span class="p">]</span>
 
 
@@ -113,11 +113,11 @@
     <span class="n">meta</span><span class="p">:</span> <span class="n">DatasetMeta</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="o">*</span><span class="p">,</span>
     <span class="n">include_labels</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
-    <span class="n">label_col_name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;y&quot;</span><span class="p">,</span>
-    <span class="n">label_str_col_name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;y_label&quot;</span><span class="p">,</span>
+    <span class="n">label_col_name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"y"</span><span class="p">,</span>
+    <span class="n">label_str_col_name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"y_label"</span><span class="p">,</span>
     <span class="n">feature_names</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Convert generated dataset to DataFrame with optional labels.</span>
+<span class="w">    </span><span class="sd">"""Convert generated dataset to DataFrame with optional labels.</span>
 
 <span class="sd">    Flexible conversion supporting multiple use cases:</span>
 <span class="sd">    1. Full conversion: x + y + meta → df with features + labels</span>
@@ -148,13 +148,13 @@
 
 <span class="sd">        &gt;&gt;&gt; # Custom column names</span>
 <span class="sd">        &gt;&gt;&gt; df = to_labeled_dataframe(x, y, meta,</span>
-<span class="sd">        ...                   label_col_name=&quot;class&quot;,</span>
-<span class="sd">        ...                   label_str_col_name=&quot;diagnosis&quot;)</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">        ...                   label_col_name="class",</span>
+<span class="sd">        ...                   label_str_col_name="diagnosis")</span>
+<span class="sd">    """</span>
     <span class="c1"># Determine feature names</span>
     <span class="k">if</span> <span class="n">feature_names</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
         <span class="k">if</span> <span class="n">meta</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Either meta or feature_names must be provided&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"Either meta or feature_names must be provided"</span><span class="p">)</span>
         <span class="n">feature_names</span> <span class="o">=</span> <span class="n">meta</span><span class="o">.</span><span class="n">feature_names</span>
 
     <span class="c1"># Convert X to DataFrame</span>
@@ -169,11 +169,11 @@
     <span class="c1"># Add labels if requested</span>
     <span class="k">if</span> <span class="n">include_labels</span><span class="p">:</span>
         <span class="k">if</span> <span class="n">y</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;y must be provided when include_labels=True&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"y must be provided when include_labels=True"</span><span class="p">)</span>
 
         <span class="c1"># Validate shape</span>
         <span class="k">if</span> <span class="n">df</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="n">y</span><span class="p">):</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Shape mismatch: X has </span><span class="si">{</span><span class="n">df</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s2"> samples but y has </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">y</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Shape mismatch: X has </span><span class="si">{</span><span class="n">df</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s2"> samples but y has </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">y</span><span class="p">)</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 
         <span class="c1"># Add numeric labels in first column</span>
         <span class="n">df</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">label_col_name</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span>
@@ -198,7 +198,7 @@
     <span class="n">index</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
     <span class="o">**</span><span class="n">csv_kwargs</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Export dataset to CSV file.</span>
+<span class="w">    </span><span class="sd">"""Export dataset to CSV file.</span>
 
 <span class="sd">    Convenience wrapper around to_labeled_dataframe() + DataFrame.to_csv().</span>
 
@@ -206,15 +206,15 @@
 <span class="sd">        x: Feature matrix.</span>
 <span class="sd">        y: Class labels.</span>
 <span class="sd">        meta: Dataset metadata.</span>
-<span class="sd">        filepath: Output path (e.g., &quot;data/train.csv&quot;).</span>
+<span class="sd">        filepath: Output path (e.g., "data/train.csv").</span>
 <span class="sd">        include_labels: If True, include label columns.</span>
 <span class="sd">        index: If True, write row indices to CSV.</span>
 <span class="sd">        **csv_kwargs: Additional arguments for pd.DataFrame.to_csv()</span>
-<span class="sd">                      (e.g., index=False, sep=&#39;;&#39;).</span>
+<span class="sd">                      (e.g., index=False, sep=';').</span>
 
 <span class="sd">    Examples:</span>
-<span class="sd">        &gt;&gt;&gt; to_csv(x, y, meta, &quot;output/dataset.csv&quot;, index=False)</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">        &gt;&gt;&gt; to_csv(x, y, meta, "output/dataset.csv", index=False)</span>
+<span class="sd">    """</span>
     <span class="n">df</span> <span class="o">=</span> <span class="n">to_labeled_dataframe</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">meta</span><span class="p">,</span> <span class="n">include_labels</span><span class="o">=</span><span class="n">include_labels</span><span class="p">)</span>
     <span class="n">df</span><span class="o">.</span><span class="n">to_csv</span><span class="p">(</span><span class="n">filepath</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="n">index</span><span class="p">,</span> <span class="o">**</span><span class="n">csv_kwargs</span><span class="p">)</span></div>
 
@@ -231,20 +231,20 @@
     <span class="n">include_labels</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
     <span class="o">**</span><span class="n">parquet_kwargs</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Export dataset to Parquet file (efficient for large datasets).</span>
+<span class="w">    </span><span class="sd">"""Export dataset to Parquet file (efficient for large datasets).</span>
 
 <span class="sd">    Args:</span>
 <span class="sd">        x: Feature matrix.</span>
 <span class="sd">        y: Class labels.</span>
 <span class="sd">        meta: Dataset metadata.</span>
-<span class="sd">        filepath: Output path (e.g., &quot;data/train.parquet&quot;).</span>
+<span class="sd">        filepath: Output path (e.g., "data/train.parquet").</span>
 <span class="sd">        include_labels: If True, include label columns.</span>
 <span class="sd">        **parquet_kwargs: Additional arguments for pd.DataFrame.to_parquet()</span>
-<span class="sd">                          (e.g., compression=&#39;gzip&#39;, engine=&#39;pyarrow&#39;).</span>
+<span class="sd">                          (e.g., compression='gzip', engine='pyarrow').</span>
 
 <span class="sd">    Examples:</span>
-<span class="sd">        &gt;&gt;&gt; to_parquet(x, y, meta, &quot;output/dataset.parquet&quot;)</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">        &gt;&gt;&gt; to_parquet(x, y, meta, "output/dataset.parquet")</span>
+<span class="sd">    """</span>
     <span class="n">df</span> <span class="o">=</span> <span class="n">to_labeled_dataframe</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">meta</span><span class="p">,</span> <span class="n">include_labels</span><span class="o">=</span><span class="n">include_labels</span><span class="p">)</span>
     <span class="n">df</span><span class="o">.</span><span class="n">to_parquet</span><span class="p">(</span><span class="n">filepath</span><span class="p">,</span> <span class="o">**</span><span class="n">parquet_kwargs</span><span class="p">)</span></div>
 

@@ -176,22 +176,22 @@ simulating site differences or instrument variations.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>x</strong> (<em>DataFrame</em><em> | </em><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.4)"><em>ndarray</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.14)"><em>tuple</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.14)"><em>Any</em></a><em>, </em><em>...</em><em>]</em><em>, </em><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.dtype.html#numpy.dtype" title="(in NumPy v2.4)"><em>dtype</em></a><em>[</em><em>float64</em><em>]</em><em>]</em>) – Feature matrix (DataFrame or array).</p></li>
-<li><p><strong>batch_assignments</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.4)"><em>ndarray</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.14)"><em>tuple</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.14)"><em>Any</em></a><em>, </em><em>...</em><em>]</em><em>, </em><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.dtype.html#numpy.dtype" title="(in NumPy v2.4)"><em>dtype</em></a><em>[</em><em>int64</em><em>]</em><em>]</em>) – Array of batch assignments per sample.</p></li>
-<li><p><strong>rng</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/random/generator.html#numpy.random.Generator" title="(in NumPy v2.4)"><em>Generator</em></a>) – NumPy random number generator used to sample batch effects.</p></li>
-<li><p><strong>effect_type</strong> (<a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Literal" title="(in Python v3.14)"><em>Literal</em></a><em>[</em><em>'additive'</em><em>, </em><em>'multiplicative'</em><em>]</em>) – <p>Type of batch effect to apply:
+<li><p><strong>x</strong> (<em>DataFrame</em><em> | </em><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.5)"><em>ndarray</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#tuple" title="(in Python v3.15)"><em>tuple</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.15)"><em>Any</em></a><em>, </em><em>...</em><em>]</em><em>, </em><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.dtype.html#numpy.dtype" title="(in NumPy v2.5)"><em>dtype</em></a><em>[</em><em>float64</em><em>]</em><em>]</em>) – Feature matrix (DataFrame or array).</p></li>
+<li><p><strong>batch_assignments</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.5)"><em>ndarray</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#tuple" title="(in Python v3.15)"><em>tuple</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.15)"><em>Any</em></a><em>, </em><em>...</em><em>]</em><em>, </em><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.dtype.html#numpy.dtype" title="(in NumPy v2.5)"><em>dtype</em></a><em>[</em><em>int64</em><em>]</em><em>]</em>) – Array of batch assignments per sample.</p></li>
+<li><p><strong>rng</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/random/generator.html#numpy.random.Generator" title="(in NumPy v2.5)"><em>Generator</em></a>) – NumPy random number generator used to sample batch effects.</p></li>
+<li><p><strong>effect_type</strong> (<a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Literal" title="(in Python v3.15)"><em>Literal</em></a><em>[</em><em>'additive'</em><em>, </em><em>'multiplicative'</em><em>]</em>) – <p>Type of batch effect to apply:
 - <code class="docutils literal notranslate"><span class="pre">&quot;additive&quot;</span></code>: Adds a batch-specific shift to affected features.
 - <code class="docutils literal notranslate"><span class="pre">&quot;multiplicative&quot;</span></code>: Multiplies affected features by a batch-specific</p>
 <blockquote>
 <div><p>scaling factor around 1.0.</p>
 </div></blockquote>
 </p></li>
-<li><p><strong>effect_strength</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>) – Standard deviation of the batch-effect distribution. Larger values
+<li><p><strong>effect_strength</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/functions.html#float" title="(in Python v3.15)"><em>float</em></a>) – Standard deviation of the batch-effect distribution. Larger values
 generate stronger perturbations. Must be non-negative.</p></li>
-<li><p><strong>affected_features</strong> (<a class="reference external" href="https://docs.python.org/3/library/collections.abc.html#collections.abc.Sequence" title="(in Python v3.14)"><em>Sequence</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a><em>] </em><em>| </em><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Literal" title="(in Python v3.14)"><em>Literal</em></a><em>[</em><em>'all'</em><em>]</em>) – Defines which features are affected:
+<li><p><strong>affected_features</strong> (<a class="reference external" href="https://docs.python.org/3/library/collections.abc.html#collections.abc.Sequence" title="(in Python v3.15)"><em>Sequence</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/builtins/functions.html#int" title="(in Python v3.15)"><em>int</em></a><em>] </em><em>| </em><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Literal" title="(in Python v3.15)"><em>Literal</em></a><em>[</em><em>'all'</em><em>]</em>) – Defines which features are affected:
 - <code class="docutils literal notranslate"><span class="pre">&quot;all&quot;</span></code>: Apply batch effects to all features.
 - Sequence[int]: Apply effects only to the listed feature indices.</p></li>
-<li><p><strong>effect_granularity</strong> (<a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Literal" title="(in Python v3.14)"><em>Literal</em></a><em>[</em><em>'per_feature'</em><em>, </em><em>'scalar'</em><em>]</em>) – <p>Controls whether effects vary across features:
+<li><p><strong>effect_granularity</strong> (<a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Literal" title="(in Python v3.15)"><em>Literal</em></a><em>[</em><em>'per_feature'</em><em>, </em><em>'scalar'</em><em>]</em>) – <p>Controls whether effects vary across features:
 - <code class="docutils literal notranslate"><span class="pre">&quot;per_feature&quot;</span></code> (default): Draws effects with shape</p>
 <blockquote>
 <div><p><code class="docutils literal notranslate"><span class="pre">(n_batches,</span> <span class="pre">n_affected_features)</span></code>, so features within the same batch
@@ -203,7 +203,7 @@ across all affected features. This corresponds to a global per-batch
 offset (additive) or global scaling factor (multiplicative).</p></li>
 </ul>
 </p></li>
-<li><p><strong>n_batches</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a><em> | </em><em>None</em>) – Total number of batches to draw effects for. Sizes the per-batch
+<li><p><strong>n_batches</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/functions.html#int" title="(in Python v3.15)"><em>int</em></a><em> | </em><em>None</em>) – Total number of batches to draw effects for. Sizes the per-batch
 effect draw as <code class="docutils literal notranslate"><span class="pre">(n_batches,</span> <span class="pre">...)</span></code>, so it must be &gt;= the largest
 batch index present in <code class="docutils literal notranslate"><span class="pre">batch_assignments</span></code>. If <code class="docutils literal notranslate"><span class="pre">None</span></code>, it is
 derived from the data as <code class="docutils literal notranslate"><span class="pre">max(batch_assignments)</span> <span class="pre">+</span> <span class="pre">1</span></code>. Passing the
@@ -240,9 +240,9 @@ the full per-feature effects vary within batches.</p></li>
 </dd>
 <dt class="field-even">Raises<span class="colon">:</span></dt>
 <dd class="field-even"><ul class="simple">
-<li><p><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#ValueError" title="(in Python v3.14)"><strong>ValueError</strong></a> – If <code class="docutils literal notranslate"><span class="pre">batch_assignments</span></code> has the wrong shape, contains negative values,
+<li><p><a class="reference external" href="https://docs.python.org/3/builtins/exceptions.html#ValueError" title="(in Python v3.15)"><strong>ValueError</strong></a> – If <code class="docutils literal notranslate"><span class="pre">batch_assignments</span></code> has the wrong shape, contains negative values,
     or <code class="docutils literal notranslate"><span class="pre">effect_granularity</span></code> is not one of the allowed strings.</p></li>
-<li><p><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#IndexError" title="(in Python v3.14)"><strong>IndexError</strong></a> – If <code class="docutils literal notranslate"><span class="pre">affected_features</span></code> contains indices outside the valid feature range.</p></li>
+<li><p><a class="reference external" href="https://docs.python.org/3/builtins/exceptions.html#IndexError" title="(in Python v3.15)"><strong>IndexError</strong></a> – If <code class="docutils literal notranslate"><span class="pre">affected_features</span></code> contains indices outside the valid feature range.</p></li>
 </ul>
 </dd>
 </dl>
@@ -260,10 +260,10 @@ the full per-feature effects vary within batches.</p></li>
 <span class="gp">&gt;&gt;&gt;</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">x_batch</span><span class="p">,</span> <span class="n">batch_effects</span> <span class="o">=</span> <span class="n">apply_batch_effects</span><span class="p">(</span>
 <span class="gp">... </span>    <span class="n">x</span><span class="p">,</span> <span class="n">batches</span><span class="p">,</span> <span class="n">rng</span><span class="p">,</span>
-<span class="gp">... </span>    <span class="n">effect_type</span><span class="o">=</span><span class="s2">&quot;additive&quot;</span><span class="p">,</span>
+<span class="gp">... </span>    <span class="n">effect_type</span><span class="o">=</span><span class="s2">"additive"</span><span class="p">,</span>
 <span class="gp">... </span>    <span class="n">effect_strength</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span>
 <span class="gp">... </span>    <span class="n">affected_features</span><span class="o">=</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">],</span>
-<span class="gp">... </span>    <span class="n">effect_granularity</span><span class="o">=</span><span class="s2">&quot;scalar&quot;</span><span class="p">,</span>
+<span class="gp">... </span>    <span class="n">effect_granularity</span><span class="o">=</span><span class="s2">"scalar"</span><span class="p">,</span>
 <span class="gp">... </span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">x_batch</span><span class="o">.</span><span class="n">shape</span>
 <span class="go">(100, 5)</span>
@@ -341,11 +341,11 @@ class tend to fall into its preferred batch, subject to randomness).</p></li>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>class_labels</strong> (<em>ArrayLike</em>) – Class membership for each sample. May be integer or
 string labels; only relative grouping matters.</p></li>
-<li><p><strong>n_batches</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a>) – Number of distinct batches (must be &gt;= 2).</p></li>
-<li><p><strong>confounding_with_class</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>) – Degree of correlation (0.0 = random assignment,
+<li><p><strong>n_batches</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/functions.html#int" title="(in Python v3.15)"><em>int</em></a>) – Number of distinct batches (must be &gt;= 2).</p></li>
+<li><p><strong>confounding_with_class</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/functions.html#float" title="(in Python v3.15)"><em>float</em></a>) – Degree of correlation (0.0 = random assignment,
 1.0 = strong preference), must be in [0, 1].</p></li>
 <li><p><strong>rng</strong> (<em>np.random.Generator</em>) – NumPy random generator (for reproducibility).</p></li>
-<li><p><strong>proportions</strong> (<em>Sequence</em><em>[</em><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a><em>] </em><em>| </em><em>None</em>) – Relative batch sizes (None = equal split).</p></li>
+<li><p><strong>proportions</strong> (<em>Sequence</em><em>[</em><a class="reference external" href="https://docs.python.org/3/builtins/functions.html#float" title="(in Python v3.15)"><em>float</em></a><em>] </em><em>| </em><em>None</em>) – Relative batch sizes (None = equal split).</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
@@ -357,12 +357,12 @@ string labels; only relative grouping matters.</p></li>
 </dl>
 <p class="rubric">Examples</p>
 <div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">rng</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">default_rng</span><span class="p">(</span><span class="mi">42</span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">y</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="s2">&quot;control&quot;</span><span class="p">]</span> <span class="o">*</span> <span class="mi">50</span> <span class="o">+</span> <span class="p">[</span><span class="s2">&quot;case&quot;</span><span class="p">]</span> <span class="o">*</span> <span class="mi">50</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">y</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="s2">"control"</span><span class="p">]</span> <span class="o">*</span> <span class="mi">50</span> <span class="o">+</span> <span class="p">[</span><span class="s2">"case"</span><span class="p">]</span> <span class="o">*</span> <span class="mi">50</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">batches</span> <span class="o">=</span> <span class="n">confounded_batch_assignment</span><span class="p">(</span>
 <span class="gp">... </span>    <span class="n">y</span><span class="p">,</span> <span class="n">n_batches</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">confounding_with_class</span><span class="o">=</span><span class="mf">0.8</span><span class="p">,</span> <span class="n">rng</span><span class="o">=</span><span class="n">rng</span>
 <span class="gp">... </span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="c1"># Most &quot;control&quot; samples will be in batch 0,</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="c1"># most &quot;case&quot; samples will be in batch 1.</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># Most "control" samples will be in batch 0,</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># most "case" samples will be in batch 1.</span>
 </pre></div>
 </div>
 <p class="rubric">Notes</p>
@@ -392,15 +392,15 @@ to the underlying implementations, see:</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>n_samples</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a>) – Number of samples.</p></li>
-<li><p><strong>n_batches</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a>) – Number of batches (must be &gt;= 1).</p></li>
+<li><p><strong>n_samples</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/functions.html#int" title="(in Python v3.15)"><em>int</em></a>) – Number of samples.</p></li>
+<li><p><strong>n_batches</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/functions.html#int" title="(in Python v3.15)"><em>int</em></a>) – Number of batches (must be &gt;= 1).</p></li>
 <li><p><strong>rng</strong> (<em>np.random.Generator</em>) – NumPy random generator (for reproducibility).</p></li>
-<li><p><strong>proportions</strong> (<em>Sequence</em><em>[</em><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a><em>] </em><em>| </em><em>None</em>) – Relative batch sizes (None = equal split).</p></li>
+<li><p><strong>proportions</strong> (<em>Sequence</em><em>[</em><a class="reference external" href="https://docs.python.org/3/builtins/functions.html#float" title="(in Python v3.15)"><em>float</em></a><em>] </em><em>| </em><em>None</em>) – Relative batch sizes (None = equal split).</p></li>
 <li><p><strong>class_labels</strong> (<em>ArrayLike</em><em> | </em><em>None</em>) – Optional class labels for confounding. May be any
 array-like of shape (n_samples,) with labels that np.unique can
 handle (e.g. integers, strings). Only used if
 confounding_with_class &gt; 0.</p></li>
-<li><p><strong>confounding_with_class</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>) – Correlation with class
+<li><p><strong>confounding_with_class</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/functions.html#float" title="(in Python v3.15)"><em>float</em></a>) – Correlation with class
 (0.0 = random, 1.0 = strong preference), must be in [0, 1].</p></li>
 </ul>
 </dd>
@@ -450,17 +450,17 @@ a unified interface for both random and confounded assignments.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>n_samples</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a>) – Number of samples to assign.</p></li>
-<li><p><strong>n_batches</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a>) – Number of distinct batches (must be &gt;= 1).</p></li>
-<li><p><strong>rng</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/random/generator.html#numpy.random.Generator" title="(in NumPy v2.4)"><em>Generator</em></a>) – NumPy random generator (for reproducibility).</p></li>
-<li><p><strong>proportions</strong> (<a class="reference external" href="https://docs.python.org/3/library/collections.abc.html#collections.abc.Sequence" title="(in Python v3.14)"><em>Sequence</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a><em>] </em><em>| </em><em>None</em>) – Relative batch sizes (None = equal split).</p></li>
+<li><p><strong>n_samples</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/functions.html#int" title="(in Python v3.15)"><em>int</em></a>) – Number of samples to assign.</p></li>
+<li><p><strong>n_batches</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/functions.html#int" title="(in Python v3.15)"><em>int</em></a>) – Number of distinct batches (must be &gt;= 1).</p></li>
+<li><p><strong>rng</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/random/generator.html#numpy.random.Generator" title="(in NumPy v2.5)"><em>Generator</em></a>) – NumPy random generator (for reproducibility).</p></li>
+<li><p><strong>proportions</strong> (<a class="reference external" href="https://docs.python.org/3/library/collections.abc.html#collections.abc.Sequence" title="(in Python v3.15)"><em>Sequence</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/builtins/functions.html#float" title="(in Python v3.15)"><em>float</em></a><em>] </em><em>| </em><em>None</em>) – Relative batch sizes (None = equal split).</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>Array of batch assignments (integers 0 to n_batches-1).</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.4)"><em>ndarray</em></a>[<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.14)">tuple</a>[<a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.14)"><em>Any</em></a>, …], <a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.dtype.html#numpy.dtype" title="(in NumPy v2.4)"><em>dtype</em></a>[<em>int64</em>]]</p>
+<dd class="field-odd"><p><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.5)"><em>ndarray</em></a>[<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#tuple" title="(in Python v3.15)">tuple</a>[<a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.15)"><em>Any</em></a>, …], <a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.dtype.html#numpy.dtype" title="(in NumPy v2.5)"><em>dtype</em></a>[<em>int64</em>]]</p>
 </dd>
 </dl>
 <p class="rubric">Examples</p>

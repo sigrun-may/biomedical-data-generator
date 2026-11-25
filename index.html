@@ -129,8 +129,8 @@ correlation between batch assignment and class label</p></li>
     <span class="p">],</span>
     <span class="n">n_standalone_noise</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span>
     <span class="n">class_configs</span><span class="o">=</span><span class="p">[</span>
-        <span class="n">ClassConfig</span><span class="p">(</span><span class="n">n_samples</span><span class="o">=</span><span class="mi">50</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;healthy&quot;</span><span class="p">),</span>
-        <span class="n">ClassConfig</span><span class="p">(</span><span class="n">n_samples</span><span class="o">=</span><span class="mi">50</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;diseased&quot;</span><span class="p">),</span>
+        <span class="n">ClassConfig</span><span class="p">(</span><span class="n">n_samples</span><span class="o">=</span><span class="mi">50</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">"healthy"</span><span class="p">),</span>
+        <span class="n">ClassConfig</span><span class="p">(</span><span class="n">n_samples</span><span class="o">=</span><span class="mi">50</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">"diseased"</span><span class="p">),</span>
     <span class="p">],</span>
     <span class="n">corr_clusters</span><span class="o">=</span><span class="p">[</span>
         <span class="c1"># Made informative through a mean shift on the diseased class.</span>
@@ -138,7 +138,7 @@ correlation between batch assignment and class label</p></li>
             <span class="n">n_cluster_features</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span>
             <span class="n">baseline_correlation</span><span class="o">=</span><span class="mf">0.6</span><span class="p">,</span>
             <span class="n">mean_channel</span><span class="o">=</span><span class="n">MeanChannel</span><span class="p">(</span><span class="n">per_class_effect</span><span class="o">=</span><span class="p">{</span><span class="mi">1</span><span class="p">:</span> <span class="mf">1.5</span><span class="p">}),</span>
-            <span class="n">label</span><span class="o">=</span><span class="s2">&quot;Pathway_A&quot;</span><span class="p">,</span>
+            <span class="n">label</span><span class="o">=</span><span class="s2">"Pathway_A"</span><span class="p">,</span>
         <span class="p">),</span>
     <span class="p">],</span>
     <span class="n">random_state</span><span class="o">=</span><span class="mi">42</span><span class="p">,</span>
